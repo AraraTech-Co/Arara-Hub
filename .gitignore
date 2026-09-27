@@ -1,3 +1,4 @@
+.cursor
 # Dependencies & build
 node_modules/
 dist/
