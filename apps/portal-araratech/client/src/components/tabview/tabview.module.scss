@@ -1,0 +1,50 @@
+@import "components/global.scss";
+
+.tabs {
+  overflow: hidden;
+  border-bottom: 1px solid $c-border;
+
+  @media (min-width: $mobile) {
+    border-bottom: none;
+  }
+}
+
+.button {
+  position: relative;
+  float: left;
+  width: 100%;
+  padding: $scale $scale5;
+  outline: none;
+  font-size: 0.85em;
+  transition: all 0.2s ease-in-out;
+  border-bottom: 1px solid $c-border;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  @media (min-width: $mobile) {
+    width: auto;
+    border-bottom: none;
+  }
+}
+
+.buttonInActive {
+  color: $c-text;
+  background-color: white;
+
+  @media (min-width: $mobile) {
+    color: white;
+    background-color: lighten($c-blue, 5%);
+  }
+}
+
+.buttonActive {
+  color: white;
+  background-color: $c-blue;
+
+  @media (min-width: $mobile) {
+    color: $c-text;
+    background-color: white;
+  }
+}

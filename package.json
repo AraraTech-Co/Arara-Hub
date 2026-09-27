@@ -1,0 +1,29 @@
+{
+  "name": "arara-platform",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Arara monorepo: central code-first API + app frontends",
+  "workspaces": [
+    "packages/*",
+    "apps/portal-suporte",
+    "apps/portal-crm",
+    "apps/portal-cursos",
+    "apps/portal-horas"
+  ],
+  "scripts": {
+    "dev:api": "npm run dev -w @arara/api",
+    "build:api": "npm run build -w @arara/api",
+    "db:generate": "npm run db:generate -w @arara/api",
+    "db:migrate": "npm run db:migrate -w @arara/api",
+    "db:seed": "npm run db:seed -w @arara/api",
+    "export:routes": "npm run export:routes -w @arara/api",
+    "codegen:routes": "npm run codegen:routes -w @arara/api",
+    "dev:portal-suporte": "npm run dev -w portal-suporte",
+    "dev:portal-crm": "npm run dev -w portal-crm",
+    "dev:portal-cursos": "npm run dev -w portal-cursos",
+    "dev:portal-horas": "npm run dev -w portal-horas"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

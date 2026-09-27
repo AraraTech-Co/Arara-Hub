@@ -1,0 +1,102 @@
+name: Deploy frontend (reusable)
+
+on:
+  workflow_call:
+    inputs:
+      app:
+        description: Compose service / app folder name (e.g. portal-suporte)
+        required: true
+        type: string
+      smoke_url:
+        description: Optional URL to curl after deploy (empty = skip)
+        required: false
+        type: string
+        default: ""
+    secrets:
+      SSH_PRIVATE_KEY:
+        required: true
+
+jobs:
+  deploy:
+    name: Deploy ${{ inputs.app }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: production
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        uses: ./.github/actions/setup-ssh
+        with:
+          ssh_key: ${{ secrets.SSH_PRIVATE_KEY }}
+          host: ${{ vars.DEPLOY_HOST }}
+          port: ${{ vars.DEPLOY_SSH_PORT || '22' }}
+          user: ${{ vars.DEPLOY_USER }}
+
+      - name: Sync monorepo deploy context
+        run: |
+          set -euo pipefail
+          : "${SSH_CONFIG:?Setup SSH did not export SSH_CONFIG}"
+          REMOTE_DIR="${{ vars.FRONTS_REMOTE_DIR || 'arara-platform-src' }}"
+          APP="${{ inputs.app }}"
+          SSH=(ssh -F "$SSH_CONFIG")
+          RSYNC_SSH="ssh -F ${SSH_CONFIG}"
+
+          "${SSH[@]}" deploy-target bash -s <<REMOTE
+          set -euo pipefail
+          RAW="${REMOTE_DIR}"
+          case "\$RAW" in
+            /*) DIR="\$RAW" ;;
+            *)  DIR="\$HOME/\$RAW" ;;
+          esac
+          mkdir -p "\$DIR/apps" "\$DIR/deploy"
+          REMOTE
+
+          rsync -az --delete \
+            --exclude node_modules --exclude .git --exclude dist --exclude .next --exclude out \
+            --exclude coverage --exclude '*.log' \
+            -e "$RSYNC_SSH" \
+            "apps/${APP}/" "deploy-target:${REMOTE_DIR}/apps/${APP}/"
+          rsync -az --delete \
+            --exclude '*.log' \
+            -e "$RSYNC_SSH" \
+            deploy/ "deploy-target:${REMOTE_DIR}/deploy/"
+
+      - name: Build & restart container
+        run: |
+          set -euo pipefail
+          : "${SSH_CONFIG:?Setup SSH did not export SSH_CONFIG}"
+          REMOTE_DIR="${{ vars.FRONTS_REMOTE_DIR || 'arara-platform-src' }}"
+          APP="${{ inputs.app }}"
+          API_UPSTREAM="${{ vars.API_UPSTREAM || 'http://arara-platform-prd:4100' }}"
+          ssh -F "$SSH_CONFIG" deploy-target bash -s <<REMOTE
+          set -euo pipefail
+          RAW="${REMOTE_DIR}"
+          case "\$RAW" in
+            /*) DIR="\$RAW" ;;
+            *)  DIR="\$HOME/\$RAW" ;;
+          esac
+          cd "\$DIR"
+          export API_UPSTREAM="${API_UPSTREAM}"
+          docker compose -f deploy/frontends.compose.yml build "${APP}"
+          docker compose -f deploy/frontends.compose.yml up -d --no-deps "${APP}"
+          sleep 2
+          docker ps --filter name="arara-front-${APP}" --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}'
+          REMOTE
+
+      - name: Smoke
+        if: inputs.smoke_url != ''
+        run: |
+          set -euo pipefail
+          URL="${{ inputs.smoke_url }}"
+          for i in 1 2 3 4 5; do
+            code=$(curl -sS -o /dev/null -w '%{http_code}' "$URL" || echo 000)
+            echo "GET $URL → $code"
+            if [ "$code" = "200" ] || [ "$code" = "301" ] || [ "$code" = "302" ]; then
+              exit 0
+            fi
+            sleep 3
+          done
+          exit 1

@@ -1,0 +1,87 @@
+@import 'components/global';
+
+.dragging {
+
+  border-radius: $radius;
+  border: 1px dashed lighten($c-green, 20%);
+  background-color: lighten($c-green, 34%);
+
+}
+
+.success {
+
+  border: 1px dashed lighten($c-green, 5%) !important;
+  background-color: lighten($c-green, 34%);
+
+}
+
+.label {
+
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  font-size: $scale-1;
+  transform: translate(-50%, -50%);
+
+}
+
+.labelIcon {
+
+  display: inline-block;
+  margin-top: -3px;
+  margin-right: $scale-2;
+
+}
+
+.labelText {
+
+  display: inline-block;
+
+}
+
+.dropzone {
+
+  position: relative;
+  text-align: center;
+  overflow-y: scroll;
+  min-height: $scale10;
+  cursor: pointer;
+  padding: $scale2 $scale;
+  margin: $scale-3 0 $scale1;
+  border: 1px dashed darken($c-border, 5%);
+
+}
+
+.legacyInput {
+
+  display: none;
+
+}
+
+.error {
+
+  margin-bottom: 0;
+  border: 1px dashed $c-red;
+  background-color: lighten($c-red, 38%);
+
+}
+
+.fileListItem {
+
+  position: relative;
+  display: inline-block;
+  margin-right: $scale;
+  padding-right: $scale1;
+
+}
+
+.fileListButton {
+    
+  position: absolute;
+  top: 58%;
+  right: 0;
+  width: $scale;
+  height: $scale;
+  transform: translateY(-50%);
+
+}

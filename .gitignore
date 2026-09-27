@@ -1,0 +1,45 @@
+# Dependencies & build
+node_modules/
+dist/
+build/
+.next/
+coverage/
+**/.turbo/
+*.tsbuildinfo
+
+# Logs & OS
+*.log
+.DS_Store
+
+# Environment / secrets (keep only *.example tracked)
+.env
+.env.*
+!.env.example
+!**/.env.example
+!**/.env.*.example
+.secrets/
+
+# Local credentials & API keys
+packages/api/data/hosting/
+packages/api/data/*-credentials.json
+packages/api/data/*-api-key.txt
+packages/api/data/canonical-emails.json
+packages/api/data/user-id-map.json
+
+# Production dumps / PII (never publish)
+packages/api/data/*-prod/
+packages/api/data/*-prod.sql
+packages/api/data/exports/
+packages/api/data/portal-suporte-api-routes.json
+packages/api/data/portal-suporte-table-models.json
+packages/api/data/portal-suporte-manifest.json
+
+# Local ops scripts with PII / hashes
+packages/api/scripts/archived/*.sql
+apps/portal-crm/scripts/create-admin-leonardo.sql
+apps/portal-crm/scripts/create-vendedor-gabi.sql
+apps/portal-crm/scripts/import-leads.sql
+apps/portal-crm/scripts/leads-data.txt
+apps/portal-suporte/.doc-apoio-verify/
+packages/api/data/role-assignments.json
+__pycache__/

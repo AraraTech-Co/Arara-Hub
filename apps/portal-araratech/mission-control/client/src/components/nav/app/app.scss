@@ -1,0 +1,194 @@
+@import 'components/global.scss';
+
+.sidebar {
+
+  @media (min-width: $mobile){
+
+    position: fixed;
+    width: $scale7;
+    height: 100%;
+    z-index: 101;
+    padding: $scale;
+    overflow: hidden;
+    background-color: $c-dark;
+    transition: all 0.2s ease-out;
+
+    &.expanded {
+
+      width: $scale11;
+
+      a span.label,
+      div span.label {
+
+        opacity: 1;
+        transition: all 0.8s ease-in-out;
+
+      }
+    }
+
+    > a { // logo
+
+      position: absolute;
+      top: $scale2;
+      left: $scale2;
+      width: $scale2;
+      height: $scale2;
+
+    }
+
+    .nav-links {
+
+      padding: 0;
+      margin-top: $scale7;
+
+      a, div {
+
+        position: relative;
+        display: block;
+        text-decoration: none;
+        color: white;
+        padding: 0;
+        cursor: pointer;
+        width: 100% !important;
+        height: $scale5;
+        padding: $scale $scale-3;
+        font-size: 1em;
+        line-height: 1;
+
+        .icon {
+
+          position: absolute;
+          top: 50%;
+          left: $scale-1;
+          transform: translateY(-50%);
+
+        }
+
+        .label {
+
+          opacity: 0;
+          pointer-events: none;
+          margin-left: $scale4;
+
+        }
+
+        &.active {
+
+          color: white;
+          border-radius: $radius;
+          background-color: $c-blue;
+          background: lighten($c-dark, 5%);
+
+        }
+      }
+    }
+  }
+}
+
+.popup {
+
+  @media (min-width: $mobile){
+
+    .btn-togglenav {
+
+      display: none !important;
+
+    }
+  }
+
+  @media (max-width: $mobile){
+
+    position: fixed;
+    top: $scale1;
+    left: $scale1;
+    width: $scale2;
+    height: $scale2;
+    z-index: 15;
+    background-color: transparent;
+
+    > a {
+
+      display: none;
+
+    }
+
+    .btn-togglenav {
+
+      position: absolute;
+      left: 0;
+      top: 0;
+      z-index: 10;
+
+    }
+
+    &.open {
+      .nav-links {
+
+        display: block !important;
+
+      }
+    }
+
+    section.nav-links {
+
+      position: fixed;
+      display: none !important;
+      padding: $scale;
+      z-index: 9;
+      top: $scale-2;
+      left: $scale-3;
+      right: $scale-3;
+      padding-top: $scale5;
+      background-color: white;
+      border-radius: $radius;
+      box-shadow: 0 0 5em rgba(0, 0, 0, 0.25);
+      transition: all 0.2s ease-in-out;
+
+      a, div {
+
+        position: relative;
+        display: inline-block;
+        float: none;
+        color: $c-text;
+        padding: 0;
+        width: 100% !important;
+        line-height: 1;
+        margin-bottom: $scale;
+        text-decoration: none;
+
+        .ico {
+
+          position: absolute;
+          top: 50%;
+          transform: translateY(-50%);
+
+        }
+
+        svg {
+
+          display: inline-block;
+
+        }
+
+        .label {
+
+          margin-left: $scale-2;
+
+        }
+
+        &:last-child {
+
+          margin-bottom: 0;
+
+        }
+
+        &.active {
+
+          color: $c-text;
+          background: none;
+
+        }
+      }
+    }
+  }
+}

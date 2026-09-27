@@ -1,0 +1,38 @@
+@import 'components/global.scss';
+
+.blankslate {
+
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 80%;
+  text-align: center;
+  transform: translate(-50%, -50%);
+
+  @media (min-width: 700px){
+
+    width: 24em;
+    
+  }
+}
+
+
+.title {
+
+  position: relative;
+  margin: 0 0 $scale2;
+
+  &:after {
+
+    content: "";
+    position: absolute;
+    bottom: -0.5em;
+    left: 50%;
+    width: $scale4;
+    height: 1px;
+    background-color: darken($c-border, 5%);
+    transform: translateX(-50%);
+    -ms-transform: translateX(-50%);
+
+  }
+}

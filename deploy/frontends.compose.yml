@@ -1,0 +1,110 @@
+# Production frontends on the SAME host ports Nginx already uses.
+# Does not edit Nginx.
+#
+#   10000  /horas/          → portal-horas
+#   10001  crm.arara-tech.com → portal-crm
+#   10003  suporte.arara-tech.com → portal-suporte
+#   10008  cursos.arara-tech.com → portal-cursos
+#   10009  hub.arara-tech.com → hub-araratech
+#   4100   api.arara-tech.com → API (started separately)
+#
+name: arara-fronts
+
+x-front-env: &front-env
+  API_UPSTREAM: ${API_UPSTREAM:-http://arara-platform-prd:4100}
+
+services:
+  portal-horas:
+    image: arara-front-portal-horas:local
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.vite-spa
+      args:
+        APP_DIR: apps/portal-horas
+        VITE_ARARA_APP_SLUG: portal-horas
+        VITE_ARARA_API_URL: https://api.arara-tech.com
+    container_name: arara-front-portal-horas
+    restart: unless-stopped
+    environment:
+      <<: *front-env
+    ports:
+      - "10000:80"
+    networks:
+      - arara
+
+  portal-crm:
+    image: arara-front-portal-crm:local
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.next-export
+      args:
+        APP_DIR: apps/portal-crm
+        NEXT_PUBLIC_ARARA_APP_SLUG: portal-crm
+        NEXT_PUBLIC_ARARA_API_URL: https://api.arara-tech.com
+    container_name: arara-front-portal-crm
+    restart: unless-stopped
+    environment:
+      <<: *front-env
+    ports:
+      - "10001:80"
+    networks:
+      - arara
+
+  portal-suporte:
+    image: arara-front-portal-suporte:local
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.next-export
+      args:
+        APP_DIR: apps/portal-suporte
+        NEXT_PUBLIC_ARARA_APP_SLUG: portal-suporte
+        NEXT_PUBLIC_ARARA_API_URL: https://api.arara-tech.com
+    container_name: arara-front-portal-suporte
+    restart: unless-stopped
+    environment:
+      <<: *front-env
+    ports:
+      - "10003:80"
+    networks:
+      - arara
+
+  portal-cursos:
+    image: arara-front-portal-cursos:local
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.vite-spa
+      args:
+        APP_DIR: apps/portal-cursos
+        VITE_ARARA_APP_SLUG: portal-cursos
+        VITE_ARARA_API_URL: https://api.arara-tech.com
+    container_name: arara-front-portal-cursos
+    restart: unless-stopped
+    environment:
+      <<: *front-env
+    ports:
+      - "10008:80"
+    networks:
+      - arara
+
+  hub-araratech:
+    image: arara-front-hub-araratech:local
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.next-export
+      args:
+        APP_DIR: apps/hub-araratech
+        NEXT_PUBLIC_ARARA_APP_SLUG: arara-hub
+        NEXT_PUBLIC_ARARA_API_URL: https://api.arara-tech.com
+    container_name: arara-front-hub-araratech
+    restart: unless-stopped
+    environment:
+      <<: *front-env
+    ports:
+      - "10009:80"
+    networks:
+      - arara
+
+networks:
+  arara:
+    external: true
+    name: arara_net

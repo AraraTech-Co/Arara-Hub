@@ -1,0 +1,78 @@
+services:
+  server:
+    container_name: main_server_${NODE_ENV}
+    image: app-server:latest
+    build:
+      context: ./
+      dockerfile: ./server/Dockerfile
+      target: production
+      args:
+        AWS_ACCESS_KEY: ${AWS_ACCESS_KEY}
+        AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+        AWS_REGION: ${AWS_REGION}
+        AWS_BUCKET: ${AWS_BUCKET}
+        APP_NAME: ${APP_NAME}
+        PORT: ${PORT}
+        CLIENT_URL: ${CLIENT_URL}
+        MISSION_CONTROL_CLIENT: ${MISSION_CONTROL_CLIENT}
+        PRODUCTION_DOMAIN: ${PRODUCTION_DOMAIN}
+        STAGING_DOMAIN: ${STAGING_DOMAIN}
+        ADMIN_DOMAIN: ${ADMIN_DOMAIN}
+        STAGING_ADMIN_DOMAIN: ${STAGING_ADMIN_DOMAIN}
+        SLACK_ERRORS_WEBHOOK: ${SLACK_ERRORS_WEBHOOK}
+        POSTMARK_API_KEY: ${POSTMARK_API_KEY}
+        DB_USER: ${DB_USER}
+        DB_PASSWORD: ${DB_PASSWORD}
+        DB_HOST: ${DB_HOST}
+        DB_NAME: ${DB_NAME}
+        DB_PROVIDER: ${DB_PROVIDER}
+        SESSION_SECRET: ${SESSION_SECRET}
+        TOKEN_SECRET: ${TOKEN_SECRET}
+        CRYPTO_SECRET: ${CRYPTO_SECRET}
+        SUPPORT_EMAIL: ${SUPPORT_EMAIL}
+        STRIPE_SECRET_API_KEY: ${STRIPE_SECRET_API_KEY}
+        SSH_PRIVATE_KEY: ${SSH_PRIVATE_KEY}
+        REDIS_HOST: ${REDIS_HOST}
+        REDIS_PASS: ${REDIS_PASS}
+        REDIS_QUEUE: ${REDIS_QUEUE}
+        NODE_ENV: ${NODE_ENV}
+        SERVER_URL: ${SERVER_URL}
+        G_REVIEW_KEY: ${G_REVIEW_KEY}
+
+  admin:
+    container_name: admin_server_${NODE_ENV}
+    image: app-admin:latest
+    build:
+      context: ./
+      dockerfile: ./mission-control/Dockerfile
+      target: production
+      args:
+        AWS_ACCESS_KEY: ${AWS_ACCESS_KEY}
+        AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+        AWS_REGION: ${AWS_REGION}
+        AWS_BUCKET: ${AWS_BUCKET}
+        APP_NAME: ${APP_NAME}
+        PORT: ${ADMIN_PORT}
+        CLIENT_URL: ${CLIENT_URL}
+        MISSION_CONTROL_CLIENT: ${MISSION_CONTROL_CLIENT}
+        PRODUCTION_DOMAIN: ${PRODUCTION_DOMAIN}
+        STAGING_DOMAIN: ${STAGING_DOMAIN}
+        ADMIN_DOMAIN: ${ADMIN_DOMAIN}
+        STAGING_ADMIN_DOMAIN: ${STAGING_ADMIN_DOMAIN}
+        SLACK_ERRORS_WEBHOOK: ${SLACK_ERRORS_WEBHOOK}
+        POSTMARK_API_KEY: ${POSTMARK_API_KEY}
+        DB_USER: ${DB_USER}
+        DB_PASSWORD: ${DB_PASSWORD}
+        DB_HOST: ${DB_HOST}
+        DB_NAME: ${DB_NAME}
+        DB_PROVIDER: ${DB_PROVIDER}
+        SESSION_SECRET: ${SESSION_SECRET}
+        TOKEN_SECRET: ${TOKEN_SECRET}
+        CRYPTO_SECRET: ${CRYPTO_SECRET}
+        SUPPORT_EMAIL: ${SUPPORT_EMAIL}
+        STRIPE_SECRET_API_KEY: ${STRIPE_SECRET_API_KEY}
+        SSH_PRIVATE_KEY: ${SSH_PRIVATE_KEY}
+        REDIS_HOST: ${REDIS_HOST}
+        REDIS_PASS: ${REDIS_PASS}
+        REDIS_QUEUE: ${REDIS_QUEUE}
+        NODE_ENV: ${NODE_ENV}

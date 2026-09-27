@@ -1,0 +1,27 @@
+name: Deploy portal-cursos
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [master, main]
+    paths:
+      - "apps/portal-cursos/**"
+      - "deploy/Dockerfile.vite-spa"
+      - "deploy/nginx/**"
+      - "deploy/frontends.compose.yml"
+      - ".github/workflows/deploy-portal-cursos.yml"
+      - ".github/workflows/deploy-frontend.reusable.yml"
+      - ".github/actions/setup-ssh/**"
+
+concurrency:
+  group: deploy-portal-cursos
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    uses: ./.github/workflows/deploy-frontend.reusable.yml
+    with:
+      app: portal-cursos
+      smoke_url: https://cursos.arara-tech.com/
+    secrets:
+      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}

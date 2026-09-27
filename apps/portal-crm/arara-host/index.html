@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CRM Arara · Hosting</title>
+  <style>
+    :root { --bg:#0f172a; --card:#1e293b; --fg:#e2e8f0; --muted:#94a3b8; --accent:#6366f1; --ok:#22c55e; --err:#ef4444; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family: ui-sans-serif, system-ui, sans-serif; background:var(--bg); color:var(--fg); min-height:100vh; }
+    .wrap { max-width: 720px; margin: 0 auto; padding: 2rem 1.25rem; }
+    h1 { font-size: 1.5rem; margin: 0 0 .25rem; }
+    .sub { color: var(--muted); font-size: .875rem; margin-bottom: 1.5rem; }
+    .card { background: var(--card); border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; }
+    label { display:block; font-size:.75rem; color:var(--muted); margin-bottom:.35rem; }
+    input { width:100%; padding:.6rem .75rem; border-radius:8px; border:1px solid #334155; background:#0f172a; color:var(--fg); margin-bottom:.75rem; }
+    button { background:var(--accent); color:#fff; border:0; border-radius:8px; padding:.65rem 1rem; font-weight:600; cursor:pointer; width:100%; }
+    button:disabled { opacity:.5; }
+    .msg { font-size:.85rem; margin-top:.75rem; }
+    .ok { color: var(--ok); } .err { color: var(--err); }
+    table { width:100%; border-collapse: collapse; font-size:.85rem; }
+    th, td { text-align:left; padding:.5rem; border-bottom:1px solid #334155; }
+    th { color: var(--muted); font-weight:500; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>CRM Arara Tech</h1>
+    <p class="sub">Hosting estático · API <code id="apiUrl"></code> · app <code>portal-crm</code></p>
+
+    <div class="card" id="loginCard">
+      <form id="loginForm">
+        <label>E-mail</label>
+        <input id="email" type="email" required placeholder="admin@example.com" />
+        <label>Senha</label>
+        <input id="password" type="password" required placeholder="••••••••" />
+        <button type="submit">Entrar (Arara)</button>
+        <p class="msg" id="loginMsg"></p>
+      </form>
+    </div>
+
+    <div class="card" id="dataCard" hidden>
+      <p class="sub" id="who"></p>
+      <button type="button" id="loadBtn">Carregar clientes</button>
+      <p class="msg" id="dataMsg"></p>
+      <div style="overflow:auto;margin-top:1rem">
+        <table>
+          <thead><tr><th>Nome</th><th>Empresa</th><th>E-mail</th></tr></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <script>
+    const ARARA = (localStorage.getItem('arara_api_url') || 'https://api.arara-tech.com').replace(/\/$/, '')
+    const SLUG = 'portal-crm'
+    document.getElementById('apiUrl').textContent = ARARA
+
+    const loginForm = document.getElementById('loginForm')
+    const loginMsg = document.getElementById('loginMsg')
+    const dataCard = document.getElementById('dataCard')
+    const loginCard = document.getElementById('loginCard')
+
+    if (localStorage.getItem('arara_jwt') && localStorage.getItem('arara_app_key:' + SLUG)) {
+      loginCard.hidden = true
+      dataCard.hidden = false
+      document.getElementById('who').textContent = 'Logado · key ok'
+    }
+
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault()
+      loginMsg.textContent = 'Autenticando…'
+      loginMsg.className = 'msg'
+      try {
+        const res = await fetch(ARARA + '/v1/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: document.getElementById('email').value,
+            password: document.getElementById('password').value,
+          }),
+        })
+        const data = await res.json()
+        if (!res.ok) throw new Error(data.error || data.message || 'Falha')
+        const token = data.token || data.accessToken
+        localStorage.setItem('arara_jwt', token)
+        const kr = await fetch(ARARA + '/v1/apps/' + SLUG + '/keys', {
+          method: 'POST',
+          headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: 'crm-hosting' }),
+        })
+        const kb = await kr.json()
+        if (!kr.ok) throw new Error(kb.error || 'Falha ao mint key')
+        localStorage.setItem('arara_app_key:' + SLUG, kb.apiKey.key)
+        loginMsg.textContent = 'OK · ' + data.user.email
+        loginMsg.className = 'msg ok'
+        loginCard.hidden = true
+        dataCard.hidden = false
+        document.getElementById('who').textContent = data.user.email
+      } catch (err) {
+        loginMsg.textContent = err.message
+        loginMsg.className = 'msg err'
+      }
+    })
+
+    document.getElementById('loadBtn').addEventListener('click', async () => {
+      const msg = document.getElementById('dataMsg')
+      msg.textContent = 'Carregando…'
+      try {
+        const key = localStorage.getItem('arara_app_key:' + SLUG)
+        const res = await fetch(ARARA + '/v1/r/' + SLUG + '/Client', { headers: { 'x-api-key': key } })
+        const data = await res.json()
+        if (!res.ok) throw new Error(data.error || 'Erro')
+        const rows = data.data || []
+        document.getElementById('tbody').innerHTML = rows.slice(0, 50).map(r =>
+          '<tr><td>' + (r.name||'—') + '</td><td>' + (r.company||'—') + '</td><td>' + (r.email||'—') + '</td></tr>'
+        ).join('')
+        msg.textContent = rows.length + ' clientes'
+        msg.className = 'msg ok'
+      } catch (err) {
+        msg.textContent = err.message
+        msg.className = 'msg err'
+      }
+    })
+  </script>
+</body>
+</html>

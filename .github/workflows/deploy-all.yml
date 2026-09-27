@@ -1,0 +1,59 @@
+name: Deploy all (manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      include_api:
+        description: Deploy API
+        type: boolean
+        default: true
+      include_fronts:
+        description: Deploy all production frontends
+        type: boolean
+        default: true
+
+concurrency:
+  group: deploy-all
+  cancel-in-progress: false
+
+jobs:
+  api:
+    if: inputs.include_api
+    uses: ./.github/workflows/deploy-api.yml
+    secrets: inherit
+
+  portal-suporte:
+    if: inputs.include_fronts
+    uses: ./.github/workflows/deploy-frontend.reusable.yml
+    with:
+      app: portal-suporte
+      smoke_url: https://suporte.arara-tech.com/
+    secrets:
+      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+
+  portal-crm:
+    if: inputs.include_fronts
+    uses: ./.github/workflows/deploy-frontend.reusable.yml
+    with:
+      app: portal-crm
+      smoke_url: https://crm.arara-tech.com/
+    secrets:
+      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+
+  portal-horas:
+    if: inputs.include_fronts
+    uses: ./.github/workflows/deploy-frontend.reusable.yml
+    with:
+      app: portal-horas
+      smoke_url: https://suporte.arara-tech.com/horas/
+    secrets:
+      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+
+  portal-cursos:
+    if: inputs.include_fronts
+    uses: ./.github/workflows/deploy-frontend.reusable.yml
+    with:
+      app: portal-cursos
+      smoke_url: https://cursos.arara-tech.com/
+    secrets:
+      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}

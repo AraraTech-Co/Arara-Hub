@@ -1,0 +1,110 @@
+@import 'components/global.scss';
+
+.modal {
+
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 10;
+  background: black;
+  background: rgba(0, 0, 0, 0.7);
+
+  header {
+
+    margin-bottom: $scale;
+
+  }
+
+  p {
+
+    margin-bottom: $scale;
+
+  }
+
+  form {
+
+    content: '';
+    display: table;
+    clear: both;
+    width: 100%;
+
+  }
+
+  .modal-content {
+
+    position: absolute;
+    left: 50%;
+    width: 94%;
+    top: 55%;
+    opacity: 0;
+    text-align: left;
+    max-height: $scale17;
+    transform: translate(-50%, -50%);
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+  }
+
+  .custom {
+
+    font-weight: 700;
+
+  }
+
+  @media (max-width: 299px){
+
+    display: none;
+
+    button {
+
+      &:last-child {
+
+        margin-top: $scale-3;
+
+      }
+    }
+  }
+
+  @media (min-width: 300px){
+
+    button {
+
+      float: left;
+      width: 49%;
+
+      &:last-child {
+
+        float: right;
+
+      }
+    }
+  }
+
+  @media (min-width: 500px){
+
+    .modal-content {
+
+      max-width: $scale15;
+
+    }
+  }
+}
+
+.modal-appear {
+
+  opacity: 0;
+
+}
+
+.modal-appear-done {
+
+  opacity: 1;
+
+  .modal-content {
+
+    opacity: 1;
+    top: 50%;
+
+  }
+}

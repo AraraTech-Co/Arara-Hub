@@ -1,0 +1,50 @@
+@import 'components/global.scss';
+
+.header  {
+
+  position: relative;
+  text-align: center;
+  margin-bottom: $scale1;
+
+  &:after {
+
+    content: '';
+    position: absolute;
+    width: $scale4;
+    height: 2px;
+    left: 50%;
+    bottom: $scale;
+    transform: translateX(-50%);
+    background-color: darken($c-border, 5%);
+
+  }
+}
+
+.title {
+
+  color: $c-purple;
+  font-weight: 600;
+  margin-bottom: $scale-3;
+
+}
+
+.subtitle {
+
+  color: $c-purple;
+  font-weight: 600;
+  font-size: $scale1;
+  margin-top: 0;
+  margin-bottom: $scale-3;
+
+  @media (min-width: $mobile){
+
+    font-size: $scale2;
+
+  }
+}
+
+.brand, .dark {
+
+  color: white;
+
+}

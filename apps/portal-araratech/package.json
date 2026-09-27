@@ -1,0 +1,42 @@
+{
+  "scripts": {
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:migrate:deploy": "prisma migrate deploy",
+    "db:seed": "prisma db seed",
+    "db:studio": "prisma studio",
+    "postinstall": "prisma generate",
+    "setup": "npm install && npm run setup:server & npm run setup:client & npm run setup:mission:server & npm run setup:mission:client && wait",
+    "setup:server": "cd server && npm install",
+    "setup:client": "cd client && npm install",
+    "setup:mission:server": "cd mission-control && npm install",
+    "setup:mission:client": "cd mission-control/client && npm install",
+    "local:dev": "concurrently --names \"server,client\" -c \"green.bold,cyan.bold\" \"npm run server\" \"npm run client\"",
+    "local:admin": "concurrently --names \"server,client,mission-control\" -c \"green.bold,cyan.bold,yellow.bold\" \"npm run server\" \"npm run client\" \"npm run mission-control\"",
+    "docker:dev": "npm run develop && npm run develop:logs",
+    "docker:dev:logs": "docker compose -f compose.yml -f compose/develop.yml logs --follow --tail 10",
+    "docker:redis": "docker compose -f compose.yml -f compose/redis.yml up --build",
+    "docker:postgres": "docker compose -f compose.yml -f compose/develop.yml up postgres -d",
+    "docker:postgres:logs": "docker compose -f compose.yml -f compose/develop.yml logs postgres --follow --tail 10",
+    "docker:reload": "docker compose -f compose.yml -f compose/develop.yml restart -d && npm run develop:logs",
+    "deploy:dockerhub": "docker compose -f compose.yml -f compose/deploy.yml build --parallel --pull",
+    "develop": "docker compose -f compose.yml -f compose/develop.yml up --build -d",
+    "develop:logs": "docker compose -f compose.yml -f compose/develop.yml logs --follow --tail 10"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.9.0",
+    "concurrently": "^9.2.1"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/node": "^20.19.43",
+    "bcryptjs": "^2.4.3",
+    "prisma": "^6.9.0",
+    "tsx": "^4.22.4",
+    "typescript": "^5.9.3"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
+  "name": "portal-araratech"
+}

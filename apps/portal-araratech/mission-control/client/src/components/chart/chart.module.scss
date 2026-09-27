@@ -1,0 +1,76 @@
+@import 'components/global.scss';
+
+.wrapper {
+
+  position: relative;
+  min-height: $scale8;
+
+}
+
+.blankslate {
+
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  font-weight: 600;
+  text-align: center;
+  transform: translate(-50%, -50%);
+
+}
+
+.blankslateIcon {
+
+  display: block;
+  margin: 0 auto $scale-3;
+
+}
+
+.chart {
+
+  height: 13.5em;
+  min-height: 13.5em;
+  cursor: pointer;
+
+  canvas {
+
+    max-height: 15em;
+
+  }
+}
+
+.sparkline {
+
+  position: relative;
+  height: 2em;
+  width: 12em;
+
+}
+
+.legend {
+
+  overflow: hidden;
+  margin-bottom: $scale2;
+
+}
+
+.legendItem {
+
+  float: left;
+  line-height: 10px;
+  font-size: 0.85em;
+  margin: 0 $scale $scale-3 0;
+
+}
+
+.legendColor {
+
+  position: relative;
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  top: 2px;
+  border-radius: 0.1em;
+  background-color: #666;
+  margin-right: $scale-3;
+
+}

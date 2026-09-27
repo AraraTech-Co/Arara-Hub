@@ -1,0 +1,21 @@
+@import "components/global.scss";
+
+.subnav {
+  position: relative;
+  padding: $scale1 $scale4 0;
+  margin: $scale2 * -1 $scale2 * -1 $scale2 $scale1 * -2;
+  background: white;
+  border-top: 1px solid $c-border;
+}
+
+.item {
+  color: $c-text;
+  display: inline-block;
+  padding-bottom: $scale;
+  margin-right: $scale2;
+  text-decoration: none;
+
+  &.active {
+    border-bottom: 2px solid $c-blue;
+  }
+}

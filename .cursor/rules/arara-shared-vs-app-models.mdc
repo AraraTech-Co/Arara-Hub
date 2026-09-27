@@ -1,0 +1,36 @@
+---
+description: Dados compartilhados vs models namespaced por app na Arara Platform
+alwaysApply: true
+---
+
+# Models: shared vs app-scoped
+
+## Regra
+
+| Tipo | Nomenclatura | Escopo | Exemplos |
+|------|--------------|--------|----------|
+| **Compartilhado** | Só o nome PascalCase (`User`, `Company`, `ApiKey`) | Todas as apps | autenticação, usuários, chaves de API, **empresas** (clientes) |
+| **Por app** | `{app-slug}-{Nome}` | Uma app | `portal-suporte-Ticket`, `festa-da-firma-Event` |
+
+- Slug do app em kebab-case; nome do model em PascalCase.
+- Controllers usam o **alias curto** (`ctx.models.Ticket`). Storage canônico app-scoped = `{slug}-{Nome}`.
+- **Não** namespacar entidades compartilhadas (`portal-suporte-User` / `portal-suporte-Company` estão errados no modelo alvo).
+- Ao integrar nova app: reutilizar shared; criar só models/dados específicos com prefixo do slug.
+
+## Auth (alinhado)
+
+- **Users**: globais (shared).
+- **API keys**: por app (metadados/escopos na platform; não duplicar User por app).
+
+## Ao mexer em models / integrate / controllers
+
+1. Classificar: shared ou app-scoped?
+2. Shared → nome simples, sem prefixo de slug; uma fonte de verdade.
+3. App-scoped → sempre `{slug}-{Nome}` no storage; nunca misturar records entre slugs.
+4. Não inventar segundo cadastro de User/Company/ApiKey “só deste app”.
+
+```text
+✅ Company, User, ApiKey
+✅ portal-suporte-Ticket, festa-da-firma-Event
+❌ portal-suporte-Company, portal-suporte-User
+```

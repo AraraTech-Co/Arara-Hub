@@ -1,0 +1,75 @@
+@import "components/global.scss";
+
+.hero {
+  position: relative;
+  color: white;
+  text-align: left;
+  margin-bottom: $scale2;
+  padding-top: $scale;
+
+  &:before {
+    content: "";
+    position: absolute;
+    top: -$scale9;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: -1;
+    background-color: $c-purple;
+    background-image: linear-gradient(rgb(106, 106, 184), rgb(84, 84, 145));
+  }
+
+  @media (min-width: 35em) {
+    text-align: center;
+    padding-top: $scale5;
+  }
+}
+
+.blurb {
+  margin-bottom: $scale3;
+
+  @media (min-width: 35em) {
+    max-width: $scale16;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  @media (min-width: 50em) {
+    max-width: $scale18;
+    margin-bottom: $scale5;
+  }
+}
+
+.title {
+  display: block;
+  font-size: $scale3;
+  font-weight: 800;
+  margin-bottom: 0;
+
+  @media (min-width: 35em) {
+    font-size: $scale4;
+  }
+}
+
+.tagline {
+  display: block;
+  color: white;
+  font-weight: normal;
+  font-size: $scale1;
+  margin: $scale-1 0 $scale;
+
+  @media (min-width: 35em) {
+    font-size: $scale1;
+  }
+}
+
+.image {
+  margin-bottom: -$scale2;
+  box-shadow: 0 $scale $scale1 rgba(0, 0, 0, 0.2);
+}
+
+.button {
+  @media (min-width: 35em) {
+    margin: 0 auto;
+  }
+}

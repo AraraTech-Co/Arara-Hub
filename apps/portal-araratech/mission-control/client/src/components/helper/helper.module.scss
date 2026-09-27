@@ -1,0 +1,29 @@
+@import 'components/global.scss';
+
+.helper {
+
+  padding: $scale;
+  margin-bottom: $scale;
+  border-radius: $radius;
+  background-color: lighten($c-blue, 27%);
+
+
+}
+
+.icon {
+
+  float: left;
+  margin-right: $scale;
+
+}
+
+.link {
+
+  text-decoration: none;
+
+  &:hover {
+
+     text-decoration: underline;
+
+  }
+}

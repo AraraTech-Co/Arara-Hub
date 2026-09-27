@@ -1,0 +1,83 @@
+# Desenvolvimento local - portal-suporte
+# Uso: docker compose up
+# App roda com next dev (hot reload). DB, Redis e Meilisearch em containers.
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+      args:
+        DATABASE_URL: ${DATABASE_URL:-postgresql://postgres:password@db:5432/portalsupport?schema=public}
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://postgres:password@db:5432/portalsupport?schema=public
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=
+      - MEILISEARCH_HOST=http://meilisearch:7700
+      - AUTH_TRUST_HOST=true
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4o-mini}
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+    # npm ci lê o lock da raiz; migrate deploy cria tabelas no Postgres do compose
+    command: sh -c "npm ci && npx prisma generate && npx prisma migrate deploy && npm run dev"
+    restart: unless-stopped
+    networks:
+      - portal
+
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: portalsupport
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - portal
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - portal
+
+  meilisearch:
+    image: getmeili/meilisearch:v1.11
+    environment:
+      MEILI_MASTER_KEY: masterKey
+      MEILI_ENV: development
+    ports:
+      - "7700:7700"
+    volumes:
+      - meilisearch_data:/meili_data
+    networks:
+      - portal
+
+volumes:
+  postgres_data:
+  meilisearch_data:
+
+networks:
+  portal:
+    driver: bridge

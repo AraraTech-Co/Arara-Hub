@@ -1,0 +1,288 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserStatus {
+  active
+  disabled
+}
+
+enum AppStatus {
+  active
+  archived
+}
+
+enum ModuleStatus {
+  draft
+  published
+}
+
+enum HostingStatus {
+  stopped
+  starting
+  running
+  error
+}
+
+model User {
+  id           String     @id @default(cuid())
+  email        String     @unique
+  name         String?
+  passwordHash String     @map("password_hash")
+  status       UserStatus @default(active)
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+
+  roles          UserRole[]
+  apps           App[]
+  memberships    AppMembership[]
+  notifications  Notification[]
+  refreshTokens  RefreshToken[]
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String    @id @default(cuid())
+  userId    String    @map("user_id")
+  tokenHash String    @unique @map("token_hash")
+  expiresAt DateTime  @map("expires_at")
+  revokedAt DateTime? @map("revoked_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}
+
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String    @map("user_id")
+  title     String
+  body      String    @db.Text
+  severity  String    @default("info") // info | success | warning | critical
+  href      String?
+  sourceApp String?   @map("source_app")
+  readAt    DateTime? @map("read_at")
+  createdBy String?   @map("created_by")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt, createdAt])
+  @@map("notifications")
+}
+
+model Role {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  users       UserRole[]
+  permissions RolePermission[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  roles RolePermission[]
+
+  @@map("permissions")
+}
+
+model UserRole {
+  userId String @map("user_id")
+  roleId String @map("role_id")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+  @@map("user_roles")
+}
+
+model RolePermission {
+  roleId       String @map("role_id")
+  permissionId String @map("permission_id")
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+model App {
+  id          String    @id @default(cuid())
+  slug        String    @unique
+  name        String
+  description String?
+  status      AppStatus @default(active)
+  ownerId     String    @map("owner_id")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  owner   User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  apiKeys ApiKey[]
+  secrets AppSecret[]
+  modules Module[]
+  models  ModelDef[]
+  records ModelRecord[]
+  hosting AppHosting?
+  members AppMembership[]
+
+  @@map("apps")
+}
+
+/** Per-app role for a shared User (CRM vendedor, horas admin, suporte developer, …). */
+model AppMembership {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  appId     String   @map("app_id")
+  role      String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  app  App  @relation(fields: [appId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, appId])
+  @@index([appId])
+  @@map("app_memberships")
+}
+
+model ApiKey {
+  id         String    @id @default(cuid())
+  appId      String    @map("app_id")
+  name       String    @default("default")
+  prefix     String
+  keyHash    String    @map("key_hash")
+  scopes     Json
+  lastUsedAt DateTime? @map("last_used_at")
+  revokedAt  DateTime? @map("revoked_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  app App @relation(fields: [appId], references: [id], onDelete: Cascade)
+
+  @@index([prefix])
+  @@map("api_keys")
+}
+
+/** Third-party credentials per app (AES-256-GCM). Distinct from ApiKey (auth hash). */
+model AppSecret {
+  id         String   @id @default(cuid())
+  appId      String   @map("app_id")
+  name       String
+  ciphertext String   @db.Text
+  iv         String
+  authTag    String   @map("auth_tag")
+  /** When true, plaintext requires JWT admin/owner or ApiKey with app:{slug}:secrets:read (not app:*). */
+  serverOnly Boolean  @default(true) @map("server_only")
+  createdBy  String?  @map("created_by")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  app App @relation(fields: [appId], references: [id], onDelete: Cascade)
+
+  @@unique([appId, name])
+  @@index([appId])
+  @@map("app_secrets")
+}
+
+model Module {
+  id          String       @id @default(cuid())
+  appId       String       @map("app_id")
+  name        String
+  description String?
+  status      ModuleStatus @default(draft)
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  app    App           @relation(fields: [appId], references: [id], onDelete: Cascade)
+  routes ModuleRoute[]
+
+  @@unique([appId, name])
+  @@map("modules")
+}
+
+model ModuleRoute {
+  id                  String   @id @default(cuid())
+  moduleId            String   @map("module_id")
+  method              String
+  path                String
+  controllerCode      String   @map("controller_code") @db.Text
+  requiredPermissions String[] @default([]) @map("required_permissions")
+  /**
+   * actor (default): JWT or x-api-key required.
+   * webhook_secret: no header auth; validates query/body `token` against AppSecret named in webhookSecretName.
+   */
+  authMode            String   @default("actor") @map("auth_mode")
+  webhookSecretName   String?  @map("webhook_secret_name")
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  module Module @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  @@unique([moduleId, method, path])
+  @@map("module_routes")
+}
+
+model ModelDef {
+  id        String   @id @default(cuid())
+  appId     String   @map("app_id")
+  name      String
+  schema    Json
+  version   Int      @default(1)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  app App @relation(fields: [appId], references: [id], onDelete: Cascade)
+
+  @@unique([appId, name])
+  @@map("model_defs")
+}
+
+model ModelRecord {
+  id        String   @id @default(cuid())
+  appId     String   @map("app_id")
+  modelName String   @map("model_name")
+  data      Json
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  app App @relation(fields: [appId], references: [id], onDelete: Cascade)
+
+  @@index([appId, modelName])
+  @@map("model_records")
+}
+
+model AppHosting {
+  id           String        @id @default(cuid())
+  appId        String        @unique @map("app_id")
+  artifactPath String        @map("artifact_path")
+  entryFile    String        @default("index.html") @map("entry_file")
+  port         Int?          @unique
+  status       HostingStatus @default(stopped)
+  pid          Int?
+  lastError    String?       @map("last_error") @db.Text
+  uploadedAt   DateTime      @default(now()) @map("uploaded_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+
+  app App @relation(fields: [appId], references: [id], onDelete: Cascade)
+
+  @@map("app_hostings")
+}

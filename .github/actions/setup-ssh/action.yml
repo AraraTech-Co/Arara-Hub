@@ -1,0 +1,74 @@
+name: Setup SSH deploy
+description: Install SSH key and known_hosts for Hostinger production deploys
+
+inputs:
+  ssh_key:
+    description: Private SSH key (PEM / OpenSSH)
+    required: true
+  host:
+    description: Server hostname or IP
+    required: true
+  port:
+    description: SSH port
+    required: false
+    default: "22"
+  user:
+    description: SSH user
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Configure SSH
+      shell: bash
+      env:
+        SSH_PRIVATE_KEY: ${{ inputs.ssh_key }}
+        DEPLOY_HOST: ${{ inputs.host }}
+        DEPLOY_PORT: ${{ inputs.port }}
+        DEPLOY_USER: ${{ inputs.user }}
+      run: |
+        set -euo pipefail
+        : "${HOME:?HOME must be set}"
+        SSH_DIR="${HOME}/.ssh"
+        KEY_FILE="${SSH_DIR}/deploy_key"
+        CONFIG_FILE="${SSH_DIR}/config"
+        KNOWN_HOSTS="${SSH_DIR}/known_hosts"
+
+        mkdir -p "${SSH_DIR}"
+        chmod 700 "${SSH_DIR}"
+
+        # Normalize secret: CRLF → LF, literal \n → newlines, ensure trailing newline
+        printf '%s' "$SSH_PRIVATE_KEY" \
+          | sed 's/\r$//' \
+          | sed 's/\\n/\n/g' \
+          > "${KEY_FILE}"
+        if [ -s "${KEY_FILE}" ] && [ "$(tail -c1 "${KEY_FILE}" | wc -l)" -eq 0 ]; then
+          printf '\n' >> "${KEY_FILE}"
+        fi
+        chmod 600 "${KEY_FILE}"
+
+        if ! ssh-keygen -y -f "${KEY_FILE}" >/tmp/deploy_key.pub 2>/tmp/deploy_key.err; then
+          echo "::error::SSH_PRIVATE_KEY inválida (libcrypto/OpenSSH não conseguiu ler)."
+          echo "Cole a chave PRIVADA completa no secret, multilinha, sem aspas."
+          cat /tmp/deploy_key.err >&2 || true
+          exit 1
+        fi
+        echo "SSH key OK ($(awk '{print $1}' /tmp/deploy_key.pub))"
+
+        ssh-keyscan -p "${DEPLOY_PORT}" -H "${DEPLOY_HOST}" >> "${KNOWN_HOSTS}" 2>/dev/null || true
+        # Absolute paths only — rsync -e does not expand ~
+        printf '%s\n' \
+          "Host deploy-target" \
+          "  HostName ${DEPLOY_HOST}" \
+          "  User ${DEPLOY_USER}" \
+          "  Port ${DEPLOY_PORT}" \
+          "  IdentityFile ${KEY_FILE}" \
+          "  UserKnownHostsFile ${KNOWN_HOSTS}" \
+          "  IdentitiesOnly yes" \
+          "  StrictHostKeyChecking accept-new" \
+          > "${CONFIG_FILE}"
+        chmod 600 "${CONFIG_FILE}"
+        # Expose for later steps (rsync -e cannot rely on ~)
+        echo "SSH_CONFIG=${CONFIG_FILE}" >> "${GITHUB_ENV}"
+        echo "SSH_DIR=${SSH_DIR}" >> "${GITHUB_ENV}"
+        ls -la "${SSH_DIR}"

@@ -1,0 +1,189 @@
+# =============================================================================
+# Gitignore - Portal de Suporte
+# =============================================================================
+
+# =============================================================================
+# Dependencies
+# =============================================================================
+
+node_modules/
+app/node_modules/
+app/package.json
+app/package-lock.json
+.pnp
+.pnp.js
+.yarn/install-state.gz
+bun.lock
+
+# =============================================================================
+# Next.js
+# =============================================================================
+
+.next/
+out/
+build/
+# If you use the "publish" script, this is where the output goes
+
+# =============================================================================
+# Production
+# =============================================================================
+
+dist/
+
+# =============================================================================
+# Debug
+# =============================================================================
+
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+bun-debug.log*
+bun.lock
+
+# =============================================================================
+# Environment Files
+# =============================================================================
+
+# Ignore TODOS os arquivos .env reais (segredos)
+.env
+.env.*
+# Mantém apenas templates de exemplo
+!.env.example
+!.env.prod.example
+
+# IDE/AI tooling local
+.claude/
+.cursor/
+
+# Dump grande de migração do Trello (não versionar)
+peUmG4F8 - gestao-de-suporte.json
+
+# =============================================================================
+# Vercel
+# =============================================================================
+
+.vercel
+.vercel.sh
+
+# =============================================================================
+# TypeScript
+# =============================================================================
+
+*.tsbuildinfo
+next-env.d.ts
+
+# =============================================================================
+# IDE - VS Code
+# =============================================================================
+
+.vscode/*
+!.vscode/extensions.json
+*.code-workspace
+
+# =============================================================================
+# IDE - JetBrains
+# =============================================================================
+
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# =============================================================================
+# IDE - Sublime
+# =============================================================================
+
+*.tmlanguage.cache
+*.plist.bundle
+*.sublime-*
+
+# =============================================================================
+# IDE - Emacs
+# =============================================================================
+
+*~
+
+# =============================================================================
+# OS
+# =============================================================================
+
+# macOS
+.DS_Store
+*.pem
+AppleDouble
+LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+
+# =============================================================================
+# Logs
+# =============================================================================
+
+*.log
+logs/
+!app/api/**/logs/
+*.log.*
+
+# =============================================================================
+# Cache
+# =============================================================================
+
+.cache/
+.pnpm-store/
+.turbo/
+
+# =============================================================================
+# Testing
+# =============================================================================
+
+coverage/
+.nyc_output/
+
+# =============================================================================
+# Misc
+# =============================================================================
+
+*.swp
+*.swo
+*~
+
+/public/uploads/**
+
+/lib/generated/prisma
+.claude/settings.local.json
+# Duplicate backup files (macOS "file 2.ext" copies)
+* 2.tsx
+* 2.ts
+* 2.sql
+* 2.json
+* 2.mjs
+* 2.md
+* 2.dev
+
+# Exports de coleção do Postman (dumps de referência — não versionar)
+*.postman_collection.json
+backups/
+
+# Pasta-fonte da Doc de Apoio: 154 MB de PDF. Fica no disco, nunca no git.
+APP-DOCUMENT/
+__pycache__/
+
+# Duplicatas que o macOS cria quando o deploy copia sobre um arquivo existente
+next.config *
+*.bak-export
+
+# Instalador do RustDesk (23 MB) e o pacote gerado a partir dele.
+# Binário desse tamanho não entra em git — este repositório já carregou um
+# export de 12 MB por descuido. A pasta é de preparo: o build não a consome
+# (o que vai para o site fica em public/downloads/). Se um dia o instalador
+# precisar ser distribuído pelo portal, o caminho é publicá-lo em
+# public/downloads/ ou hospedá-lo fora, não versioná-lo aqui.
+/Rustdesk/

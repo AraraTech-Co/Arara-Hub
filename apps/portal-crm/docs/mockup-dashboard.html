@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CRM Arara Tech — Mockup Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: #f5f5f4;
+    min-height: 100vh;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 40px 20px;
+  }
+
+  .page-wrapper {
+    width: 100%;
+    max-width: 1100px;
+  }
+
+  .page-label {
+    text-align: center;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: #9ca3af;
+    margin-bottom: 16px;
+  }
+
+  .crm-wrap {
+    background: #f9fafb;
+    border-radius: 16px;
+    border: 1px solid #e5e7eb;
+    overflow: hidden;
+    box-shadow: 0 4px 24px rgba(0,0,0,.07);
+  }
+
+  /* Topbar */
+  .crm-topbar {
+    background: #fff;
+    border-bottom: 1px solid #f3f4f6;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 20px;
+  }
+  .crm-logo {
+    width: 30px; height: 30px;
+    border-radius: 8px;
+    background: #4f46e5;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 14px; font-weight: 600;
+    flex-shrink: 0;
+  }
+  .crm-topbar-name { font-size: 14px; font-weight: 600; color: #111827; }
+  .crm-topbar-tag {
+    margin-left: auto;
+    font-size: 11px;
+    color: #9ca3af;
+    background: #f3f4f6;
+    padding: 3px 10px;
+    border-radius: 99px;
+  }
+
+  /* Body */
+  .crm-body { display: flex; min-height: 580px; }
+
+  /* Sidebar */
+  .crm-sidebar {
+    width: 200px; flex-shrink: 0;
+    background: #fff;
+    border-right: 1px solid #f3f4f6;
+    padding: 14px 10px;
+    display: flex; flex-direction: column; gap: 2px;
+  }
+  .crm-nav-item {
+    display: flex; align-items: center; gap: 9px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    color: #6b7280;
+    cursor: pointer;
+    transition: background .15s;
+    text-decoration: none;
+  }
+  .crm-nav-item:hover { background: #f9fafb; color: #111827; }
+  .crm-nav-item.active { background: #eef2ff; color: #4338ca; font-weight: 500; }
+  .crm-nav-icon { font-size: 17px; flex-shrink: 0; }
+
+  .crm-user {
+    margin-top: auto;
+    padding: 12px;
+    border-top: 1px solid #f3f4f6;
+  }
+  .crm-user-name { font-size: 13px; font-weight: 500; color: #111827; }
+  .crm-user-role { font-size: 11px; color: #9ca3af; margin-top: 1px; }
+
+  /* Main */
+  .crm-main { flex: 1; padding: 24px; display: flex; flex-direction: column; gap: 18px; overflow: hidden; }
+
+  .crm-greeting { font-size: 18px; font-weight: 600; color: #111827; }
+
+  .section-label {
+    font-size: 10px; font-weight: 600;
+    color: #9ca3af;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  /* Quick actions */
+  .crm-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .crm-action-btn {
+    border-radius: 12px;
+    padding: 14px 16px;
+    display: flex; flex-direction: column; gap: 4px;
+    cursor: pointer; border: none; text-align: left;
+    transition: filter .15s, transform .1s;
+  }
+  .crm-action-btn:hover { filter: brightness(.94); transform: translateY(-1px); }
+  .crm-action-btn:active { transform: scale(.98); }
+  .action-icon { font-size: 18px; margin-bottom: 2px; }
+  .action-label { font-size: 13px; font-weight: 600; }
+  .action-sub { font-size: 11px; opacity: .78; }
+  .btn-blue  { background: #4f46e5; color: #fff; }
+  .btn-green { background: #059669; color: #fff; }
+  .btn-amber { background: #d97706; color: #fff; }
+
+  /* KPIs */
+  .crm-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .crm-kpi {
+    background: #fff;
+    border: 1px solid #f3f4f6;
+    border-radius: 12px;
+    padding: 14px;
+  }
+  .kpi-label { font-size: 11px; color: #6b7280; margin-bottom: 6px; }
+  .kpi-value { font-size: 22px; font-weight: 600; color: #111827; }
+  .kpi-value.accent { color: #4f46e5; }
+  .kpi-sub { font-size: 10px; color: #9ca3af; margin-top: 3px; }
+
+  /* Meta */
+  .crm-card {
+    background: #fff;
+    border: 1px solid #f3f4f6;
+    border-radius: 12px;
+    padding: 16px;
+  }
+  .crm-card-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 12px;
+  }
+  .crm-card-title { font-size: 13px; font-weight: 500; color: #111827; }
+  .crm-card-link { font-size: 12px; color: #4f46e5; text-decoration: none; font-weight: 500; }
+  .progress-track { height: 7px; background: #f3f4f6; border-radius: 99px; overflow: hidden; }
+  .progress-fill { height: 100%; background: #4f46e5; border-radius: 99px; width: 34%; }
+  .progress-labels { display: flex; justify-content: space-between; margin-top: 6px; font-size: 11px; color: #9ca3af; }
+  .progress-pct { font-size: 13px; font-weight: 600; color: #4f46e5; }
+
+  /* Agenda */
+  .agenda-list { display: flex; flex-direction: column; }
+  .agenda-item {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 9px 0;
+    border-bottom: 1px solid #f9fafb;
+  }
+  .agenda-item:last-child { border-bottom: none; padding-bottom: 0; }
+  .agenda-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: #4f46e5; margin-top: 4px; flex-shrink: 0;
+  }
+  .agenda-dot.done { background: #10b981; }
+  .agenda-text-label { font-size: 12px; font-weight: 500; color: #111827; }
+  .agenda-time { font-size: 11px; color: #9ca3af; margin-top: 1px; }
+  .badge {
+    display: inline-flex; align-items: center;
+    font-size: 10px; font-weight: 500;
+    padding: 2px 8px; border-radius: 99px;
+    margin-right: 5px;
+  }
+  .badge-blue   { background: #dbeafe; color: #1e40af; }
+  .badge-amber  { background: #fef3c7; color: #92400e; }
+  .badge-green  { background: #d1fae5; color: #065f46; }
+  .badge-purple { background: #ede9fe; color: #5b21b6; }
+
+  /* Footer note */
+  .footer-note {
+    margin-top: 20px;
+    text-align: center;
+    font-size: 12px;
+    color: #9ca3af;
+    line-height: 1.6;
+  }
+  .footer-note strong { color: #6b7280; font-weight: 500; }
+
+  /* SVG icons inline */
+  .icon-svg { display: inline-block; vertical-align: middle; }
+</style>
+</head>
+<body>
+
+<div class="page-wrapper">
+  <p class="page-label">CRM Arara Tech · Mockup para aprovação · Jun 2026</p>
+
+  <div class="crm-wrap">
+
+    <!-- Topbar -->
+    <div class="crm-topbar">
+      <div class="crm-logo">C</div>
+      <span class="crm-topbar-name">CRM Arara Tech</span>
+      <span class="crm-topbar-tag">Mockup · v1.0</span>
+    </div>
+
+    <!-- Body -->
+    <div class="crm-body">
+
+      <!-- Sidebar -->
+      <div class="crm-sidebar">
+        <a class="crm-nav-item active" href="#">
+          <svg class="crm-nav-icon icon-svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+          Dashboard
+        </a>
+        <a class="crm-nav-item" href="#">
+          <svg class="crm-nav-icon icon-svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Clientes
+        </a>
+        <a class="crm-nav-item" href="#">
+          <svg class="crm-nav-icon icon-svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="4" height="18"/><rect x="10" y="8" width="4" height="13"/><rect x="17" y="5" width="4" height="16"/></svg>
+          Pipeline
+        </a>
+        <a class="crm-nav-item" href="#">
+          <svg class="crm-nav-icon icon-svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Agenda
+        </a>
+        <a class="crm-nav-item" href="#">
+          <svg class="crm-nav-icon icon-svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          Histórico de Vendas
+        </a>
+        <a class="crm-nav-item" href="#">
+          <svg class="crm-nav-icon icon-svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          Equipe
+        </a>
+        <a class="crm-nav-item" href="#">
+          <svg class="crm-nav-icon icon-svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          Configurações
+        </a>
+
+        <div class="crm-user">
+          <div class="crm-user-name">Leonardo</div>
+          <div class="crm-user-role">Administrador</div>
+        </div>
+      </div>
+
+      <!-- Main content -->
+      <div class="crm-main">
+
+        <div class="crm-greeting">Bom dia, Leonardo 👋</div>
+
+        <!-- Ações rápidas -->
+        <div>
+          <p class="section-label">Ações rápidas</p>
+          <div class="crm-actions">
+            <div class="crm-action-btn btn-blue">
+              <svg class="action-icon icon-svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+              <span class="action-label">Novo Cliente</span>
+              <span class="action-sub">Cadastrar lead ou cliente</span>
+            </div>
+            <div class="crm-action-btn btn-green">
+              <svg class="action-icon icon-svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+              <span class="action-label">Lançar Venda</span>
+              <span class="action-sub">Registrar negociação</span>
+            </div>
+            <div class="crm-action-btn btn-amber">
+              <svg class="action-icon icon-svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              <span class="action-label">Lançar Visita</span>
+              <span class="action-sub">Agendar visita a cliente</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- KPIs -->
+        <div class="crm-kpis">
+          <div class="crm-kpi">
+            <div class="kpi-label">Vendido no mês</div>
+            <div class="kpi-value">R$ 34.200</div>
+          </div>
+          <div class="crm-kpi">
+            <div class="kpi-label">Meta atingida</div>
+            <div class="kpi-value accent">34%</div>
+            <div class="kpi-sub">de R$ 100.000</div>
+          </div>
+          <div class="crm-kpi">
+            <div class="kpi-label">Deals abertos</div>
+            <div class="kpi-value">12</div>
+          </div>
+          <div class="crm-kpi">
+            <div class="kpi-label">Atividades hoje</div>
+            <div class="kpi-value">3</div>
+          </div>
+        </div>
+
+        <!-- Progresso da meta -->
+        <div class="crm-card">
+          <div class="crm-card-header">
+            <span class="crm-card-title">Progresso da meta — junho/2026</span>
+            <span class="progress-pct">34%</span>
+          </div>
+          <div class="progress-track"><div class="progress-fill"></div></div>
+          <div class="progress-labels"><span>R$ 34.200</span><span>R$ 100.000</span></div>
+        </div>
+
+        <!-- Agenda -->
+        <div class="crm-card">
+          <div class="crm-card-header">
+            <span class="crm-card-title">Agenda de hoje</span>
+            <a class="crm-card-link" href="#">Ver tudo →</a>
+          </div>
+          <div class="agenda-list">
+            <div class="agenda-item">
+              <div class="agenda-dot"></div>
+              <div>
+                <div class="agenda-text-label"><span class="badge badge-blue">Ligação</span>Empresa ABC Ltda</div>
+                <div class="agenda-time">09:00</div>
+              </div>
+            </div>
+            <div class="agenda-item">
+              <div class="agenda-dot"></div>
+              <div>
+                <div class="agenda-text-label"><span class="badge badge-amber">Visita</span>Comércio XYZ</div>
+                <div class="agenda-time">14:30</div>
+              </div>
+            </div>
+            <div class="agenda-item">
+              <div class="agenda-dot done"></div>
+              <div>
+                <div class="agenda-text-label"><span class="badge badge-green">Reunião</span>Distribuidora Sul</div>
+                <div class="agenda-time">08:00 · Concluída</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <p class="footer-note">
+    Mockup visual — dados fictícios para aprovação de layout.<br>
+    <strong>Arara Tech · Portal CRM · Junho 2026</strong>
+  </p>
+</div>
+
+</body>
+</html>

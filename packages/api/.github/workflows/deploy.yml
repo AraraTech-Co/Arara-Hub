@@ -1,0 +1,15 @@
+# Deprecated — monorepo deploys live at the repository root:
+#   .github/workflows/deploy-api.yml
+#   .github/workflows/deploy-portal-*.yml
+#
+# This nested workflow is ignored by GitHub Actions (only root .github/ counts).
+name: "(unused) legacy nested deploy"
+
+on:
+  workflow_dispatch:
+
+jobs:
+  noop:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Use root workflows under .github/workflows/ — see docs/DEPLOY.md"

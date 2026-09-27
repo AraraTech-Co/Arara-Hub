@@ -1,0 +1,25 @@
+{
+  "name": "hub-araratech",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 5180",
+    "build": "next build",
+    "start": "next start -p 5180",
+    "lint": "next lint",
+    "export:deploy": "bash scripts/export-and-deploy.sh"
+  },
+  "dependencies": {
+    "next": "15.5.2",
+    "react": "19.1.1",
+    "react-dom": "19.1.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^24",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}

@@ -1,0 +1,27 @@
+name: Deploy portal-suporte
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [master, main]
+    paths:
+      - "apps/portal-suporte/**"
+      - "deploy/Dockerfile.next-export"
+      - "deploy/nginx/**"
+      - "deploy/frontends.compose.yml"
+      - ".github/workflows/deploy-portal-suporte.yml"
+      - ".github/workflows/deploy-frontend.reusable.yml"
+      - ".github/actions/setup-ssh/**"
+
+concurrency:
+  group: deploy-portal-suporte
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    uses: ./.github/workflows/deploy-frontend.reusable.yml
+    with:
+      app: portal-suporte
+      smoke_url: https://suporte.arara-tech.com/
+    secrets:
+      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}

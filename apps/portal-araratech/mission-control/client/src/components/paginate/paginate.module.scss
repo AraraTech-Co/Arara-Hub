@@ -1,0 +1,22 @@
+@import 'components/global';
+
+.paginate {
+
+  display: inline-block;
+  margin-bottom: $scale;
+
+}
+
+.button {
+
+  float: left;
+
+}
+
+.counter {
+
+  float: left;
+  margin: -.2em 0.5em;
+  font-size: 0.9em;
+
+}

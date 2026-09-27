@@ -1,0 +1,61 @@
+@import 'components/global.scss';
+
+h1, h2, h3, h4, h5, h6 {
+
+  font-size: $scale;
+  margin: 0 0 0 0;
+  padding: 0;
+  line-height: $scale1;
+
+}
+
+h1 {
+
+  font-weight: 600;
+  font-size: $scale2;
+
+}
+
+h2 {
+
+  font-size: $scale1;
+  font-weight: 600;
+  margin: $scale1 0 $scale;
+
+}
+
+p {
+
+  line-height: $scale2;
+  margin-bottom: $scale;
+
+}
+
+a {
+
+  color: $c-blue;
+
+}
+
+p:last-child {
+
+  margin-bottom: 0;
+
+}
+
+blockquote {
+
+  font-style: italic;
+  font-size: 1.1em;
+  line-height: $scale2;
+
+}
+
+cite {
+
+  display: block;
+  font-style: normal;
+  opacity: 0.7;
+  margin: $scale1 0 0 0;
+
+}

@@ -1,0 +1,20 @@
+@import "components/global.scss";
+
+.image {
+  float: left;
+  margin-right: $scale2;
+  width: $scale5;
+  border-radius: 100%;
+}
+
+.blockquote {
+  overflow: hidden;
+}
+
+.cite {
+  overflow: hidden;
+  display: block;
+  opacity: 0.8;
+  font-style: normal;
+  margin-top: $scale2;
+}

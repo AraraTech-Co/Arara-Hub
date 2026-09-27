@@ -1,0 +1,53 @@
+@import 'components/global.scss';
+
+.base {
+
+  padding: $scale4 0;
+  text-align: left;
+  background-color: white;
+
+  @media (min-width: $mobile){
+
+    padding: $scale6 0;
+
+  }
+}
+
+.transparent {
+
+  background-color: transparent;
+
+}
+
+.tint {
+
+  background-color: $c-bg;
+
+}
+
+.dark {
+
+  color: white;
+  background-color: $c-dark;
+
+}
+
+.brand {
+
+  color: white;
+  background-color: $c-purple;
+
+}
+
+.left {
+
+  text-align: left;
+
+}
+
+.center {
+
+  text-align: center;
+
+}
+

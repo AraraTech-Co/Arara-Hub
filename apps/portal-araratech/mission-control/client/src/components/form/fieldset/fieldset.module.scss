@@ -1,0 +1,46 @@
+@import 'components/global.scss';
+
+.base {
+
+  position: relative;
+  clear: both;
+  border: none;
+  padding: 0;
+  
+  &:last-child {
+    
+    margin-bottom: 0;
+
+  }
+}
+
+.error {
+
+  border: none;
+  padding: $scale2 $scale $scale2;
+
+  &:before {
+
+    // psuedo border
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: $scale2;
+    border-radius: $radius;
+    border: 1px solid $c-red;
+    background-color: lighten($c-red, 38%);
+
+  }
+}
+
+.errorMessage {
+
+  top: 0;
+  clear: both;
+  margin-left: -1.1em;
+  margin-right: -1.1em;
+  margin-bottom: 0;
+
+}

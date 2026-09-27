@@ -1,0 +1,1115 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Validador SPED — Arara Tech</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --sidebar: oklch(0.158 0.015 271);
+    --sidebar-border: rgba(255,255,255,0.08);
+    --indigo: #4f46e5;
+    --indigo-light: #eef2ff;
+    --indigo-dark: #3730a3;
+    --slate-50: #f8fafc;
+    --slate-100: #f1f5f9;
+    --slate-200: #e2e8f0;
+    --slate-300: #cbd5e1;
+    --slate-400: #94a3b8;
+    --slate-500: #64748b;
+    --slate-600: #475569;
+    --slate-700: #334155;
+    --slate-800: #1e293b;
+    --slate-900: #0f172a;
+    --red-50: #fef2f2;
+    --red-100: #fee2e2;
+    --red-600: #dc2626;
+    --red-700: #b91c1c;
+    --amber-50: #fffbeb;
+    --amber-100: #fef3c7;
+    --amber-600: #d97706;
+    --green-50: #f0fdf4;
+    --green-100: #dcfce7;
+    --green-600: #16a34a;
+    --blue-600: #2563eb;
+  }
+
+  body {
+    font-family: 'Sora', sans-serif;
+    background: var(--slate-100);
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: 256px;
+    background: var(--sidebar);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    height: 100vh;
+  }
+  .sidebar-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 20px 16px;
+    border-bottom: 1px solid var(--sidebar-border);
+  }
+  .logo-icon {
+    width: 32px; height: 32px;
+    background: var(--indigo);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .logo-icon svg { width: 18px; height: 18px; color: white; }
+  .logo-text { color: white; font-size: 13px; font-weight: 600; }
+  .logo-sub { color: #94a3b8; font-size: 11px; }
+
+  .sidebar-search {
+    margin: 8px 12px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--sidebar-border);
+    border-radius: 8px;
+    padding: 7px 10px;
+    color: #94a3b8;
+    font-size: 12px;
+    display: flex; align-items: center; gap: 6px;
+  }
+
+  .sidebar-nav { flex: 1; overflow-y: auto; padding: 12px; }
+  .nav-group-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #64748b;
+    padding: 8px 12px 4px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #94a3b8;
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-bottom: 1px;
+  }
+  .nav-item:hover { background: rgba(255,255,255,0.06); color: white; }
+  .nav-item.active { background: var(--indigo); color: white; }
+  .nav-item svg { width: 15px; height: 15px; flex-shrink: 0; }
+
+  /* MAIN */
+  .main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .page {
+    flex: 1;
+    overflow-y: auto;
+    padding: 32px;
+  }
+
+  /* PAGE HEADER */
+  .page-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 24px;
+  }
+  .page-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--slate-900);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .page-title svg { color: var(--indigo); width: 22px; height: 22px; }
+  .page-sub { color: var(--slate-500); font-size: 13px; margin-top: 3px; }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    gap: 2px;
+    background: var(--slate-200);
+    border-radius: 10px;
+    padding: 3px;
+    width: fit-content;
+    margin-bottom: 24px;
+  }
+  .tab {
+    padding: 7px 18px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--slate-500);
+    cursor: pointer;
+    transition: all 0.15s;
+    border: none;
+    background: none;
+  }
+  .tab:hover { color: var(--slate-700); }
+  .tab.active {
+    background: white;
+    color: var(--slate-900);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  }
+
+  /* TAB CONTENT */
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* UPLOAD */
+  .upload-zone {
+    border: 2px dashed var(--slate-300);
+    border-radius: 16px;
+    background: white;
+    padding: 56px 40px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+  }
+  .upload-zone:hover {
+    border-color: var(--indigo);
+    background: var(--indigo-light);
+  }
+  .upload-icon {
+    width: 56px; height: 56px;
+    background: var(--indigo-light);
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 16px;
+  }
+  .upload-icon svg { width: 28px; height: 28px; color: var(--indigo); }
+  .upload-title { font-size: 17px; font-weight: 600; color: var(--slate-800); margin-bottom: 6px; }
+  .upload-sub { font-size: 13px; color: var(--slate-500); }
+  .upload-limit {
+    display: inline-block;
+    margin-top: 16px;
+    background: var(--slate-100);
+    border: 1px solid var(--slate-200);
+    border-radius: 6px;
+    padding: 4px 12px;
+    font-size: 12px;
+    color: var(--slate-500);
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .progress-section {
+    background: white;
+    border: 1px solid var(--slate-200);
+    border-radius: 16px;
+    padding: 28px 32px;
+    margin-top: 20px;
+  }
+  .progress-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--slate-700);
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .progress-steps {
+    display: flex;
+    align-items: center;
+    gap: 0;
+  }
+  .progress-step {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+  }
+  .progress-step:last-child { flex: none; }
+  .step-circle {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .step-circle.done { background: var(--green-100); color: var(--green-600); }
+  .step-circle.active {
+    background: var(--indigo);
+    color: white;
+    animation: pulse-ring 1.5s ease-out infinite;
+  }
+  .step-circle.pending { background: var(--slate-100); color: var(--slate-400); }
+  @keyframes pulse-ring {
+    0% { box-shadow: 0 0 0 0 rgba(79,70,229,0.4); }
+    70% { box-shadow: 0 0 0 8px rgba(79,70,229,0); }
+    100% { box-shadow: 0 0 0 0 rgba(79,70,229,0); }
+  }
+  .step-label {
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .step-label.done { color: var(--green-600); }
+  .step-label.active { color: var(--indigo); }
+  .step-label.pending { color: var(--slate-400); }
+  .step-connector {
+    flex: 1;
+    height: 2px;
+    margin: 0 8px;
+  }
+  .step-connector.done { background: var(--green-600); }
+  .step-connector.pending { background: var(--slate-200); }
+
+  /* RESULT HEADER */
+  .result-header {
+    background: white;
+    border: 1px solid var(--slate-200);
+    border-radius: 16px;
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .result-meta { display: flex; align-items: center; gap: 24px; }
+  .result-badge {
+    padding: 5px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .badge-reprovado { background: var(--red-100); color: var(--red-700); }
+  .badge-aprovado { background: var(--green-100); color: var(--green-600); }
+  .badge-avisos { background: var(--amber-100); color: var(--amber-600); }
+  .result-info { font-size: 13px; color: var(--slate-600); }
+  .result-info strong { color: var(--slate-900); font-weight: 600; }
+  .result-actions { display: flex; gap: 8px; }
+
+  /* BTN */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s;
+  }
+  .btn-primary { background: var(--indigo); color: white; }
+  .btn-primary:hover { background: var(--indigo-dark); }
+  .btn-outline { background: white; color: var(--slate-700); border: 1px solid var(--slate-200); }
+  .btn-outline:hover { background: var(--slate-50); }
+  .btn-ghost { background: transparent; color: var(--slate-600); }
+  .btn svg { width: 14px; height: 14px; }
+
+  /* QUICK CHECKS */
+  .quick-checks {
+    background: white;
+    border: 1px solid var(--slate-200);
+    border-radius: 16px;
+    padding: 20px 24px;
+    margin-bottom: 16px;
+  }
+  .section-title {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--slate-500);
+    margin-bottom: 14px;
+  }
+  .qc-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+  }
+  .qc-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid;
+  }
+  .qc-item.ok { background: var(--green-50); border-color: #bbf7d0; }
+  .qc-item.fail { background: var(--red-50); border-color: #fecaca; }
+  .qc-item.na { background: var(--slate-50); border-color: var(--slate-200); }
+  .qc-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .qc-item.ok .qc-dot { background: var(--green-600); }
+  .qc-item.fail .qc-dot { background: var(--red-600); }
+  .qc-item.na .qc-dot { background: var(--slate-400); }
+  .qc-label { font-size: 12px; font-weight: 500; }
+  .qc-item.ok .qc-label { color: var(--green-600); }
+  .qc-item.fail .qc-label { color: var(--red-700); }
+  .qc-item.na .qc-label { color: var(--slate-500); }
+
+  /* BLOCO CARDS */
+  .blocos-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .bloco-card {
+    background: white;
+    border: 1px solid var(--slate-200);
+    border-radius: 12px;
+    padding: 14px 16px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .bloco-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .bloco-card.ok { border-top: 3px solid var(--green-600); }
+  .bloco-card.error { border-top: 3px solid var(--red-600); }
+  .bloco-card.warn { border-top: 3px solid var(--amber-600); }
+  .bloco-card.neutral { border-top: 3px solid var(--slate-300); }
+  .bloco-name { font-size: 13px; font-weight: 700; color: var(--slate-800); margin-bottom: 4px; }
+  .bloco-count { font-size: 11px; }
+  .bloco-card.ok .bloco-count { color: var(--green-600); }
+  .bloco-card.error .bloco-count { color: var(--red-600); }
+  .bloco-card.warn .bloco-count { color: var(--amber-600); }
+  .bloco-card.neutral .bloco-count { color: var(--slate-400); }
+
+  /* ERROR TABLE */
+  .error-section {
+    background: white;
+    border: 1px solid var(--slate-200);
+    border-radius: 16px;
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+  .error-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--slate-100);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .filter-row {
+    display: flex;
+    gap: 8px;
+  }
+  .filter-select {
+    padding: 6px 10px;
+    border: 1px solid var(--slate-200);
+    border-radius: 8px;
+    font-size: 12px;
+    color: var(--slate-600);
+    background: white;
+    font-family: 'Sora', sans-serif;
+  }
+  table { width: 100%; border-collapse: collapse; }
+  thead tr { background: var(--slate-50); }
+  th {
+    padding: 10px 16px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--slate-500);
+    border-bottom: 1px solid var(--slate-200);
+  }
+  td {
+    padding: 11px 16px;
+    font-size: 13px;
+    color: var(--slate-700);
+    border-bottom: 1px solid var(--slate-100);
+    vertical-align: middle;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--slate-50); }
+
+  .sev-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .sev-critico { background: var(--red-100); color: var(--red-700); }
+  .sev-erro { background: #fef3c7; color: #92400e; }
+  .sev-aviso { background: #eff6ff; color: #1d4ed8; }
+
+  .mono { font-family: 'IBM Plex Mono', monospace; font-size: 12px; }
+  .line-num { color: var(--slate-400); font-size: 12px; font-family: 'IBM Plex Mono', monospace; }
+
+  /* RECOMMENDATIONS */
+  .rec-section {
+    background: white;
+    border: 1px solid var(--slate-200);
+    border-radius: 16px;
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+  .rec-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--slate-100);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .rec-item {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--slate-100);
+  }
+  .rec-item:last-child { border-bottom: none; }
+  .rec-reg {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .reg-tag {
+    background: var(--indigo-light);
+    color: var(--indigo);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 5px;
+  }
+  .rec-title { font-size: 13px; font-weight: 600; color: var(--slate-800); }
+  .rec-struct {
+    background: var(--slate-800);
+    color: #a5f3fc;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    margin: 8px 0;
+  }
+  .rec-steps { list-style: none; }
+  .rec-steps li {
+    font-size: 12px;
+    color: var(--slate-600);
+    padding: 3px 0;
+    padding-left: 16px;
+    position: relative;
+  }
+  .rec-steps li::before {
+    content: '→';
+    position: absolute;
+    left: 0;
+    color: var(--indigo);
+    font-weight: 700;
+  }
+
+  /* CLIENT VIEW */
+  .client-header {
+    text-align: center;
+    background: white;
+    border: 1px solid var(--slate-200);
+    border-radius: 16px;
+    padding: 28px;
+    margin-bottom: 16px;
+  }
+  .client-status-icon {
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    background: var(--red-100);
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 12px;
+  }
+  .client-status-icon svg { width: 28px; height: 28px; color: var(--red-600); }
+  .client-title { font-size: 18px; font-weight: 700; color: var(--slate-900); margin-bottom: 4px; }
+  .client-sub { font-size: 13px; color: var(--slate-500); }
+
+  .client-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .client-stat {
+    background: white;
+    border: 1px solid var(--slate-200);
+    border-radius: 14px;
+    padding: 20px;
+    text-align: center;
+  }
+  .client-stat-value { font-size: 28px; font-weight: 700; margin-bottom: 4px; }
+  .client-stat.critical .client-stat-value { color: var(--red-600); }
+  .client-stat.warn .client-stat-value { color: var(--amber-600); }
+  .client-stat.info .client-stat-value { color: var(--indigo); }
+  .client-stat-label { font-size: 12px; color: var(--slate-500); }
+
+  .client-messages {
+    background: white;
+    border: 1px solid var(--slate-200);
+    border-radius: 16px;
+    padding: 20px 24px;
+    margin-bottom: 16px;
+  }
+  .client-msg-item {
+    display: flex;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--slate-100);
+  }
+  .client-msg-item:last-child { border-bottom: none; }
+  .client-msg-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 5px;
+  }
+  .client-msg-dot.critical { background: var(--red-600); }
+  .client-msg-dot.warn { background: var(--amber-600); }
+  .client-msg-text { font-size: 13px; color: var(--slate-700); line-height: 1.5; }
+  .client-msg-text strong { color: var(--slate-900); }
+
+  .client-cta {
+    text-align: center;
+    padding: 8px;
+  }
+  .btn-lg {
+    padding: 12px 28px;
+    font-size: 14px;
+    border-radius: 10px;
+  }
+
+  /* HISTORY */
+  .history-filters {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    align-items: center;
+  }
+  .search-input {
+    padding: 8px 12px;
+    border: 1px solid var(--slate-200);
+    border-radius: 8px;
+    font-size: 13px;
+    font-family: 'Sora', sans-serif;
+    color: var(--slate-700);
+    background: white;
+    flex: 1;
+    max-width: 280px;
+  }
+  .history-table-wrap {
+    background: white;
+    border: 1px solid var(--slate-200);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+  .status-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .chip-dot { width: 6px; height: 6px; border-radius: 50%; }
+  .chip-reprovado { background: var(--red-50); color: var(--red-700); }
+  .chip-reprovado .chip-dot { background: var(--red-600); }
+  .chip-aprovado { background: var(--green-50); color: var(--green-600); }
+  .chip-aprovado .chip-dot { background: var(--green-600); }
+  .chip-avisos { background: var(--amber-50); color: var(--amber-600); }
+  .chip-avisos .chip-dot { background: var(--amber-600); }
+
+  .pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 20px;
+    border-top: 1px solid var(--slate-100);
+  }
+  .pagination-info { font-size: 12px; color: var(--slate-500); }
+  .pagination-btns { display: flex; gap: 4px; }
+  .pag-btn {
+    width: 30px; height: 30px;
+    border-radius: 6px;
+    border: 1px solid var(--slate-200);
+    background: white;
+    font-size: 12px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--slate-600);
+  }
+  .pag-btn.active { background: var(--indigo); color: white; border-color: var(--indigo); }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--slate-300); border-radius: 10px; }
+
+  /* spinner */
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spin { animation: spin 0.8s linear infinite; }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M3 18v-6a9 9 0 0118 0v6"/><path d="M21 19a2 2 0 01-2 2h-1a2 2 0 01-2-2v-3a2 2 0 012-2h3z M3 19a2 2 0 002 2h1a2 2 0 002-2v-3a2 2 0 00-2-2H3z"/></svg>
+    </div>
+    <div>
+      <div class="logo-text">Portal Suporte</div>
+      <div class="logo-sub">Painel Admin</div>
+    </div>
+  </div>
+  <div class="sidebar-search">
+    <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+    Buscar... ⌘K
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-group-label">
+      <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Workspace
+    </div>
+    <div class="nav-item">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Dashboard
+    </div>
+    <div class="nav-item">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"/></svg>
+      Kanban
+    </div>
+
+    <div class="nav-group-label" style="margin-top:8px">
+      <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+      Atendimento
+    </div>
+    <div class="nav-item">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+      Tickets Públicos
+    </div>
+    <div class="nav-item">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+      SLA
+    </div>
+
+    <div class="nav-group-label" style="margin-top:8px">
+      <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0"/></svg>
+      Clientes
+    </div>
+    <div class="nav-item">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+      Empresas
+    </div>
+    <div class="nav-item">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+      Unidades
+    </div>
+    <div class="nav-item active">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      Validador SPED
+    </div>
+  </nav>
+</aside>
+
+<!-- MAIN CONTENT -->
+<main class="main">
+  <div class="page">
+
+    <!-- Header -->
+    <div class="page-header">
+      <div>
+        <div class="page-title">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          Validador SPED
+        </div>
+        <p class="page-sub">Valide arquivos EFD ICMS/IPI antes de entregar ao contador</p>
+      </div>
+    </div>
+
+    <!-- TABS -->
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('upload')">Upload</button>
+      <button class="tab" onclick="switchTab('suporte')">Resultado — Suporte</button>
+      <button class="tab" onclick="switchTab('cliente')">Resultado — Cliente</button>
+      <button class="tab" onclick="switchTab('historico')">Histórico</button>
+    </div>
+
+    <!-- ===== TAB: UPLOAD ===== -->
+    <div id="tab-upload" class="tab-content active">
+      <div class="upload-zone" onclick="showProgress()">
+        <div class="upload-icon">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+        </div>
+        <div class="upload-title">Arraste o arquivo SPED aqui</div>
+        <div class="upload-sub">ou clique para selecionar do seu computador</div>
+        <span class="upload-limit">.txt · máx 50 MB</span>
+      </div>
+
+      <div class="progress-section" id="progress-box" style="display:none">
+        <div class="progress-title">
+          <svg class="spin" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" style="color:var(--indigo)"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          Validando arquivo · <span style="color:var(--slate-500);font-weight:400">MAZETTO_BLOCO_K_122025.txt</span>
+        </div>
+        <div class="progress-steps">
+          <div class="progress-step">
+            <div class="step-circle done">✓</div>
+            <div class="step-label done">Parse</div>
+          </div>
+          <div class="step-connector done"></div>
+          <div class="progress-step">
+            <div class="step-circle done">✓</div>
+            <div class="step-label done">Estrutura</div>
+          </div>
+          <div class="step-connector done"></div>
+          <div class="progress-step">
+            <div class="step-circle active">3</div>
+            <div class="step-label active">Campos</div>
+          </div>
+          <div class="step-connector pending"></div>
+          <div class="progress-step">
+            <div class="step-circle pending">4</div>
+            <div class="step-label pending">Referências</div>
+          </div>
+          <div class="step-connector pending"></div>
+          <div class="progress-step">
+            <div class="step-circle pending">5</div>
+            <div class="step-label pending">Fechamento</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== TAB: SUPORTE ===== -->
+    <div id="tab-suporte" class="tab-content">
+      <!-- Result header -->
+      <div class="result-header">
+        <div class="result-meta">
+          <span class="result-badge badge-reprovado">● Reprovado</span>
+          <div class="result-info">
+            <strong>44.219.772/0001-94</strong> &nbsp;·&nbsp;
+            Período <strong>12/2025</strong> &nbsp;·&nbsp;
+            44.821 linhas &nbsp;·&nbsp;
+            MAZETTO_BLOCO_K_122025.txt
+          </div>
+        </div>
+        <div class="result-actions">
+          <button class="btn btn-outline">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            CSV Detalhado
+          </button>
+          <button class="btn btn-outline">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            CSV Resumo
+          </button>
+          <button class="btn btn-primary">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"/></svg>
+            Abrir Chamado
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick checks -->
+      <div class="quick-checks">
+        <div class="section-title">Quick Checks</div>
+        <div class="qc-grid">
+          <div class="qc-item ok"><div class="qc-dot"></div><div class="qc-label">Cabeçalho (0000)</div></div>
+          <div class="qc-item ok"><div class="qc-dot"></div><div class="qc-label">Bloco K encontrado</div></div>
+          <div class="qc-item fail"><div class="qc-dot"></div><div class="qc-label">Fechamento K990</div></div>
+          <div class="qc-item ok"><div class="qc-dot"></div><div class="qc-label">Fechamento 9999</div></div>
+          <div class="qc-item fail"><div class="qc-dot"></div><div class="qc-label">Itens sem 0200</div></div>
+          <div class="qc-item ok"><div class="qc-dot"></div><div class="qc-label">Unidades (0190)</div></div>
+          <div class="qc-item na"><div class="qc-dot"></div><div class="qc-label">Bloco H</div></div>
+          <div class="qc-item ok"><div class="qc-dot"></div><div class="qc-label">COD_VER = 019</div></div>
+        </div>
+      </div>
+
+      <!-- Blocos -->
+      <div class="blocos-grid">
+        <div class="bloco-card ok"><div class="bloco-name">Bloco 0</div><div class="bloco-count">✓ Sem erros</div></div>
+        <div class="bloco-card neutral"><div class="bloco-name">Bloco B</div><div class="bloco-count">— N/A</div></div>
+        <div class="bloco-card neutral"><div class="bloco-name">Bloco C</div><div class="bloco-count">— N/A</div></div>
+        <div class="bloco-card neutral"><div class="bloco-name">Bloco E</div><div class="bloco-count">— N/A</div></div>
+        <div class="bloco-card error"><div class="bloco-name">Bloco K</div><div class="bloco-count">✗ 14 erros</div></div>
+        <div class="bloco-card warn"><div class="bloco-name">Bloco H</div><div class="bloco-count">⚠ 2 avisos</div></div>
+        <div class="bloco-card ok"><div class="bloco-name">Bloco 9</div><div class="bloco-count">✓ Sem erros</div></div>
+      </div>
+
+      <!-- Error Table -->
+      <div class="error-section">
+        <div class="error-header">
+          <div class="section-title" style="margin:0">Erros e Avisos (16)</div>
+          <div class="filter-row">
+            <select class="filter-select"><option>Todas severidades</option><option>CRÍTICO</option><option>ERRO</option><option>AVISO</option></select>
+            <select class="filter-select"><option>Todas categorias</option><option>leiaute</option><option>cruzamento</option><option>fechamento</option></select>
+            <select class="filter-select"><option>Todos blocos</option><option>Bloco K</option><option>Bloco H</option></select>
+          </div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Sev.</th>
+              <th>Cat.</th>
+              <th>Registro</th>
+              <th>Linha</th>
+              <th>Campo</th>
+              <th>Problema</th>
+              <th>Correção técnica</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="sev-badge sev-critico">CRÍTICO</span></td>
+              <td><span style="font-size:11px;color:var(--slate-500)">leiaute</span></td>
+              <td><span class="mono">K200</span></td>
+              <td><span class="line-num">512</span></td>
+              <td><span class="mono">—</span></td>
+              <td>6 campos encontrados, esperado 5</td>
+              <td style="color:var(--slate-500);font-size:12px">Remover campo VL_UNIT (campo 6)</td>
+            </tr>
+            <tr>
+              <td><span class="sev-badge sev-critico">CRÍTICO</span></td>
+              <td><span style="font-size:11px;color:var(--slate-500)">cruzamento</span></td>
+              <td><span class="mono">K200</span></td>
+              <td><span class="line-num">891</span></td>
+              <td><span class="mono">COD_ITEM</span></td>
+              <td>Item 'AA400' não cadastrado no 0200</td>
+              <td style="color:var(--slate-500);font-size:12px">Cadastrar AA400 no registro 0200</td>
+            </tr>
+            <tr>
+              <td><span class="sev-badge sev-critico">CRÍTICO</span></td>
+              <td><span style="font-size:11px;color:var(--slate-500)">cruzamento</span></td>
+              <td><span class="mono">K200</span></td>
+              <td><span class="line-num">1204</span></td>
+              <td><span class="mono">COD_ITEM</span></td>
+              <td>Item 'PC-9400' não cadastrado no 0200</td>
+              <td style="color:var(--slate-500);font-size:12px">Cadastrar PC-9400 no registro 0200</td>
+            </tr>
+            <tr>
+              <td><span class="sev-badge sev-erro">ERRO</span></td>
+              <td><span style="font-size:11px;color:var(--slate-500)">fechamento</span></td>
+              <td><span class="mono">K990</span></td>
+              <td><span class="line-num">44819</span></td>
+              <td><span class="mono">QTD_LIN</span></td>
+              <td>44820 declarado, 44818 contados</td>
+              <td style="color:var(--slate-500);font-size:12px">Recalcular total linhas Bloco K</td>
+            </tr>
+            <tr>
+              <td><span class="sev-badge sev-aviso">AVISO</span></td>
+              <td><span style="font-size:11px;color:var(--slate-500)">negócio</span></td>
+              <td><span class="mono">H010</span></td>
+              <td><span class="line-num">32100</span></td>
+              <td><span class="mono">VL_ITEM</span></td>
+              <td>VL_ITEM difere de QTD × VL_UNIT em R$ 0,03</td>
+              <td style="color:var(--slate-500);font-size:12px">Verificar arredondamento no cálculo</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Recommendations -->
+      <div class="rec-section">
+        <div class="rec-header">
+          <div class="section-title" style="margin:0">Recomendações por Registro</div>
+          <span style="font-size:12px;color:var(--slate-500)">2 registros com erro</span>
+        </div>
+        <div class="rec-item">
+          <div class="rec-reg">
+            <span class="reg-tag">K200</span>
+            <span class="rec-title">Estoque Escriturado — 14 erros</span>
+          </div>
+          <div class="rec-struct">|K200|DT_EST|COD_ITEM|QTD_EST|IND_EST|</div>
+          <ul class="rec-steps">
+            <li>Remover campo VL_UNIT (6º campo) — K200 tem exatamente 5 campos no leiaute v019</li>
+            <li>Cadastrar 13 itens ausentes no Bloco 0 (registro 0200) antes de referenciar em K200</li>
+            <li>Recalcular K990.QTD_LIN após correções</li>
+          </ul>
+        </div>
+        <div class="rec-item">
+          <div class="rec-reg">
+            <span class="reg-tag">H010</span>
+            <span class="rec-title">Inventário — 2 avisos</span>
+          </div>
+          <div class="rec-struct">|H010|COD_ITEM|UNID|QTD|VL_UNIT|VL_ITEM|IND_PROP|COD_PART|TXT_COMPL|COD_CTA|VL_ITEM_IR|</div>
+          <ul class="rec-steps">
+            <li>Verificar arredondamento: VL_ITEM deve ser igual a QTD × VL_UNIT (tolerância R$ 0,02)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== TAB: CLIENTE ===== -->
+    <div id="tab-cliente" class="tab-content">
+      <div class="client-header">
+        <div class="client-status-icon">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </div>
+        <div class="client-title">Arquivo com problemas encontrados</div>
+        <div class="client-sub">MAZETTO IND E COM DE ALUMINIO LTDA · Período 12/2025 · Validado hoje às 14:32</div>
+      </div>
+
+      <div class="client-stats">
+        <div class="client-stat critical">
+          <div class="client-stat-value">14</div>
+          <div class="client-stat-label">Erros críticos que impedem importação</div>
+        </div>
+        <div class="client-stat warn">
+          <div class="client-stat-value">2</div>
+          <div class="client-stat-label">Avisos que precisam de revisão</div>
+        </div>
+        <div class="client-stat info">
+          <div class="client-stat-value">2</div>
+          <div class="client-stat-label">Blocos com problemas</div>
+        </div>
+      </div>
+
+      <div class="client-messages">
+        <div class="section-title">O que foi encontrado</div>
+        <div class="client-msg-item">
+          <div class="client-msg-dot critical"></div>
+          <div class="client-msg-text">O arquivo possui <strong>erros de estrutura no Bloco K</strong> que impedirão a importação no validador da Receita Federal (PVA). É necessário corrigir antes de entregar ao contador.</div>
+        </div>
+        <div class="client-msg-item">
+          <div class="client-msg-dot critical"></div>
+          <div class="client-msg-text"><strong>13 produtos referenciados no estoque</strong> não estão cadastrados no arquivo. A equipe técnica precisará completar o cadastro desses itens.</div>
+        </div>
+        <div class="client-msg-item">
+          <div class="client-msg-dot warn"></div>
+          <div class="client-msg-text">O <strong>inventário físico (Bloco H)</strong> apresenta pequenas divergências de valor em 2 itens. Pode ser necessária revisão dos cálculos.</div>
+        </div>
+      </div>
+
+      <div class="client-cta">
+        <button class="btn btn-primary btn-lg">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"/></svg>
+          Abrir chamado para correção
+        </button>
+        <p style="font-size:12px;color:var(--slate-400);margin-top:10px">O chamado será aberto com o relatório completo já anexado</p>
+      </div>
+    </div>
+
+    <!-- ===== TAB: HISTÓRICO ===== -->
+    <div id="tab-historico" class="tab-content">
+      <div class="history-filters">
+        <input class="search-input" type="text" placeholder="Buscar por CNPJ ou empresa...">
+        <select class="filter-select"><option>Todos os períodos</option><option>12/2025</option><option>11/2025</option><option>01/2026</option></select>
+        <select class="filter-select"><option>Todos os status</option><option>Reprovado</option><option>Com avisos</option><option>Aprovado</option></select>
+        <div style="flex:1"></div>
+        <button class="btn btn-outline" style="font-size:12px">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+          Exportar
+        </button>
+      </div>
+      <div class="history-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>CNPJ</th>
+              <th>Empresa</th>
+              <th>Período</th>
+              <th>Status</th>
+              <th>Erros</th>
+              <th>Avisos</th>
+              <th>Data</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="cursor:pointer">
+              <td class="mono" style="font-size:12px">44.219.772/0001-94</td>
+              <td style="font-weight:500">Mazetto Alumínio</td>
+              <td>12/2025</td>
+              <td><span class="status-chip chip-reprovado"><span class="chip-dot"></span>Reprovado</span></td>
+              <td style="color:var(--red-600);font-weight:600">14</td>
+              <td style="color:var(--amber-600)">2</td>
+              <td style="color:var(--slate-400);font-size:12px">Hoje 14:32</td>
+              <td><button class="btn btn-ghost" style="font-size:12px;padding:4px 8px">Ver →</button></td>
+            </tr>
+            <tr style="cursor:pointer">
+              <td class="mono" style="font-size:12px">44.219.772/0001-94</td>
+              <td style="font-weight:500">Mazetto Alumínio</td>
+              <td>11/2025</td>
+              <td><span class="status-chip chip-avisos"><span class="chip-dot"></span>Com avisos</span></td>
+              <td style="color:var(--slate-400)">0</td>
+              <td style="color:var(--amber-600)">3</td>
+              <td style="color:var(--slate-400);font-size:12px">28/05 09:15</td>
+              <td><button class="btn btn-ghost" style="font-size:12px;padding:4px 8px">Ver →</button></td>
+            </tr>
+            <tr style="cursor:pointer">
+              <td class="mono" style="font-size:12px">40.168.506/0001-29</td>
+              <td style="font-weight:500">Super Shopping SJC</td>
+              <td>12/2025</td>
+              <td><span class="status-chip chip-aprovado"><span class="chip-dot"></span>Aprovado</span></td>
+              <td style="color:var(--slate-400)">0</td>
+              <td style="color:var(--slate-400)">0</td>
+              <td style="color:var(--slate-400);font-size:12px">27/05 16:44</td>
+              <td><button class="btn btn-ghost" style="font-size:12px;padding:4px 8px">Ver →</button></td>
+            </tr>
+            <tr style="cursor:pointer">
+              <td class="mono" style="font-size:12px">40.168.506/0001-29</td>
+              <td style="font-weight:500">Super Shopping SJC</td>
+              <td>11/2025</td>
+              <td><span class="status-chip chip-reprovado"><span class="chip-dot"></span>Reprovado</span></td>
+              <td style="color:var(--red-600);font-weight:600">7</td>
+              <td style="color:var(--amber-600)">1</td>
+              <td style="color:var(--slate-400);font-size:12px">20/05 11:20</td>
+              <td><button class="btn btn-ghost" style="font-size:12px;padding:4px 8px">Ver →</button></td>
+            </tr>
+            <tr style="cursor:pointer">
+              <td class="mono" style="font-size:12px">44.219.772/0001-94</td>
+              <td style="font-weight:500">Mazetto Alumínio</td>
+              <td>10/2025</td>
+              <td><span class="status-chip chip-aprovado"><span class="chip-dot"></span>Aprovado</span></td>
+              <td style="color:var(--slate-400)">0</td>
+              <td style="color:var(--slate-400)">0</td>
+              <td style="color:var(--slate-400);font-size:12px">15/05 08:30</td>
+              <td><button class="btn btn-ghost" style="font-size:12px;padding:4px 8px">Ver →</button></td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="pagination">
+          <span class="pagination-info">Mostrando 1–5 de 23 validações</span>
+          <div class="pagination-btns">
+            <button class="pag-btn">‹</button>
+            <button class="pag-btn active">1</button>
+            <button class="pag-btn">2</button>
+            <button class="pag-btn">3</button>
+            <button class="pag-btn">›</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<script>
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    const names = ['upload','suporte','cliente','historico'];
+    t.classList.toggle('active', names[i] === name);
+  });
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+}
+
+function showProgress() {
+  document.getElementById('progress-box').style.display = 'block';
+}
+</script>
+</body>
+</html>

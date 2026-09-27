@@ -1,0 +1,86 @@
+@import 'components/global.scss';
+
+.base {
+
+  position: relative;
+  padding: $scale2;
+  z-index: 1;
+  margin-bottom: $scale2;
+  background: white;
+  border-radius: $radius;
+
+  > h2 {
+
+    font-weight: 700;
+    margin: $scale2 0 0;
+
+  }
+
+  &:last-of-type {
+
+    margin-bottom: 0;
+
+  }
+}
+
+.header {
+
+  position: relative;
+  overflow: hidden;
+  text-align: left;
+  color: $c-text;
+  padding-bottom: $scale1;
+  margin-bottom: $scale3;
+  background-color: white;
+  border-bottom: 1px dotted $c-border;
+
+}
+
+.title {
+
+  float: left;
+  margin: 0;
+  font-size: $scale1;
+  font-weight: 600;
+
+}
+
+.center {
+
+  margin-left: auto;
+  margin-right: auto;
+
+}
+
+.shadow {
+
+  box-shadow: 0em 0.15em 0.4em rgba(0, 0, 0, 0.05);
+
+}
+
+.loading {
+
+  min-height: $scale13;
+
+}
+
+.restrictWidth {
+
+  @media (min-width: $mobile){
+
+    max-width: $scale15;
+
+  }
+}
+
+.noPadding {
+
+  padding: 0;
+
+}
+
+.last {
+
+  margin-bottom: 0;
+
+}

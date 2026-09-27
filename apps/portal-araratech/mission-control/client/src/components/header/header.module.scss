@@ -1,0 +1,31 @@
+@import 'components/global.scss';
+
+.header {
+
+  position: relative;
+  width: auto;
+  z-index: 3;
+  background: white;
+  padding: $scale2;
+  font-weight: 600;
+  margin: $scale2*-1 $scale2*-1 $scale2 $scale2*-1;
+
+  @media (max-width: $mobile){
+
+    color: $c-text;
+    text-align: center;
+    background: white;
+    padding: $scale $scale;
+    border: none;
+
+  }
+
+  @media (min-width: $mobile){
+
+    h1 {
+
+      font-size: $scale1;
+      
+    }
+  }
+}

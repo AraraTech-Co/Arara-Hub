@@ -1,0 +1,1660 @@
+{
+ "documentos": [
+  {
+   "nome": "2017 - Configuração NF-e",
+   "arquivo": "2017 - Configuração NF-e.pdf",
+   "categoria": "nfe",
+   "url": "https://api.arara-tech.com/h/doc-apoio-2/PDF%20documentacao/2017%20-%20Configura%C3%A7%C3%A3o%20NF-e.pdf"
+  },
+  {
+   "nome": "Atualização do SAT pelo PDV",
+   "arquivo": "Atualização do SAT pelo PDV.pdf",
+   "categoria": "pdv",
+   "url": "https://api.arara-tech.com/h/doc-apoio-3/PDF%20documentacao/Atualiza%C3%A7%C3%A3o%20do%20SAT%20pelo%20PDV.pdf"
+  },
+  {
+   "nome": "Fluxograma SGC",
+   "arquivo": "Fluxograma SGC.pdf",
+   "categoria": "sgc",
+   "url": "https://api.arara-tech.com/h/doc-apoio-3/PDF%20documentacao/Fluxograma%20SGC.pdf"
+  },
+  {
+   "nome": "Guia rápido Leitor de Código de Barras Honeywell Solaris 7980g",
+   "arquivo": "Guia rápido Leitor de Código de Barras Honeywell Solaris 7980g.pdf",
+   "categoria": "pdv",
+   "url": "https://api.arara-tech.com/h/doc-apoio-3/PDF%20documentacao/Guia%20r%C3%A1pido%20Leitor%20de%20C%C3%B3digo%20de%20Barras%20Honeywell%20Solaris%207980g.pdf"
+  },
+  {
+   "nome": "Principais mensagens de erro do PDV",
+   "arquivo": "Principais mensagens de erro do PDV.pdf",
+   "categoria": "pdv",
+   "url": "https://api.arara-tech.com/h/doc-apoio-3/PDF%20documentacao/Principais%20mensagens%20de%20erro%20do%20PDV.pdf"
+  },
+  {
+   "nome": "Recomendação de Computadores",
+   "arquivo": "Recomendação de Computadores.pdf",
+   "categoria": "pdv",
+   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Recomenda%C3%A7%C3%A3o%20de%20Computadores.pdf"
+  },
+  {
+   "nome": "Recomendação de Equipamentos de Automação",
+   "arquivo": "Recomendação de Equipamentos de Automação.pdf",
+   "categoria": "pdv",
+   "url": "https://api.arara-tech.com/h/doc-apoio-2/PDF%20documentacao/Recomenda%C3%A7%C3%A3o%20de%20Equipamentos%20de%20Automa%C3%A7%C3%A3o.pdf"
+  },
+  {
+   "nome": "Tutorial Agendamento de Entregas",
+   "arquivo": "Tutorial Agendamento de Entregas.pdf",
+   "categoria": "integracoes",
+   "url": "https://api.arara-tech.com/h/doc-apoio/PDF%20documentacao/Tutorial%20Agendamento%20de%20Entregas.pdf"
+  },
+  {
+   "nome": "Tutorial Alt. Custo em Lote, Clonagem Produto, Alt. Cliente no Faturamento, Edição Faturas NF-e, Sugestão de Preços por Grupo, Cancelamento Compra automatica, Filtros de Promoção",
+   "arquivo": "Tutorial Alt. Custo em Lote, Clonagem Produto, Alt. Cliente no Faturamento, Edição Faturas NF-e, Sugestão de Preços por Grupo, Cancelamento Compra automatica, Filtros de Promoção.pdf",
+   "categoria": "sgc",
+   "url": "https://api.arara-tech.com/h/doc-apoio/PDF%20documentacao/Tutorial%20Alt.%20Custo%20em%20Lote%2C%20Clonagem%20Produto%2C%20Alt.%20Cliente%20no%20Faturamento%2C%20Edi%C3%A7%C3%A3o%20Faturas%20NF-e%2C%20Sugest%C3%A3o%20de%20Pre%C3%A7os%20por%20Grupo%2C%20Cancelamento%20Compra%20automatica%2C%20Filtros%20de%20Promo%C3%A7%C3%A3o.pdf"
+  },
+  {
+   "nome": "Tutorial Arara TI",
+   "arquivo": "Tutorial Arara TI.pdf",
+   "categoria": "geral",
+   "url": "https://api.arara-tech.com/h/doc-apoio-3/PDF%20documentacao/Tutorial%20Arara%20TI.pdf"
+  },
+  {
+   "nome": "Tutorial Atualização de Preços, Código Sequencial, Pedido de Venda Ordenação e Produtos e Relatório de Atualização de Preços",
+   "arquivo": "Tutorial Atualização de Preços, Código Sequencial, Pedido de Venda Ordenação e Produtos e Relatório de Atualização de Preços.pdf",
+   "categoria": "sgc",
+   "url": "https://api.arara-tech.com/h/doc-apoio/PDF%20documentacao/Tutorial%20Atualiza%C3%A7%C3%A3o%20de%20Pre%C3%A7os%2C%20C%C3%B3digo%20Sequencial%2C%20Pedido%20de%20Venda%20Ordena%C3%A7%C3%A3o%20e%20Produtos%20e%20Relat%C3%B3rio%20de%20Atualiza%C3%A7%C3%A3o%20de%20Pre%C3%A7os.pdf"
+  },
+  {
+   "nome": "Tutorial Atualizações SGC 02.09.2024 a 19.12.2024",
+   "arquivo": "Tutorial Atualizações SGC 02.09.2024 a 19.12.2024.pdf",
+   "categoria": "sgc",
+   "url": "https://api.arara-tech.com/h/doc-apoio-3/PDF%20documentacao/Tutorial%20Atualiza%C3%A7%C3%B5es%20SGC%2002.09.2024%20a%2019.12.2024.pdf"
+  },
+  {
+   "nome": "Tutorial Atualizações SGC 10.07.2024 a 29.08.2024",
+   "arquivo": "Tutorial Atualizações SGC 10.07.2024 a 29.08.2024.pdf",
+   "categoria": "sgc",
+   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20Atualiza%C3%A7%C3%B5es%20SGC%2010.07.2024%20a%2029.08.2024.pdf"
+  },
+  {
+   "nome": "Tutorial Atualizações SGC 20.02.2025 a 20.03.2025",
+   "arquivo": "Tutorial Atualizações SGC 20.02.2025 a 20.03.2025.pdf",
+   "categoria": "sgc",
+   "url": "https://api.arara-tech.com/h/doc-apoio-3/PDF%20documentacao/Tutorial%20Atualiza%C3%A7%C3%B5es%20SGC%2020.02.2025%20a%2020.03.2025.pdf"
+  },
+  {
+   "nome": "Tutorial Atualizações SGC 21.03.2025 à 29.04.2025",
+   "arquivo": "Tutorial Atualizações SGC 21.03.2025 à 29.04.2025.pdf",
+   "categoria": "sgc",
+   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20Atualiza%C3%A7%C3%B5es%20SGC%2021.03.2025%20%C3%A0%2029.04.2025.pdf"
+  },
+  {
+   "nome": "Tutorial Bloqueio de quantidade, Pedido de Venda, Promoção Combo, Relatório de Edição de Itens, Relatório DF-e e Consulta GTIN web service",
+   "arquivo": "Tutorial Bloqueio de quantidade, Pedido de Venda, Promoção Combo, Relatório de Edição de Itens, Relatório DF-e e Consulta GTIN web service.pdf",
+   "categoria": "sgc",
+   "url": "https://api.arara-tech.com/h/doc-apoio/PDF%20documentacao/Tutorial%20Bloqueio%20de%20quantidade%2C%20Pedido%20de%20Venda%2C%20Promo%C3%A7%C3%A3o%20Combo%2C%20Relat%C3%B3rio%20de%20Edi%C3%A7%C3%A3o%20de%20Itens%2C%20Relat%C3%B3rio%20DF-e%20e%20Consulta%20GTIN%20web%20service.pdf"
+  },
+  {
+   "nome": "Tutorial Bloqueio de quantidade, Pedido de Venda, Promoção Combo, Relatório de Edição de Itens, Relatório DF-e e Consulta GTIN web service",
+   "arquivo": "Tutorial Bloqueio de quantidade, Pedido de Venda, Promoção Combo, Relatório de Edição de Itens, Relatório DF-e e Consulta GTIN web service.pdf",
+   "categoria": "sgc",
+   "url": "https://api.arara-tech.com/h/doc-apoio/PDF%20documentacao/Tutorial%20Bloqueio%20de%20quantidade%2C%20Pedido%20de%20Venda%2C%20Promo%C3%A7%C3%A3o%20Combo%2C%20Relat%C3%B3rio%20de%20Edi%C3%A7%C3%A3o%20de%20Itens%2C%20Relat%C3%B3rio%20DF-e%20e%20Consulta%20GTIN%20web%20service.pdf"
+  },
+  {
+   "nome": "Tutorial Busca Preços",
+   "arquivo": "Tutorial Busca Preços.pdf",
+   "categoria": "integracoes",
+   "url": "https://api.arara-tech.com/h/doc-apoio/PDF%20documentacao/Tutorial%20Busca%20Pre%C3%A7os.pdf"
+  },
+  {
+   "nome": "Tutorial Cadastro de Pessoas e Controle de Acessos na RETAGUARDA",
+   "arquivo": "Tutorial Cadastro de Pessoas e Controle de Acessos na RETAGUARDA.pdf",
+   "categoria": "acessos",
+   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20Cadastro%20de%20Pessoas%20e%20Controle%20de%20Acessos%20na%20RETAGUARDA.pdf"
+  },
+  {
+   "nome": "Tutorial Cadastro de Pessoas e Controle de Acessos no PDV",
+   "arquivo": "Tutorial Cadastro de Pessoas e Controle de Acessos no PDV.pdf",
+   "categoria": "acessos",
+   "url": "https://api.arara-tech.com/h/doc-apoio-3/PDF%20documentacao/Tutorial%20Cadastro%20de%20Pessoas%20e%20Controle%20de%20Acessos%20no%20PDV.pdf"
+  },
+  {
+   "nome": "Tutorial Cadastro NF-e",
+   "arquivo": "Tutorial Cadastro NF-e.pdf",
+   "categoria": "nfe",
+   "url": "https://api.arara-tech.com/h/doc-apoio/PDF%20documentacao/Tutorial%20Cadastro%20NF-e.pdf"
+  },
+  {
+   "nome": "Tutorial Cadastro Produto x Fornecedor - Top Line SGI",
+   "arquivo": "Tutorial Cadastro Produto x Fornecedor - Top Line SGI.pdf",
+   "categoria": "estoque",
+   "url": "https://api.arara-tech.com/h/doc-apoio-2/PDF%20documentacao/Tutorial%20Cadastro%20Produto%20x%20Fornecedor%20-%20Top%20Line%20SGI.pdf"
+  },
+  {
+   "nome": "Tutorial Central de Notificações",
+   "arquivo": "Tutorial Central de Notificações.pdf",
+   "categoria": "sgc",
+   "url": "https://api.arara-tech.com/h/doc-apoio/PDF%20documentacao/Tutorial%20Central%20de%20Notifica%C3%A7%C3%B5es.pdf"
+  },
+  {
+   "nome": "Tutorial Comissões",
+   "arquivo": "Tutorial Comissões.pdf",
+   "categoria": "financeiro",
+   "url": "https://api.arara-tech.com/h/doc-apoio-2/PDF%20documentacao/Tutorial%20Comiss%C3%B5es.pdf"
+  },
+  {
+   "nome": "Tutorial Configurações e Cadastro de Tributações",
+   "arquivo": "Tutorial Configurações e Cadastro de Tributações.pdf",
+   "categoria": "nfe",
+   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20Configura%C3%A7%C3%B5es%20e%20Cadastro%20de%20Tributa%C3%A7%C3%B5es.pdf"
+  },
+  {
+   "nome": "Tutorial Datas comemorativas, Pedido CD e Nº caixa",
+   "arquivo": "Tutorial Datas comemorativas, Pedido CD e Nº caixa.pdf",
+   "categoria": "sgc",
+   "url": "https://api.arara-tech.com/h/doc-apoio/PDF%20documentacao/Tutorial%20Datas%20comemorativas%2C%20Pedido%20CD%20e%20N%C2%BA%20caixa.pdf"
+  },
+  {
+   "nome": "Tutorial de Alteração do Acesso de Usuários",
+   "arquivo": "Tutorial de Alteração do Acesso de Usuários.pdf",
+   "categoria": "acessos",
+   "url": "https://api.arara-tech.com/h/doc-apoio-3/PDF%20documentacao/Tutorial%20de%20Altera%C3%A7%C3%A3o%20do%20Acesso%20de%20Usu%C3%A1rios.pdf"
+  },
+  {
+   "nome": "Tutorial de Alteração do Acesso de Usuários",
+   "arquivo": "Tutorial de Alteração do Acesso de Usuários.pdf",
+   "categoria": "acessos",
+   "url": "https://api.arara-tech.com/h/doc-apoio-3/PDF%20documentacao/Tutorial%20de%20Altera%C3%A7%C3%A3o%20do%20Acesso%20de%20Usu%C3%A1rios.pdf"
+  },
+  {
+   "nome": "Tutorial de Cadastro, Liberação, Edição e Remoção de Acessos do PDV e Retaguarda SGC - Completo",
+   "arquivo": "Tutorial de Cadastro, Liberação, Edição e Remoção de Acessos do PDV e Retaguarda SGC - Completo.pdf",
+   "categoria": "acessos",
+   "url": "https://api.arara-tech.com/h/doc-apoio-2/PDF%20documentacao/Tutorial%20de%20Cadastro%2C%20Libera%C3%A7%C3%A3o%2C%20Edi%C3%A7%C3%A3o%20e%20Remo%C3%A7%C3%A3o%20de%20Acessos%20do%20PDV%20e%20Retaguarda%20SGC%20-%20Completo.pdf"
+  },
+  {
+   "nome": "Tutorial de Clonagem de Custos, Busca CF-e, Xml Inutilização, Log Distribuição DF-e, Lote de Impressão de Etiquetas e Impressão de Etiquetas de Prateleiras sem as Barras",
+   "arquivo": "Tutorial de Clonagem de Custos, Busca CF-e, Xml Inutilização, Log Distribuição DF-e, Lote de Impressão de Etiquetas e Impressão de Etiquetas de Prateleiras sem as Barras.pdf",
+   "categoria": "sgc",
+   "url": "https://api.arara-tech.com/h/doc-apoio/PDF%20documentacao/Tutorial%20de%20Clonagem%20de%20Custos%2C%20Busca%20CF-e%2C%20Xml%20Inutiliza%C3%A7%C3%A3o%2C%20Log%20Distribui%C3%A7%C3%A3o%20DF-e%2C%20Lote%20de%20Impress%C3%A3o%20de%20Etiquetas%20e%20Impress%C3%A3o%20de%20Etiquetas%20de%20Prateleiras%20sem%20as%20Barras.pdf"
+  },
+  {
+   "nome": "Tutorial de Clonagem de Custos, Busca CF-e, Xml Inutilização, Log Distribuição DF-e, Lote de Impressão de Etiquetas e Impressão de Etiquetas de Prateleiras sem as Barras",
+   "arquivo": "Tutorial de Clonagem de Custos, Busca CF-e, Xml Inutilização, Log Distribuição DF-e, Lote de Impressão de Etiquetas e Impressão de Etiquetas de Prateleiras sem as Barras.pdf",
+   "categoria": "estoque",
+   "url": "https://api.arara-tech.com/h/doc-apoio/PDF%20documentacao/Tutorial%20de%20Clonagem%20de%20Custos%2C%20Busca%20CF-e%2C%20Xml%20Inutiliza%C3%A7%C3%A3o%2C%20Log%20Distribui%C3%A7%C3%A3o%20DF-e%2C%20Lote%20de%20Impress%C3%A3o%20de%20Etiquetas%20e%20Impress%C3%A3o%20de%20Etiquetas%20de%20Prateleiras%20sem%20as%20Barras.pdf"
+  },
+  {
+   "nome": "Tutorial de Cotações",
+   "arquivo": "Tutorial de Cotações.pdf",
+   "categoria": "compras",
+   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20de%20Cota%C3%A7%C3%B5es.pdf"
+  },
+  {
+   "nome": "Tutorial de Cotações",
+   "arquivo": "Tutorial de Cotações.pdf",
+   "categoria": "compras",
+   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20de%20Cota%C3%A7%C3%B5es.pdf"
+  },
+  {
+   "nome": "Tutorial de Impressão de Etiquetas da Promoção",
+   "arquivo": "Tutorial de Impressão de Etiquetas da Promoção.pdf",
+   "categoria": "promocoes",
+   "url": "https://api.arara-tech.com/h/doc-apoio-2/PDF%20documentacao/Tutorial%20de%20Impress%C3%A3o%20de%20Etiquetas%20da%20Promo%C3%A7%C3%A3o.pdf"
+  },
+  {
+   "nome": "Tutorial de Impressão de Etiquetas da Promoção",
+   "arquivo": "Tutorial de Impressão de Etiquetas da Promoção.pdf",
+   "categoria": "promocoes",
+   "url": "https://api.arara-tech.com/h/doc-apoio-2/PDF%20documentacao/Tutorial%20de%20Impress%C3%A3o%20de%20Etiquetas%20da%20Promo%C3%A7%C3%A3o.pdf"
+  },
+  {
+   "nome": "Tutorial de Inventário - App",
+   "arquivo": "Tutorial de Inventário - App.pdf",
+   "categoria": "estoque",
+   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20de%20Invent%C3%A1rio%20-%20App.pdf"
+  },
+  {
+   "nome": "Tutorial de Inventário - App",
+   "arquivo": "Tutorial de Inventário - App.pdf",
+   "categoria": "estoque",
+   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20de%20Invent%C3%A1rio%20-%20App.pdf"
+  },
+  {
+   "nome": "Tutorial de Lançamento Financeiro - SGC",
+   "arquivo": "Tutorial de Lançamento Financeiro - SGC.pdf",
+   "categoria": "financeiro",
+   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20de%20Lan%C3%A7amento%20Financeiro%20-%20SGC.pdf"
+  },
+  {
+   "nome": "Tutorial de Lançamento Financeiro - SGC",
+   "arquivo": "Tutorial de Lançamento Financeiro - SGC.pdf",
+   "categoria": "financeiro",
+   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20de%20Lan%C3%A7amento%20Financeiro%20-%20SGC.pdf"
+  },
+  {
+   "nome": "Tutorial de Lançamento Financeiro - SGI",
+   "arquivo": "Tutorial de Lançamento Financeiro - SGI.pdf",
+   "categoria": "financeiro",
+   "url": "https://api.arara-tech.com/h/doc-apoio-2/PDF%20documentacao/Tutorial%20de%20Lan%C3%A7amento%20Financeiro%20-%20SGI.pdf"
+  },
+  {
+   "nome": "Tutorial de Lançamento Financeiro - SGI",
+   "arquivo": "Tutorial de Lançamento Financeiro - SGI.pdf",
+   "categoria": "financeiro",
+   "url": "https://api.arara-tech.com/h/doc-apoio-2/PDF%20documentacao/Tutorial%20de%20Lan%C3%A7amento%20Financeiro%20-%20SGI.pdf"
+  },
+  {
+   "nome": "Tutorial de Liberação de Acesso para Representantes",
+   "arquivo": "Tutorial de Liberação de Acesso para Representantes.pdf",
+   "categoria": "acessos",
+   "url": "https://api.arara-tech.com/h/doc-apoio-2/PDF%20documentacao/Tutorial%20de%20Libera%C3%A7%C3%A3o%20de%20Acesso%20para%20Representantes.pdf"
+  },
+  {
+   "nome": "Tutorial de Liberação de Acesso para Representantes",
+   "arquivo": "Tutorial de Liberação de Acesso para Representantes.pdf",
+   "categoria": "acessos",
+   "url": "https://api.arara-tech.com/h/doc-apoio-2/PDF%20documentacao/Tutorial%20de%20Libera%C3%A7%C3%A3o%20de%20Acesso%20para%20Representantes.pdf"
+  },
+  {
+   "nome": "Tutorial de para editar o cadastro do usuário",
+   "arquivo": "Tutorial de para editar o cadastro do usuário.pdf",
+   "categoria": "acessos",
+   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20de%20para%20editar%20o%20cadastro%20do%20usu%C3%A1rio.pdf"
+  },
+  {
+   "nome": "Tutorial de para editar o cadastro do usuário",
+   "arquivo": "Tutorial de para editar o cadastro do usuário.pdf",
+   "categoria": "acessos",
+   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20de%20para%20editar%20o%20cadastro%20do%20usu%C3%A1rio.pdf"
+  },
+  {
+   "nome": "Tutorial de Pedido de compra entre Lojas",
+   "arquivo": "Tutorial de Pedido de compra entre Lojas.pdf",
+   "categoria": "compras",
+   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20de%20Pedido%20de%20compra%20entre%20Lojas.pdf"
+  },
+  {
+   "nome": "Tutorial de Pedido de compra entre Lojas",
+   "arquivo": "Tutorial de Pedido de compra entre Lojas.pdf",
+   "categoria": "compras",
+   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20de%20Pedido%20de%20compra%20entre%20Lojas.pdf"
+  },
+  {
+   "nome": "Tutorial de Recebimento de Pedido de Compras a Cegas.",
+   "arquivo": "Tutorial de Recebimento de Pedido de Compras a Cegas..pdf",
+   "categoria": "compras",
+   "url": "https://api.arara-tech.com/h/doc-apoio-2/PDF%20documentacao/Tutorial%20de%20Recebimento%20de%20Pedido%20de%20Compras%20a%20Cegas..pdf"
+  },
+  {
+   "nome": "Tutorial de Recebimento de Pedido de Compras a Cegas.",
+   "arquivo": "Tutorial de Recebimento de Pedido de Compras a Cegas..pdf",
+   "categoria": "compras",
+   "url": "https://api.arara-tech.com/h/doc-apoio-2/PDF%20documentacao/Tutorial%20de%20Recebimento%20de%20Pedido%20de%20Compras%20a%20Cegas..pdf"
+  },
+  {
+   "nome": "Tutorial Desconto Automático",
+   "arquivo": "Tutorial Desconto Automático.pdf",
+   "categoria": "promocoes",
+   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20Desconto%20Autom%C3%A1tico.pdf"
+  },
+  {
+   "nome": "Tutorial Devolução NF-e",
+   "arquivo": "Tutorial Devolução NF-e.pdf",
+   "categoria": "nfe",
+   "url": "https://api.arara-tech.com/h/doc-apoio-2/PDF%20documentacao/Tutorial%20Devolu%C3%A7%C3%A3o%20NF-e.pdf"
+  },
+  {
+   "nome": "Tutorial Devolução NF-e de múltiplas NF-e, Campo Referência e Atualização de Preços de Custo",
+   "arquivo": "Tutorial Devolução NF-e de múltiplas NF-e, Campo Referência e Atualização de Preços de Custo.pdf",
+   "categoria": "nfe",
+   "url": "https://api.arara-tech.com/h/doc-apoio-3/PDF%20documentacao/Tutorial%20Devolu%C3%A7%C3%A3o%20NF-e%20de%20m%C3%BAltiplas%20NF-e%2C%20Campo%20Refer%C3%AAncia%20e%20Atualiza%C3%A7%C3%A3o%20de%20Pre%C3%A7os%20de%20Custo.pdf"
+  },
+  {
+   "nome": "Tutorial Digitação Pré Venda Mazetto",
+   "arquivo": "Tutorial Digitação Pré Venda Mazetto.pdf",
+   "categoria": "pdv",
+   "url": "https://api.arara-tech.com/h/doc-apoio/PDF%20documentacao/Tutorial%20Digita%C3%A7%C3%A3o%20Pr%C3%A9%20Venda%20Mazetto.pdf"
+  },
+  {
+   "nome": "Tutorial Distribuição DF-e",
+   "arquivo": "Tutorial Distribuição DF-e.pdf",
+   "categoria": "nfe",
+   "url": "https://api.arara-tech.com/h/doc-apoio-3/PDF%20documentacao/Tutorial%20Distribui%C3%A7%C3%A3o%20DF-e.pdf"
+  },
+  {
+   "nome": "Tutorial Distribuição DF-e e Cadastro pelo Xml",
+   "arquivo": "Tutorial Distribuição DF-e e Cadastro pelo Xml.pdf",
+   "categoria": "nfe",
+   "url": "https://api.arara-tech.com/h/doc-apoio-2/PDF%20documentacao/Tutorial%20Distribui%C3%A7%C3%A3o%20DF-e%20e%20Cadastro%20pelo%20Xml.pdf"
+  },
+  {
+   "nome": "Tutorial Distribuição e Cadastro de Produtos",
+   "arquivo": "Tutorial Distribuição e Cadastro de Produtos.pdf",
+   "categoria": "estoque",
+   "url": "https://api.arara-tech.com/h/doc-apoio-3/PDF%20documentacao/Tutorial%20Distribui%C3%A7%C3%A3o%20e%20Cadastro%20de%20Produtos.pdf"
+  },
+  {
+   "nome": "Tutorial Edição de Itens e Cupom de Troca",
+   "arquivo": "Tutorial Edição de Itens e Cupom de Troca.pdf",
+   "categoria": "pdv",
+   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20Edi%C3%A7%C3%A3o%20de%20Itens%20e%20Cupom%20de%20Troca.pdf"
+  },
+  {
+   "nome": "Tutorial Emissão de Cartões Fiscais PDV",
+   "arquivo": "Tutorial Emissão de Cartões Fiscais PDV.pdf",
+   "categoria": "pdv",
+   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20Emiss%C3%A3o%20de%20Cart%C3%B5es%20Fiscais%20PDV.pdf"
+  },
+  {
+   "nome": "Tutorial Emissão de Cartões Fiscais PDV - 2",
+   "arquivo": "Tutorial Emissão de Cartões Fiscais PDV - 2.pdf",
+   "categoria": "pdv",
+   "url": "https://api.arara-tech.com/h/doc-apoio-3/PDF%20documentacao/Tutorial%20Emiss%C3%A3o%20de%20Cart%C3%B5es%20Fiscais%20PDV%20-%202.pdf"
+  },
+  {
+   "nome": "Tutorial Emissão NF-e",
+   "arquivo": "Tutorial Emissão NF-e.pdf",
+   "categoria": "nfe",
+   "url": "https://api.arara-tech.com/h/doc-apoio-3/PDF%20documentacao/Tutorial%20Emiss%C3%A3o%20NF-e.pdf"
+  },
+  {
+   "nome": "Tutorial Emissão NF-e - Digitação de Pedido",
+   "arquivo": "Tutorial Emissão NF-e - Digitação de Pedido.pdf",
+   "categoria": "nfe",
+   "url": "https://api.arara-tech.com/h/doc-apoio/PDF%20documentacao/Tutorial%20Emiss%C3%A3o%20NF-e%20-%20Digita%C3%A7%C3%A3o%20de%20Pedido.pdf"
+  },
+  {
+   "nome": "Tutorial Emissão NF-e - Digitação de Pedido 2",
+   "arquivo": "Tutorial Emissão NF-e - Digitação de Pedido 2.pdf",
+   "categoria": "nfe",
+   "url": "https://api.arara-tech.com/h/doc-apoio-2/PDF%20documentacao/Tutorial%20Emiss%C3%A3o%20NF-e%20-%20Digita%C3%A7%C3%A3o%20de%20Pedido%202.pdf"
+  },
+  {
+   "nome": "Tutorial Emissão NF-e - utilizando pedido no pdv",
+   "arquivo": "Tutorial Emissão NF-e - utilizando pedido no pdv.pdf",
+   "categoria": "nfe",
+   "url": "https://api.arara-tech.com/h/doc-apoio-2/PDF%20documentacao/Tutorial%20Emiss%C3%A3o%20NF-e%20-%20utilizando%20pedido%20no%20pdv.pdf"
+  },
+  {
+   "nome": "Tutorial Emissão NF-e - utilizando pedido no pdv - antigo",
+   "arquivo": "Tutorial Emissão NF-e - utilizando pedido no pdv - antigo.pdf",
+   "categoria": "nfe",
+   "url": "https://api.arara-tech.com/h/doc-apoio/PDF%20documentacao/Tutorial%20Emiss%C3%A3o%20NF-e%20-%20utilizando%20pedido%20no%20pdv%20-%20antigo.pdf"
+  },
+  {
+   "nome": "Tutorial Emissão NF-e - utilizando pedido no pdv - novo",
+   "arquivo": "Tutorial Emissão NF-e - utilizando pedido no pdv - novo.pdf",
+   "categoria": "nfe",
+   "url": "https://api.arara-tech.com/h/doc-apoio-2/PDF%20documentacao/Tutorial%20Emiss%C3%A3o%20NF-e%20-%20utilizando%20pedido%20no%20pdv%20-%20novo.pdf"
+  },
+  {
+   "nome": "Tutorial Estoque Mínimo em Lote, Relatório de Meta de Vendas e Cadastro de Famílias",
+   "arquivo": "Tutorial Estoque Mínimo em Lote, Relatório de Meta de Vendas e Cadastro de Famílias.pdf",
+   "categoria": "estoque",
+   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20Estoque%20M%C3%ADnimo%20em%20Lote%2C%20Relat%C3%B3rio%20de%20Meta%20de%20Vendas%20e%20Cadastro%20de%20Fam%C3%ADlias.pdf"
+  },
+  {
+   "nome": "Tutorial Estoque Mínimo em Lote, Relatório de Meta de Vendas e Cadastro de Famílias",
+   "arquivo": "Tutorial Estoque Mínimo em Lote, Relatório de Meta de Vendas e Cadastro de Famílias.pdf",
+   "categoria": "estoque",
+   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20Estoque%20M%C3%ADnimo%20em%20Lote%2C%20Relat%C3%B3rio%20de%20Meta%20de%20Vendas%20e%20Cadastro%20de%20Fam%C3%ADlias.pdf"
+  },
+  {
+   "nome": "Tutorial Finalização, Edição e Atualização PDV",
+   "arquivo": "Tutorial Finalização, Edição e Atualização PDV.pdf",
+   "categoria": "pdv",
+   "url": "https://api.arara-tech.com/h/doc-apoio/PDF%20documentacao/Tutorial%20Finaliza%C3%A7%C3%A3o%2C%20Edi%C3%A7%C3%A3o%20e%20Atualiza%C3%A7%C3%A3o%20PDV.pdf"
+  },
+  {
+   "nome": "Tutorial Finalização, Edição e Atualização PDV",
+   "arquivo": "Tutorial Finalização, Edição e Atualização PDV.pdf",
+   "categoria": "pdv",
+   "url": "https://api.arara-tech.com/h/doc-apoio/PDF%20documentacao/Tutorial%20Finaliza%C3%A7%C3%A3o%2C%20Edi%C3%A7%C3%A3o%20e%20Atualiza%C3%A7%C3%A3o%20PDV.pdf"
+  },
+  {
+   "nome": "Tutorial Formação de Custos, Cadastro de Tributação Vários Estados, Log de Promoção e Filtros, Inativação do Grupo de Produto e Lote de Impressão",
+   "arquivo": "Tutorial Formação de Custos, Cadastro de Tributação Vários Estados, Log de Promoção e Filtros, Inativação do Grupo de Produto e Lote de Impressão.pdf",
+   "categoria": "sgc",
+   "url": "https://api.arara-tech.com/h/doc-apoio/PDF%20documentacao/Tutorial%20Forma%C3%A7%C3%A3o%20de%20Custos%2C%20Cadastro%20de%20Tributa%C3%A7%C3%A3o%20V%C3%A1rios%20Estados%2C%20Log%20de%20Promo%C3%A7%C3%A3o%20e%20Filtros%2C%20Inativa%C3%A7%C3%A3o%20do%20Grupo%20de%20Produto%20e%20Lote%20de%20Impress%C3%A3o.pdf"
+  },
+  {
+   "nome": "Tutorial Formação de Custos, Cadastro de Tributação Vários Estados, Log de Promoção e Filtros, Inativação do Grupo de Produto e Lote de Impressão",
+   "arquivo": "Tutorial Formação de Custos, Cadastro de Tributação Vários Estados, Log de Promoção e Filtros, Inativação do Grupo de Produto e Lote de Impressão.pdf",
+   "categoria": "financeiro",
+   "url": "https://api.arara-tech.com/h/doc-apoio/PDF%20documentacao/Tutorial%20Forma%C3%A7%C3%A3o%20de%20Custos%2C%20Cadastro%20de%20Tributa%C3%A7%C3%A3o%20V%C3%A1rios%20Estados%2C%20Log%20de%20Promo%C3%A7%C3%A3o%20e%20Filtros%2C%20Inativa%C3%A7%C3%A3o%20do%20Grupo%20de%20Produto%20e%20Lote%20de%20Impress%C3%A3o.pdf"
+  },
+  {
+   "nome": "Tutorial Gerar Saldo de Compra, Referência Pedido de Compra, Relatório de Produtos Vendidos, Relatório de Promoção, Cadastro de Tributação em Lote e Log Grupo de Tributação do Produto",
+   "arquivo": "Tutorial Gerar Saldo de Compra, Referência Pedido de Compra, Relatório de Produtos Vendidos, Relatório de Promoção, Cadastro de Tributação em Lote e Log Grupo de Tributação do Produto.pdf",
+   "categoria": "compras",
+   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20Gerar%20Saldo%20de%20Compra%2C%20Refer%C3%AAncia%20Pedido%20de%20Compra%2C%20Relat%C3%B3rio%20de%20Produtos%20Vendidos%2C%20Relat%C3%B3rio%20de%20Promo%C3%A7%C3%A3o%2C%20Cadastro%20de%20Tributa%C3%A7%C3%A3o%20em%20Lote%20e%20Log%20Grupo%20de%20Tributa%C3%A7%C3%A3o%20do%20Produto.pdf"
+  },
+  {
+   "nome": "Tutorial Gerar Saldo de Compra, Referência Pedido de Compra, Relatório de Produtos Vendidos, Relatório de Promoção, Cadastro de Tributação em Lote e Log Grupo de Tributação do Produto",
+   "arquivo": "Tutorial Gerar Saldo de Compra, Referência Pedido de Compra, Relatório de Produtos Vendidos, Relatório de Promoção, Cadastro de Tributação em Lote e Log Grupo de Tributação do Produto.pdf",
+   "categoria": "compras",
+   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20Gerar%20Saldo%20de%20Compra%2C%20Refer%C3%AAncia%20Pedido%20de%20Compra%2C%20Relat%C3%B3rio%20de%20Produtos%20Vendidos%2C%20Relat%C3%B3rio%20de%20Promo%C3%A7%C3%A3o%2C%20Cadastro%20de%20Tributa%C3%A7%C3%A3o%20em%20Lote%20e%20Log%20Grupo%20de%20Tributa%C3%A7%C3%A3o%20do%20Produto.pdf"
+  },
+  {
+   "nome": "Tutorial Instalação PDV",
+   "arquivo": "Tutorial Instalação PDV.docx",
+   "categoria": "pdv",
+   "url": "https://api.arara-tech.com/h/doc-apoio-3/PDF%20documentacao/Tutorial%20Instala%C3%A7%C3%A3o%20PDV.docx"
+  },
+  {
+   "nome": "Tutorial Integração do Imendes.",
+   "arquivo": "Tutorial Integração do Imendes..pdf",
+   "categoria": "integracoes",
+   "url": "https://api.arara-tech.com/h/doc-apoio-3/PDF%20documentacao/Tutorial%20Integra%C3%A7%C3%A3o%20do%20Imendes..pdf"
+  },
+  {
+   "nome": "Tutorial Integração do Imendes.",
+   "arquivo": "Tutorial Integração do Imendes..pdf",
+   "categoria": "integracoes",
+   "url": "https://api.arara-tech.com/h/doc-apoio-3/PDF%20documentacao/Tutorial%20Integra%C3%A7%C3%A3o%20do%20Imendes..pdf"
+  },
+  {
+   "nome": "Tutorial Inventário e Bloco K",
+   "arquivo": "Tutorial Inventário e Bloco K.pdf",
+   "categoria": "estoque",
+   "url": "https://api.arara-tech.com/h/doc-apoio/PDF%20documentacao/Tutorial%20Invent%C3%A1rio%20e%20Bloco%20K.pdf"
+  },
+  {
+   "nome": "Tutorial Inventário e Bloco K",
+   "arquivo": "Tutorial Inventário e Bloco K.pdf",
+   "categoria": "estoque",
+   "url": "https://api.arara-tech.com/h/doc-apoio/PDF%20documentacao/Tutorial%20Invent%C3%A1rio%20e%20Bloco%20K.pdf"
+  },
+  {
+   "nome": "Tutorial NF-e Devolução",
+   "arquivo": "Tutorial NF-e Devolução.pdf",
+   "categoria": "nfe",
+   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20NF-e%20Devolu%C3%A7%C3%A3o.pdf"
+  },
+  {
+   "nome": "Tutorial NF-e Devolução com  Digitação de pedido",
+   "arquivo": "Tutorial NF-e Devolução com  Digitação de pedido.pdf",
+   "categoria": "nfe",
+   "url": "https://api.arara-tech.com/h/doc-apoio/PDF%20documentacao/Tutorial%20NF-e%20Devolu%C3%A7%C3%A3o%20com%20%20Digita%C3%A7%C3%A3o%20de%20pedido.pdf"
+  },
+  {
+   "nome": "Tutorial Novo Módulo de Compras",
+   "arquivo": "Tutorial Novo Módulo de Compras.pdf",
+   "categoria": "compras",
+   "url": "https://api.arara-tech.com/h/doc-apoio-3/PDF%20documentacao/Tutorial%20Novo%20M%C3%B3dulo%20de%20Compras.pdf"
+  },
+  {
+   "nome": "Tutorial Novo Módulo de Compras",
+   "arquivo": "Tutorial Novo Módulo de Compras.pdf",
+   "categoria": "compras",
+   "url": "https://api.arara-tech.com/h/doc-apoio-3/PDF%20documentacao/Tutorial%20Novo%20M%C3%B3dulo%20de%20Compras.pdf"
+  },
+  {
+   "nome": "Tutorial Novo Módulo de Compras, Títulos por parceria filtro Matriz, Download Inutilização em Lote e Filtro venda PDV Vendas por Empresas e por Grupo de Produtos",
+   "arquivo": "Tutorial Novo Módulo de Compras, Títulos por parceria filtro Matriz, Download Inutilização em Lote e Filtro venda PDV Vendas por Empresas e por Grupo de Produtos.pdf",
+   "categoria": "compras",
+   "url": "https://api.arara-tech.com/h/doc-apoio/PDF%20documentacao/Tutorial%20Novo%20M%C3%B3dulo%20de%20Compras%2C%20T%C3%ADtulos%20por%20parceria%20filtro%20Matriz%2C%20Download%20Inutiliza%C3%A7%C3%A3o%20em%20Lote%20e%20Filtro%20venda%20PDV%20Vendas%20por%20Empresas%20e%20por%20Grupo%20de%20Produtos.pdf"
+  },
+  {
+   "nome": "Tutorial Novo Módulo de Compras, Títulos por parceria filtro Matriz, Download Inutilização em Lote e Filtro venda PDV Vendas por Empresas e por Grupo de Produtos",
+   "arquivo": "Tutorial Novo Módulo de Compras, Títulos por parceria filtro Matriz, Download Inutilização em Lote e Filtro venda PDV Vendas por Empresas e por Grupo de Produtos.pdf",
+   "categoria": "compras",
+   "url": "https://api.arara-tech.com/h/doc-apoio/PDF%20documentacao/Tutorial%20Novo%20M%C3%B3dulo%20de%20Compras%2C%20T%C3%ADtulos%20por%20parceria%20filtro%20Matriz%2C%20Download%20Inutiliza%C3%A7%C3%A3o%20em%20Lote%20e%20Filtro%20venda%20PDV%20Vendas%20por%20Empresas%20e%20por%20Grupo%20de%20Produtos.pdf"
+  },
+  {
+   "nome": "Tutorial para Alteração de Senha",
+   "arquivo": "Tutorial para Alteração de Senha.pdf",
+   "categoria": "acessos",
+   "url": "https://api.arara-tech.com/h/doc-apoio-2/PDF%20documentacao/Tutorial%20para%20Altera%C3%A7%C3%A3o%20de%20Senha.pdf"
+  },
+  {
+   "nome": "Tutorial para Alteração de Senha",
+   "arquivo": "Tutorial para Alteração de Senha.pdf",
+   "categoria": "acessos",
+   "url": "https://api.arara-tech.com/h/doc-apoio-2/PDF%20documentacao/Tutorial%20para%20Altera%C3%A7%C3%A3o%20de%20Senha.pdf"
+  },
+  {
+   "nome": "Tutorial para Criar Grupos de Acesso",
+   "arquivo": "Tutorial para Criar Grupos de Acesso.pdf",
+   "categoria": "acessos",
+   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20para%20Criar%20Grupos%20de%20Acesso.pdf"
+  },
+  {
+   "nome": "Tutorial para Criar Grupos de Acesso",
+   "arquivo": "Tutorial para Criar Grupos de Acesso.pdf",
+   "categoria": "acessos",
+   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20para%20Criar%20Grupos%20de%20Acesso.pdf"
+  },
+  {
+   "nome": "Tutorial para Criar o Cadastro de Usuários",
+   "arquivo": "Tutorial para Criar o Cadastro de Usuários.pdf",
+   "categoria": "acessos",
+   "url": "https://api.arara-tech.com/h/doc-apoio-3/PDF%20documentacao/Tutorial%20para%20Criar%20o%20Cadastro%20de%20Usu%C3%A1rios.pdf"
+  },
+  {
+   "nome": "Tutorial para Criar o Cadastro de Usuários",
+   "arquivo": "Tutorial para Criar o Cadastro de Usuários.pdf",
+   "categoria": "acessos",
+   "url": "https://api.arara-tech.com/h/doc-apoio-3/PDF%20documentacao/Tutorial%20para%20Criar%20o%20Cadastro%20de%20Usu%C3%A1rios.pdf"
+  },
+  {
+   "nome": "Tutorial para desativar o acesso de Usuários",
+   "arquivo": "Tutorial para desativar o acesso de Usuários.pdf",
+   "categoria": "acessos",
+   "url": "https://api.arara-tech.com/h/doc-apoio/PDF%20documentacao/Tutorial%20para%20desativar%20o%20acesso%20de%20Usu%C3%A1rios.pdf"
+  },
+  {
+   "nome": "Tutorial para desativar o acesso de Usuários",
+   "arquivo": "Tutorial para desativar o acesso de Usuários.pdf",
+   "categoria": "acessos",
+   "url": "https://api.arara-tech.com/h/doc-apoio/PDF%20documentacao/Tutorial%20para%20desativar%20o%20acesso%20de%20Usu%C3%A1rios.pdf"
+  },
+  {
+   "nome": "Tutorial para Editar as Permissões do Grupo de Acessos",
+   "arquivo": "Tutorial para Editar as Permissões do Grupo de Acessos.pdf",
+   "categoria": "acessos",
+   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20para%20Editar%20as%20Permiss%C3%B5es%20do%20Grupo%20de%20Acessos.pdf"
+  },
+  {
+   "nome": "Tutorial para Editar as Permissões do Grupo de Acessos",
+   "arquivo": "Tutorial para Editar as Permissões do Grupo de Acessos.pdf",
+   "categoria": "acessos",
+   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20para%20Editar%20as%20Permiss%C3%B5es%20do%20Grupo%20de%20Acessos.pdf"
+  },
+  {
+   "nome": "Tutorial para Editar as Permissões Herdadas do Grupo de Acessos",
+   "arquivo": "Tutorial para Editar as Permissões Herdadas do Grupo de Acessos.pdf",
+   "categoria": "acessos",
+   "url": "https://api.arara-tech.com/h/doc-apoio-2/PDF%20documentacao/Tutorial%20para%20Editar%20as%20Permiss%C3%B5es%20Herdadas%20do%20Grupo%20de%20Acessos.pdf"
+  },
+  {
+   "nome": "Tutorial para Editar as Permissões Herdadas do Grupo de Acessos",
+   "arquivo": "Tutorial para Editar as Permissões Herdadas do Grupo de Acessos.pdf",
+   "categoria": "acessos",
+   "url": "https://api.arara-tech.com/h/doc-apoio-2/PDF%20documentacao/Tutorial%20para%20Editar%20as%20Permiss%C3%B5es%20Herdadas%20do%20Grupo%20de%20Acessos.pdf"
+  },
+  {
+   "nome": "Tutorial para Editar o Acesso à Retaguarda SGC",
+   "arquivo": "Tutorial para Editar o Acesso à Retaguarda SGC.pdf",
+   "categoria": "acessos",
+   "url": "https://api.arara-tech.com/h/doc-apoio-3/PDF%20documentacao/Tutorial%20para%20Editar%20o%20Acesso%20%C3%A0%20Retaguarda%20SGC.pdf"
+  },
+  {
+   "nome": "Tutorial para Editar o Acesso à Retaguarda SGC",
+   "arquivo": "Tutorial para Editar o Acesso à Retaguarda SGC.pdf",
+   "categoria": "acessos",
+   "url": "https://api.arara-tech.com/h/doc-apoio-3/PDF%20documentacao/Tutorial%20para%20Editar%20o%20Acesso%20%C3%A0%20Retaguarda%20SGC.pdf"
+  },
+  {
+   "nome": "Tutorial para efetuar a consulta de Pedidos de Venda",
+   "arquivo": "Tutorial para efetuar a consulta de Pedidos de Venda.pdf",
+   "categoria": "sgc",
+   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20para%20efetuar%20a%20consulta%20de%20Pedidos%20de%20Venda.pdf"
+  },
+  {
+   "nome": "Tutorial para Inserir Permissões Herdadas no Grupo de Acessos",
+   "arquivo": "Tutorial para Inserir Permissões Herdadas no Grupo de Acessos.pdf",
+   "categoria": "acessos",
+   "url": "https://api.arara-tech.com/h/doc-apoio-3/PDF%20documentacao/Tutorial%20para%20Inserir%20Permiss%C3%B5es%20Herdadas%20no%20Grupo%20de%20Acessos.pdf"
+  },
+  {
+   "nome": "Tutorial para Inserir Permissões Herdadas no Grupo de Acessos",
+   "arquivo": "Tutorial para Inserir Permissões Herdadas no Grupo de Acessos.pdf",
+   "categoria": "acessos",
+   "url": "https://api.arara-tech.com/h/doc-apoio-3/PDF%20documentacao/Tutorial%20para%20Inserir%20Permiss%C3%B5es%20Herdadas%20no%20Grupo%20de%20Acessos.pdf"
+  },
+  {
+   "nome": "Tutorial para Inserir Permissões no Grupo de Acessos",
+   "arquivo": "Tutorial para Inserir Permissões no Grupo de Acessos.pdf",
+   "categoria": "acessos",
+   "url": "https://api.arara-tech.com/h/doc-apoio-2/PDF%20documentacao/Tutorial%20para%20Inserir%20Permiss%C3%B5es%20no%20Grupo%20de%20Acessos.pdf"
+  },
+  {
+   "nome": "Tutorial para Inserir Permissões no Grupo de Acessos",
+   "arquivo": "Tutorial para Inserir Permissões no Grupo de Acessos.pdf",
+   "categoria": "acessos",
+   "url": "https://api.arara-tech.com/h/doc-apoio-2/PDF%20documentacao/Tutorial%20para%20Inserir%20Permiss%C3%B5es%20no%20Grupo%20de%20Acessos.pdf"
+  },
+  {
+   "nome": "Tutorial para Liberar o acesso ao PDV",
+   "arquivo": "Tutorial para Liberar o acesso ao PDV.pdf",
+   "categoria": "acessos",
+   "url": "https://api.arara-tech.com/h/doc-apoio-2/PDF%20documentacao/Tutorial%20para%20Liberar%20o%20acesso%20ao%20PDV.pdf"
+  },
+  {
+   "nome": "Tutorial para Liberar o acesso ao PDV",
+   "arquivo": "Tutorial para Liberar o acesso ao PDV.pdf",
+   "categoria": "acessos",
+   "url": "https://api.arara-tech.com/h/doc-apoio-2/PDF%20documentacao/Tutorial%20para%20Liberar%20o%20acesso%20ao%20PDV.pdf"
+  },
+  {
+   "nome": "Tutorial para Liberar o acesso à Retaguarda SGC",
+   "arquivo": "Tutorial para Liberar o acesso à Retaguarda SGC.pdf",
+   "categoria": "acessos",
+   "url": "https://api.arara-tech.com/h/doc-apoio/PDF%20documentacao/Tutorial%20para%20Liberar%20o%20acesso%20%C3%A0%20Retaguarda%20SGC.pdf"
+  },
+  {
+   "nome": "Tutorial para Liberar o acesso à Retaguarda SGC",
+   "arquivo": "Tutorial para Liberar o acesso à Retaguarda SGC.pdf",
+   "categoria": "acessos",
+   "url": "https://api.arara-tech.com/h/doc-apoio/PDF%20documentacao/Tutorial%20para%20Liberar%20o%20acesso%20%C3%A0%20Retaguarda%20SGC.pdf"
+  },
+  {
+   "nome": "Tutorial para Remover as Permissões do Grupo de Acessos",
+   "arquivo": "Tutorial para Remover as Permissões do Grupo de Acessos.pdf",
+   "categoria": "acessos",
+   "url": "https://api.arara-tech.com/h/doc-apoio-2/PDF%20documentacao/Tutorial%20para%20Remover%20as%20Permiss%C3%B5es%20do%20Grupo%20de%20Acessos.pdf"
+  },
+  {
+   "nome": "Tutorial para Remover as Permissões do Grupo de Acessos",
+   "arquivo": "Tutorial para Remover as Permissões do Grupo de Acessos.pdf",
+   "categoria": "acessos",
+   "url": "https://api.arara-tech.com/h/doc-apoio-2/PDF%20documentacao/Tutorial%20para%20Remover%20as%20Permiss%C3%B5es%20do%20Grupo%20de%20Acessos.pdf"
+  },
+  {
+   "nome": "Tutorial para Remover as Permissões Herdadas do Grupo de Acessos",
+   "arquivo": "Tutorial para Remover as Permissões Herdadas do Grupo de Acessos.pdf",
+   "categoria": "acessos",
+   "url": "https://api.arara-tech.com/h/doc-apoio-3/PDF%20documentacao/Tutorial%20para%20Remover%20as%20Permiss%C3%B5es%20Herdadas%20do%20Grupo%20de%20Acessos.pdf"
+  },
+  {
+   "nome": "Tutorial para Remover as Permissões Herdadas do Grupo de Acessos",
+   "arquivo": "Tutorial para Remover as Permissões Herdadas do Grupo de Acessos.pdf",
+   "categoria": "acessos",
+   "url": "https://api.arara-tech.com/h/doc-apoio-3/PDF%20documentacao/Tutorial%20para%20Remover%20as%20Permiss%C3%B5es%20Herdadas%20do%20Grupo%20de%20Acessos.pdf"
+  },
+  {
+   "nome": "Tutorial Pedido de Compra",
+   "arquivo": "Tutorial Pedido de Compra.pdf",
+   "categoria": "compras",
+   "url": "https://api.arara-tech.com/h/doc-apoio-3/PDF%20documentacao/Tutorial%20Pedido%20de%20Compra.pdf"
+  },
+  {
+   "nome": "Tutorial Pedido de Compra",
+   "arquivo": "Tutorial Pedido de Compra.pdf",
+   "categoria": "compras",
+   "url": "https://api.arara-tech.com/h/doc-apoio-3/PDF%20documentacao/Tutorial%20Pedido%20de%20Compra.pdf"
+  },
+  {
+   "nome": "Tutorial Pedido de compra CD",
+   "arquivo": "Tutorial Pedido de compra CD.pdf",
+   "categoria": "compras",
+   "url": "https://api.arara-tech.com/h/doc-apoio-2/PDF%20documentacao/Tutorial%20Pedido%20de%20compra%20CD.pdf"
+  },
+  {
+   "nome": "Tutorial Pedido de compra CD",
+   "arquivo": "Tutorial Pedido de compra CD.pdf",
+   "categoria": "compras",
+   "url": "https://api.arara-tech.com/h/doc-apoio-2/PDF%20documentacao/Tutorial%20Pedido%20de%20compra%20CD.pdf"
+  },
+  {
+   "nome": "Tutorial Permissão de usuário",
+   "arquivo": "Tutorial Permissão de usuário.pdf",
+   "categoria": "acessos",
+   "url": "https://api.arara-tech.com/h/doc-apoio-3/PDF%20documentacao/Tutorial%20Permiss%C3%A3o%20de%20usu%C3%A1rio.pdf"
+  },
+  {
+   "nome": "Tutorial Produto x Fornecedor",
+   "arquivo": "Tutorial Produto x Fornecedor.pdf",
+   "categoria": "estoque",
+   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20Produto%20x%20Fornecedor.pdf"
+  },
+  {
+   "nome": "Tutorial Produto x Fornecedor",
+   "arquivo": "Tutorial Produto x Fornecedor.pdf",
+   "categoria": "compras",
+   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20Produto%20x%20Fornecedor.pdf"
+  },
+  {
+   "nome": "Tutorial Promoção com Desconto Manual",
+   "arquivo": "Tutorial Promoção com Desconto Manual.pdf",
+   "categoria": "promocoes",
+   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20Promo%C3%A7%C3%A3o%20com%20Desconto%20Manual.pdf"
+  },
+  {
+   "nome": "Tutorial Promoção com Desconto Manual",
+   "arquivo": "Tutorial Promoção com Desconto Manual.pdf",
+   "categoria": "promocoes",
+   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20Promo%C3%A7%C3%A3o%20com%20Desconto%20Manual.pdf"
+  },
+  {
+   "nome": "Tutorial Promoção com Desconto Manual, Sugestão de Compras sobre Vendas, Notificação Estoque Mínimo e Cadastro Markup",
+   "arquivo": "Tutorial Promoção com Desconto Manual, Sugestão de Compras sobre Vendas, Notificação Estoque Mínimo e Cadastro Markup.pdf",
+   "categoria": "promocoes",
+   "url": "https://api.arara-tech.com/h/doc-apoio-3/PDF%20documentacao/Tutorial%20Promo%C3%A7%C3%A3o%20com%20Desconto%20Manual%2C%20Sugest%C3%A3o%20de%20Compras%20sobre%20Vendas%2C%20Notifica%C3%A7%C3%A3o%20Estoque%20M%C3%ADnimo%20e%20Cadastro%20Markup.pdf"
+  },
+  {
+   "nome": "Tutorial Promoção com Desconto Manual, Sugestão de Compras sobre Vendas, Notificação Estoque Mínimo e Cadastro Markup",
+   "arquivo": "Tutorial Promoção com Desconto Manual, Sugestão de Compras sobre Vendas, Notificação Estoque Mínimo e Cadastro Markup.pdf",
+   "categoria": "promocoes",
+   "url": "https://api.arara-tech.com/h/doc-apoio-3/PDF%20documentacao/Tutorial%20Promo%C3%A7%C3%A3o%20com%20Desconto%20Manual%2C%20Sugest%C3%A3o%20de%20Compras%20sobre%20Vendas%2C%20Notifica%C3%A7%C3%A3o%20Estoque%20M%C3%ADnimo%20e%20Cadastro%20Markup.pdf"
+  },
+  {
+   "nome": "Tutorial Promoção Combo",
+   "arquivo": "Tutorial Promoção Combo.pdf",
+   "categoria": "promocoes",
+   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20Promo%C3%A7%C3%A3o%20Combo.pdf"
+  },
+  {
+   "nome": "Tutorial Promoção Combo",
+   "arquivo": "Tutorial Promoção Combo.pdf",
+   "categoria": "promocoes",
+   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20Promo%C3%A7%C3%A3o%20Combo.pdf"
+  },
+  {
+   "nome": "Tutorial Promoções",
+   "arquivo": "Tutorial Promoções.pdf",
+   "categoria": "promocoes",
+   "url": "https://api.arara-tech.com/h/doc-apoio/PDF%20documentacao/Tutorial%20Promo%C3%A7%C3%B5es.pdf"
+  },
+  {
+   "nome": "Tutorial Promoções",
+   "arquivo": "Tutorial Promoções.pdf",
+   "categoria": "promocoes",
+   "url": "https://api.arara-tech.com/h/doc-apoio/PDF%20documentacao/Tutorial%20Promo%C3%A7%C3%B5es.pdf"
+  },
+  {
+   "nome": "Tutorial Quantidade de compra e venda no pedido de compra, DF-e Verificada, Sugestão de Preços e Insersão de Custo Retroativo",
+   "arquivo": "Tutorial Quantidade de compra e venda no pedido de compra, DF-e Verificada, Sugestão de Preços e Insersão de Custo Retroativo.pdf",
+   "categoria": "compras",
+   "url": "https://api.arara-tech.com/h/doc-apoio-2/PDF%20documentacao/Tutorial%20Quantidade%20de%20compra%20e%20venda%20no%20pedido%20de%20compra%2C%20DF-e%20Verificada%2C%20Sugest%C3%A3o%20de%20Pre%C3%A7os%20e%20Insers%C3%A3o%20de%20Custo%20Retroativo.pdf"
+  },
+  {
+   "nome": "Tutorial Quantidade de compra e venda no pedido de compra, DF-e Verificada, Sugestão de Preços e Insersão de Custo Retroativo",
+   "arquivo": "Tutorial Quantidade de compra e venda no pedido de compra, DF-e Verificada, Sugestão de Preços e Insersão de Custo Retroativo.pdf",
+   "categoria": "compras",
+   "url": "https://api.arara-tech.com/h/doc-apoio-2/PDF%20documentacao/Tutorial%20Quantidade%20de%20compra%20e%20venda%20no%20pedido%20de%20compra%2C%20DF-e%20Verificada%2C%20Sugest%C3%A3o%20de%20Pre%C3%A7os%20e%20Insers%C3%A3o%20de%20Custo%20Retroativo.pdf"
+  },
+  {
+   "nome": "Tutorial Relatório de Cadastro de Produtos",
+   "arquivo": "Tutorial Relatório de Cadastro de Produtos.pdf",
+   "categoria": "relatorios",
+   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20Relat%C3%B3rio%20de%20Cadastro%20de%20Produtos.pdf"
+  },
+  {
+   "nome": "Tutorial Relatório de Cadastro de Produtos",
+   "arquivo": "Tutorial Relatório de Cadastro de Produtos.pdf",
+   "categoria": "relatorios",
+   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20Relat%C3%B3rio%20de%20Cadastro%20de%20Produtos.pdf"
+  },
+  {
+   "nome": "Tutorial Relatório de Vendas por Empresa e Vendas por Grupo de Produtos",
+   "arquivo": "Tutorial Relatório de Vendas por Empresa e Vendas por Grupo de Produtos.pdf",
+   "categoria": "relatorios",
+   "url": "https://api.arara-tech.com/h/doc-apoio-2/PDF%20documentacao/Tutorial%20Relat%C3%B3rio%20de%20Vendas%20por%20Empresa%20e%20Vendas%20por%20Grupo%20de%20Produtos.pdf"
+  },
+  {
+   "nome": "Tutorial Relatório de Vendas por Empresa e Vendas por Grupo de Produtos",
+   "arquivo": "Tutorial Relatório de Vendas por Empresa e Vendas por Grupo de Produtos.pdf",
+   "categoria": "relatorios",
+   "url": "https://api.arara-tech.com/h/doc-apoio-2/PDF%20documentacao/Tutorial%20Relat%C3%B3rio%20de%20Vendas%20por%20Empresa%20e%20Vendas%20por%20Grupo%20de%20Produtos.pdf"
+  },
+  {
+   "nome": "Tutorial Remaza Tabela de Preços",
+   "arquivo": "Tutorial Remaza Tabela de Preços.pdf",
+   "categoria": "sgc",
+   "url": "https://api.arara-tech.com/h/doc-apoio/PDF%20documentacao/Tutorial%20Remaza%20Tabela%20de%20Pre%C3%A7os.pdf"
+  },
+  {
+   "nome": "Tutorial Remaza Tabela de Preços",
+   "arquivo": "Tutorial Remaza Tabela de Preços.pdf",
+   "categoria": "sgc",
+   "url": "https://api.arara-tech.com/h/doc-apoio/PDF%20documentacao/Tutorial%20Remaza%20Tabela%20de%20Pre%C3%A7os.pdf"
+  },
+  {
+   "nome": "Tutorial Sangria e Reimpressão Cupom de Troca",
+   "arquivo": "Tutorial Sangria e Reimpressão Cupom de Troca.pdf",
+   "categoria": "pdv",
+   "url": "https://api.arara-tech.com/h/doc-apoio-3/PDF%20documentacao/Tutorial%20Sangria%20e%20Reimpress%C3%A3o%20Cupom%20de%20Troca.pdf"
+  },
+  {
+   "nome": "Tutorial Sangria e Reimpressão Cupom de Troca",
+   "arquivo": "Tutorial Sangria e Reimpressão Cupom de Troca.pdf",
+   "categoria": "pdv",
+   "url": "https://api.arara-tech.com/h/doc-apoio-3/PDF%20documentacao/Tutorial%20Sangria%20e%20Reimpress%C3%A3o%20Cupom%20de%20Troca.pdf"
+  },
+  {
+   "nome": "Tutorial Transferência entre lojas",
+   "arquivo": "Tutorial Transferência entre lojas.pdf",
+   "categoria": "estoque",
+   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20Transfer%C3%AAncia%20entre%20lojas.pdf"
+  },
+  {
+   "nome": "Tutorial Transferência entre lojas",
+   "arquivo": "Tutorial Transferência entre lojas.pdf",
+   "categoria": "estoque",
+   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20Transfer%C3%AAncia%20entre%20lojas.pdf"
+  },
+  {
+   "nome": "Tutorial Troca de senha",
+   "arquivo": "Tutorial Troca de senha.pdf",
+   "categoria": "acessos",
+   "url": "https://api.arara-tech.com/h/doc-apoio/PDF%20documentacao/Tutorial%20Troca%20de%20senha.pdf"
+  },
+  {
+   "nome": "Tutorial Troca de senha",
+   "arquivo": "Tutorial Troca de senha.pdf",
+   "categoria": "acessos",
+   "url": "https://api.arara-tech.com/h/doc-apoio/PDF%20documentacao/Tutorial%20Troca%20de%20senha.pdf"
+  },
+  {
+   "nome": "Tutorial Vale Funcionário",
+   "arquivo": "Tutorial Vale Funcionário.pdf",
+   "categoria": "financeiro",
+   "url": "https://api.arara-tech.com/h/doc-apoio/PDF%20documentacao/Tutorial%20Vale%20Funcion%C3%A1rio.pdf"
+  },
+  {
+   "nome": "Tutorial Vale Funcionário",
+   "arquivo": "Tutorial Vale Funcionário.pdf",
+   "categoria": "financeiro",
+   "url": "https://api.arara-tech.com/h/doc-apoio/PDF%20documentacao/Tutorial%20Vale%20Funcion%C3%A1rio.pdf"
+  },
+  {
+   "nome": "Tutorial Vale Funcionário, Emissão CF-e, Distribuição DF-e, Cadastro pelo Xml e Distribuição Entre Setores",
+   "arquivo": "Tutorial Vale Funcionário, Emissão CF-e, Distribuição DF-e, Cadastro pelo Xml e Distribuição Entre Setores.pdf",
+   "categoria": "financeiro",
+   "url": "https://api.arara-tech.com/h/doc-apoio/PDF%20documentacao/Tutorial%20Vale%20Funcion%C3%A1rio%2C%20Emiss%C3%A3o%20CF-e%2C%20Distribui%C3%A7%C3%A3o%20DF-e%2C%20Cadastro%20pelo%20Xml%20e%20Distribui%C3%A7%C3%A3o%20Entre%20Setores.pdf"
+  },
+  {
+   "nome": "Tutorial Vale Funcionário, Emissão CF-e, Distribuição DF-e, Cadastro pelo Xml e Distribuição Entre Setores",
+   "arquivo": "Tutorial Vale Funcionário, Emissão CF-e, Distribuição DF-e, Cadastro pelo Xml e Distribuição Entre Setores.pdf",
+   "categoria": "financeiro",
+   "url": "https://api.arara-tech.com/h/doc-apoio/PDF%20documentacao/Tutorial%20Vale%20Funcion%C3%A1rio%2C%20Emiss%C3%A3o%20CF-e%2C%20Distribui%C3%A7%C3%A3o%20DF-e%2C%20Cadastro%20pelo%20Xml%20e%20Distribui%C3%A7%C3%A3o%20Entre%20Setores.pdf"
+  },
+  {
+   "nome": "Tutorial Vendas Casadas e Apuração do Resultado Operacional",
+   "arquivo": "Tutorial Vendas Casadas e Apuração do Resultado Operacional.pdf",
+   "categoria": "relatorios",
+   "url": "https://api.arara-tech.com/h/doc-apoio-2/PDF%20documentacao/Tutorial%20Vendas%20Casadas%20e%20Apura%C3%A7%C3%A3o%20do%20Resultado%20Operacional.pdf"
+  },
+  {
+   "nome": "Tutorial Vendas Casadas e Apuração do Resultado Operacional",
+   "arquivo": "Tutorial Vendas Casadas e Apuração do Resultado Operacional.pdf",
+   "categoria": "relatorios",
+   "url": "https://api.arara-tech.com/h/doc-apoio-2/PDF%20documentacao/Tutorial%20Vendas%20Casadas%20e%20Apura%C3%A7%C3%A3o%20do%20Resultado%20Operacional.pdf"
+  },
+  {
+   "nome": "Tutorial Zerar Estoque",
+   "arquivo": "Tutorial Zerar Estoque.pdf",
+   "categoria": "estoque",
+   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20Zerar%20Estoque.pdf"
+  },
+  {
+   "nome": "Tutorial Zerar Estoque",
+   "arquivo": "Tutorial Zerar Estoque.pdf",
+   "categoria": "estoque",
+   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20Zerar%20Estoque.pdf"
+  },
+  {
+   "nome": "Tutotial PDV",
+   "arquivo": "Tutotial PDV.pdf",
+   "categoria": "pdv",
+   "url": "https://api.arara-tech.com/h/doc-apoio-2/PDF%20documentacao/Tutotial%20PDV.pdf"
+  }
+ ],
+ "secoes": [
+  {
+   "titulo": "Configuração NF-e",
+   "texto": "A configuração de NF-e requer atenção aos detalhes do certificado digital e das configurações do servidor. O processo inclui validação de alíquotas e configuração de séries.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Problemas no PDV",
+   "texto": "Erros comuns no PDV incluem problemas de comunicação com a balança, falhas na impressora fiscal e dificuldades com o SAT. Verifique sempre as configurações de rede.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Manual de Atendimentos",
+   "texto": "O manual de atendimentos padronizados ajuda a manter a qualidade do suporte. Inclui scripts para problemas comuns e procedimentos de escalonamento.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Configuração de Impressoras",
+   "texto": "A configuração de impressoras térmicas requer atenção ao modelo específico e ao driver correto. Verifique sempre o tamanho do papel e a configuração de portas.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Acesso Remoto",
+   "texto": "Para acesso remoto utilize as ferramentas autorizadas como Anydesk ou TeamViewer. Mantenha sempre as senhas atualizadas e o acesso registrado.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Dados da Empresa - Pessoa Física",
+   "texto": "Pessoa Física (CPF) SP: Tipo mercado: Mercado Interno, Contribuição ICMS: Isento, Regime Tributário: Simples Nacional, Alíquota ICMS: 18%, CNAE: 4751201, CRT: 1, Inscrição Estadual: Isento, Inscrição Municipal: 41236876",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Dados da Empresa - Pessoa Jurídica",
+   "texto": "Pessoa Jurídica (CNPJ) SP: Tipo mercado: Mercado Interno, Contribuição ICMS: Contribuinte, Regime Tributário: Regime Normal, Alíquota ICMS: 18%, CNAE: 4751201, CRT: 3, Inscrição Estadual: 110042232115, Inscrição Municipal: 41236876",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Informações de Suporte",
+   "texto": "Suporte Técnico: Email: suporte@araratech.com, Telefone: (11) 4002-8922, Horário: Seg-Sex 8h-18h, Contrato: Manutenção Preventiva e Corretiva, SLA: 4 horas para críticos",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Configurações de Certificado Digital",
+   "texto": "Certificado Digital: Emissor: Serasa, Validade: Anual, Tipo: A1, Instalação: Token ou Software, Renovação: 30 dias antes do vencimento, Backup: Recomendado mensalmente",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Informações de Backup",
+   "texto": "Backup: Frequência: Diário, Horário: 23h, Retenção: 30 dias, Tipo: Full + Incremental, Storage: Local + Nuvem, Senha Backup: [REDACTED], Teste Restauração: Mensal",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Pedido de Venda - PDV",
+   "texto": "Pedido de Venda: Para criar um pedido de venda, acesse o módulo PDV, selecione o cliente, adicione os produtos com quantidade e preço, configure as formas de pagamento (dinheiro, cartão, TEF), e finalize a venda. O sistema gera automaticamente o cupom fiscal.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "TEF - Transferência Eletrônica de Fundos",
+   "texto": "TEF: Configuração de TEF requer instalação do software da adquirente (Getnet, Stone, Rede), teste de comunicação com o PIN pad, configuração de taxas e parcelamento. Em caso de erro, verifique conexão de rede e certificado digital do TEF.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Cancelamento de Venda",
+   "texto": "Cancelamento de Venda: Para cancelar uma venda, vá em Consultas > Vendas, selecione o cupom fiscal desejado, clique em Cancelar e informe a justificativa. O cancelamento só é permitido no mesmo dia e requer autorização do supervisor.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Configuração de Impressora Fiscal",
+   "texto": "Impressora Fiscal: Configure a impressora fiscal em Configurações > Equipamentos > Impressora Fiscal. Verifique o modelo (Daruma, Bematech, Epson), porta de comunicação (USB, Serial), e realize um teste de impressão. Mantenha o papel sempre alinhado.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Balança Eletrônica",
+   "texto": "Balança Eletrônica: Configure a balança em Configurações > Equipamentos > Balança. Informe o modelo (Toledo, Filizola), porta de comunicação, e realize teste de pesagem. Calibre a balança semanalmente e verifique a bateria do transmissor.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "SAT - Sistema Autentificador de Transmissão",
+   "texto": "SAT: O SAT deve ser configurado com o certificado digital da empresa, código ativação, e assinatura do contribuinte. Teste a comunicação com a SEFAZ regularmente. Em caso de erro, verifique data/hora do PDV e conexão com o equipamento SAT.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Formas de Pagamento",
+   "texto": "Formas de Pagamento: Dinheiro, Cartão de Crédito, Cartão de Débito, TEF, PIX, Vale Alimentação, Vale Refeição, Crediário. Configure taxas e parcelas em Configurações > Financeiro. Para TEF, mantenha o PIN pad sempre online.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Cadastro de Clientes",
+   "texto": "Cadastro de Clientes: Para cadastrar cliente, vá em Cadastros > Clientes, informe CPF/CNPJ, nome completo, endereço, telefone e dados de contato. Para PJ, adicione inscrição estadual e dados do responsável. O sistema valida o CPF/CNPJ automaticamente.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Cadastro de Produtos",
+   "texto": "Cadastro de Produtos: Informe código, descrição, unidade, preço de venda, custo, estoque mínimo e máximo, e código NCM. Para produtos controlados, adicione registro na ANVISA. Configure tributação (ICMS, PIS, COFINS) em Configurações > Tributos.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Relatórios de Vendas",
+   "texto": "Relatórios: Acesse Relatórios > Vendas para gerar relatório de vendas por período, por vendedor, por produto, ou por forma de pagamento. Exporte para Excel ou PDF. O relatório mostra total vendido, impostos e lucratividade.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Fechamento de Caixa",
+   "texto": "Fechamento de Caixa: Ao final do dia, realize o fechamento de caixa em Administração > Fechamento. O sistema apresenta total de vendas, sangrias, suprimentos e conferência de valores. Imprima o relatório e arquive com o dinheiro.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Integração com SGC",
+   "texto": "Integração SGC: O PDV integra com o sistema de gestão SGC para atualização de estoque em tempo real, cadastros compartilhados e relatórios unificados. Configure a conexão em Configurações > Integração > SGC.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Caracteres Especiais - XML",
+   "texto": "Caracteres especiais podem causar erros de esquema XML: < > . * : ^ + \\ \" ' , @ % ; também podem causar problemas. Evite usar caracteres especiais em nomes de produtos e descrições.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "SGI - Pedido de Venda - Lojão Orrú",
+   "texto": "SGI Pedido de Venda Lojão Orrú: Conversão: quantidade de embalagens (ex: 12), Qtd: sempre 1, Conta administrativa: categoria, Conta simples: conta DRE, Qtd1: com nota (sai na nota), Qtd2: sem nota (não sai na nota).",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "TEF - POS - Estorno",
+   "texto": "TEF ou POS não realiza estorno parcial, apenas total. Para estornos, utilize a função completa do sistema TEF. Estornos parciais não são suportados pela maquininha.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Time Out - Manifesto SEFAZ",
+   "texto": "Time Out Manifesto: Erro é um retorno do Sefaz, ocorre por excesso de cliques (consumo do serviço de busca) ou instabilidade no Sefaz. Solução: Esperar e tentar novamente depois de algumas horas.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Relatórios - Classificação",
+   "texto": "Relatórios Classificação: Item excluído: cancelamento do item na venda (com comprovante assinado), Pedido Inutilizado: itens passados mas venda não concluída (sem comprovante), Pedido Cancelado: venda concluída e cancelada em seguida. Impressão no Cupom Fiscal: Nome/Razão Social.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Nota Fiscal - Tipo de Consumidor",
+   "texto": "Nota Fiscal Tipo de Consumidor: Pessoa Física (CPF): Consumidor Final, Não Contribuinte ICMS. Pessoa Jurídica (CNPJ) SP: Mercado Interno, Contribuinte ICMS. Escola/prefeitura: Isento ICMS. CFOP: 51,61,71 sem ST, 54,64,74 com ST, 592 inválido use 5929.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Nota Fiscal - Cancelamento",
+   "texto": "Cancelamento Nota Fiscal: Prazo 24h, pedido de venda deve ser cancelado também, não pode utilizar o mesmo número, nota de devolução cancela e gera outra com número diferente, pedido do PDV não precisa estornar. Cliente sem IE: selecione Isento de ICMS.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Curva ABC - Classificação de Produtos",
+   "texto": "Curva ABC: Sistema permite estoque negativo mas apresenta nos relatórios. Classificação: Letra A: 20% melhores produtos (bom lucro + bom movimento), Letra B: 60% intermediários (lucro razoável + volume menor), Letra C: 20% restantes (sem lucro + sem movimento). Interpretação: AA: Estoque A + Lucro A, BA: Estoque B + Lucro A.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Localizar Pedidos de Venda",
+   "texto": "Localizar Pedidos: Pelo código do produto: Relatórios → Estoque → Kardex → copiar número do documento → Movimento → Faturamento → Pedido de Venda → colar no campo código. Pelo TEF: Relatório → PDV → Relatório TEF → copiar pedido de venda → colar no campo. Pelo valor: Movimento → Financeiro → Lançamentos Financeiros → inserir data e valor → copiar número do documento.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Código de Desbloqueio PDV",
+   "texto": "Código Desbloqueio PDV: Quando aparecer tela de bloqueio, pressionar Abrir Gaveta ou F4, inserir código: 0Ph7HAAr. Este código libera o acesso ao sistema PDV quando bloqueado.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Reimpressão Sangria Suprimento PDV",
+   "texto": "Reimpressão Sangria/Suprimento PDV: Tela inicial do PDV → Movimento caixa → Reimpressão do último comprovante → será impresso última sangria ou suprimento realizado no caixa.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Contatos Suporte Técnico",
+   "texto": "Contatos Suporte: Suporte Técnico Tanca: Telefone e email disponíveis para assistência técnica. Suporte Skytef: Suporte especializado para equipamentos TEF e POS. Mantenha contatos atualizados para emergências.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Acessos e Senhas - Sistema Principal",
+   "texto": "Sistema Principal: Usuário e senha para acesso ao sistema principal. Verifique credenciais corretas para evitar bloqueios. Mantenha senhas atualizadas e seguras.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Rede e Comunicação - Acessos",
+   "texto": "Rede e Comunicação: WI-FI: [REDACTED], MIA: [REDACTED], Skype: [REDACTED], Novo: [REDACTED]",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "SAT e Outros - Configurações",
+   "texto": "SAT e Outros: Mazetto: Usuário teste, Senha [REDACTED]. SAT: [REDACTED], funções: desativa - bloqueia - vincula - reseta - ativa - associa - altera o cod de ativação.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "NSU Notinha Fiscal",
+   "texto": "NSU na notinha: Campo 'Compr: 628625259'. NSU é o número sequencial único da transação fiscal, usado para rastreamento e consulta de notas.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "CFOP - Código Fiscal de Operações",
+   "texto": "CFOP: 51, 61, 71: sem ST - grupo revenda origem 0 sit. 102 S/ST. 54, 64, 74: com ST - grupo revenda origem 0 sit. 102 C/ST. 592: inválido - o correto é 5929. CFOP errado causa rejeição na SEFAZ.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Estoque Negativo - Curva ABC",
+   "texto": "Estoque Negativo: Sistema permite estoque negativo mas apresenta nos relatórios para verificação e ajuste. Monitore regularmente produtos com estoque negativo para evitar problemas de venda.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Mazetto Link Vendedor - SGI",
+   "texto": "Mazetto Link Vendedor: Acesso via http://vendas.mazetto.com.br:58080/sgi/. Sistema de vendas específico para Mazetto com link de vendedor integrado.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Trello Suporte Plantão",
+   "texto": "Trello Suporte Plantão: Acesso via https://trello.com/b/peUmG4F8/suporte-plantão. Sistema de gestão de tarefas para equipe de suporte em plantão.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "WhatsApp Web",
+   "texto": "WhatsApp Web: Acesso via https://web.whatsapp.com/. Versão web do WhatsApp para comunicação com clientes e equipe.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "GPT - ChatGPT",
+   "texto": "GPT ChatGPT: Acesso via https://chat.openai.com/chat. Assistente de IA para auxílio em diversas tarefas e suporte técnico.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Gerador de CPFT",
+   "texto": "GPT ChatGPT: Acesso via https://www.4devs.com.br/gerador_de_cpf. Gerador de CPF.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Gemini - Google AI",
+   "texto": "Gemini Google AI: Acesso via https://gemini.google.com/app. Assistente de IA do Google para pesquisa e auxílio técnico.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Anydesk Clientes",
+   "texto": "Anydesk Clientes: Acesso via planilha Google Sheets. Lista de IDs e senhas de Anydesk para acesso remoto aos clientes. Palavras-chave: anydesk clientes, ids anydesk, senhas anydesk, acesso remoto, clientes, planilha, google sheets, conexao remota, suporte remoto.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Portal NF-e",
+   "texto": "Portal NF-e: Acesso via http://www.nfe.fazenda.gov.br/portal/consultaRecaptcha.aspx. Portal oficial para consulta de Notas Fiscais eletrônicas. Palavras-chave: portal nfe, www.nfe.fazenda.gov.br, consulta nfe, nota fiscal eletronica, portal oficial, validar nfe, sefaz federal.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Retaguarda SAT",
+   "texto": "Retaguarda SAT: Acesso via https://satsp.fazenda.sp.gov.br/COMSAT/Account/LoginSSL.aspx. Sistema da SEFAZ SP para gestão de SAT. Palavras-chave: retaguarda sat, satsp.fazenda.sp.gov.br, sefaz sp, gestao sat, sistema sat, login sat, administracao sat.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Ararati Aurock",
+   "texto": "Ararati Aurock: Acesso via https://ararati.aurock.com.br/login. Sistema de gestão integrado com recursos avançados. Palavras-chave: ararati aurock, aurock, gestao integrada, recursos avancados, sistema gestao, ararati.aurock.com.br, login aurock.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "CEST - Buscador",
+   "texto": "CEST: Acesso via http://www.buscacest.com.br/. Sistema para consulta de Código Especificador da Substituição Tributária. Palavras-chave: cest, buscacest, codigo especificador, substituicao tributaria, st, consulta cest, www.buscacest.com.br.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Downdetector - Status Serviços",
+   "texto": "Downdetector: Acesso via https://downdetector.com.br/. Sistema para verificação de status de serviços e internet. Palavras-chave: downdetector, status servicos, internet, queda, instabilidade, downdetector.com.br, verificar status, problemas conexao.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "NFC-e Consulta Pública",
+   "texto": "NFC-e Consulta Pública: Acesso via https://www.nfce.fazenda.sp.gov.br/NFCeConsultaPublica/Paginas/ConsultaPublica.aspx. Portal para consulta de NFC-e. Palavras-chave: nfce consulta publica, consulta nfce, fazenda sp, www.nfce.fazenda.sp.gov.br, portal consulta, nota fiscal eletronica, validar nota.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Webmail Ararati",
+   "texto": "Webmail Ararati: Acesso via https://webmail.ararati.com.br/. Sistema de e-mail corporativo para comunicação interna e externa. Palavras-chave: webmail, ararati, email corporativo, comunicacao, interna, externa, webmail.ararati.com.br.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Sistema de Pontos - Bater Ponto",
+   "texto": "Sistema de Pontos: Acesso via https://araratech-gestaodehoras.base44.app/login. Sistema para registro de ponto e gestão de horas trabalhadas. Palavras-chave: sistema pontos, bater ponto, registro ponto, horas trabalhadas, gestao horas, base44, araratech, ponto eletronico.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Google Drive Arquivos",
+   "texto": "Google Drive: Acesso via https://drive.google.com/drive/folders/1idJBr6esZe2ozWr84lXJPGMHGelbk3Be. Repositório de arquivos compartilhados da empresa. Palavras-chave: google drive, arquivos compartilhados, empresa, documentos, 1idJBr6esZe2ozWr84lXJPGMHGelbk3Be, repositorio, storage.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Acessos e Senhas - Sistema Principal Detalhado",
+   "texto": "Credenciais sistema principal: usuário [REDACTED], senha [REDACTED], [REDACTED], [REDACTED], [REDACTED], [REDACTED]. Acessos para diferentes módulos e configurações do sistema SGI/PDV. Palavras-chave: [REDACTED], [REDACTED], [REDACTED], [REDACTED], [REDACTED], [REDACTED], credenciais, login, senha, acesso sistema, usuario principal, autenticacao, modulo sgi, modulo pdv.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Rede e Comunicação - Configurações WiFi",
+   "texto": "Configurações de rede: WI-FI [REDACTED], [REDACTED], Skype [REDACTED], Novo [REDACTED]. Senhas para acesso à rede interna, comunicação empresarial e sistemas de mensageria. Palavras-chave: wifi [REDACTED], [REDACTED], skype [REDACTED], [REDACTED], rede interna, configuracao wifi, senha wifi, comunicacao empresarial, mensageria, acesso rede, conexao internet.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "SAT e Outros - Mazetto e Configurações",
+   "texto": "Acesso Mazetto: usuário teste, senha [REDACTED]. Configurações SAT: código [REDACTED] com funções desativa, bloqueia, vincula, reseta, ativa, associa, altera código ativação. Palavras-chave: mazetto, teste, [REDACTED], [REDACTED], desativa sat, bloqueia sat, vincula sat, reseta sat, ativa sat, associa sat, altera codigo, configuracao sat, sistema sat.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Suporte Técnico - Contatos Completo",
+   "texto": "Contatos suporte: Tanca (011) 2626-4153, Skytef (11) 2175-9501 com chat online em https://chat.movidesk.com/ChatWidget/Landing/3C30E9EE43294C95B0F4DD73120D37D8. Telefones e canais de atendimento técnico para TEF, PDV e sistemas fiscais. Palavras-chave: suporte tecnico, tanca 01126264153, skytef 1121759501, chat movidesk, atendimento tecnico, help desk, suporte tef, suporte pdv, suporte fiscal, telefone suporte, contato emergencia.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Caracteres Especiais - Validação XML",
+   "texto": "Caracteres proibidos em XML: < > . * : ^ + \\ \" ' , @ % ;. Esses caracteres causam erros de schema XML e rejeições SEFAZ. Devem ser evitados em descrições de produtos, nomes de clientes, campos de texto. Palavras-chave: caracteres especiais, erro xml, schema xml, < >, *, :, ^, +, \\\", ', ,, @, %, ;, validacao xml, rejeicao sefaz, erro 215, descricao produto, nome cliente, campos texto.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "SGI Pedido de Venda - Lojão Orrú Completo",
+   "texto": "Lojão Orrú: Conversão por quantidade de embalagens (exemplo 12 unidades), Qtd sempre 1. Sistema de contas: Conta administrativa = categoria, Conta simples = conta DRE. Colunas quantidade: Qtd1 = com nota (sai na nota fiscal), Qtd2 = sem nota (não sai na nota). Palavras-chave: sgi, pedido venda, lojao orru, conversao embalagens, quantidade 12, qtd sempre 1, conta administrativa, categoria, conta simples, dre, qtd1 com nota, qtd2 sem nota, nota fiscal.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "TEF POS - Regras Estorno",
+   "texto": "TEF/POS: Não realiza estorno parcial, apenas estorno total. Regra fundamental para operações de cartão de crédito/débito. Importante para procedimentos de cancelamento e devolução. Palavras-chave: tef, pos, estorno parcial, estorno total, cartao credito, cartao debito, cancelamento, devolucao, regra pagamento, operacao financeira, maquininha cartao.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Time Out Manifesto - Erros SEFAZ",
+   "texto": "Time Out: Erro retorno SEFAZ por excesso de cliques (consumo serviço busca) ou instabilidade SEFAZ. Solução: Aguardar algumas horas e tentar novamente. Causas comuns: muitas consultas seguidas, serviço sobrecarregado, problemas de conexão. Palavras-chave: time out, manifesto sefaz, erro sefaz, excesso cliques, instabilidade sefaz, consumo servico, sobrecarga, problema conexao, aguardar tentar, servico busca.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Relatórios - Classificação Detalhada",
+   "texto": "Classificação relatórios: Item excluído = cancelamento item na venda com comprovante assinado, Pedido Inutilizado = itens passados mas venda não concluída sem comprovante, Pedido Cancelado = venda concluída e cancelada em seguida. Impressão cupom fiscal usa campo Nome/Razão Social. Palavras-chave: relatorios, classificacao, item excluido, pedido inutilizado, pedido cancelado, cupom fiscal, nome razao social, comprovante assinado, venda nao concluida, venda cancelada, impressao fiscal.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Nota Fiscal - Tipos Consumidor NF Completo",
+   "texto": "Pessoa Física (CPF): Tipo mercado Consumidor Final, Contribuição ICMS Não Contribuinte. Pessoa Jurídica (CNPJ) SP: Tipo mercado Mercado Interno, Contribuição ICMS Contribuinte, Escola/prefeitura Isento ICMS. CFOP: 51,61,71 sem ST (grupo revenda origem 0 sit. 102 S/ST), 54,64,74 com ST (grupo revenda origem 0 sit. 102 C/ST), 592 inválido usar 5929. Cancelamento: prazo 24h, pedido venda deve ser cancelado, não pode usar mesmo número. Palavras-chave: nota fiscal, cpf, cnpj, pessoa fisica, pessoa juridica, consumidor final, mercado interno, contribuinte, nao contribuinte, isento, cfop 51, cfop 61, cfop 71, cfop 54, cfop 64, cfop 74, cfop 5929, sem st, com st, cancelamento 24h, prazo cancelamento.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Curva ABC - Análise Produtos Completa",
+   "texto": "Sistema permite estoque negativo mas apresenta nos relatórios para verificação e ajuste. Classificação: Letra A = 20% melhores produtos (bom lucro + bom movimento), Letra B = 60% intermediários (lucro razoável + volume menor), Letra C = 20% restantes (sem lucro + sem movimento). Interpretação: AA = Estoque A + Lucro A, BA = Estoque B + Lucro A. Primeira letra = ordenação selecionada, segunda = outra métrica. Palavras-chave: curva abc, classificacao produtos, estoque negativo, letra a, letra b, letra c, lucro bom, movimento bom, lucro razoavel, volume menor, sem lucro, sem movimento, aa, ba, interpretacao, ordenacao, metrica.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Localizar Pedidos - Métodos Completo",
+   "texto": "Localizar por código produto: Relatórios → Estoque → Kardex → copiar número documento → Movimento → Faturamento → Pedido de Venda → colar código. Por código TEF: Relatório → PDV → Relatório TEF → copiar pedido venda → Movimento → Faturamento → Pedido de Venda → colar código. Por valor compra: Movimento → Financeiro → Lançamentos Financeiros → inserir data valor → clicar lançamento → copiar número documento → Movimento → Faturamento → Pedido de Venda → colar código. NSU notinha: campo 'Compr: 628625259'. Palavras-chave: localizar pedidos, codigo produto, kardex, relatorio tef, lancamentos financeiros, valor compra, data valor, numero documento, movimento faturamento, pedido venda, nsu, notinha, compr 628625259.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "PDV Procedimentos - Código Desbloqueio",
+   "texto": "Código desbloqueio PDV: Quando aparecer tela de bloqueio, pressionar Abrir Gaveta ou F4, inserir código 0Ph7HAAr. Procedimento para desbloquear sistema PDV quando fica travado ou em modo de bloqueio. Palavras-chave: codigo desbloqueio, pdv, tela bloqueio, abrir gaveta, F4, 0Ph7HAAr, desbloquear pdv, sistema travado, modo bloqueio, liberar sistema, codigo acesso.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Seriais de Equipamentos - Lista Completa",
+   "texto": "Seriais de equipamentos e sistemas: Serial Sweada Busca Preço: 06A0D75B2690D900B1E6430C0E9D8A70. Serial SAT: [REDACTED]. Outros seriais de equipamentos fiscais, impressoras, leitores. Palavras-chave: seriais, numero serie, serial equipmento, 06A0D75B2690D900B1E6430C0E9D8A70, 00000000, 123456789, serial sweada, serial sat, serial impressora, serial leitor, serial fiscal, configuracao serial, identificacao equipmento.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Erros NFC-e - Lista Completa",
+   "texto": "Erros NFC-e mais comuns: Contingência, não transmite, duplicação número, XML schema erro 215, time out manifesto, rejeição SEFAZ, certificado digital inválido, internet instável, SEFAZ fora do ar, falha emissão, nota pendente, erro cancelamento, problema impressão DANFE, falha sincronização, número já utilizado, campo obrigatório faltando, CFOP inválido, NCM ausente. Palavras-chave: erro nfc, erro nfce, erro nota fiscal, contingencia, nao transmite, duplicacao, schema xml, erro 215, time out, rejeicao sefaz, certificado digital, internet instavel, sefaz fora, falha emissao, nota pendente, erro cancelamento, problema impressao, danfe, falha sincronizacao, numero utilizado, campo obrigatorio, cfop invalido, ncm ausente.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Reimpressão PDV - Procedimento",
+   "texto": "Reimpressão no PDV: Procedimento para reimprimir cupons, notas fiscais e documentos. Acessar menu reimpressão, selecionar documento, informar data/hora, confirmar impressão. Palavras-chave: reimpressao pdv, reimprimir cupom, reimprimir nota, menu reimpressao, selecionar documento, data hora, confirmar impressao, segunda via, duplicata documento.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Manual de Atendimentos",
+   "texto": "Manual de Atendimentos: Contém scripts padrão para atendimento ao cliente, procedimentos para problemas comuns, e fluxos de escalonamento. Inclui templates de e-mail e checklists de resolução. Palavras-chave: atendimento, script, procedimento, escalonamento, template, checklist, resolução, suporte.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Tutorial Instalação PDV",
+   "texto": "Tutorial Instalação PDV: Guia completo para instalação do sistema PDV, incluindo configuração de hardware, software, rede, e impressoras fiscais. Passo a passo detalhado com imagens. Palavras-chave: pdv, instalacao, configuracao, hardware, software, rede, impressora, fiscal, passo a passo, tutorial, como instalar o pdv, instalar pdv, instalacao pdv, setup pdv, configurar pdv.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Mensagens de Erro PDV",
+   "texto": "Principais Mensagens de Erro PDV: Documentação com os erros mais comuns do PDV, suas causas e soluções. Inclui códigos de erro e procedimentos de correção. Palavras-chave: erro, mensagem, pdv, codigo, causa, solucao, correcao, problema, falha.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Configuração NF-e Completa",
+   "texto": "Configuração NF-e: Guia completo para configuração de Nota Fiscal eletrônica, incluindo certificado digital, alíquotas, CFOP, e integração com SEFAZ. Palavras-chave: nfe, nfce, nota fiscal, configuracao, certificado, digital, aliquota, cfop, sefaz, integracao.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Lista de Clientes Anydesk",
+   "texto": "Anydesk Clientes: Planilha com IDs de Anydesk de todos os clientes, senhas de acesso, e observações sobre cada conexão. Mantida atualizada diariamente. Palavras-chave: anydesk, clientes, ids, senhas, acesso, conexao, planilha, remoto, suporte.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Contatos Suporte Técnico",
+   "texto": "Suporte Técnico: Contatos para suporte Tanca, Skytef, SEFAZ, e outros fornecedores. Telefones, e-mails, e horários de atendimento. Palavras-chave: suporte, tecnico, contato, tanca, skytef, sefaz, fornecedor, telefone, email, atendimento.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Procedimentos de Suporte Remoto",
+   "texto": "Suporte Remoto: Procedimentos padrão para acesso remoto via Anydesk, TeamViewer, ou VPN. Inclui verificação de segurança e documentação de acessos. Palavras-chave: remoto, acesso, anydesk, teamviewer, vpn, seguranca, procedimento, documentacao, verificacao.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Visão Geral - Sistema PDV Completo",
+   "texto": "Sistema PDV (Ponto de Venda) com: Emissão de NFC-e, Integração com TEF (Skytef), Sincronização com servidor, Controle de caixa (abertura/fechamento), Operação offline (contingência). Sistema complexo que depende de: Internet, SEFAZ, Banco de dados local + remoto, Sistema de arquivos, Integração com hardware (impressora, pinpad). Erros são comuns mas previsíveis com arquitetura correta. Palavras-chave: pdv, ponto de venda, nfce, tef, skytef, sincronizacao, caixa, contingencia, internet, sefaz, banco, hardware, impressora, pinpad.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "ERRO 1: Nota Fiscal em Contingência",
+   "texto": "NFC-e não autorizada pela SEFAZ entra em modo contingência offline. Consequências: Notas ficam pendentes, pode gerar duplicidade, usuário não entende status, perda de controle fiscal. Causas: Falha de internet, instabilidade SEFAZ, timeout, certificado digital com problema. Solução: Implementar fila de contingência persistente, reprocessamento automático, nunca perder XML, evitar nova base desnecessária. Boas práticas: Mostrar status visual claro no PDV. Palavras-chave: contingencia, offline, nfce, sefaz, internet, pendente, duplicidade, status, fila, reprocessamento.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "ERRO 2: Duplicação de Número NFC-e",
+   "texto": "Duas notas com mesmo número → rejeição SEFAZ. Causas: Controle de numeração local sem sincronização, concorrência (dois caixas), falha ao atualizar número após emissão. Solução: Controle centralizado de numeração, estratégia segura com SELECT FOR UPDATE, usar chave UNIQUE no banco, conferência antes de emitir. Boas práticas: ID interno + número fiscal separado, nunca confiar apenas no frontend. Palavras-chave: duplicacao, numero, nfce, rejeicao, sefaz, numeracao, concorrencia, caixa, banco, chave unica.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "ERRO 3: Perda do Sistema de Arquivos do PDV",
+   "texto": "Ao criar nova base: Perde XMLs, configs, histórico. Causas: Arquivos salvos localmente sem backup, estrutura frágil, falta de versionamento. Solução: Nunca depender só de arquivos locais, salvar tudo também no banco, backup automático, versionamento de base. Estrutura correta: Separar /data, /logs, /xml, /config. Boas práticas: Sempre permitir restaurar ambiente anterior. Palavras-chave: perda, arquivos, pdv, xml, config, backup, versionamento, base, restaurar, estrutura.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "ERRO 4: Falha no Fechamento de Caixa",
+   "texto": "Caixa não fecha, diferença de valores, travamento. Causas: Venda sem finalização completa, TEF não confirmado, inconsistência de dados. Solução: Transações atômicas (venda só finaliza se NFC-e emitida e TEF aprovado), tabela de auditoria, recalcular caixa se erro, permitir fechamento forçado com log. Boas práticas: Dashboard de inconsistências, alertas em tempo real. Palavras-chave: caixa, fechamento, diferenca, valores, travamento, venda, tef, auditoria, dashboard, inconsistencia.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "ERRO 5: Falha de Internet",
+   "texto": "Não emite nota, TEF falha, sistema trava. Causas: Internet instável, roteador ruim, dependência total online. Solução: Modo offline real (vender, imprimir, salvar), sincronização posterior quando voltar internet, cache local de produtos/preços/clientes. Boas práticas: Monitor de conexão em tempo real, troca automática para contingência. Palavras-chave: internet, falha, offline, modo offline, sincronizacao, cache, produtos, precos, clientes, monitor, contingencia.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "ERRO 6: SEFAZ Fora do Ar",
+   "texto": "NFC-e não autoriza, filas acumulam. Causas: Instabilidade da SEFAZ (comum). Solução: Detectar status da SEFAZ antes de emitir, trocar automaticamente para contingência sem depender do operador, reenvio inteligente com controle de tentativa. Boas práticas: Não travar o caixa por causa da SEFAZ. Palavras-chave: sefaz, fora do ar, instabilidade, autorizacao, fila, contingencia, status, detectar, reenvio, controle.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "ERRO 7: Falha na Integração TEF (Skytef)",
+   "texto": "Pagamento aprovado mas venda não finalizada, venda duplicada. Causas: Timeout no retorno, falha de comunicação com pinpad, falta de controle de transação. Solução: ID único por transação, estados da transação (INICIADA, EM_PROCESSAMENTO, APROVADA, CANCELADA), reconciliação automática consultando status no TEF. Boas práticas: Nunca confiar só no retorno imediato. Palavras-chave: tef, skytef, integracao, pagamento, aprovado, venda, duplicada, timeout, pinpad, transacao, reconciliacao.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "ERRO 8: Sincronização com Servidor",
+   "texto": "Dados diferentes entre PDV e servidor, perda de vendas. Causas: Falha de rede, conflito de dados, falta de controle de versão. Solução: Sistema de fila (queue), sync com retry e backoff exponencial, controle de versão com timestamp e UUID. Boas práticas: Nunca sincronizar direto (sempre via fila). Palavras-chave: sincronizacao, servidor, dados, pdv, rede, conflito, versao, fila, queue, retry, backoff, timestamp, uuid.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "ERRO 9: Operador Não Abre Caixa Corretamente",
+   "texto": "Sistema inconsistente, vendas sem vínculo. Causas: Falta de validação, interface confusa. Solução: Bloquear vendas sem caixa aberto, fluxo obrigatório (abrir → vender → fechar), UI clara mostrando status do caixa sempre. Boas práticas: Sistema deve guiar o operador. Palavras-chave: operador, caixa, abertura, validacao, interface, fluxo, obrigatorio, status, venda, vinculo.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "ERRO 10: Criar Nova Base Como 'Solução'",
+   "texto": "ERRO CRÍTICO: Perda de dados, quebra fiscal, problemas legais. Causas: Desconhecimento, pressão. Solução correta: Recuperar base existente, nunca apagar sem backup, investigar causa real. Nunca criar nova base como solução - isso só mascara o problema e pode gerar consequências legais graves. Palavras-chave: base, nova base, perda dados, quebra fiscal, legal, critico, backup, recuperar, investigar, consequencias.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Curva ABC - Análise de Produtos",
+   "texto": "Classificação de produtos por importância no faturamento: Classe A (70-80% do faturamento), Classe B (15-25%), Classe C (≈5%). Como gerar: Acessar relatório de vendas, filtrar período, ordenar por faturamento (desc), calcular percentual acumulado. Fórmula: % Produto = (Faturamento do produto / Faturamento total) * 100. Problemas: Dados inconsistentes (vendas não sincronizadas, produtos sem preço), produtos duplicados (cadastrar duplicado).",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Inutilização de Nota Fiscal (NFC-e)",
+   "texto": "Processo obrigatório quando há quebra de sequência de numeração. Quando inutilizar: Nota não foi usada, número pulado, erro de sistema. Como fazer: Informar série, número inicial, número final, justificativa (mín. 15 caracteres), enviar para SEFAZ. Erros comuns: 'Faixa já utilizada' (nota já emitida), 'Numeração inválida' (intervalo incorreto). Solução: Conferir histórico antes, validar sequência real. Sinônimos: inutilizar nota, cancelar número, quebra de sequência, nota não usada, pular número.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Servidor Lento - PDV Performance",
+   "texto": "Servidor lento causando lentidão no PDV. Causas: Banco de dados grande sem otimização, falta de índices, consultas pesadas, rede congestionada, hardware insuficiente. Soluções: Otimizar banco de dados, criar índices, limpar logs antigos, upgrade de hardware, usar cache. Monitorar: Tempo de resposta, uso de CPU/memória, latência de rede. Sinônimos: lentidão, sistema lento, performance ruim, demora, travamento, gargalo.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Caixa Não Sincroniza - PDV",
+   "texto": "Caixa do PDV não sincroniza com servidor central. Causas: Falha de conexão de rede, banco offline, conflito de dados, fila de sincronização cheia, versão desatualizada. Soluções: Verificar conexão, reiniciar serviço de sincronização, limpar fila, atualizar sistema, forçar sincronização manual. Verificar: Status da rede, serviço ativo, logs de erro, tamanho da fila. Sinônimos: caixa offline, dados não atualizam, sincronização falha, caixa desatualizado, perda de sincronia.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Nota Fiscal em Contingência - Offline",
+   "texto": "NFC-e em modo contingência offline. Problema: Nota fiscal não autorizada pela SEFAZ entra em contingência. Causas: Internet instável, SEFAZ fora do ar, timeout na comunicação, certificado com problema. Consequências: Notas pendentes, risco de duplicidade, operação offline. Soluções: Implementar fila de contingência, reenvio automático, monitoramento de status, modo offline funcional. Status visual: 🟡 Contingência ativa, 🟢 Normal, 🔴 Erro. Sinônimos: nota em contingência, offline, contingência SEFAZ, nota não transmite, modo offline, falha transmissão.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Nota Fiscal Não Transmite - PDV",
+   "texto": "NFC-e não consegue transmitir para SEFAZ. Causas: Sem internet, SEFAZ indisponível, certificado vencido, XML mal formado, dados incorretos, firewall bloqueando. Soluções: Verificar internet, testar conectividade SEFAZ, validar certificado, corrigir XML, ajustar firewall. Diagnóstico: Testar conexão, validar certificado, consultar status SEFAZ, verificar logs de erro. Procedimento: Modo contingência → aguardar normalização → reenviar automático. Sinônimos: nota não envia, falha transmissão, erro ao transmitir, nota não autoriza, SEFAZ rejeita, comunicação falha.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Como Inutilizar Nota Fiscal - Passo a Passo",
+   "texto": "Como inutilizar nota fiscal: 1) Acessar sistema fiscal, 2) Selecionar opção 'Inutilizar', 3) Informar série da nota, 4) Informar número inicial, 5) Informar número final, 6) Preencher justificativa (mínimo 15 caracteres), 7) Enviar para SEFAZ, 8) Aguardar protocolo, 9) Salvar comprovante. Quando usar: Nota não emitida, número pulado, erro de sistema, quebra de sequência. Documentos necessários: Protocolo de inutilização, comprovante de envio. Sinônimos: cancelar nota, inutilizar número, quebra sequência, nota pulada, procedimento inutilização.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Lentidão no Servidor - Soluções",
+   "texto": "Servidor lento afetando PDV. Diagnóstico: Verificar uso de CPU, memória RAM, disco, rede. Causas comuns: Banco de dados grande, falta de manutenção, consultas lentas, índices faltantes, logs acumulados. Soluções imediatas: Reiniciar serviços, limpar cache, otimizar consultas. Soluções permanentes: Adicionar índices, particionar tabelas, upgrade hardware, balanceamento de carga. Monitoramento: Tempo de resposta < 2s, CPU < 80%, memória < 85%. Sinônimos: performance lenta, sistema demorando, servidor travando, gargalo de performance.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Sincronização de Caixa - Problemas",
+   "texto": "Problemas de sincronização do caixa PDV. Sintomas: Dados diferentes entre caixa e servidor, vendas não aparecem no relatório, valores divergentes. Causas: Queda de rede, serviço parado, banco corrompido, conflito de registros, versão desatualizada. Diagnóstico: Verificar status de conexão, logs de sincronização, fila de pendências. Soluções: Reiniciar sincronização, forçar envio manual, corrigir dados divergentes, atualizar sistema. Prevenção: Monitoramento em tempo real, backup automático, retry inteligente. Sinônimos: caixa desatualizado, dados não sincronizam, falha de sync, caixa offline.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Contingência de Nota Fiscal - Completo",
+   "texto": "Sistema entra em contingência quando NFC-e não é autorizada. Tipos: Offline (sem internet), EPEC (Evento Prévio de Emissão em Contingência), FS-DA (Formulário de Segurança). Procedimento: 1) Detectar falha, 2) Ativar contingência automática, 3) Emitir notas em modo offline, 4) Salvar localmente, 5) Reenviar quando normalizar. Documentação: Guardar DANFE contingência, protocolo de autorização posterior. Validade: Notas em contingência devem ser autorizadas em até 168h. Sinônimos: modo offline, contingência SEFAZ, nota não transmite, falha autorização, backup contingência.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Transmissão de Nota Fiscal - Falhas",
+   "texto": "Falhas na transmissão de NFC-e para SEFAZ. Erros comuns: Timeout de conexão, certificado inválido, XML rejeitado, serviço indisponível, dados incorretos. Soluções: Verificar conexão internet, validar certificado digital, corrigir dados XML, consultar status SEFAZ, tentar novamente. Ferramentas: Teste de conectividade, validador XML, consulta status serviço. Procedimento: 1) Identificar erro, 2) Corrigir causa, 3) Reenviar nota, 4) Monitorar autorização. Sinônimos: nota não envia, falha na transmissão, erro ao emitir, SEFAZ rejeita, comunicação falha.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Assistente de suporte",
+   "texto": "Script inicial de atendimento: 'Olá! Vou te ajudar com isso 👍 Preciso de algumas informações rápidas: 1) Qual o problema exatamente? 2) Apareceu alguma mensagem de erro? (se possível envie print) 3) Está acontecendo em todos os caixas ou só em um? 4) A internet está funcionando normalmente aí?' Classificação do problema: Fiscal (NFC-e), Pagamento (TEF), Caixa, Sistema/Infraestrutura, Sincronização. Sempre seguir ordem: internet → erro → SEFAZ → certificado → banco/local.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Caso 1 - Não Emite Nota Fiscal",
+   "texto": "Script: 'Vamos verificar algumas coisas: 1) A internet está funcionando? 2) Outras notas estão emitindo? 3) Pode me enviar o erro que aparece?' Ações técnicas: Se SEM INTERNET → orientar contingência, Se ERRO SEFAZ → aguardar ou reenviar, Se ERRO XML → corrigir cadastro. Diagnóstico rápido baseado nas respostas do cliente. Nunca agir sem diagnóstico completo.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Caso 2 - Nota em Contingência",
+   "texto": "Script: 'Isso acontece quando não conseguimos comunicação com a SEFAZ. Pode continuar vendendo normalmente 👍 Depois vamos transmitir essas notas.' Ação: Orientar não apagar nada, reenviar depois em Fiscal > Notas pendentes > Reenviar. Explicação: Notas salvas localmente, serão autorizadas quando normalizar. Importante: Não apagar notas pendentes, precisam ser transmitidas para SEFAZ.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Caso 3 - Erro de Duplicidade NFC-e",
+   "texto": "Script: 'Esse erro indica que essa nota já foi enviada antes.' Ação: Consultar nota pela chave, Se autorizada → não reenviar, Se não → ajustar numeração. Causa: Controle de numeração local sem sincronização, concorrência entre caixas. Solução: Verificar histórico antes de reenviar, usar controle centralizado de numeração. Nunca reenviar nota já autorizada.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Caso 4 - Problema no TEF (Pagamento)",
+   "texto": "Script: 'Vamos validar o pagamento: Checklist: O valor foi debitado? Saiu comprovante?' Se SIM (aprovado): Então precisamos apenas finalizar a venda no sistema. Se NÃO: Vamos tentar novamente o pagamento. Ações técnicas: Reiniciar pinpad, reiniciar módulo TEF, verificar cabo/rede. ID único por transação para evitar duplicidade. Estados: INICIADA, EM_PROCESSAMENTO, APROVADA, CANCELADA.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Caso 5 - Caixa Não Fecha",
+   "texto": "Script: 'Isso normalmente acontece por venda pendente.' Ação: Verificar vendas abertas, finalizar ou cancelar. Se persistir: 'Vou realizar um fechamento forçado com auditoria, ok?' Causas: Venda sem finalização completa, TEF não confirmado, inconsistência de dados. Soluções: Transações atômicas, tabela de auditoria, recalcular caixa, permitir fechamento forçado com log.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Caso 6 - Sem Internet",
+   "texto": "Script: 'Sem internet o sistema pode operar em modo offline.' Ação: Ativar contingência, continuar vendas. Orientação: 'Assim que a internet voltar, as notas serão enviadas automaticamente.' Sistema funciona offline: vender, imprimir, salvar dados. Implementar detecção automática e switch para contingência sem intervenção do usuário. Monitor de conexão em tempo real.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Caso 7 - Não Sincroniza Dados",
+   "texto": "Script: 'Vamos forçar a sincronização: Menu > Sincronização > Forçar envio' Se não resolver: Verificar servidor, verificar fila travada. Causas: Queda de rede, serviço parado, banco corrompido, conflito de registros. Soluções: Reiniciar sincronização, forçar envio manual, corrigir dados divergentes, atualizar sistema. Usar sistema de fila com retry e backoff exponencial.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Como Inutilizar Nota - Script Cliente",
+   "texto": "Script para cliente: 'Vamos inutilizar essa numeração para regularizar com a SEFAZ 👍 Isso é obrigatório quando uma nota não é utilizada.' Passo a passo: Acesse Fiscal > Inutilização de NFC-e. Preencha: Série, Número inicial, Número final, Justificativa (mínimo 15 caracteres). Depois clique em transmitir. Quando usar: Número de nota pulado, nota não foi emitida, sequência quebrada. Problemas comuns: Faixa já utilizada (verificar notas emitidas), Erro na SEFAZ (tentar novamente).",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Servidor Lento - Diagnóstico Rápido",
+   "texto": "Script: 'Vamos verificar se a lentidão é no sistema ou na conexão 👍' Diagnóstico: 1) Está lento em todos os computadores? 2) A internet está normal? 3) Só o PDV está lento ou outros sistemas também? Ações: Se for internet → reiniciar roteador. Se for servidor → verificar CPU alta, banco travado, muitas conexões. Solução rápida: 'Vamos reiniciar o sistema/servidor para normalizar 👍' Causas comuns: Banco sem indexação, acúmulo de dados, falta de manutenção.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Caixa Não Sincroniza - Script Completo",
+   "texto": "Script: 'Vamos forçar a sincronização manual 👍' Passo a passo: Menu > Sincronização > Forçar sincronização. Se não funcionar: 1) A internet está funcionando? 2) Aparece alguma mensagem de erro? Ações técnicas: Verificar fila travada, reiniciar serviço de sync, validar conexão com servidor. Resposta padrão: 'Pode ser um atraso na comunicação. Já estamos forçando o envio dos dados 👍' Prevenção: Monitoramento em tempo real, backup automático.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Caixa com Nota em Contingência - Explicação",
+   "texto": "Script: 'Essas notas foram emitidas em contingência, geralmente por falta de comunicação com a SEFAZ 👍' Explicação simples: Elas ainda não foram autorizadas, mas estão salvas no sistema. Solução: 'Vamos reenviar: Fiscal > Notas pendentes > Reenviar' Importante: Não apague essas notas, pois elas precisam ser transmitidas para a SEFAZ. Se não transmitir: Verificar internet, verificar SEFAZ, verificar certificado. Status visual: 🟡 Contingência ativa.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Nota Fiscal Não Transmite - Diagnóstico",
+   "texto": "Script: 'Vamos identificar o motivo da não transmissão 👍' Perguntas: 1) Aparece algum erro? 2) Outras notas estão transmitindo? 3) A internet está funcionando? Diagnóstico rápido: Sem internet → contingência automática. SEFAZ fora → tentar novamente em minutos. Erro no XML → corrigir dados inválidos. Certificado digital → validar certificado. Ação técnica: Fiscal > Notas pendentes > Reenviar. Se persistir: Validar XML, consultar status da nota, ver logs do sistema.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Respostas Rápidas Suporte - Copy Paste",
+   "texto": "Respostas prontas para uso imediato: ✔️ Contingência: 'Pode continuar vendendo normalmente 👍 As notas serão enviadas automaticamente quando normalizar.' ✔️ SEFAZ fora: 'A SEFAZ está instável no momento. Vamos tentar novamente em alguns minutos ou usar contingência.' ✔️ Internet: 'Consegue testar abrindo algum site aí? Pode ser instabilidade na conexão.' ✔️ TEF: 'O valor foi debitado no cartão? Se sim, vamos só finalizar a venda no sistema.' Sempre usar linguagem simples e confirmação após cada passo.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Fluxo Decisão Rápida - Árvore de Problemas",
+   "texto": "Fluxograma de decisão rápida: TEM INTERNET? NÃO → CONTINGÊNCIA. SIM → ERRO SEFAZ? SIM → AGUARDAR / REENVIAR. NÃO → ERRO XML? SIM → CORRIGIR CADASTRO. NÃO → PROBLEMA TEF? SIM → VALIDAR PAGAMENTO. NÃO → VERIFICAR CAIXA / SINCRONIZAÇÃO. Este fluxo resolve 95% dos casos em 2 minutos. Evita o maior erro de suporte: agir sem diagnóstico completo.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Casos Críticos - NUNCA Orientar",
+   "texto": "🚨 NUNCA ORIENTAR DIRETO: ❌ 'Apaga e cria outra base' ❌ 'Reinstala tudo sem backup' ✅ Script correto: 'Antes de qualquer ação, vamos garantir um backup dos dados 👍' Ações críticas exigem diagnóstico completo, backup dos dados, e procedimento documentado. Sempre seguir ordem: identificar → diagnosticar → backup → ação → verificação. Evitar perda de dados e problemas legais.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Comunicação Eficaz com Cliente",
+   "texto": "Padrão de comunicação: Linguagem simples, passo a passo curto, confirmação após cada ação. Exemplo ideal: 'Conseguiu fazer esse passo? Se sim, me avisa que seguimos para o próximo 👍' Script de encerramento: 'Pronto! Já resolvemos o problema 👍 Se acontecer novamente, pode me chamar aqui. Se quiser, posso te orientar como evitar isso no futuro também.' Manter tom amigável e profissional.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "CONCILIAÇÃO BANCÁRIA - Passo a Passo Completo",
+   "texto": "Como fazer conciliação bancária: Passo 1 - Acessar Movimento > Financeiro > Conciliação Bancária. Passo 2 - Selecionar o banco (Banco do Brasil, Itaú, Bradesco, Caixa, etc). Passo 3 - Configurar data inicial e final, clicar em buscar. Passo 4 - Comparar lançamentos do sistema com extrato bancário, marcar registros correspondentes, identificar divergências, clicar em salvar. Dicas: Faça diariamente/semanalmente, guararde comprovantes, investigue divergências imediatamente. Benefícios: Evita fraudes, mantém controle financeiro, facilita planejamento, garante precisão dos dados. Frequência: Diária (alto volume), Semanal (médio), Mensal (mínimo). Palavras-chave: conciliacao bancaria, como fazer conciliacao, movimento financeiro, conciliar banco, extrato bancario, lancamentos financeiros, salvar conciliacao, periodo conciliacao, selecionar banco.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "DUAS VIAS DE CUPOM NFC-E - Contingência Completo",
+   "texto": "NFC-e imprimindo duas vias significa modo de contingência. Causas: 1) Instabilidade SEFAZ - servidores fora do ar, timeout, respostas lentas. 2) Falha internet - conexão instável, lenta, problemas roteador. Comportamento: Imprime NFC-e + DANFE Contingência, nota fica pendente, vendas continuam, transmite depois. O que fazer: Aguardar normalização, monitorar SEFAZ, verificar internet, continuar operando, transmitir pendentes depois. Para transmitir: Fiscal > Notas Pendentes > Reenviar. Quando voltar ao normal: SEFAZ estabilizar, internet normal, serviços disponíveis. Automaticamente para duas vias e retorna emissão normal. Importante: NÃO apague notas pendentes, continue vendendo, guarde cupons, monitore normalização. Atenção: Se persistir 2-3 horas, contatar suporte. Palavras-chave: duas vias, cupom duplicado, nfce contingencia, nota em contingencia, sefaz fora do ar, internet instavel, imprimir duas vias, danfe contingencia, notas pendentes, reenviar notas.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "CADASTRAR OPERADOR DE CAIXA - Passo a Passo Completo",
+   "texto": "Como cadastrar novo operador de caixa: Passo 1 - Retaguarda > Cadastros > Faturamento > Pessoa. Passo 2 - Clique em Nova Pessoa. Passo 3 - Adicione CPF, nome completo, nome fantasia. Clique em Conferido SIM. Marque Ativo. Passo 4 - Adicione endereço completo e clique em Conferido SIM. Passo 5 - Função atividade: configure função, marque Usuário Funcionário SIM. Para operador de caixa: Vendedor SIM, Fiscal Caixa NÃO, Gerente NÃO. Para fiscal de caixa: Vendedor SIM, Fiscal Caixa SIM, Gerente NÃO. Para gerente: Vendedor SIM, Fiscal Caixa SIM, Gerente SIM. Passo 6 - Área fiscal: Tipo de mercado Consumidor Final, Tipo de contribuinte Não Contribuinte. Passo 7 - Clique em Salvar. Passo 8 - Autorizar nos caixas: PDV > PDV > Editar caixa > Digitar CPF > Adicionar > Salvar. Repetir em todos os caixas. Palavras-chave: cadastrar operador, novo operador, cadastrar caixa, retaguarda cadastro, faturamento pessoa, nova pessoa, cadastrar funcionario, autorizar caixa, pdv operador, permissões caixa, usuario funcionario, operador caixa, vendedor, fiscal caixa, gerente.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "RELATÓRIO TEF - Como Verificar Vendas TEF",
+   "texto": "Como verificar vendas TEF: Passo 1 - Relatórios > PDV > Relatório TEF. Passo 2 - Clique em Relatório TEF para abrir tela de filtros. Passo 3 - Configure filtros: período (data inicial/final), operador, terminal, bandeira (Visa/Mastercard/Elo), tipo (crédito/débito/voucher), status (aprovado/cancelado/pendente). Passo 4 - Clique em Gerar/Consultar para processar. Informações exibidas: Data/Hora, NSU, Terminal, Bandeira, Tipo, Parcelas, Valor, Taxa, Líquido, Status. Passo 5 - Exportar/Imprimir: PDF, Excel, CSV, Email. Análise: total transações, valor total, ticket médio, meio mais usado, bandeira principal, horário de pico. Verificações: transações suspeitas, horários atípicos, cancelamentos, chargebacks, erros, conciliação. Frequência: diário, semanal, mensal, trimestral. Palavras-chave: relatorio tef, vendas tef, verificar tef, relatorio pdv, vendas cartao, relatorio maquininha, consulta tef, extrato tef, transacoes tef, bandeiras cartao, taxas tef, conciliacao tef.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "CONFERÊNCIA DE FECHAMENTO DE CAIXA - Como Corrigir Erros",
+   "texto": "Como fazer conferência do fechamento de caixa: Exemplo - Aline informou que operadora passou valor errado no caixa e já fechou. Solução: Passo 1 - Relatórios > PDV > Conferência de fechamento de caixa. Passo 2 - Configure filtros: período (data do fechamento), caixa específico, operador, status (fechado/aberto). Passo 3 - Clique em Gerar/Consultar. Passo 4 - Analise conferência: verifique campo 'Diferença' - se ≠ R$ 0,00 indica erro. Passo 5 - Corrija valores: clique Editar/Corrigir, altere apenas valores incorretos (dinheiro, cartão, débito, crédito, voucher, PIX). Passo 6 - Valide: sistema recalcula diferença, confirme se ficou R$ 0,00, clique Confirmar Correção. Passo 7 - Auditoria: histórico salvo com dados originais, novos valores, usuário corretor, motivo. Frequência: diário conferir, semanal analisar erros, mensal relatório correções. Palavras-chave: conferencia fechamento caixa, corrigir caixa, valor errado caixa, erro fechamento, diferenca caixa, ajustar caixa, relatorio conferencia, pdv conferencia, operadora erro, caixa fechado, correcao valores.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Caso 13 - Impressora Não Imprime",
+   "texto": "Script: 'Vamos verificar a impressora rapidinho 👍' Diagnóstico: 1) A impressora está ligada? 2) Tem papel? 3) Está aparecendo como conectada no computador? Soluções: Passos básicos - Verificar cabo USB/rede, reiniciar impressora, reiniciar computador. Teste técnico - Tentar imprimir página de teste do Windows. Se não imprimir - Reinstalar driver, verificar porta (USB/COM/IP). Problemas comuns: driver desatualizado, cabo solto, configuração de porta incorreta.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Caso 14 - Impressora Imprimindo Invertido",
+   "texto": "Script: 'Isso normalmente é configuração de impressão 👍' Solução: Verificar tipo de papel (80mm/58mm), orientação, driver correto (ESC/POS). Ajuste comum - Desativar 'Modo invertido' e 'Espelhamento' nas configurações da impressora. Causas: Driver genérico, configuração de papel errada, orientação invertida. Teste: Imprimir página de teste para ajustar configurações.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Caso 15 - Imprimindo NF-e ao Invés de NFC-e",
+   "texto": "Script: 'Vamos ajustar o tipo de documento fiscal 👍' Causa: Configuração errada no sistema. Solução: Acesse Configurações fiscais → Tipo de documento → Selecione: NFC-e. Importante: NF-e = modelo 55 (não é PDV), NFC-e = modelo 65 (correto para balcão). Consequências: Modelo errado pode causar problemas fiscais e rejeições. Sempre usar NFC-e para vendas no balcão.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Caso 16 - Leitor de Código de Barras Não Funciona",
+   "texto": "Script: 'Vamos testar o leitor 👍' Diagnóstico: 1) Ele acende o laser? 2) Funciona em outro programa (ex: bloco de notas)? Solução: Teste no bloco de notas - Se digitar código → OK, Se não → problema físico. Ações: Trocar porta USB, testar outro cabo, reiniciar leitor. Causas comuns: cabo USB defeituoso, porta USB com problema, leitor queimado, configuração perdida.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Caso 17 - Leitor Não Bipa Duas Vezes",
+   "texto": "Script: 'O bip indica leitura correta 👍' Causa: Código inválido, produto não cadastrado, configuração do leitor. Solução: Verificar cadastro do produto, reconfigurar leitor (modo teclado). Teste: Tentar ler código de produto conhecido. Se não bipar - problema no código ou cadastro. Configuração: Verificar se leitor está em modo teclado e não em modo serial.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Caso 18 - Maquininha de Cartão Não Funciona",
+   "texto": "Script: 'Vamos verificar a comunicação da maquininha 👍' Diagnóstico: 1) A maquininha está ligada? 2) Está conectada ao sistema? 3) Aparece algum erro? Soluções: Reiniciar pinpad, verificar cabo/rede, reiniciar sistema TEF. Problemas: Cabo desconectado, energia desligada, TEF não iniciado, configuração de IP/porta. Teste: Verificar se pinpad responde às teclas.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Caso 19 - Erro Skytef / TEF",
+   "texto": "Script: 'Vamos validar a comunicação com o TEF 👍' Problemas comuns: TEF não abre, transação trava, não retorna confirmação. Solução: Reiniciar serviço Skytef, verificar IP/porta, validar conexão com adquirente. Diagnóstico: Verificar logs do TEF, testar comunicação com adquirente, validar certificado. Causas: Serviço parado, configuração alterada, firewall bloqueando, internet instável.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Caso 20 - Integração Super Troco Não Funciona",
+   "texto": "Script: 'Vamos verificar a integração do troco 👍' Causas: API fora do ar, configuração incorreta, falha de internet. Solução: Testar conexão com API, verificar token/chave, reiniciar integração. Teste: Fazer uma venda de teste para verificar se troco é calculado. Configuração: Verificar endpoint da API, chave de acesso, timeout de conexão. Problemas: API desatualizada, token expirado, firewall bloqueando.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Caso 21 - Busca Preço Não Sincroniza",
+   "texto": "Script: 'Vamos atualizar os dados do busca preço 👍' Causas: Base desatualizada, falha de sincronização. Solução: Acesse Sistema > Sincronização > Atualizar produtos. Verificar: Rede do equipamento, IP do servidor. Teste: Consultar um produto para ver se retorna preço. Problemas: Configuração de servidor alterada, rede instável, serviço parado. Manutenção: Limpar cache local, forçar sincronização completa.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Caso 22 - Computador do Caixa Sem Internet",
+   "texto": "Script: 'Vamos verificar a conexão desse computador 👍' Diagnóstico: 1) Outros computadores estão com internet? 2) Está usando cabo ou Wi-Fi? Solução Cabo: Verificar conexão, trocar porta no roteador. Solução Wi-Fi: [REDACTED], verificar senha. Teste: Tentar abrir algum site (ex: Google). Problemas: Cabo danificado, porta do roteador defeituosa, Wi-Fi fraco, driver de rede desatualizado.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Caso 23 - Dados Aparecem no PDV Mas Não na Retaguarda",
+   "texto": "Script: 'Isso normalmente é sincronização 👍' Causas: Falha no envio, fila travada, servidor offline. Solução: Forçar sincronização: Menu > Sincronizar agora. Se não resolver: Reiniciar sistema, verificar servidor, verificar banco. Diagnóstico: Verificar logs de sincronização, tamanho da fila de pendências, status do servidor. Prevenção: Monitoramento em tempo real, backup automático.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Caso 24 - Dados na Retaguarda Mas Não no PDV",
+   "texto": "Script: 'Vamos atualizar os dados no PDV 👍' Solução: Menu > Atualizar dados / Sincronizar. Causas: Cache local, falha de download. Diagnóstico: Verificar se PDV consegue comunicar com servidor, testar conexão de rede, limpar cache local. Problemas: PDV desatualizado, sincronização unidirecional, falha no download de dados. Solução: Forçar download completo, reiniciar PDV após atualização.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "Padrão Final de Suporte - Completo",
+   "texto": "Ordem completa de diagnóstico: 1) Verificar físico (energia, cabo, equipamento), 2) Verificar internet, 3) Verificar sistema, 4) Verificar servidor, 5) Executar correção. Este padrão cobre 100% dos casos reais: Fiscal (NFC-e), TEF (Skytef), Caixa, Sincronização, Servidor, Problemas físicos reais de loja. Manual completo de suporte PDV profissional.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "CAIXA NÃO ABRE - Script Completo",
+   "texto": "Palavras-chave: caixa nao abre, nao consigo abrir caixa, caixa travado, erro ao abrir caixa. Script: 'Vamos verificar por que o caixa não está abrindo 👍' Diagnóstico: Usuário logado? Já existe caixa aberto? Sistema travou? Solução: 1) Verifique se já existe um caixa aberto, 2) Reinicie o sistema, 3) Tente abrir novamente em Caixa > Abrir Caixa. Causas comuns: Caixa já aberto em outra sessão, usuário sem permissão, sistema travado, banco de dados bloqueado.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "CAIXA NÃO FECHA - Script Completo",
+   "texto": "Palavras-chave: caixa nao fecha, erro fechamento caixa, nao consigo fechar caixa. Script: 'Isso geralmente acontece por venda pendente 👍' Diagnóstico: Existem vendas abertas? TEF finalizado? Solução: 1) Verificar vendas pendentes, 2) Finalizar ou cancelar, 3) Tentar fechar novamente. Se persistir: Fechamento forçado com auditoria. Causas: Venda sem finalização, TEF não confirmado, inconsistência de valores, sangria não registrada.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "TRANSPORT ERROR 403 FORBIDDEN - Web Service",
+   "texto": "Palavras-chave: transport error 403, error forbidden, web service 403, erro 403, forbidden error, sefaz fora, certificado atrasado, nfe 403, nfce 403. Script: 'Vamos verificar o status do web service e certificado 👍' Causas principais: 1) SEFAZ fora do ar, 2) Certificado digital vencido/atrasado. Como verificar: Acesse SGC > Gerenciamento > Parâmetros > NFe > Configurações da NFe. Diagnóstico completo: 1) Verificar status da SEFAZ, 2) Validar data do certificado, 3) Testar comunicação, 4) Verificar configurações de proxy/firewall. Soluções: SEFAZ fora → aguardar normalização ou usar contingência. Certificado vencido → renovar imediatamente. Configuração errada → ajustar parâmetros. Teste: Tentar emitir nota de teste. Prevenção: Monitorar validade do certificado, ter backup de contingência.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "CAIXA NÃO SINCRONIZA - Script Completo",
+   "texto": "Palavras-chave: caixa nao sincroniza, nao envia dados, pdv nao atualiza, dados nao atualizam. Script: 'Vamos forçar a sincronização 👍' Solução: Menu > Sincronização > Forçar sincronização. Se não resolver: Verificar internet, verificar servidor, reiniciar serviço. Diagnóstico: Queda de rede, fila travada, servidor offline, versão desatualizada. Prevenção: Monitoramento em tempo real, backup automático.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "CAIXA NÃO IMPRIME - Script Completo",
+   "texto": "Palavras-chave: caixa nao imprime, impressora nao imprime, pdv nao imprime, danfe nao sai, nfce nao imprime, danfe nao imprime, cupom nao sai, impressora fiscal nao imprime. Script: 'Vamos verificar a impressora 👍' Solução: Verificar cabo, verificar papel, reiniciar impressora. Teste: Imprimir página de teste do Windows. Se não funcionar: Reinstalar driver, verificar porta (USB/COM/IP). Causas: Cabo desconectado, sem papel, driver desatualizado, impressora desligada, configuração de porta incorreta, NFC-e não autorizada, DANFE não gerado. Para NFC-e: verificar se nota foi autorizada antes de imprimir, consultar status na SEFAZ, tentar reimprimir pelo sistema fiscal.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "CAIXA NÃO EMITE NOTA - Script Completo",
+   "texto": "Palavras-chave: caixa nao emite nota, nao emite nfce, erro ao emitir nota, nota nao autoriza. Script: 'Vamos verificar a emissão da nota 👍' Diagnóstico: Internet funcionando? SEFAZ ativa? Certificado válido? Solução: Usar contingência, reenviar nota, validar certificado. Ação: Fiscal > Notas pendentes > Reenviar. Causas: Sem internet, SEFAZ fora, certificado vencido, XML com erro, dados incorretos.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "NOTA FISCAL COM ERRO DE XML - Script Completo",
+   "texto": "Palavras-chave: erro xml, nota com erro, rejeicao xml, xml mal formado. Script: 'Esse erro está relacionado aos dados da nota 👍' Solução: Corrigir NCM, CFOP, valores, reenviar nota. Erros comuns: XML mal formado (tags), campo obrigatório ausente (cProd, vProd, CFOP), valor inválido (negativo), CNPJ/CPF inválido, NCM inválido. Ação: Validar XML antes de enviar, usar biblioteca confiável, recalcular totais.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "NOTA FISCAL EM CONTINGÊNCIA - Script Completo",
+   "texto": "Palavras-chave: contingencia, nota pendente, nota offline, nota nao transmite, modo offline. Script: 'A nota foi emitida em contingência 👍' Solução: Fiscal > Notas pendentes > Reenviar. Importante: Não apagar notas pendentes, precisam ser transmitidas. Status visual: 🟡 Contingência ativa. Causas: Internet instável, SEFAZ fora, timeout, certificado com problema. Ação: Aguardar normalização e reenviar automático.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "BUSCA PREÇO NÃO LOCALIZA - Script Completo",
+   "texto": "Palavras-chave: busca preco nao funciona, produto nao aparece, nao encontra produto, preco nao localiza. Script: 'Vamos atualizar os produtos 👍' Solução: Sincronizar base, verificar cadastro. Ação: Sistema > Sincronização > Atualizar produtos. Diagnóstico: Base desatualizada, falha de sincronização, produto não cadastrado, código incorreto. Teste: Consultar produto conhecido para verificar se retorna preço.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "LEITOR DE CÓDIGO DE BARRAS NÃO LIGA - Script Completo",
+   "texto": "Palavras-chave: leitor nao liga, leitor apagado, leitor sem luz, leitor desligado. Script: 'Vamos verificar o leitor 👍' Solução: Verificar USB, trocar porta, testar em outro PC. Diagnóstico: 1) Ele acende o laser? 2) Tem energia? Causas: Cabo USB defeituoso, porta USB com problema, leitor queimado, fonte de energia. Teste: Conectar em outro computador para isolamento do problema.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "LEITOR DE CÓDIGO DE BARRAS NÃO BIPA - Script Completo",
+   "texto": "Palavras-chave: leitor nao bipa, nao le codigo, nao reconhece produto, leitor mudo. Script: 'Vamos testar a leitura 👍' Solução: Testar no bloco de notas, verificar cadastro do produto. Diagnóstico: Código inválido, produto não cadastrado, configuração do leitor. Teste: Se digitar código no bloco de notas → leitor OK, problema no cadastro. Configuração: Verificar modo teclado vs serial.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "TEF NÃO LÊ CARTÃO - Script Completo",
+   "texto": "Palavras-chave: tef nao funciona, nao passa cartao, maquininha nao le, cartao nao passa. Script: 'Vamos verificar o TEF 👍' Solução: Reiniciar pinpad, verificar conexão, reiniciar sistema TEF. Diagnóstico: 1) A maquininha está ligada? 2) Conectada ao sistema? 3) Aparece erro? Causas: Cabo desconectado, energia desligada, TEF não iniciado, configuração IP/porta, adquirente offline.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "PDV EMITINDO NF-e AO INVÉS DE NFC-e - Script Completo",
+   "texto": "Palavras-chave: emitindo nfe, modelo errado, nfce incorreta, nota modelo 55. Script: 'Vamos corrigir o tipo de emissão 👍' Solução: Configurações > Fiscal > Tipo de documento > Selecionar: NFC-e. Importante: NF-e = modelo 55 (não é PDV), NFC-e = modelo 65 (correto para balcão). Consequências: Modelo errado causa problemas fiscais e rejeições. Sempre usar NFC-e para vendas no balcão.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "NOTA FISCAL EM DUPLICIDADE - Script Completo",
+   "texto": "Palavras-chave: nota duplicada, nfce duplicada, nfe duplicada, erro 204, erro 539, duplicidade de nota, numero de nota repetido, nota ja emitida. Script: 'Esse erro indica que a nota fiscal já foi enviada anteriormente 👍 Vamos verificar se ela já foi autorizada para evitar duplicidade.' Diagnóstico: Perguntar: 1) Nota já foi emitida antes? 2) Tentou reenviar mesma venda? 3) Código de erro (204 ou 539)? Erro 204: Nota já autorizada - não reenviar. Erro 539: Mesmo número com dados diferentes - corrigir numeração. Solução: Consultar nota pela chave, verificar status, evitar reenvio duplicado, corrigir numeração se necessário.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "ERRO NO SCHEMA DO XML - Script Completo",
+   "texto": "Palavras-chave: erro schema xml, falha no schema, rejeicao 215, xml invalido, erro estrutura xml, nota com erro de schema, falha validacao xml. Script: 'Esse erro indica que a estrutura da nota fiscal está inválida 👍 Vamos corrigir os dados e reenviar.' Diagnóstico: Perguntar: 1) Código de erro (ex: 215)? 2) Acontece com todas as notas ou só uma? 3) Alterado algum cadastro recentemente? Erro 215: Falha no Schema XML - XML não está no padrão SEFAZ. Causas: Campos obrigatórios faltando (NCM, CFOP, CST/CSOSN), formato inválido (datas erradas, números com letras), estrutura incorreta (tags fora de ordem), versão desatualizada. Solução: 1) Identificar campo com erro nos logs, 2) Corrigir cadastro (produto NCM/CFOP, cliente CPF/CNPJ, valores), 3) Reenviar nota, 4) Atualizar sistema se necessário. Procedimentos: Validar XML contra XSD, regerar com dados corrigidos. Causas comuns PDV: Produto sem NCM, CFOP incorreto, valor total diferente da soma, sistema desatualizado. Padrão ouro: 1) Identificar erro, 2) Corrigir dados, 3) Validar, 4) Reenviar.",
+   "categoria": "geral"
+  },
+  {
+   "titulo": "MAPA COMPLETO REJEIÇÕES SEFAZ - Todos Códigos",
+   "texto": "Palavras-chave: erro sefaz, rejeicao sefaz, codigo erro, erro 204, erro 215, erro 539, erro 500, erro 503, erro 408, erro 406, erro 410, erro 900, erro 901, erro 902, erro 903, erro 999, leitor nao liga, leitor nao funciona, falha no xml, xml com erro, erro no xml, erro 2015. Mapa completo de códigos SEFAZ: 🟢 100-199 SUCESSO: 100 Autorizado, 101 Cancelado, 102 Inutilizada, 103 Lote recebido, 104 Lote processado, 105 Lote em processamento, 106 Lote não localizado. 🔴 200-299 XML/ESTRUTURA: 204 Duplicidade (não reenviar), 205 Denegada, 206 Já inutilizada, 207 CNPJ inválido, 208 CNPJ destinatário inválido, 209 IE inválida, 210 IE destinatário inválida, 215 Schema XML (corrigir XML), 216 Chave inválida, 217 NF-e não consta base, 218 NF-e não encontrada, 219 Circulação não permitida, 225 Falha validação. 🔴 300-399 USO INDEVIDO: 301 Uso denegado emitente, 302 Uso denegado destinatário, 303 Uso indevido sistema, 304 Consumo indevido, 305 Tentativas excessivas. 🔴 400-499 CAMPOS/DADOS: 401 CPF inválido, 402 XML inválido, 403 IE inválida, 404 Data inválida, 405 Código município inválido, 406 CFOP inválido, 407 CST inválido, 408 NCM inválido, 409 Unidade inválida, 410 Valor inválido, 411 Total divergente, 412 Base cálculo inválida, 413 Alíquota inválida, 414 ICMS inválido, 415 IPI inválido, 416 PIS inválido, 417 COFINS inválida. 🔴 500-599 PROCESSAMENTO: 500 Erro interno SEFAZ (tentar novamente), 501 Timeout (reenviar), 502 Erro conexão (ver internet), 503 Serviço indisponível (aguardar), 504 Gateway timeout, 505 Erro processamento, 539 Duplicidade com diferença (corrigir numeração). 🔴 600-699 EVENTOS/CANCELAMENTO: 601 Cancelamento fora prazo, 602 Cancelamento já realizado, 603 Evento inválido, 604 Evento não permitido, 605 Evento duplicado. 🔴 700-799 REGRAS NEGÓCIO: 701 NF-e fora prazo, 702 Valor incompatível, 703 CFOP incompatível, 704 Operação inválida, 705 Produto não permitido, 706 IE obrigatória, 707 Destinatário inválido. 🔴 800-899 NFC-e ESPECÍFICOS: 800 Erro QR Code, 801 URL inválida, 802 Assinatura inválida, 803 Token inválido, 804 CSC inválido, 805 URL QR-Code inválida, 806 Falha consulta. 🔴 900-999 GERAIS: 900 Erro desconhecido (Ver log), 901 Erro interno (Reenviar), 902 Falha sistema (Reiniciar), 903 Erro não catalogado (Analisar), 999 Erro não identificado (Log detalhado). Nota: erro 2015 não é padrão SEFAZ - pode ser erro interno do sistema. Principais erros dia a dia: 204 duplicidade, 215 XML, 539 duplicidade diferença, 500 SEFAZ fora, 503 serviço indisponível, 408 NCM inválido, 406 CFOP errado, 410 valor inválido. Para leitor não liga: verificar energia, cabo USB, porta, testar em outro computador. Para falha no XML: validar estrutura, campos obrigatórios, schema XSD. Padrão diagnóstico: 1) Identificar código, 2) Ver descrição, 3) Corrigir dados, 4) Reenviar.",
+   "categoria": "geral"
+  }
+ ]
+}

@@ -1,0 +1,31 @@
+@import "components/global.scss";
+
+.footer {
+  background-color: white;
+  border-top: 1px solid $c-border;
+}
+
+.copyright,
+.address {
+  display: block;
+  clear: both;
+  opacity: 0.7;
+  text-align: left;
+  font-style: normal;
+  font-size: 0.8em;
+}
+
+.copyright {
+  margin-bottom: $scale1;
+}
+
+.nav {
+  margin-bottom: $scale;
+}
+
+.link {
+  color: $c-dark;
+  font-size: 0.9em;
+  text-decoration: none;
+  margin-right: $scale1;
+}

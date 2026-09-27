@@ -1,0 +1,20 @@
+# Projeto Compose fixo — outros stacks no mesmo VPS (ex.: CRM) devem usar
+# outro `name` / `-p`. Ambos tinham pasta `remote/` + serviço `app` e um
+# `up --force-recreate app` derrubava o outro.
+name: remote
+
+volumes:
+  postgres_data:
+    # Nomes explícitos = mantém volumes já existentes no VPS (project remote_*).
+    name: remote_postgres_data
+  meilisearch_data:
+    name: remote_meilisearch_data
+  uploads_data:
+    name: remote_uploads_data
+  rustdesk_data:
+    name: remote_rustdesk_data
+
+networks:
+  portal:
+    name: remote_portal
+    driver: bridge

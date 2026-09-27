@@ -1,0 +1,79 @@
+@import 'components/global.scss';
+
+main {
+
+  @media (min-width: $mobile){
+
+    &.with-sidebar {
+
+      padding-left: $scale7 + $scale1;
+
+      .blankslate-message {
+
+        margin-left: $scale8;
+
+      }
+    }
+  }
+
+  @media (max-width: $mobile + 1){
+
+    &.with-bottom-nav {
+
+      padding-bottom: $scale7;
+
+    }
+  }
+}
+
+header {
+
+  margin-bottom: $scale;
+
+}
+
+.col1 {
+
+  @media (min-width: $mobile){
+
+    float: left;
+    width: 49%;
+
+  }
+}
+
+.col2 {
+
+  @media (min-width: $mobile){
+
+    float: right;
+    width: 49%;
+
+  }
+}
+
+.title-row {
+
+
+  &:after {
+
+    content: "";
+    display: table;
+    clear: both;
+
+  }
+
+  h2 {
+
+    float: left;
+    margin-top: 0;
+
+  }
+
+  button {
+
+    float: right;
+    margin-top: -0.5em;
+
+  }
+}

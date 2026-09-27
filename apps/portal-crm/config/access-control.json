@@ -1,0 +1,33 @@
+{
+  "levels": {
+    "user": { "rank": 10 },
+    "support": { "rank": 20 },
+    "developer": { "rank": 30 },
+    "admin": { "rank": 40 }
+  },
+  "contexts": [
+    { "prefix": "/api/admin", "floorLevel": "admin" },
+    { "prefix": "/configuracoes", "floorLevel": "admin" }
+  ],
+  "routes": [
+    { "pattern": "/dashboard", "minLevel": "user" },
+    { "pattern": "/clientes", "minLevel": "user" },
+    { "pattern": "/prospeccao", "minLevel": "user" },
+    { "pattern": "/pipeline", "minLevel": "user" },
+    { "pattern": "/agenda", "minLevel": "user" },
+    { "pattern": "/historico-vendas", "minLevel": "user" },
+    { "pattern": "/equipe", "minLevel": "admin" },
+    { "pattern": "/configuracoes", "minLevel": "admin" },
+    { "pattern": "/api/admin/users", "minLevel": "admin" },
+    { "pattern": "/api/admin/users/**", "minLevel": "admin" },
+    { "pattern": "/api/clients", "minLevel": "user" },
+    { "pattern": "/api/clients/**", "minLevel": "user" },
+    { "pattern": "/api/deals", "minLevel": "user" },
+    { "pattern": "/api/deals/**", "minLevel": "user" },
+    { "pattern": "/api/activities", "minLevel": "user" },
+    { "pattern": "/api/activities/**", "minLevel": "user" },
+    { "pattern": "/api/leads", "minLevel": "user" },
+    { "pattern": "/api/leads/**", "minLevel": "user" },
+    { "pattern": "/api/stages", "minLevel": "user" }
+  ]
+}

@@ -1,0 +1,17 @@
+@import 'components/global.scss';
+
+.base {
+
+  position: relative;
+  top: -3px;
+  display: block;
+  color: white;
+  font-size: 0.85em;
+  font-weight: 500;
+  margin-bottom: $scale2;
+  padding: 0.6em $scale;
+  border-bottom-left-radius: $radius;
+  border-bottom-right-radius: $radius;
+  background: darken($c-red, 3%);
+
+}

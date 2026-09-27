@@ -1,0 +1,177 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  vendedor
+  gerente
+  admin
+}
+
+enum ClientType {
+  lead
+  cliente
+}
+
+enum DealStatus {
+  open
+  won
+  lost
+}
+
+enum ActivityType {
+  call
+  visit
+  email
+  meeting
+  follow_up
+}
+
+enum StaffPosition {
+  vendedor_externo
+  vendedor_interno
+  gerente_comercial
+  diretor
+}
+
+model Team {
+  id         String   @id @default(cuid())
+  name       String
+  managerId  String?
+  manager    User?    @relation("TeamManager", fields: [managerId], references: [id])
+  members    User[]   @relation("TeamMembers")
+  createdAt  DateTime @default(now())
+
+  @@index([managerId])
+}
+
+model User {
+  id           String     @id @default(cuid())
+  name         String
+  email        String     @unique
+  passwordHash String
+  role         Role       @default(vendedor)
+  active       Boolean    @default(true)
+  teamId       String?
+  team         Team?      @relation("TeamMembers", fields: [teamId], references: [id])
+  managedTeams Team[]     @relation("TeamManager")
+  clients      Client[]
+  deals        Deal[]
+  activities   Activity[]
+  goals        Goal[]
+  profile      Profile?
+  createdAt    DateTime   @default(now())
+
+  @@index([teamId])
+}
+
+/// Extensão de domínio 1:1 com User (mesmo id) — espelha o padrão User+Profile
+/// do portal-suporte. Guarda dados de RH/gestão que não pertencem à autenticação.
+/// A escrita é dupla (User + Profile) em transação; ver UserRepository.
+model Profile {
+  id        String         @id
+  user      User           @relation(fields: [id], references: [id], onDelete: Cascade)
+  fullName  String?
+  position  StaffPosition?
+  phone     String?
+  avatarUrl String?
+  expiresAt DateTime?
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+}
+
+model Stage {
+  id     String  @id @default(cuid())
+  name   String
+  order  Int
+  color  String  @default("#6366f1")
+  active Boolean @default(true)
+  deals  Deal[]
+}
+
+model Client {
+  id         String     @id @default(cuid())
+  name       String
+  company    String?
+  email      String?
+  phone      String?
+  type       ClientType @default(lead)
+  // ownerId null = lead no POOL de prospecção (sem dono, disponível para pegar)
+  ownerId    String?
+  owner      User?      @relation(fields: [ownerId], references: [id])
+  source     String?    // origem do lead: importação, campanha, manual...
+  notes      String?
+  tags       String[]
+  deals      Deal[]
+  activities Activity[]
+  createdAt  DateTime   @default(now())
+
+  @@index([ownerId, createdAt])
+  @@index([type])
+}
+
+model Deal {
+  id            String     @id @default(cuid())
+  title         String
+  clientId      String
+  client        Client     @relation(fields: [clientId], references: [id])
+  ownerId       String
+  owner         User       @relation(fields: [ownerId], references: [id])
+  stageId       String
+  stage         Stage      @relation(fields: [stageId], references: [id])
+  value         Decimal?   @db.Decimal(12, 2)
+  expectedClose DateTime?
+  closedAt      DateTime?
+  status        DealStatus @default(open)
+  stageHistory  Json       @default("[]")
+  activities    Activity[]
+  createdAt     DateTime   @default(now())
+
+  @@index([clientId])
+  @@index([stageId])
+  @@index([ownerId, status])
+  @@index([ownerId, status, closedAt])
+  @@index([status, closedAt])
+}
+
+model Activity {
+  id           String       @id @default(cuid())
+  type         ActivityType
+  dealId       String?
+  deal         Deal?        @relation(fields: [dealId], references: [id])
+  clientId     String?
+  client       Client?      @relation(fields: [clientId], references: [id])
+  ownerId      String
+  owner        User         @relation(fields: [ownerId], references: [id])
+  scheduledAt  DateTime
+  doneAt       DateTime?
+  notes        String?
+  reminderSent Boolean      @default(false)
+  createdAt    DateTime     @default(now())
+
+  @@index([dealId])
+  @@index([clientId])
+  @@index([ownerId, scheduledAt])
+  @@index([ownerId, doneAt])
+}
+
+model Goal {
+  id          String  @id @default(cuid())
+  userId      String
+  user        User    @relation(fields: [userId], references: [id])
+  periodMonth Int
+  periodYear  Int
+  targetValue Decimal @db.Decimal(12, 2)
+  targetDeals Int
+
+  @@unique([userId, periodMonth, periodYear])
+}
+
+model AppConfig {
+  key   String @id
+  value String
+}

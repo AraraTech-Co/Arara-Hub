@@ -1,0 +1,67 @@
+@import 'components/global.scss';
+
+/* pop */
+.animate { width: 100% };
+
+.animate.pop > * {
+
+  opacity: 0;
+  transform: scale(0.95);
+  transition: all 200ms cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+}
+
+.animate.pop-appear-done > * {
+
+  opacity: 1;
+  transform: none;
+
+}
+
+/* center pop */
+.animate.pop-center > * {
+
+  opacity: 0;
+  transform: scale(0.95);
+  transition: all 200ms cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+}
+
+.animate.pop-center-appear-done > * {
+
+  opacity: 1;
+  transform: scale(1);
+
+}
+
+/* slideup */
+.animate.slideup > * {
+
+  opacity: 0;
+  transform: translateY(5%);
+  transition: all 200ms cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+}
+
+.animate.slideup-appear-done > * {
+
+  opacity: 1;
+  transform: none;
+
+}
+
+/* slidedown */
+.animate.slidedown > * {
+
+  opacity: 0;
+  transform: translateY(-5%);
+  transition: all 200ms cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+}
+
+.animate.slidedown-appear-done > * {
+
+  opacity: 1;
+  transform: none;
+
+}

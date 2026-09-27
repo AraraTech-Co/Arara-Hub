@@ -1,0 +1,16 @@
+@import 'components/global.scss';
+
+.base {
+
+  display: block;
+  width: $scale9;
+  height: $scale3;
+  margin: 0 auto $scale2;
+  outline: none;
+
+  @media (max-width: $mobile){
+
+    width: $scale8;
+
+  }
+}

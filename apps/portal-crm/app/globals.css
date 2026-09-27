@@ -1,0 +1,82 @@
+@import "tailwindcss";
+@source "../app";
+@source "../components";
+
+:root {
+  --background: oklch(0.99 0 0);
+  --foreground: oklch(0.13 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.13 0 0);
+  --primary: oklch(0.541 0.239 271);
+  --primary-foreground: oklch(0.99 0 0);
+  --muted: oklch(0.965 0 0);
+  --muted-foreground: oklch(0.50 0 0);
+  --border: oklch(0.91 0 0);
+  --input: oklch(0.91 0 0);
+  --ring: oklch(0.541 0.239 271);
+  --radius: 0.5rem;
+
+  --sidebar: oklch(0.158 0.015 271);
+  --sidebar-foreground: oklch(0.92 0.008 271);
+  --sidebar-primary: oklch(0.541 0.239 271);
+  --sidebar-accent: oklch(0.22 0.02 271);
+  --sidebar-border: oklch(0.25 0.018 271);
+  --sidebar-muted: oklch(0.62 0.015 271);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Default transitions */
+a,
+button {
+  transition-property: color, background-color, border-color, box-shadow;
+  transition-duration: 150ms;
+  transition-timing-function: ease;
+}
+
+/* Focus ring consistente usando indigo-600 */
+:focus-visible {
+  outline: 2px solid oklch(0.541 0.239 271);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* text-wrap balance nos headings */
+h1, h2, h3, h4, h5, h6 {
+  text-wrap: balance;
+}
+
+/* Scrollbar thin e estilizada */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: oklch(0.80 0 0) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: oklch(0.82 0 0);
+  border-radius: 9999px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: oklch(0.68 0 0);
+}

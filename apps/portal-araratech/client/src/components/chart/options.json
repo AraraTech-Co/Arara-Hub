@@ -1,0 +1,46 @@
+{
+  "scales": {
+    "x": {
+      "grid": {
+        "display": false
+      },
+      "border": {},
+      "ticks": {
+        "font": {
+          "family": "Source Sans Pro",
+          "size": 11
+        }
+      }
+    },
+    "y": {
+      "grid": {
+        "display": false,
+        "drawBorder": false
+      },
+      "border": {
+        "display": false
+      },
+      "ticks": {
+        "font": {
+          "family": "Source Sans Pro",
+          "size": 11
+        }
+      }
+    }
+  },
+  "plugins": {
+    "legend": {
+      "display": false
+    },
+    "tooltip": {
+      "backgroundColor": "#404958",
+      "padding": 10,
+      "enabled": true,
+      "displayColors": false,
+      "callbacks": {}
+    }
+  },
+  "defaultFontSize": 11,
+  "maintainAspectRatio": false,
+  "responsive": true
+}

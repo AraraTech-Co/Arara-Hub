@@ -1,0 +1,125 @@
+@import "components/global.scss";
+$grey: #aaa;
+
+button.base,
+a.base {
+  color: white;
+  transition: 0.3s ease-in-out all;
+
+  &:hover {
+    color: white !important;
+  }
+}
+
+button.facebook,
+a.facebook {
+  background-color: $c-facebook;
+
+  &:hover {
+    background-color: darken($c-facebook, 7%);
+  }
+}
+
+button.twitter,
+a.twitter {
+  background-color: $c-twitter;
+
+  &:hover {
+    background-color: darken($c-twitter, 7%);
+  }
+}
+
+button.microsoft,
+a.microsoft {
+  background-color: $c-microsoft;
+
+  &:hover {
+    background-color: darken($c-microsoft, 7%);
+  }
+}
+
+button.linkedin,
+a.linkedin {
+  background-color: $c-linkedin;
+
+  &:hover {
+    background-color: darken($c-linkedin, 7%);
+  }
+}
+
+button.mail,
+a.mail {
+  background-color: $c-green;
+
+  &:hover {
+    background-color: darken($c-green, 7%);
+  }
+}
+
+.icon {
+  position: absolute;
+  z-index: 5;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.signinButtons {
+  text-align: center;
+  margin-top: -$scale3;
+  margin-bottom: $scale3;
+}
+
+.signinButton {
+  margin-bottom: $scale-2;
+}
+
+.shareButton {
+  position: relative;
+  float: left;
+  width: $scale4;
+  height: $scale4;
+  margin-right: 0.5em;
+  padding: $scale-2;
+  border-radius: $radius;
+
+  &:last-child {
+    margin-right: 0;
+  }
+}
+
+.or {
+  position: relative;
+  display: inline-block;
+  margin-top: $scale-2;
+  padding: 0 $scale-2;
+  z-index: 3;
+  color: $c-text;
+  width: 100%;
+
+  &:before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+    width: 100%;
+    z-index: -2;
+    margin-top: 1px;
+    background-color: $c-border;
+    transform: translateY(-50%);
+  }
+
+  &:after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: $scale4;
+    height: 100%;
+    z-index: -1;
+    transform: translate(-50%, -50%);
+    background-color: white;
+  }
+}

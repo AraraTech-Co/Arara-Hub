@@ -1,0 +1,13 @@
+# Compose project isolado — não colidir com portal-suporte (`remote`) no mesmo VPS.
+name: arara
+
+volumes:
+  postgres_data:
+    name: arara_postgres_data
+  platform_data:
+    name: arara_platform_data
+
+networks:
+  arara:
+    name: arara_net
+    driver: bridge

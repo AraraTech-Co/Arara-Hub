@@ -1,0 +1,15 @@
+# Config do cliente RustDesk — aponta para o servidor self-hosted da Arara.
+# PREENCHIDO em 21/08/2026 — servidor no ar, portas TCP 21115-21119 abertas.
+# A `key` é a chave PÚBLICA do hbbs: é ela que impede um cliente de ser
+# desviado para outro servidor. Pode ser distribuída à vontade.
+#
+# Este arquivo vai JUNTO do instalar-rustdesk.bat, na mesma pasta.
+#
+# Se um dia o volume `remote_rustdesk_data` for recriado, o par de chaves nasce
+# de novo e ESTE arquivo precisa ser atualizado (senão nenhum cliente conecta).
+# Para reler:  cat $(find / -name id_ed25519.pub 2>/dev/null)
+
+rendezvous_server = 'YOUR_DEPLOY_HOST:21116'
+relay_server = 'YOUR_DEPLOY_HOST:21117'
+api_server = ''
+key = 'YOUR_RUSTDESK_PUBLIC_KEY'

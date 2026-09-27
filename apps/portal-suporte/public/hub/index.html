@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Arara Hub</title>
+    <!--
+      /hub/ foi a casa provisória do Arara Hub enquanto `hub.arara-tech.com`
+      não existia. Existe desde 28/08, com certificado — o Hub mora lá.
+
+      Aqui ficou só o redirecionamento, e não uma segunda cópia dos arquivos:
+      duas cópias divergem na primeira atualização que alguém esquecer de
+      copiar, e ninguém percebe até atrapalhar.
+
+      ONTEM ESTE REDIRECIONAMENTO FOI UM ERRO e foi revertido: ele apontava
+      para http://<ip>:<porta>, sem TLS, e o Hub é uma tela de login. Agora o
+      destino tem certificado, então vale.
+    -->
+    <meta http-equiv="refresh" content="0; url=https://hub.arara-tech.com/" />
+    <link rel="canonical" href="https://hub.arara-tech.com/" />
+    <style>
+      body { font: 15px ui-sans-serif, system-ui, sans-serif; background:#0d0d16; color:#e8e8f0;
+             display:grid; place-items:center; height:100vh; margin:0; text-align:center }
+      a { color:#7c7cf0 }
+    </style>
+  </head>
+  <body>
+    <div>
+      <p>O Arara Hub agora tem endereço próprio.</p>
+      <p><a href="https://hub.arara-tech.com/">hub.arara-tech.com</a></p>
+    </div>
+  </body>
+</html>

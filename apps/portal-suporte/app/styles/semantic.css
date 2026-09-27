@@ -1,0 +1,44 @@
+/* ─── Semantic state tokens — success, warning, error, info ──────────────────
+   Naming: --sem-{name}     = background
+           --sem-{name}-fg  = foreground
+           --sem-{name}-bd  = border
+   ──────────────────────────────────────────────────────────────────────────── */
+:root {
+  /* Verde da marca (#93B52E · matiz 123), extraído do logotipo. O verde
+   anterior era genérico, matiz 163 — azulado, de biblioteca. "Resolvido"
+   e "concluído" são o momento em que a marca aparece de graça.
+   Contraste conferido: 7,83:1 no claro, 8,69:1 no escuro. */
+  --sem-success:    oklch(0.950 0.055 123);
+  --sem-success-fg: oklch(0.400 0.105 123);
+  --sem-success-bd: oklch(0.905 0.095 123);
+
+  --sem-warning:    oklch(0.962 0.059 96);
+  --sem-warning-fg: oklch(0.473 0.137 46);
+  --sem-warning-bd: oklch(0.924 0.120 96);
+
+  --sem-error:    oklch(0.936 0.032 18);
+  --sem-error-fg: oklch(0.444 0.177 26);
+  --sem-error-bd: oklch(0.885 0.061 18);
+
+  --sem-info:    oklch(0.932 0.032 256);
+  --sem-info-fg: oklch(0.421 0.180 265);
+  --sem-info-bd: oklch(0.882 0.059 254);
+}
+
+.dark {
+  --sem-success:    oklch(0.25 0.055 123);
+  --sem-success-fg: oklch(0.80 0.105 123);
+  --sem-success-bd: oklch(0.38 0.075 123);
+
+  --sem-warning:    oklch(0.27 0.06 80);
+  --sem-warning-fg: oklch(0.82 0.08 85);
+  --sem-warning-bd: oklch(0.42 0.09 80);
+
+  --sem-error:    oklch(0.26 0.05 25);
+  --sem-error-fg: oklch(0.79 0.08 25);
+  --sem-error-bd: oklch(0.40 0.08 25);
+
+  --sem-info:    oklch(0.25 0.05 256);
+  --sem-info-fg: oklch(0.77 0.07 256);
+  --sem-info-bd: oklch(0.38 0.08 256);
+}

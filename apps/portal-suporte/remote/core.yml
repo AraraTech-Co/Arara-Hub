@@ -1,0 +1,173 @@
+services:
+  app:
+    image: ${DOCKER_IMAGE}:${IMAGE_TAG:-latest}
+    container_name: portal-suporte-prd
+    restart: unless-stopped
+    depends_on:
+      database:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    volumes:
+      - uploads_data:/app/public/uploads
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT:-5432}/${DB_NAME}?schema=public
+      # IA — secrets injetados no deploy (GitHub Actions → export antes do compose up)
+      AI_API_KEY: ${AI_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      LLM_MODEL: ${LLM_MODEL:-}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-}
+      REDIS_HOST: ${REDIS_HOST:-redis}
+      REDIS_PORT: ${REDIS_PORT:-6379}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      REDIS_DB: ${REDIS_DB:-0}
+      MEILISEARCH_HOST: ${MEILISEARCH_HOST:-http://meilisearch:7700}
+      MEILISEARCH_API_KEY: ${MEILISEARCH_API_KEY:-}
+      AUTH_SECRET: ${AUTH_SECRET}
+      AUTH_URL: ${AUTH_URL:-}
+      AUTH_TRUST_HOST: ${AUTH_TRUST_HOST:-false}
+      SSH_ENCRYPTION_KEY: ${SSH_ENCRYPTION_KEY}
+      BOTCONVERSA_API_KEY: ${BOTCONVERSA_API_KEY:-}
+      BOTCONVERSA_API_URL: ${BOTCONVERSA_API_URL:-}
+      BOTCONVERSA_WEBHOOK_SECRET: ${BOTCONVERSA_WEBHOOK_SECRET:-}
+      BOTCONVERSA_STATUS_PAUSE: ${BOTCONVERSA_STATUS_PAUSE:-}
+      BOTCONVERSA_STATUS_RESUME: ${BOTCONVERSA_STATUS_RESUME:-}
+      # Transporte de WhatsApp ativo + Avisa API (troca via WA_TRANSPORT)
+      WA_TRANSPORT: ${WA_TRANSPORT:-botconversa}
+      AVISA_API_TOKEN: ${AVISA_API_TOKEN:-}
+      AVISA_API_URL: ${AVISA_API_URL:-}
+      AVISA_WEBHOOK_SECRET: ${AVISA_WEBHOOK_SECRET:-}
+      # Bot de atendimento (Claude) — só atua quando ligado no admin + chave presente
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      WA_BOT_MODEL: ${WA_BOT_MODEL:-}
+      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-https://portal.example.com}
+      SENTRY_DSN: ${SENTRY_DSN:-}
+      NEXT_PUBLIC_SENTRY_DSN: ${NEXT_PUBLIC_SENTRY_DSN:-}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 768M
+        reservations:
+          cpus: "0.10"
+          memory: 256M
+    networks:
+      - portal
+
+  database:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: "0.35"
+          memory: 512M
+        reservations:
+          cpus: "0.05"
+          memory: 128M
+    networks:
+      - portal
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --maxmemory 96mb --maxmemory-policy allkeys-lru
+    ports:
+      - "6379:6379"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.05"
+          memory: 128M
+        reservations:
+          cpus: "0.01"
+          memory: 32M
+    networks:
+      - portal
+
+  meilisearch:
+    image: getmeili/meilisearch:v1.11
+    environment:
+      MEILI_MASTER_KEY: masterKey
+      MEILI_ENV: production
+      MEILI_MAX_INDEXING_MEMORY: 200MB
+    ports:
+      - "7700:7700"
+    volumes:
+      - meilisearch_data:/meili_data
+    deploy:
+      resources:
+        limits:
+          cpus: "0.10"
+          memory: 256M
+        reservations:
+          cpus: "0.02"
+          memory: 64M
+    networks:
+      - portal
+
+  # ── RustDesk self-hosted (acesso remoto — substitui o AnyDesk) ──────────────
+  # hbbs = ID/rendezvous server (sinalização + NAT hole-punch).
+  # hbbr = relay server (tráfego quando não há P2P direto).
+  # Ambos compartilham o volume rustdesk_data (a chave Ed25519 gerada na 1ª subida).
+  # RUSTDESK_PUBLIC_HOST = host/IP público que os clientes usam para o relay.
+  # Firewall do VPS precisa liberar: TCP 21115-21119 + UDP 21116.
+  rustdesk-hbbs:
+    image: rustdesk/rustdesk-server:latest
+    container_name: portal-rustdesk-hbbs
+    restart: unless-stopped
+    command: hbbs -r ${RUSTDESK_PUBLIC_HOST:-YOUR_DEPLOY_HOST}:21117
+    ports:
+      - "21115:21115"
+      - "21116:21116"
+      - "21116:21116/udp"
+      - "21118:21118"
+    volumes:
+      - rustdesk_data:/root
+    depends_on:
+      - rustdesk-hbbr
+    deploy:
+      resources:
+        limits:
+          cpus: "0.10"
+          memory: 128M
+        reservations:
+          cpus: "0.02"
+          memory: 32M
+    networks:
+      - portal
+
+  rustdesk-hbbr:
+    image: rustdesk/rustdesk-server:latest
+    container_name: portal-rustdesk-hbbr
+    restart: unless-stopped
+    command: hbbr
+    ports:
+      - "21117:21117"
+      - "21119:21119"
+    volumes:
+      - rustdesk_data:/root
+    deploy:
+      resources:
+        limits:
+          cpus: "0.10"
+          memory: 128M
+        reservations:
+          cpus: "0.02"
+          memory: 32M
+    networks:
+      - portal

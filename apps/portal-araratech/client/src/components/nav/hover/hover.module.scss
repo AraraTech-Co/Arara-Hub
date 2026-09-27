@@ -1,0 +1,123 @@
+@import "components/global.scss";
+
+.wrapper {
+  position: relative;
+  top: -0.2em;
+  cursor: pointer;
+  clear: both;
+  width: $scale11;
+  min-width: $scale10;
+  color: $c-text-light;
+  z-index: 100;
+
+  &:after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    height: 15px;
+  }
+}
+
+.nav {
+  position: absolute;
+  top: 100%;
+  width: 100%;
+  padding: 0 $scale-4;
+  margin-top: 12px;
+  text-align: left;
+  border-radius: $radius;
+  box-shadow: 0px 0px 0.5em rgba(0, 0, 0, 0.15);
+  background: rgba(255, 255, 255, 0.8);
+
+  a,
+  button {
+    display: block;
+    width: 100%;
+    color: $c-text;
+    font-weight: 400;
+    opacity: 0.85;
+    font-size: $scale-1;
+    border-radius: 0;
+    text-align: left;
+    padding: $scale;
+    border-bottom: 1px solid $c-border;
+    background-color: transparent;
+
+    &:hover {
+      opacity: 1;
+      background-color: transparent;
+    }
+
+    &:last-child {
+      border-bottom: 0 !important;
+    }
+  }
+
+  &:after {
+    content: " ";
+    position: absolute;
+    bottom: 99%;
+    left: 1em;
+    pointer-events: none;
+    border: solid transparent;
+    border-bottom-color: white;
+    border-width: 6px;
+  }
+}
+
+.label {
+  display: inline-block;
+  color: $c-text-light;
+  font-size: $scale-2;
+  font-weight: 500;
+}
+
+.icon {
+  position: relative;
+  display: inline-block;
+  margin-right: $scale-4;
+}
+
+.left {
+  left: 0;
+  text-align: left;
+
+  nav:after {
+    right: auto;
+    left: 0.5em;
+  }
+}
+
+.right {
+  right: 0;
+  text-align: right;
+
+  nav:after {
+    right: 0.5em;
+    left: auto;
+  }
+
+  a,
+  button {
+    text-align: right;
+  }
+}
+
+.dark {
+  nav {
+    background: $c-dark;
+    background: rgba(0, 0, 0, 0.8);
+
+    a,
+    button {
+      color: lighten($c-text-light, 12%);
+      border-bottom: 1px solid lighten($c-dark, 10%);
+    }
+
+    &:after {
+      border-bottom-color: $c-dark;
+    }
+  }
+}

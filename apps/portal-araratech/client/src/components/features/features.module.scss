@@ -1,0 +1,31 @@
+@import 'components/global.scss';
+
+div.feature {
+
+  padding-right: $scale;
+
+}
+
+.icon {
+
+  position: relative;
+  float: left;
+  margin-top: 0.2em;
+  margin-right: $scale-2;
+
+}
+
+.title {
+
+  color: $c-blue;
+  font-weight: 800;
+  text-transform: uppercase;
+
+}
+
+.description {
+
+  margin-top: $scale-4;
+  margin-bottom: $scale2;
+
+}

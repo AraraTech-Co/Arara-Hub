@@ -1,0 +1,77 @@
+services:
+  app:
+    image: ${DOCKER_IMAGE}:${IMAGE_TAG:-latest}
+    container_name: arara-platform-prd
+    restart: unless-stopped
+    depends_on:
+      database:
+        condition: service_healthy
+    ports:
+      - "${APP_PORT:-4100}:4100"
+      # Sticky hosting ports (1 host / app). Amplie se precisar de mais apps.
+      - "10000-10050:10000-10050"
+    volumes:
+      - platform_data:/app/data
+    environment:
+      NODE_ENV: production
+      PORT: "4100"
+      HOST: "0.0.0.0"
+      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST:-arara-platform-db}:${DB_PORT:-5432}/${DB_NAME}?schema=public
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      REFRESH_TOKEN_EXPIRES_DAYS: ${REFRESH_TOKEN_EXPIRES_DAYS:-30}
+      APP_SECRETS_KEY: ${APP_SECRETS_KEY}
+      PUBLIC_HOST: ${PUBLIC_HOST:-localhost}
+      SANDBOX_TIMEOUT_MS: ${SANDBOX_TIMEOUT_MS:-15000}
+      SANDBOX_MEMORY_MB: ${SANDBOX_MEMORY_MB:-32}
+      # Prefer BY_APP (least privilege). Empty both for an app = ctx.fetch denies all hosts.
+      SANDBOX_FETCH_ALLOWLIST: ${SANDBOX_FETCH_ALLOWLIST:-}
+      SANDBOX_FETCH_ALLOWLIST_BY_APP: ${SANDBOX_FETCH_ALLOWLIST_BY_APP:-portal-suporte:www.avisaapi.com.br,portal-suporte:openrouter.ai,portal-suporte:api.arara-tech.com,portal-horas:api.arara-tech.com}
+      SANDBOX_FETCH_TIMEOUT_MS: ${SANDBOX_FETCH_TIMEOUT_MS:-8000}
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"fetch('http://127.0.0.1:4100/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\"",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: "1.00"
+          memory: 1024M
+        reservations:
+          cpus: "0.10"
+          memory: 256M
+    networks:
+      - arara
+
+  database:
+    image: postgres:16-alpine
+    container_name: arara-platform-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    # Postgres só na rede Docker (5432 interno); não publicar no host.
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 512M
+        reservations:
+          cpus: "0.05"
+          memory: 128M
+    networks:
+      - arara

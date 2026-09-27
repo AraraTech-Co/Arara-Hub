@@ -1,0 +1,55 @@
+# Production API (Hostinger-Suporte)
+#
+# Container : arara-platform-prd
+# Image     : arara-api:local
+# Port      : 4100 → api.arara-tech.com (Nginx on host, unchanged)
+# Network   : arara_net (shared with fronts + Postgres)
+#
+# Env file on server: ~/arara-platform-api/prd.env
+# (DATABASE_URL, JWT_*, APP_SECRETS_KEY, PUBLIC_HOST, SANDBOX_*, DISABLE_*)
+#
+# SANDBOX_FETCH_*: must be in prd.env. Empty both = every ctx.fetch denied
+# (WhatsApp, OpenRouter, etc.). Deploy scripts ensure defaults if missing.
+#
+name: arara-api
+
+services:
+  api:
+    image: ${API_IMAGE:-arara-api:local}
+    build:
+      context: ../packages/api
+      dockerfile: Dockerfile
+    container_name: arara-platform-prd
+    restart: unless-stopped
+    ports:
+      - "${API_PORT:-4100}:4100"
+    env_file:
+      - ${API_ENV_FILE:-prd.env}
+    environment:
+      NODE_ENV: production
+      PORT: "4100"
+      HOST: "0.0.0.0"
+      # Embedded SPA hosting retired — fronts are separate containers
+      DISABLE_HOSTING_RESTORE: "1"
+      DISABLE_APP_HOSTING: "1"
+      ALLOW_DB_CONTROLLER_PUBLISH: "0"
+      # Defaults only apply when the key is absent from prd.env (compose merge).
+      SANDBOX_FETCH_ALLOWLIST_BY_APP: ${SANDBOX_FETCH_ALLOWLIST_BY_APP:-portal-suporte:www.avisaapi.com.br,portal-suporte:mmg.whatsapp.net,portal-suporte:openrouter.ai,portal-suporte:api.arara-tech.com,portal-horas:api.arara-tech.com}
+      SANDBOX_FETCH_TIMEOUT_MS: ${SANDBOX_FETCH_TIMEOUT_MS:-8000}
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"fetch('http://127.0.0.1:4100/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\"",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+    networks:
+      - arara
+
+networks:
+  arara:
+    external: true
+    name: arara_net

@@ -1,0 +1,133 @@
+@import 'components/global.scss';
+
+.input {
+
+  margin-bottom: $scale1;
+
+}
+
+.base {
+
+  position: relative;
+  cursor: pointer;
+  color: $c-text;
+  width: 100%;
+  overflow: hidden;
+  border: 1px solid $c-border;
+  background-color: white;
+  border-radius: $radius;
+
+  &:after {
+
+    content: "";
+    position: absolute;
+    top: 50%;
+    right: $scale;
+    width: 0.85em;
+    height: 0.5em;
+    opacity: 0.35;
+    pointer-events: none;
+    transform: translateY(-50%);
+    background-size: contain;
+    background-image: url('./icons/ico-dropdown.svg');
+
+  }
+}
+
+.select {
+
+  position: relative;
+  width: 120%;
+  color: $c-text;
+  font-size: $scale;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background: transparent;
+  border: transparent;
+  outline: none;
+  cursor: pointer;
+  padding: $scale;
+
+}
+
+.select:-moz-focusring {
+
+  color: transparent;
+  text-shadow: 0 0 0 #000;
+
+}
+
+.select::-ms-expand {
+
+  display: none;
+
+}
+
+.success {
+
+  border-color: lighten($c-green, 3%);
+
+}
+
+.errorWrapper {
+
+  border: none;
+
+  &:before {
+
+    // psuedo border
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: $scale2;
+    border-radius: $radius;
+    border: 1px solid $c-red;
+
+  }
+
+  &:after {
+
+    margin-top: -$scale;
+
+  }
+}
+
+.error {
+
+  color: $c-red;
+  z-index: 2;
+
+}
+
+.warningWrapper {
+
+  &:before {
+
+    // psuedo border
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: $scale2;
+    border-radius: $radius;
+    border: 1px solid $c-orange;
+
+  }
+}
+
+.warning {
+
+  color: $c-orange;
+  z-index: 2;
+
+}
+
+.message {
+
+  margin-bottom: 0;
+
+}

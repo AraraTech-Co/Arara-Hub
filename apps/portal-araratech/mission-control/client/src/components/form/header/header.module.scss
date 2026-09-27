@@ -1,0 +1,15 @@
+@import 'components/global.scss';
+
+header {
+
+  padding-bottom: $scale;
+  margin-bottom: $scale;
+
+}
+
+.label {
+
+  color: lighten($c-text, 16%);
+  font-size: $scale-1;
+
+}

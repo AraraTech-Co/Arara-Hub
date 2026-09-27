@@ -1,0 +1,34 @@
+services:
+  # Serviço `crm` (não `app`) — evita colidir com o `app` do portal-suporte
+  # se alguém rodar compose sem `-p` / `name` corretos.
+  crm:
+    # Build no próprio VPS a partir do código sincronizado (context = raiz do repo).
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    image: crm-app:latest
+    container_name: crm-prd
+    restart: unless-stopped
+    ports:
+      # host 8080 (liberada no firewall) → container 3000
+      - "8080:3000"
+    environment:
+      NODE_ENV: production
+      # Aponta para o Postgres compartilhado (serviço `database` na rede remote_portal).
+      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST:-database}:${DB_PORT:-5432}/${DB_NAME}?schema=public
+      # next-auth v5
+      AUTH_SECRET: ${AUTH_SECRET}
+      AUTH_URL: ${AUTH_URL:-}
+      AUTH_TRUST_HOST: ${AUTH_TRUST_HOST:-true}
+      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://YOUR_DEPLOY_HOST:8080}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 512M
+        reservations:
+          cpus: "0.10"
+          memory: 128M
+    networks:
+      - portal

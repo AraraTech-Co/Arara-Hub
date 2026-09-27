@@ -1,0 +1,3 @@
+{
+    "server/**/*{.js,.jsx,.ts,.tsx}": ["npm run lint:backend","npm run test:backend"]
+}

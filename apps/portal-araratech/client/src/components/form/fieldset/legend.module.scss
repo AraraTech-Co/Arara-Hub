@@ -1,0 +1,30 @@
+@import 'components/global.scss';
+
+.base {
+
+  display: block;
+  position: relative;
+  color: lighten($c-text, 5%);
+  font-size: 0.85em;
+  margin-bottom: 0.65em;
+  text-transform: uppercase;
+
+}
+
+.error {
+
+  color: $c-red;
+  z-index: 2;
+  margin-left: -$scale1;
+
+}
+
+.required:after {
+
+  content: '*';
+  color: $c-red;
+  margin-left: 0.35em;
+  font-size: $scale;
+  font-weight: 500;
+
+}

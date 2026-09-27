@@ -1,0 +1,40 @@
+@import "components/global.scss";
+
+.creditCard {
+  position: relative;
+  display: block;
+  width: $scale12 + $scale3;
+  height: $scale10;
+  padding: $scale $scale2;
+  margin: $scale2 auto $scale5;
+  color: white;
+  letter-spacing: 0.025em;
+  border-radius: $radius * 2;
+  background-image: linear-gradient(48deg, #7373b4 0%, #6564ac 100%);
+}
+
+.brand {
+  font-weight: 600;
+  text-transform: uppercase;
+  margin-bottom: $scale;
+}
+
+.number {
+  font-size: $scale1;
+  font-weight: 600;
+  margin-bottom: $scale-2;
+}
+
+.col {
+  float: left;
+  margin-right: $scale;
+}
+
+.title {
+  font-weight: 600;
+  font-size: $scale-1;
+}
+
+.value {
+  font-size: $scale-1;
+}

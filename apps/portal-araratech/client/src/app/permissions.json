@@ -1,0 +1,65 @@
+{
+  "master": {
+    "master": true,
+    "sales": true,
+    "agent": true,
+    "owner": true,
+    "admin": true,
+    "developer": true,
+    "user": true
+  },
+  "sales": {
+    "master": false,
+    "sales": true,
+    "agent": false,
+    "owner": true,
+    "admin": true,
+    "developer": true,
+    "user": true
+  },
+  "agent": {
+    "master": false,
+    "sales": false,
+    "agent": true,
+    "owner": true,
+    "admin": true,
+    "developer": true,
+    "user": true
+  },
+  "owner": {
+    "master": false,
+    "sales": false,
+    "agent": false,
+    "owner": true,
+    "admin": true,
+    "developer": true,
+    "user": true
+  },
+  "admin": {
+    "master": false,
+    "sales": false,
+    "agent": false,
+    "owner": false,
+    "admin": true,
+    "developer": false,
+    "user": true
+  },
+  "user": {
+    "master": false,
+    "sales": false,
+    "agent": false,
+    "owner": false,
+    "admin": false,
+    "developer": false,
+    "user": true
+  },
+  "developer": {
+    "master": false,
+    "sales": false,
+    "agent": false,
+    "owner": false,
+    "admin": false,
+    "developer": true,
+    "user": true
+  }
+}

@@ -1,0 +1,361 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "./styles/status.css";
+@import "./styles/priority.css";
+@import "./styles/semantic.css";
+@import "./styles/devops.css";
+@import "./styles/components.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* O DESIGN.md fica na raiz da app e o Tailwind varre a pasta inteira atras de
+   nomes de classe. Sem esta linha, uma classe CITADA no documento vira regra
+   de verdade no CSS publicado — medido: `shadow-baixa`, `shadow-media` e
+   `md:px-6` entraram por ali, e um exemplo com `bg-slate-800` traria a paleta
+   crua de volta pela porta dos fundos. Documento descreve, nao declara. */
+@source not "../DESIGN.md";
+
+  /* ── Cor da marca (extraída de Logo_AraraTech_Icon.png em 10/09/2026) ──
+     O indigo que estava aqui era o violeta padrão do shadcn — veio no template
+     e nunca foi trocado. O azul da Arara é #06A8E0 · oklch(0.687 0.138 231.4).
+
+     A marca precisa de rampa por tema, e a medição diz por quê: o azul puro
+     carrega texto branco a apenas 2,73:1 e, sobre fundo claro, lê a 2,67:1.
+     Os dois reprovam. No ESCURO ele entra cheio com texto quase-preto (6,84:1);
+     no CLARO desce para L=0.43, o azul mais vivo que ainda carrega branco
+     (7,45:1) e serve como texto (7,28:1). Mesmo matiz, mesma croma. */
+:root {
+  --background: oklch(0.992 0.003 70);
+  --foreground: oklch(0.13 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.13 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.13 0 0);
+  --primary: oklch(0.43 0.138 231.4);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.96 0.010 231.4);
+  --secondary-foreground: oklch(0.36 0.090 231.4);
+  --muted: oklch(0.966 0.005 70);
+  --muted-foreground: oklch(0.505 0.008 70);
+  --accent: oklch(0.93 0.022 231.4);
+  --accent-foreground: oklch(0.36 0.090 231.4);
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.99 0 0);
+  --border: oklch(0.912 0.006 70);
+  --input: oklch(0.91 0 0);
+  --ring: oklch(0.43 0.138 231.4);
+  --radius: 0.75rem;
+  --chart-1: oklch(0.43 0.138 231.4);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.646 0.222 41.116);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.627 0.265 303.9);
+  --sidebar: oklch(0.155 0.012 70);
+  --sidebar-foreground: oklch(0.92 0.009 70);
+  --sidebar-primary: oklch(0.43 0.138 231.4);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+  --sidebar-accent: oklch(0.225 0.014 70);
+  --sidebar-accent-foreground: oklch(0.92 0.009 70);
+  --sidebar-border: oklch(0.25 0.013 70);
+  --sidebar-ring: oklch(0.43 0.138 231.4);
+  --sidebar-muted-foreground: oklch(0.63 0.011 70);
+}
+
+.dark {
+  --background: oklch(0.185 0.008 70);
+  --foreground: oklch(0.93 0.006 70);
+  --card: oklch(0.225 0.009 70);
+  --card-foreground: oklch(0.93 0.006 70);
+  --popover: oklch(0.225 0.009 70);
+  --popover-foreground: oklch(0.93 0.006 70);
+  --primary: oklch(0.687 0.138 231.4);
+  /* Quase-preto, não branco: branco sobre o azul da marca dá 2,73:1. */
+  --primary-foreground: oklch(0.17 0.010 70);
+  --secondary: oklch(0.27 0.010 70);
+  --secondary-foreground: oklch(0.92 0.010 231.4);
+  --muted: oklch(0.265 0.009 70);
+  --muted-foreground: oklch(0.635 0.011 70);
+  --accent: oklch(0.30 0.014 70);
+  --accent-foreground: oklch(0.92 0.010 231.4);
+  --destructive: oklch(0.50 0.2 27.325);
+  --destructive-foreground: oklch(0.99 0 0);
+  --border: oklch(0.305 0.010 70);
+  --input: oklch(0.27 0.010 70);
+  --ring: oklch(0.687 0.138 231.4);
+  --chart-1: oklch(0.687 0.138 231.4);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+  --sidebar: oklch(0.14 0.010 70);
+  --sidebar-foreground: oklch(0.92 0.009 70);
+  --sidebar-primary: oklch(0.687 0.138 231.4);
+  --sidebar-primary-foreground: oklch(0.17 0.010 70);
+  --sidebar-accent: oklch(0.215 0.012 70);
+  --sidebar-accent-foreground: oklch(0.92 0.009 70);
+  --sidebar-border: oklch(0.24 0.010 70);
+  --sidebar-ring: oklch(0.687 0.138 231.4);
+  --sidebar-muted-foreground: oklch(0.60 0.011 70);
+}
+
+@theme inline {
+  --font-sans: "Geist", "Geist Fallback";
+  --font-mono: "Geist Mono", "Geist Mono Fallback";
+  /* Elevação. O portal não tinha token de sombra: tudo era chapado e a
+     separação vinha de borda de 1px em cada bloco — vinte arestas por tela que
+     o olho refixa sem querer. Deslocamento pequeno e desfoque generoso deixam
+     o olho agrupar por profundidade, que custa menos em jornada de oito horas. */
+  --shadow-baixa: 0 1px 2px rgb(0 0 0 / 0.18);
+  --shadow-media: 0 1px 2px rgb(0 0 0 / 0.22), 0 8px 24px -12px rgb(0 0 0 / 0.35);
+  --shadow-alta: 0 2px 4px rgb(0 0 0 / 0.24), 0 16px 40px -16px rgb(0 0 0 / 0.45);
+
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 2px);
+  --radius-xl: calc(var(--radius) + 6px);
+
+  /* ── Base shadcn tokens ── */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* ── A marca sobrescreve as escalas do Tailwind ──────────────────────────
+     O portal tem ~340 classes com o violeta do template escritas na mão
+     (bg-indigo-600 62 vezes, bg-indigo-700 35, e assim por diante) e ~200 com
+     verde de biblioteca. Elas nunca passaram por token, e por isso não
+     mudaram quando --primary mudou.
+
+     Trocar 540 ocorrências à mão seria uma varredura arriscada em arquivo que
+     ninguém revisaria linha a linha. Redefinir a ESCALA resolve num lugar só:
+     todo `bg-indigo-600` que já existe passa a render o azul da Arara, sem
+     tocar em componente nenhum.
+
+     As rampas são derivadas do logotipo — azul #06A8E0 (matiz 231.4) e verde
+     #93B52E (matiz 123) — com a luminância distribuída para os degraus
+     cumprirem seu papel: 600 carrega texto branco (6,05:1 no azul, 6,31:1 no
+     verde) e 400 é a cor viva sobre o carvão escuro (7,30:1 e 8,64:1).
+     violet e purple caem na mesma rampa do azul: eram o mesmo violeta com
+     outro nome, e manter os três separados só preservaria o acidente. */
+  --color-indigo-50:  oklch(0.970 0.018 231.4);
+  --color-indigo-100: oklch(0.940 0.038 231.4);
+  --color-indigo-200: oklch(0.885 0.068 231.4);
+  --color-indigo-300: oklch(0.805 0.098 231.4);
+  --color-indigo-400: oklch(0.705 0.128 231.4);
+  --color-indigo-500: oklch(0.585 0.140 231.4);
+  --color-indigo-600: oklch(0.480 0.140 231.4);
+  --color-indigo-700: oklch(0.405 0.125 231.4);
+  --color-indigo-800: oklch(0.335 0.100 231.4);
+  --color-indigo-900: oklch(0.272 0.078 231.4);
+  --color-indigo-950: oklch(0.200 0.058 231.4);
+
+  --color-violet-50:  var(--color-indigo-50);
+  --color-violet-100: var(--color-indigo-100);
+  --color-violet-200: var(--color-indigo-200);
+  --color-violet-300: var(--color-indigo-300);
+  --color-violet-400: var(--color-indigo-400);
+  --color-violet-500: var(--color-indigo-500);
+  --color-violet-600: var(--color-indigo-600);
+  --color-violet-700: var(--color-indigo-700);
+  --color-violet-800: var(--color-indigo-800);
+  --color-violet-900: var(--color-indigo-900);
+  --color-violet-950: var(--color-indigo-950);
+
+  --color-purple-50:  var(--color-indigo-50);
+  --color-purple-100: var(--color-indigo-100);
+  --color-purple-200: var(--color-indigo-200);
+  --color-purple-300: var(--color-indigo-300);
+  --color-purple-400: var(--color-indigo-400);
+  --color-purple-500: var(--color-indigo-500);
+  --color-purple-600: var(--color-indigo-600);
+  --color-purple-700: var(--color-indigo-700);
+  --color-purple-800: var(--color-indigo-800);
+  --color-purple-900: var(--color-indigo-900);
+  --color-purple-950: var(--color-indigo-950);
+
+  --color-emerald-50:  oklch(0.970 0.020 123);
+  --color-emerald-100: oklch(0.940 0.042 123);
+  --color-emerald-200: oklch(0.888 0.074 123);
+  --color-emerald-300: oklch(0.815 0.112 123);
+  --color-emerald-400: oklch(0.723 0.160 123);
+  --color-emerald-500: oklch(0.630 0.150 123);
+  --color-emerald-600: oklch(0.530 0.135 123);
+  --color-emerald-700: oklch(0.445 0.115 123);
+  --color-emerald-800: oklch(0.365 0.092 123);
+  --color-emerald-900: oklch(0.300 0.072 123);
+  --color-emerald-950: oklch(0.215 0.052 123);
+
+  --color-green-50:  var(--color-emerald-50);
+  --color-green-100: var(--color-emerald-100);
+  --color-green-200: var(--color-emerald-200);
+  --color-green-300: var(--color-emerald-300);
+  --color-green-400: var(--color-emerald-400);
+  --color-green-500: var(--color-emerald-500);
+  --color-green-600: var(--color-emerald-600);
+  --color-green-700: var(--color-emerald-700);
+  --color-green-800: var(--color-emerald-800);
+  --color-green-900: var(--color-emerald-900);
+  --color-green-950: var(--color-emerald-950);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* ── Status tokens → Tailwind classes ──
+     bg-status-backlog / text-status-backlog-fg / border-status-backlog-bd */
+  --color-status-backlog:          var(--status-backlog);
+  --color-status-backlog-fg:       var(--status-backlog-fg);
+  --color-status-backlog-bd:       var(--status-backlog-bd);
+
+  --color-status-triage:           var(--status-triage);
+  --color-status-triage-fg:        var(--status-triage-fg);
+  --color-status-triage-bd:        var(--status-triage-bd);
+
+  --color-status-pending:          var(--status-pending);
+  --color-status-pending-fg:       var(--status-pending-fg);
+  --color-status-pending-bd:       var(--status-pending-bd);
+
+  --color-status-pending-dev:      var(--status-pending-dev);
+  --color-status-pending-dev-fg:   var(--status-pending-dev-fg);
+  --color-status-pending-dev-bd:   var(--status-pending-dev-bd);
+
+  --color-status-in-progress:      var(--status-in-progress);
+  --color-status-in-progress-fg:   var(--status-in-progress-fg);
+  --color-status-in-progress-bd:   var(--status-in-progress-bd);
+
+  --color-status-testing:          var(--status-testing);
+  --color-status-testing-fg:       var(--status-testing-fg);
+  --color-status-testing-bd:       var(--status-testing-bd);
+
+  --color-status-waiting:          var(--status-waiting);
+  --color-status-waiting-fg:       var(--status-waiting-fg);
+  --color-status-waiting-bd:       var(--status-waiting-bd);
+
+  --color-status-resolved:         var(--status-resolved);
+  --color-status-resolved-fg:      var(--status-resolved-fg);
+  --color-status-resolved-bd:      var(--status-resolved-bd);
+
+  --color-status-resolved-manual:      var(--status-resolved-manual);
+  --color-status-resolved-manual-fg:   var(--status-resolved-manual-fg);
+  --color-status-resolved-manual-bd:   var(--status-resolved-manual-bd);
+
+  --color-status-cancelled:        var(--status-cancelled);
+  --color-status-cancelled-fg:     var(--status-cancelled-fg);
+  --color-status-cancelled-bd:     var(--status-cancelled-bd);
+
+  --color-status-migration:        var(--status-migration);
+  --color-status-migration-fg:     var(--status-migration-fg);
+  --color-status-migration-bd:     var(--status-migration-bd);
+
+  --color-status-migration-done:      var(--status-migration-done);
+  --color-status-migration-done-fg:   var(--status-migration-done-fg);
+  --color-status-migration-done-bd:   var(--status-migration-done-bd);
+
+  /* ── Priority tokens → Tailwind classes ── */
+  --color-priority-very-low-dot:   var(--priority-very-low-dot);
+  --color-priority-low-dot:        var(--priority-low-dot);
+
+  --color-priority-medium:         var(--priority-medium);
+  --color-priority-medium-fg:      var(--priority-medium-fg);
+  --color-priority-medium-bd:      var(--priority-medium-bd);
+  --color-priority-medium-line:    var(--priority-medium-line);
+  --color-priority-medium-dot:     var(--priority-medium-dot);
+
+  --color-priority-high:           var(--priority-high);
+  --color-priority-high-fg:        var(--priority-high-fg);
+  --color-priority-high-bd:        var(--priority-high-bd);
+  --color-priority-high-line:      var(--priority-high-line);
+  --color-priority-high-dot:       var(--priority-high-dot);
+
+  --color-priority-urgent:         var(--priority-urgent);
+  --color-priority-urgent-fg:      var(--priority-urgent-fg);
+  --color-priority-urgent-bd:      var(--priority-urgent-bd);
+  --color-priority-urgent-line:    var(--priority-urgent-line);
+  --color-priority-urgent-dot:     var(--priority-urgent-dot);
+
+  /* ── Severity tokens → Tailwind classes ── */
+  --color-severity-p0:             var(--severity-p0);
+  --color-severity-p0-fg:          var(--severity-p0-fg);
+  --color-severity-p0-bd:          var(--severity-p0-bd);
+
+  --color-severity-p1:             var(--severity-p1);
+  --color-severity-p1-fg:          var(--severity-p1-fg);
+  --color-severity-p1-bd:          var(--severity-p1-bd);
+
+  --color-severity-p2:             var(--severity-p2);
+  --color-severity-p2-fg:          var(--severity-p2-fg);
+  --color-severity-p2-bd:          var(--severity-p2-bd);
+
+  --color-severity-p3:             var(--severity-p3);
+  --color-severity-p3-fg:          var(--severity-p3-fg);
+  --color-severity-p3-bd:          var(--severity-p3-bd);
+
+  /* ── Semantic tokens → Tailwind classes ── */
+  --color-sem-success:             var(--sem-success);
+  --color-sem-success-fg:          var(--sem-success-fg);
+  --color-sem-success-bd:          var(--sem-success-bd);
+
+  --color-sem-warning:             var(--sem-warning);
+  --color-sem-warning-fg:          var(--sem-warning-fg);
+  --color-sem-warning-bd:          var(--sem-warning-bd);
+
+  --color-sem-error:               var(--sem-error);
+  --color-sem-error-fg:            var(--sem-error-fg);
+  --color-sem-error-bd:            var(--sem-error-bd);
+
+  --color-sem-info:                var(--sem-info);
+  --color-sem-info-fg:             var(--sem-info-fg);
+  --color-sem-info-bd:             var(--sem-info-bd);
+
+  /* ── DevOps tokens → Tailwind classes ── */
+  --color-devops-surface:          var(--devops-surface);
+  --color-devops-panel:            var(--devops-panel);
+  --color-devops-overlay:          var(--devops-overlay);
+  --color-devops-border:           var(--devops-border);
+  --color-devops-foreground:       var(--devops-foreground);
+  --color-devops-muted:            var(--devops-muted);
+  --color-devops-accent:           var(--devops-accent);
+  --color-devops-success:          var(--devops-success);
+  --color-devops-warning:          var(--devops-warning);
+  --color-devops-error:            var(--devops-error);
+  --color-devops-chart-line:       var(--devops-chart-line);
+  --color-devops-chart-grid:       var(--devops-chart-grid);
+  --color-devops-chart-bg:         var(--devops-chart-bg);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+  button, a, [role="button"] {
+    @apply transition-all duration-200;
+  }
+}

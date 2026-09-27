@@ -1,0 +1,16 @@
+@import "components/global.scss";
+
+.user {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  right: $scale2;
+  z-index: 10;
+}
+
+.name {
+  float: right;
+  opacity: 0.5;
+  font-size: $scale-2;
+  font-weight: 400;
+}

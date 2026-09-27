@@ -1,0 +1,43 @@
+# Next.js static export → nginx
+ARG APP_DIR=apps/portal-crm
+ARG NEXT_PUBLIC_ARARA_APP_SLUG=portal-crm
+ARG NEXT_PUBLIC_ARARA_API_URL=https://api.arara-tech.com
+
+FROM node:22-bookworm-slim AS builder
+WORKDIR /src
+ARG APP_DIR
+ARG NEXT_PUBLIC_ARARA_APP_SLUG
+ARG NEXT_PUBLIC_ARARA_API_URL
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV NEXT_PUBLIC_ARARA_API_URL=${NEXT_PUBLIC_ARARA_API_URL}
+ENV NEXT_PUBLIC_ARARA_APP_SLUG=${NEXT_PUBLIC_ARARA_APP_SLUG}
+ENV ARARA_CLIENT_ONLY=1
+COPY ${APP_DIR}/package.json ${APP_DIR}/package-lock.json* ./
+RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi
+COPY ${APP_DIR}/ ./
+RUN if [ -f next.config.export.mjs ]; then \
+      if [ -f next.config.ts ]; then mv next.config.ts next.config.ts.bak; fi; \
+      if [ -f next.config.mjs ]; then mv next.config.mjs next.config.mjs.bak; fi; \
+      cp next.config.export.mjs next.config.mjs; \
+    fi \
+ && if [ -d app/api ]; then mv app/api /tmp/app-api; fi \
+ && if [ -d app/uploads ]; then mv app/uploads /tmp/app-uploads; fi \
+ && if [ -d pages/api ]; then mv pages/api /tmp/pages-api; fi \
+ && if [ -f proxy.ts ]; then mv proxy.ts /tmp/proxy.ts; fi \
+ && if [ -f middleware.ts ]; then mv middleware.ts /tmp/middleware.ts; fi \
+ && if [ -f instrumentation.ts ]; then mv instrumentation.ts /tmp/instrumentation.ts; fi \
+ && if [ -f sentry.client.config.ts ]; then mv sentry.client.config.ts /tmp/sentry.client.config.ts; fi \
+ && if [ -f sentry.server.config.ts ]; then mv sentry.server.config.ts /tmp/sentry.server.config.ts; fi \
+ && if [ -f sentry.edge.config.ts ]; then mv sentry.edge.config.ts /tmp/sentry.edge.config.ts; fi \
+ && npm run build \
+ && test -d out
+
+FROM nginx:1.27-alpine
+RUN apk add --no-cache gettext
+COPY deploy/nginx/spa.conf.template /etc/nginx/templates/spa.conf.template
+COPY deploy/nginx/docker-entrypoint.sh /docker-entrypoint-spa.sh
+RUN chmod +x /docker-entrypoint-spa.sh
+COPY --from=builder /src/out /usr/share/nginx/html
+ENV API_UPSTREAM=http://arara-platform-prd:4100
+EXPOSE 80
+ENTRYPOINT ["/docker-entrypoint-spa.sh"]

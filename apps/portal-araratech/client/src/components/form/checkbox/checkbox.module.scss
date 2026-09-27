@@ -1,0 +1,38 @@
+@import 'components/global.scss';
+
+.input {
+
+  position: relative;
+  float: left;
+  width: 2em;
+  height: 2em;
+  cursor: pointer;
+  margin-right: $scale;
+  background: none;
+  border: 1px solid darken($c-border, 8%);
+  background-size: 70%;
+  background-position: center center;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  transition: all 0.2s ease-in-out;
+
+  &:checked {
+
+    border: none;
+    background-color: $c-green;
+    background-repeat: no-repeat;
+    background-size: 1em;
+    background-position: center center;
+    background-image: url('./icons/ico-check-white.svg');
+
+  }
+}
+
+.label {
+
+  cursor: pointer;
+  margin-top: 0.325em;
+  text-transform: none !important;
+
+}

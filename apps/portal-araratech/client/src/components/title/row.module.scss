@@ -1,0 +1,17 @@
+@import "components/global.scss";
+
+.row {
+  overflow: auto;
+  margin-bottom: $scale1;
+}
+
+.title {
+  float: left;
+  margin-top: $scale-4;
+  font-weight: 600;
+  font-size: $scale1;
+}
+
+.actions {
+  float: right;
+}

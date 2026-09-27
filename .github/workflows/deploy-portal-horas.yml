@@ -1,0 +1,27 @@
+name: Deploy portal-horas
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [master, main]
+    paths:
+      - "apps/portal-horas/**"
+      - "deploy/Dockerfile.vite-spa"
+      - "deploy/nginx/**"
+      - "deploy/frontends.compose.yml"
+      - ".github/workflows/deploy-portal-horas.yml"
+      - ".github/workflows/deploy-frontend.reusable.yml"
+      - ".github/actions/setup-ssh/**"
+
+concurrency:
+  group: deploy-portal-horas
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    uses: ./.github/workflows/deploy-frontend.reusable.yml
+    with:
+      app: portal-horas
+      smoke_url: https://suporte.arara-tech.com/horas/
+    secrets:
+      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}

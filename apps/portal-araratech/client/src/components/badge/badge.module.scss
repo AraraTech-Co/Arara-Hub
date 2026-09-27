@@ -1,0 +1,39 @@
+@import 'components/global.scss';
+
+.base {
+
+  display: inline-block;
+  margin: 0 0.25em;
+  padding: 0.25em 0.65em;
+  color: white;
+  background-color: $c-purple;
+  font-size: 0.8em;
+  text-align: center;
+  text-transform: uppercase;
+  border-radius: $radius;
+
+}
+
+.blue {
+
+  background-color: $c-blue;
+
+}
+
+.red {
+
+  background-color: $c-red;
+
+}
+
+.green {
+
+  background-color: $c-green;
+
+}
+
+.orange {
+
+  background-color: $c-orange;
+
+}

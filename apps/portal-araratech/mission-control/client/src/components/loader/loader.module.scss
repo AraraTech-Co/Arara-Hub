@@ -1,0 +1,25 @@
+@import 'components/global.scss';
+@import 'components/global/animation.scss';
+
+.base {
+
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 22px;
+  height: 22px;
+  transform: translate(-50%, -50%);
+
+}
+
+.orbit {
+
+  $speed: 1s;
+  position: absolute;
+  z-index: 10;
+  -webkit-animation: rotate $speed infinite linear;
+  -moz-animation: rotate $speed infinite linear;
+  -o-animation: rotate $speed infinite linear;
+  animation: rotate $speed infinite linear;
+
+}

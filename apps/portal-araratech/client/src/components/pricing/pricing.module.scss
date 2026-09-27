@@ -1,0 +1,63 @@
+@import "components/global.scss";
+
+.plans {
+  display: block;
+  margin-bottom: $scale1;
+}
+
+.plan {
+  vertical-align: top;
+  margin-bottom: $scale2;
+
+  @media (min-width: $mobile) {
+    display: inline-block;
+    margin-right: $scale1;
+
+    &:last-child {
+      margin-right: 0;
+    }
+  }
+}
+
+.name {
+  position: absolute;
+  font-weight: 600;
+  text-align: center;
+  font-size: $scale;
+  color: $c-purple;
+  text-transform: uppercase;
+
+  @media (min-width: $mobile) {
+    position: relative;
+    color: $c-text;
+  }
+}
+
+.price {
+  position: absolute;
+  color: $c-purple;
+  font-weight: 800;
+  font-size: $scale1;
+  right: $scale-1;
+  top: $scale;
+
+  @media (min-width: $mobile) {
+    position: relative;
+    font-size: $scale3;
+    top: auto;
+    right: auto;
+    margin: 0.25em 0 0;
+  }
+}
+
+.features {
+  columns: 2;
+  margin-left: 0;
+  margin-top: $scale4;
+  margin-bottom: $scale;
+
+  @media (min-width: $mobile) {
+    columns: auto;
+    margin-top: $scale;
+  }
+}

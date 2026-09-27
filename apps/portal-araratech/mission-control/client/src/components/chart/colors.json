@@ -1,0 +1,46 @@
+{
+  "blue": {
+    "borderColor": "#77AFE8",
+    "backgroundColor": ["#77AFE8", "#79B3EF", "#8DC2F9", "#ACD3FB", "#A9D3FE", "#C5E1FD"],
+    "transparentColor": "rgba(119, 175, 232, 0.1)",
+    "pointRadius": 4,
+    "pointHoverRadius": 5,
+    "pointBorderWidth": 2,
+    "pointBackgroundColor": "#FFFFFF",
+    "pointHoverBackgroundColor": "#FFFFFF",
+    "pointHoverBorderColor": "#77AFE8"
+  },
+  "red": {
+    "borderColor": "#F9627A",
+    "backgroundColor": ["#F9627A", "#F67489", "#F68697", "#F78C9D", "#F69EAC", "#FBACB9"],
+    "transparentColor": "rgba(232, 130, 164, 0.1)",
+    "pointRadius": 4,
+    "pointHoverRadius": 5,
+    "pointBorderWidth": 2,
+    "pointBackgroundColor": "#FFFFFF",
+    "pointHoverBackgroundColor": "#FFFFFF",
+    "pointHoverBorderColor": "#F9627A"
+  },
+  "green": {
+    "borderColor": "#75CD9F",
+    "backgroundColor": ["#75CD9F", "#82D7AB", "#A0E8C2", "#A8EDC8", "#A7EBC8"],
+    "transparentColor": "rgba(134, 206, 201, 0.1)",
+    "pointRadius": 4,
+    "pointHoverRadius": 5,
+    "pointBorderWidth": 2,
+    "pointBackgroundColor": "#FFFFFF",
+    "pointHoverBackgroundColor": "#FFFFFF",
+    "pointHoverBorderColor": "#75CD9F"
+  },
+  "purple": {
+    "borderColor": "#8D8CC3",
+    "backgroundColor": ["#8D8CC3", "#9A99CB", "#A6A5D7", "#B6B5E4", "#C5C4F1", "#CECDF8"],
+    "transparentColor": "rgba(166, 165, 207, 0.1)",
+    "pointRadius": 4,
+    "pointHoverRadius": 5,
+    "pointBorderWidth": 2,
+    "pointBackgroundColor": "#FFFFFF",
+    "pointHoverBackgroundColor": "#FFFFFF",
+    "pointHoverBorderColor": "#8D8CC3"
+  }
+}

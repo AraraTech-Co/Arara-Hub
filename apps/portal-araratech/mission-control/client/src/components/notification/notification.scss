@@ -1,0 +1,147 @@
+@import 'components/global.scss';
+
+.notification {
+
+  position: fixed;
+  left: 0;
+  right: 0;
+  color: white;
+  top: -$scale5;
+  z-index: 10;
+  text-align: center;
+  padding: 0.75em $scale;
+  transition: all 0.25s ease-out;
+
+  &.success {
+
+    background-color: $c-green;
+
+  }
+
+  &.warning {
+
+    background-color: $c-orange;
+
+  }
+
+  &.error {
+
+    background-color: $c-red;
+
+  }
+
+  p {
+
+    margin-bottom: 0;
+
+  }
+
+  .btn-close-notification {
+
+    position: absolute;
+    top: 50%;
+    right: $scale2;
+    opacity: 0.7;
+    width: 1.5em;
+    height: 1.5em;
+    transform: translateY(-50%);
+    -ms-transform: translateY(-50%);
+    transition: all 0.2s ease-in-out;
+
+    &:hover {
+
+      opacity: 1;
+
+    }
+  }
+}
+
+.notification-appear-done {
+
+  top: 0;
+
+}
+
+.notification-exit {
+
+  top: -$scale5;
+
+}
+
+/* toast */
+.toast {
+
+  position: fixed;
+  top: auto;
+  left: auto;
+  bottom: -$scale9;
+  right: $scale;
+  width: $scale14;
+  padding: $scale3;
+  text-align: left;
+  color: $c-text;
+  height: auto !important;
+  border-radius: $radius;
+  background-color: white !important;
+  box-shadow: 0.1em 0.1em 0.75em rgba(0, 0, 0, 0.25);
+
+  &.with-icon {
+
+    padding-left: $scale7;
+
+  }
+  
+  > svg {
+
+    position: absolute;
+    top: 50%;
+    left: $scale3;
+    transform: translateY(-50%);
+
+  }
+
+  .btn-close-notification {
+
+    top: $scale1;
+    right: $scale-3;
+    width: $scale1;
+    height: $scale1;
+
+  }
+
+  p {
+
+    line-height: 1.4em;
+    margin-bottom: 0;
+    
+  }
+
+  &.success {
+
+    border-bottom: 0.2em solid $c-green;
+  }
+
+  &.warning {
+
+    border-bottom: 0.2em solid $c-orange;
+
+  }
+
+  &.error {
+
+    border-bottom: 0.2em solid $c-red;
+
+  }
+}
+
+.toast-appear-done {
+
+  bottom: $scale;
+
+}
+
+.toast-exit {
+
+  bottom: -$scale9;
+
+}

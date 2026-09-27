@@ -1,0 +1,19 @@
+/* ─── DevOps module sub-theme (always dark, independent of light/dark toggle) ─
+   Apply wrapper class `devops-theme` on the root element of DevOps pages/layouts.
+   ──────────────────────────────────────────────────────────────────────────── */
+.devops-theme {
+  --devops-surface:     oklch(0.12 0.008 271); /* ≈ #0f1117 */
+  --devops-panel:       oklch(0.16 0.010 271); /* ≈ #1a1d23 */
+  --devops-overlay:     oklch(0.19 0.010 271); /* ≈ #22262e */
+  --devops-border:      oklch(0.24 0.012 271); /* ≈ #2d3139 */
+  --devops-foreground:  oklch(0.92 0.006 271);
+  --devops-muted:       oklch(0.55 0.010 271);
+  --devops-accent:      oklch(0.55 0.22  262); /* blue-500  */
+  --devops-success:     oklch(0.55 0.17  162); /* green-500 */
+  --devops-warning:     oklch(0.65 0.18  85);  /* yellow-500 */
+  --devops-error:       oklch(0.60 0.22  27);  /* red-500   */
+  --devops-scrollbar:   oklch(0.22 0.010 271); /* ≈ #1e293b */
+  --devops-chart-line:  oklch(0.55 0.22  262);
+  --devops-chart-grid:  oklch(0.22 0.008 271);
+  --devops-chart-bg:    oklch(0.14 0.008 271);
+}

@@ -1,0 +1,124 @@
+// shake animation
+@-webkit-keyframes shake {
+
+ from {
+
+    transform: translateX(-5px);
+    -ms-transform: translateX(-5px);
+
+ }
+ to {
+
+    transform: translateX(5px);
+    -ms-transform: translateX(5px);
+
+ }
+}
+
+@-moz-keyframes shake {
+
+ from {
+
+    transform: translateX(-5px);
+    -ms-transform: translateX(-5px);
+
+ }
+ to {
+
+    transform: translateX(5px);
+    -ms-transform: translateX(5px);
+
+ }
+}
+
+@-o-keyframes shake {
+
+ from {
+
+    transform: translateX(-5px);
+    -ms-transform: translateX(-5px);
+
+ }
+ to {
+
+    transform: translateX(5px);
+    -ms-transform: translateX(5px);
+
+ }
+}
+
+@keyframes shake {
+
+ from {
+
+    transform: translateX(-5px);
+    -ms-transform: translateX(-5px);
+
+ }
+ to {
+
+    transform: translateX(5px);
+    -ms-transform: translateX(5px);
+
+ }
+}
+
+@-webkit-keyframes rotate {
+
+  from {
+
+    transform: rotate(0);
+    -ms-transform: rotate(0);
+
+  }
+  to {
+
+    transform: rotate(360deg);
+    -ms-transform: rotate(360deg);
+
+  }
+}
+
+@-moz-keyframes rotate {
+
+  from {
+
+    transform: rotate(0);
+    -ms-transform: rotate(0);
+
+  }
+  to {
+
+    transform: rotate(360deg);
+    -ms-transform: rotate(360deg);
+
+  }
+}
+
+@-o-keyframes rotate {
+
+  from {
+    transform: rotate(0);
+    -ms-transform: rotate(0);
+  }
+  to {
+    transform: rotate(360deg);
+    -ms-transform: rotate(360deg);
+  }
+}
+
+@keyframes rotate {
+
+  from {
+
+    transform: rotate(0);
+    -ms-transform: rotate(0);
+
+  }
+  to {
+
+    transform: rotate(360deg);
+    -ms-transform: rotate(360deg);
+
+  }
+}

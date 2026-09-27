@@ -1,0 +1,127 @@
+@import 'components/global.scss';
+
+.input {
+
+  position: relative;
+  margin: 0 0 $scale1;
+
+  &:last-child {
+    
+    margin-bottom: 0;
+
+  }
+}
+
+.textbox {
+
+  display: block;
+  position: relative;
+  width: 100%;
+  color: $c-text;
+  font-size: $scale;
+  padding: $scale;
+  border-radius: $radius;
+  background-color: white;
+  border: 1px solid $c-border;
+  -webkit-appearance: none;
+  -webkit-border-radius: $radius;
+
+  &:focus {
+
+    background-color: #fafafa;
+
+  }
+
+  &:disabled {
+
+    opacity: 0.5;
+
+  }
+}
+
+.textarea {
+
+  min-height: $scale10;
+  font-family: 'Source Sans Pro', helvetica, arial, sans-serif;
+
+}
+
+.success {
+
+  border-color: lighten($c-green, 3%);
+
+}
+
+.successIcon {
+
+  position: absolute;
+  top: $scale5;
+  right: $scale-2;
+  z-index: 100;
+
+}
+
+.error {
+
+  position: relative;
+  color: $c-red;
+  margin-bottom: 0;
+  border: 1px solid $c-red;
+  background-color: lighten($c-red, 38%);
+
+}
+
+.warning {
+
+  background: darken($c-orange, 3%);
+
+}
+
+// placeholders
+::-webkit-input-placeholder {
+
+  color: lighten($c-text, 24%);
+
+}
+
+::-moz-placeholder {
+
+  color: lighten($c-text, 24%);
+
+}
+
+:-ms-input-placeholder {
+
+  color: lighten($c-text, 24%);
+
+}
+
+:-moz-placeholder {
+
+  color: lighten($c-text, 24%);
+
+}
+
+.error::-webkit-input-placeholder {
+
+  color: $c-red;
+
+}
+
+.error::-moz-placeholder {
+
+  color: $c-red;
+
+}
+
+.error:-ms-input-placeholder {
+
+  color: $c-red;
+
+}
+
+.error:-moz-placeholder {
+
+  color: $c-red;
+
+}

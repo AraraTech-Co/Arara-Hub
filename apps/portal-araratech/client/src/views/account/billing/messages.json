@@ -1,0 +1,20 @@
+{
+  "requires_payment_method": {
+    "show": true,
+    "title": "Your latest payment failed",
+    "text": "Our latest attempt to charge your card failed. Please update your card details below, and we will attempt to charge your card again.",
+    "type": "error"
+  },
+  "requires_action": {
+    "show": true,
+    "title": "You need to authorize your payment",
+    "text": "In order to process your latest subscription payment, you need to authorize the transaction with your bank. Please check your email for a link to do this, then refresh this page when you're done.",
+    "type": "warning"
+  },
+  "canceled": {
+    "show": true,
+    "title": "Your subscription has been canceled",
+    "text": "In order to continue using the app, please select a new plan and complete the payment process.",
+    "type": "error"
+  }
+}

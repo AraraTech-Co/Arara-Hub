@@ -1,0 +1,94 @@
+/* ─── Priority & Severity tokens ─────────────────────────────────────────────
+   Naming: --priority-{name}       = badge background
+           --priority-{name}-fg    = badge foreground
+           --priority-{name}-bd    = badge border
+           --priority-{name}-line  = left border accent (kanban card)
+           --priority-{name}-dot   = dot indicator
+   ──────────────────────────────────────────────────────────────────────────── */
+:root {
+  /* very_low — neutro mais apagado que low: só o ponto tem token */
+  --priority-very-low-dot: oklch(0.78 0.004 248);
+
+  /* low — neutral (resolves to existing muted tokens at component level) */
+  --priority-low-dot: oklch(0.60 0.006 248);
+
+  /* medium — blue */
+  --priority-medium:      oklch(0.932 0.032 256);
+  --priority-medium-fg:   oklch(0.488 0.243 264);
+  --priority-medium-bd:   oklch(0.882 0.059 254);
+  --priority-medium-line: oklch(0.68  0.20  244);
+  --priority-medium-dot:  oklch(0.55  0.22  262);
+
+  /* high — orange */
+  --priority-high:      oklch(0.954 0.038 75);
+  --priority-high-fg:   oklch(0.553 0.195 38);
+  --priority-high-bd:   oklch(0.901 0.076 71);
+  --priority-high-line: oklch(0.75  0.15  60);
+  --priority-high-dot:  oklch(0.65  0.20  47);
+
+  /* urgent — red */
+  --priority-urgent:      oklch(0.936 0.032 18);
+  --priority-urgent-fg:   oklch(0.505 0.213 28);
+  --priority-urgent-bd:   oklch(0.885 0.061 18);
+  --priority-urgent-line: oklch(0.62  0.21  27);
+  --priority-urgent-dot:  oklch(0.60  0.22  27);
+
+  /* Severity P0 — yellow (informação) */
+  --severity-p0:    oklch(0.973 0.071 103);
+  --severity-p0-fg: oklch(0.47  0.127 67);
+  --severity-p0-bd: oklch(0.879 0.133 96);
+
+  /* Severity P1 — blue (baixo) */
+  --severity-p1:    oklch(0.932 0.032 256);
+  --severity-p1-fg: oklch(0.421 0.180 265);
+  --severity-p1-bd: oklch(0.803 0.100 258);
+
+  /* Severity P2 — orange (médio) */
+  --severity-p2:    oklch(0.954 0.038 75);
+  --severity-p2-fg: oklch(0.470 0.157 42);
+  --severity-p2-bd: oklch(0.837 0.128 66);
+
+  /* Severity P3 — red (crítico) */
+  --severity-p3:    oklch(0.936 0.032 18);
+  --severity-p3-fg: oklch(0.444 0.177 26);
+  --severity-p3-bd: oklch(0.808 0.114 19);
+}
+
+.dark {
+  --priority-very-low-dot: oklch(0.38 0.004 248);
+  --priority-low-dot: oklch(0.50 0.006 248);
+
+  --priority-medium:      oklch(0.25 0.05 256);
+  --priority-medium-fg:   oklch(0.77 0.07 256);
+  --priority-medium-bd:   oklch(0.38 0.08 256);
+  --priority-medium-line: oklch(0.64 0.17 247);
+  --priority-medium-dot:  oklch(0.65 0.18 262);
+
+  --priority-high:      oklch(0.26 0.06 55);
+  --priority-high-fg:   oklch(0.80 0.08 65);
+  --priority-high-bd:   oklch(0.40 0.09 55);
+  --priority-high-line: oklch(0.72 0.14 55);
+  --priority-high-dot:  oklch(0.72 0.16 55);
+
+  --priority-urgent:      oklch(0.26 0.05 25);
+  --priority-urgent-fg:   oklch(0.79 0.08 25);
+  --priority-urgent-bd:   oklch(0.40 0.08 25);
+  --priority-urgent-line: oklch(0.58 0.20 27);
+  --priority-urgent-dot:  oklch(0.68 0.20 27);
+
+  --severity-p0:    oklch(0.27 0.06 95);
+  --severity-p0-fg: oklch(0.82 0.08 95);
+  --severity-p0-bd: oklch(0.42 0.09 95);
+
+  --severity-p1:    oklch(0.25 0.05 256);
+  --severity-p1-fg: oklch(0.77 0.07 256);
+  --severity-p1-bd: oklch(0.38 0.08 256);
+
+  --severity-p2:    oklch(0.26 0.06 55);
+  --severity-p2-fg: oklch(0.80 0.08 65);
+  --severity-p2-bd: oklch(0.40 0.09 55);
+
+  --severity-p3:    oklch(0.26 0.05 25);
+  --severity-p3-fg: oklch(0.79 0.08 25);
+  --severity-p3-bd: oklch(0.40 0.08 25);
+}

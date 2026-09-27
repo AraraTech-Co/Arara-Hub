@@ -1,0 +1,402 @@
+/** @generated from data/exports/portal-araratech/routes.json — run: npm run codegen:routes */
+import type { StaticRoute } from '../../lib/handler-ctx.js'
+import { compileController } from '../../lib/compile-controller.js'
+
+export const PortalAraratechRoutes: StaticRoute[] = [
+  // 0 account DELETE /account/:id (707e153c)
+  {
+    module: "account",
+    method: "DELETE",
+    path: "/account/:id",
+    authMode: "actor",
+    webhookSecretName: null,
+    requiredPermissions: [],
+    source: "cms3uesxh000rmk842l2t8aeg",
+    handler: compileController("async function handler(ctx) {\n  const model = ctx.models.Account;\n  if (!model) return ctx.reply.status(500).send({ error: \"Model Account missing\" });\n  try {\n    await model.delete(String(ctx.params.id));\n    return ctx.reply.send({ ok: true });\n  } catch (e) {\n    return ctx.reply.status(404).send({ error: String(e.message || e) });\n  }\n}\nmodule.exports = { handler };"),
+  },
+  // 1 account GET /account (585b3e50)
+  {
+    module: "account",
+    method: "GET",
+    path: "/account",
+    authMode: "actor",
+    webhookSecretName: null,
+    requiredPermissions: [],
+    source: "cms3ueswr000hmk84thi5zdtf",
+    handler: compileController("async function handler(ctx) {\n  const model = ctx.models.Account;\n  if (!model) return ctx.reply.status(500).send({ error: \"Model Account missing\" });\n  const rows = await model.findMany(ctx.query || {});\n  return ctx.reply.send({ data: rows, count: rows.length });\n}\nmodule.exports = { handler };"),
+  },
+  // 2 account GET /account/:id (08fbd5d9)
+  {
+    module: "account",
+    method: "GET",
+    path: "/account/:id",
+    authMode: "actor",
+    webhookSecretName: null,
+    requiredPermissions: [],
+    source: "cms3uesxa000lmk84ogd8m53b",
+    handler: compileController("async function handler(ctx) {\n  const model = ctx.models.Account;\n  if (!model) return ctx.reply.status(500).send({ error: \"Model Account missing\" });\n  const row = await model.findById(String(ctx.params.id));\n  if (!row) return ctx.reply.status(404).send({ error: \"not found\" });\n  return ctx.reply.send({ data: row });\n}\nmodule.exports = { handler };"),
+  },
+  // 3 account PATCH /account/:id (b9241d76)
+  {
+    module: "account",
+    method: "PATCH",
+    path: "/account/:id",
+    authMode: "actor",
+    webhookSecretName: null,
+    requiredPermissions: [],
+    source: "cms3uesxc000nmk84h2q86nhs",
+    handler: compileController("async function handler(ctx) {\n  const model = ctx.models.Account;\n  if (!model) return ctx.reply.status(500).send({ error: \"Model Account missing\" });\n  try {\n    const row = await model.update(String(ctx.params.id), Object.assign({}, ctx.body || {}));\n    return ctx.reply.send({ data: row });\n  } catch (e) {\n    return ctx.reply.status(404).send({ error: String(e.message || e) });\n  }\n}\nmodule.exports = { handler };"),
+  },
+  // 4 account POST /account (8e8f30f6)
+  {
+    module: "account",
+    method: "POST",
+    path: "/account",
+    authMode: "actor",
+    webhookSecretName: null,
+    requiredPermissions: [],
+    source: "cms3uesx4000jmk84v7e3a01z",
+    handler: compileController("async function handler(ctx) {\n  const model = ctx.models.Account;\n  if (!model) return ctx.reply.status(500).send({ error: \"Model Account missing\" });\n  const row = await model.create(Object.assign({}, ctx.body || {}));\n  return ctx.reply.status(201).send({ data: row });\n}\nmodule.exports = { handler };"),
+  },
+  // 5 account PUT /account/:id (e621436a)
+  {
+    module: "account",
+    method: "PUT",
+    path: "/account/:id",
+    authMode: "actor",
+    webhookSecretName: null,
+    requiredPermissions: [],
+    source: "cms3uesxf000pmk84f6bgngyw",
+    handler: compileController("async function handler(ctx) {\n  const model = ctx.models.Account;\n  if (!model) return ctx.reply.status(500).send({ error: \"Model Account missing\" });\n  try {\n    const row = await model.update(String(ctx.params.id), Object.assign({}, ctx.body || {}));\n    return ctx.reply.send({ data: row });\n  } catch (e) {\n    return ctx.reply.status(404).send({ error: String(e.message || e) });\n  }\n}\nmodule.exports = { handler };"),
+  },
+  // 6 accountuser DELETE /accountuser/:id (644a8123)
+  {
+    module: "accountuser",
+    method: "DELETE",
+    path: "/accountuser/:id",
+    authMode: "actor",
+    webhookSecretName: null,
+    requiredPermissions: [],
+    source: "cms3uesy5001jmk840ushvrwp",
+    handler: compileController("async function handler(ctx) {\n  const model = ctx.models.AccountUser;\n  if (!model) return ctx.reply.status(500).send({ error: \"Model AccountUser missing\" });\n  try {\n    await model.delete(String(ctx.params.id));\n    return ctx.reply.send({ ok: true });\n  } catch (e) {\n    return ctx.reply.status(404).send({ error: String(e.message || e) });\n  }\n}\nmodule.exports = { handler };"),
+  },
+  // 7 accountuser GET /accountuser (72b28d97)
+  {
+    module: "accountuser",
+    method: "GET",
+    path: "/accountuser",
+    authMode: "actor",
+    webhookSecretName: null,
+    requiredPermissions: [],
+    source: "cms3uesy00019mk84gftqmql0",
+    handler: compileController("async function handler(ctx) {\n  const model = ctx.models.AccountUser;\n  if (!model) return ctx.reply.status(500).send({ error: \"Model AccountUser missing\" });\n  const rows = await model.findMany(ctx.query || {});\n  return ctx.reply.send({ data: rows, count: rows.length });\n}\nmodule.exports = { handler };"),
+  },
+  // 8 accountuser GET /accountuser/:id (d6534fac)
+  {
+    module: "accountuser",
+    method: "GET",
+    path: "/accountuser/:id",
+    authMode: "actor",
+    webhookSecretName: null,
+    requiredPermissions: [],
+    source: "cms3uesy2001dmk84ilfns1cb",
+    handler: compileController("async function handler(ctx) {\n  const model = ctx.models.AccountUser;\n  if (!model) return ctx.reply.status(500).send({ error: \"Model AccountUser missing\" });\n  const row = await model.findById(String(ctx.params.id));\n  if (!row) return ctx.reply.status(404).send({ error: \"not found\" });\n  return ctx.reply.send({ data: row });\n}\nmodule.exports = { handler };"),
+  },
+  // 9 accountuser PATCH /accountuser/:id (2641b0c4)
+  {
+    module: "accountuser",
+    method: "PATCH",
+    path: "/accountuser/:id",
+    authMode: "actor",
+    webhookSecretName: null,
+    requiredPermissions: [],
+    source: "cms3uesy3001fmk84gsqzawiq",
+    handler: compileController("async function handler(ctx) {\n  const model = ctx.models.AccountUser;\n  if (!model) return ctx.reply.status(500).send({ error: \"Model AccountUser missing\" });\n  try {\n    const row = await model.update(String(ctx.params.id), Object.assign({}, ctx.body || {}));\n    return ctx.reply.send({ data: row });\n  } catch (e) {\n    return ctx.reply.status(404).send({ error: String(e.message || e) });\n  }\n}\nmodule.exports = { handler };"),
+  },
+  // 10 accountuser POST /accountuser (1aa51d85)
+  {
+    module: "accountuser",
+    method: "POST",
+    path: "/accountuser",
+    authMode: "actor",
+    webhookSecretName: null,
+    requiredPermissions: [],
+    source: "cms3uesy1001bmk84w8n2tc4s",
+    handler: compileController("async function handler(ctx) {\n  const model = ctx.models.AccountUser;\n  if (!model) return ctx.reply.status(500).send({ error: \"Model AccountUser missing\" });\n  const row = await model.create(Object.assign({}, ctx.body || {}));\n  return ctx.reply.status(201).send({ data: row });\n}\nmodule.exports = { handler };"),
+  },
+  // 11 accountuser PUT /accountuser/:id (2b983269)
+  {
+    module: "accountuser",
+    method: "PUT",
+    path: "/accountuser/:id",
+    authMode: "actor",
+    webhookSecretName: null,
+    requiredPermissions: [],
+    source: "cms3uesy4001hmk84zayg5eg9",
+    handler: compileController("async function handler(ctx) {\n  const model = ctx.models.AccountUser;\n  if (!model) return ctx.reply.status(500).send({ error: \"Model AccountUser missing\" });\n  try {\n    const row = await model.update(String(ctx.params.id), Object.assign({}, ctx.body || {}));\n    return ctx.reply.send({ data: row });\n  } catch (e) {\n    return ctx.reply.status(404).send({ error: String(e.message || e) });\n  }\n}\nmodule.exports = { handler };"),
+  },
+  // 12 event DELETE /event/:id (b0ebbb44)
+  {
+    module: "event",
+    method: "DELETE",
+    path: "/event/:id",
+    authMode: "actor",
+    webhookSecretName: null,
+    requiredPermissions: [],
+    source: "cms3uesyj002bmk84avuddhmg",
+    handler: compileController("async function handler(ctx) {\n  const model = ctx.models.Event;\n  if (!model) return ctx.reply.status(500).send({ error: \"Model Event missing\" });\n  try {\n    await model.delete(String(ctx.params.id));\n    return ctx.reply.send({ ok: true });\n  } catch (e) {\n    return ctx.reply.status(404).send({ error: String(e.message || e) });\n  }\n}\nmodule.exports = { handler };"),
+  },
+  // 13 event GET /event (ca678f2f)
+  {
+    module: "event",
+    method: "GET",
+    path: "/event",
+    authMode: "actor",
+    webhookSecretName: null,
+    requiredPermissions: [],
+    source: "cms3uesyf0021mk840px6purf",
+    handler: compileController("async function handler(ctx) {\n  const model = ctx.models.Event;\n  if (!model) return ctx.reply.status(500).send({ error: \"Model Event missing\" });\n  const rows = await model.findMany(ctx.query || {});\n  return ctx.reply.send({ data: rows, count: rows.length });\n}\nmodule.exports = { handler };"),
+  },
+  // 14 event GET /event/:id (38450ebd)
+  {
+    module: "event",
+    method: "GET",
+    path: "/event/:id",
+    authMode: "actor",
+    webhookSecretName: null,
+    requiredPermissions: [],
+    source: "cms3uesyg0025mk84cuhw4zqg",
+    handler: compileController("async function handler(ctx) {\n  const model = ctx.models.Event;\n  if (!model) return ctx.reply.status(500).send({ error: \"Model Event missing\" });\n  const row = await model.findById(String(ctx.params.id));\n  if (!row) return ctx.reply.status(404).send({ error: \"not found\" });\n  return ctx.reply.send({ data: row });\n}\nmodule.exports = { handler };"),
+  },
+  // 15 event PATCH /event/:id (c3acdf44)
+  {
+    module: "event",
+    method: "PATCH",
+    path: "/event/:id",
+    authMode: "actor",
+    webhookSecretName: null,
+    requiredPermissions: [],
+    source: "cms3uesyh0027mk84gh8jsptt",
+    handler: compileController("async function handler(ctx) {\n  const model = ctx.models.Event;\n  if (!model) return ctx.reply.status(500).send({ error: \"Model Event missing\" });\n  try {\n    const row = await model.update(String(ctx.params.id), Object.assign({}, ctx.body || {}));\n    return ctx.reply.send({ data: row });\n  } catch (e) {\n    return ctx.reply.status(404).send({ error: String(e.message || e) });\n  }\n}\nmodule.exports = { handler };"),
+  },
+  // 16 event POST /event (6780c55a)
+  {
+    module: "event",
+    method: "POST",
+    path: "/event",
+    authMode: "actor",
+    webhookSecretName: null,
+    requiredPermissions: [],
+    source: "cms3uesyg0023mk84q4hvl4rx",
+    handler: compileController("async function handler(ctx) {\n  const model = ctx.models.Event;\n  if (!model) return ctx.reply.status(500).send({ error: \"Model Event missing\" });\n  const row = await model.create(Object.assign({}, ctx.body || {}));\n  return ctx.reply.status(201).send({ data: row });\n}\nmodule.exports = { handler };"),
+  },
+  // 17 event PUT /event/:id (97bd2fc5)
+  {
+    module: "event",
+    method: "PUT",
+    path: "/event/:id",
+    authMode: "actor",
+    webhookSecretName: null,
+    requiredPermissions: [],
+    source: "cms3uesyi0029mk84f0ckv0tm",
+    handler: compileController("async function handler(ctx) {\n  const model = ctx.models.Event;\n  if (!model) return ctx.reply.status(500).send({ error: \"Model Event missing\" });\n  try {\n    const row = await model.update(String(ctx.params.id), Object.assign({}, ctx.body || {}));\n    return ctx.reply.send({ data: row });\n  } catch (e) {\n    return ctx.reply.status(404).send({ error: String(e.message || e) });\n  }\n}\nmodule.exports = { handler };"),
+  },
+  // 18 log DELETE /log/:id (cc099863)
+  {
+    module: "log",
+    method: "DELETE",
+    path: "/log/:id",
+    authMode: "actor",
+    webhookSecretName: null,
+    requiredPermissions: [],
+    source: "cms3uesyp002pmk84qhnw673i",
+    handler: compileController("async function handler(ctx) {\n  const model = ctx.models.Log;\n  if (!model) return ctx.reply.status(500).send({ error: \"Model Log missing\" });\n  try {\n    await model.delete(String(ctx.params.id));\n    return ctx.reply.send({ ok: true });\n  } catch (e) {\n    return ctx.reply.status(404).send({ error: String(e.message || e) });\n  }\n}\nmodule.exports = { handler };"),
+  },
+  // 19 log GET /log (e52bb4a0)
+  {
+    module: "log",
+    method: "GET",
+    path: "/log",
+    authMode: "actor",
+    webhookSecretName: null,
+    requiredPermissions: [],
+    source: "cms3uesyl002fmk84lsyvctcx",
+    handler: compileController("async function handler(ctx) {\n  const model = ctx.models.Log;\n  if (!model) return ctx.reply.status(500).send({ error: \"Model Log missing\" });\n  const rows = await model.findMany(ctx.query || {});\n  return ctx.reply.send({ data: rows, count: rows.length });\n}\nmodule.exports = { handler };"),
+  },
+  // 20 log GET /log/:id (28c9a5da)
+  {
+    module: "log",
+    method: "GET",
+    path: "/log/:id",
+    authMode: "actor",
+    webhookSecretName: null,
+    requiredPermissions: [],
+    source: "cms3uesyn002jmk84wo7oob82",
+    handler: compileController("async function handler(ctx) {\n  const model = ctx.models.Log;\n  if (!model) return ctx.reply.status(500).send({ error: \"Model Log missing\" });\n  const row = await model.findById(String(ctx.params.id));\n  if (!row) return ctx.reply.status(404).send({ error: \"not found\" });\n  return ctx.reply.send({ data: row });\n}\nmodule.exports = { handler };"),
+  },
+  // 21 log PATCH /log/:id (ecfa5692)
+  {
+    module: "log",
+    method: "PATCH",
+    path: "/log/:id",
+    authMode: "actor",
+    webhookSecretName: null,
+    requiredPermissions: [],
+    source: "cms3uesyo002lmk844ddribbt",
+    handler: compileController("async function handler(ctx) {\n  const model = ctx.models.Log;\n  if (!model) return ctx.reply.status(500).send({ error: \"Model Log missing\" });\n  try {\n    const row = await model.update(String(ctx.params.id), Object.assign({}, ctx.body || {}));\n    return ctx.reply.send({ data: row });\n  } catch (e) {\n    return ctx.reply.status(404).send({ error: String(e.message || e) });\n  }\n}\nmodule.exports = { handler };"),
+  },
+  // 22 log POST /log (a289a761)
+  {
+    module: "log",
+    method: "POST",
+    path: "/log",
+    authMode: "actor",
+    webhookSecretName: null,
+    requiredPermissions: [],
+    source: "cms3uesym002hmk84z46n5b19",
+    handler: compileController("async function handler(ctx) {\n  const model = ctx.models.Log;\n  if (!model) return ctx.reply.status(500).send({ error: \"Model Log missing\" });\n  const row = await model.create(Object.assign({}, ctx.body || {}));\n  return ctx.reply.status(201).send({ data: row });\n}\nmodule.exports = { handler };"),
+  },
+  // 23 log PUT /log/:id (a779b125)
+  {
+    module: "log",
+    method: "PUT",
+    path: "/log/:id",
+    authMode: "actor",
+    webhookSecretName: null,
+    requiredPermissions: [],
+    source: "cms3uesyp002nmk84u3sda8aq",
+    handler: compileController("async function handler(ctx) {\n  const model = ctx.models.Log;\n  if (!model) return ctx.reply.status(500).send({ error: \"Model Log missing\" });\n  try {\n    const row = await model.update(String(ctx.params.id), Object.assign({}, ctx.body || {}));\n    return ctx.reply.send({ data: row });\n  } catch (e) {\n    return ctx.reply.status(404).send({ error: String(e.message || e) });\n  }\n}\nmodule.exports = { handler };"),
+  },
+  // 24 plan DELETE /plan/:id (0c173088)
+  {
+    module: "plan",
+    method: "DELETE",
+    path: "/plan/:id",
+    authMode: "actor",
+    webhookSecretName: null,
+    requiredPermissions: [],
+    source: "cms3uesyc001xmk84dp617vpb",
+    handler: compileController("async function handler(ctx) {\n  const model = ctx.models.Plan;\n  if (!model) return ctx.reply.status(500).send({ error: \"Model Plan missing\" });\n  try {\n    await model.delete(String(ctx.params.id));\n    return ctx.reply.send({ ok: true });\n  } catch (e) {\n    return ctx.reply.status(404).send({ error: String(e.message || e) });\n  }\n}\nmodule.exports = { handler };"),
+  },
+  // 25 plan GET /plan (5be7c622)
+  {
+    module: "plan",
+    method: "GET",
+    path: "/plan",
+    authMode: "actor",
+    webhookSecretName: null,
+    requiredPermissions: [],
+    source: "cms3uesy8001nmk84lw6v70lt",
+    handler: compileController("async function handler(ctx) {\n  const model = ctx.models.Plan;\n  if (!model) return ctx.reply.status(500).send({ error: \"Model Plan missing\" });\n  const rows = await model.findMany(ctx.query || {});\n  return ctx.reply.send({ data: rows, count: rows.length });\n}\nmodule.exports = { handler };"),
+  },
+  // 26 plan GET /plan/:id (0c344b48)
+  {
+    module: "plan",
+    method: "GET",
+    path: "/plan/:id",
+    authMode: "actor",
+    webhookSecretName: null,
+    requiredPermissions: [],
+    source: "cms3uesya001rmk84ebd5wkv7",
+    handler: compileController("async function handler(ctx) {\n  const model = ctx.models.Plan;\n  if (!model) return ctx.reply.status(500).send({ error: \"Model Plan missing\" });\n  const row = await model.findById(String(ctx.params.id));\n  if (!row) return ctx.reply.status(404).send({ error: \"not found\" });\n  return ctx.reply.send({ data: row });\n}\nmodule.exports = { handler };"),
+  },
+  // 27 plan PATCH /plan/:id (89906875)
+  {
+    module: "plan",
+    method: "PATCH",
+    path: "/plan/:id",
+    authMode: "actor",
+    webhookSecretName: null,
+    requiredPermissions: [],
+    source: "cms3uesyb001tmk847hby4hw4",
+    handler: compileController("async function handler(ctx) {\n  const model = ctx.models.Plan;\n  if (!model) return ctx.reply.status(500).send({ error: \"Model Plan missing\" });\n  try {\n    const row = await model.update(String(ctx.params.id), Object.assign({}, ctx.body || {}));\n    return ctx.reply.send({ data: row });\n  } catch (e) {\n    return ctx.reply.status(404).send({ error: String(e.message || e) });\n  }\n}\nmodule.exports = { handler };"),
+  },
+  // 28 plan POST /plan (a6815eeb)
+  {
+    module: "plan",
+    method: "POST",
+    path: "/plan",
+    authMode: "actor",
+    webhookSecretName: null,
+    requiredPermissions: [],
+    source: "cms3uesy9001pmk848h7bff0y",
+    handler: compileController("async function handler(ctx) {\n  const model = ctx.models.Plan;\n  if (!model) return ctx.reply.status(500).send({ error: \"Model Plan missing\" });\n  const row = await model.create(Object.assign({}, ctx.body || {}));\n  return ctx.reply.status(201).send({ data: row });\n}\nmodule.exports = { handler };"),
+  },
+  // 29 plan PUT /plan/:id (9d09cd1d)
+  {
+    module: "plan",
+    method: "PUT",
+    path: "/plan/:id",
+    authMode: "actor",
+    webhookSecretName: null,
+    requiredPermissions: [],
+    source: "cms3uesyb001vmk84i6frwj9m",
+    handler: compileController("async function handler(ctx) {\n  const model = ctx.models.Plan;\n  if (!model) return ctx.reply.status(500).send({ error: \"Model Plan missing\" });\n  try {\n    const row = await model.update(String(ctx.params.id), Object.assign({}, ctx.body || {}));\n    return ctx.reply.send({ data: row });\n  } catch (e) {\n    return ctx.reply.status(404).send({ error: String(e.message || e) });\n  }\n}\nmodule.exports = { handler };"),
+  },
+  // 30 user DELETE /user/:id (19c086cf)
+  {
+    module: "user",
+    method: "DELETE",
+    path: "/user/:id",
+    authMode: "actor",
+    webhookSecretName: null,
+    requiredPermissions: [],
+    source: "cms3uesxw0015mk84lqzwpyjh",
+    handler: compileController("async function handler(ctx) {\n  const model = ctx.models.User;\n  if (!model) return ctx.reply.status(500).send({ error: \"Model User missing\" });\n  try {\n    await model.delete(String(ctx.params.id));\n    return ctx.reply.send({ ok: true });\n  } catch (e) {\n    return ctx.reply.status(404).send({ error: String(e.message || e) });\n  }\n}\nmodule.exports = { handler };"),
+  },
+  // 31 user GET /user (0da06995)
+  {
+    module: "user",
+    method: "GET",
+    path: "/user",
+    authMode: "actor",
+    webhookSecretName: null,
+    requiredPermissions: [],
+    source: "cms3uesxm000vmk84vmi0uirj",
+    handler: compileController("async function handler(ctx) {\n  const model = ctx.models.User;\n  if (!model) return ctx.reply.status(500).send({ error: \"Model User missing\" });\n  const rows = await model.findMany(ctx.query || {});\n  return ctx.reply.send({ data: rows, count: rows.length });\n}\nmodule.exports = { handler };"),
+  },
+  // 32 user GET /user/:id (a4f17f7f)
+  {
+    module: "user",
+    method: "GET",
+    path: "/user/:id",
+    authMode: "actor",
+    webhookSecretName: null,
+    requiredPermissions: [],
+    source: "cms3uesxr000zmk84ok3yf0sc",
+    handler: compileController("async function handler(ctx) {\n  const model = ctx.models.User;\n  if (!model) return ctx.reply.status(500).send({ error: \"Model User missing\" });\n  const row = await model.findById(String(ctx.params.id));\n  if (!row) return ctx.reply.status(404).send({ error: \"not found\" });\n  return ctx.reply.send({ data: row });\n}\nmodule.exports = { handler };"),
+  },
+  // 33 user PATCH /user/:id (691bfe9e)
+  {
+    module: "user",
+    method: "PATCH",
+    path: "/user/:id",
+    authMode: "actor",
+    webhookSecretName: null,
+    requiredPermissions: [],
+    source: "cms3uesxt0011mk845o777jen",
+    handler: compileController("async function handler(ctx) {\n  const model = ctx.models.User;\n  if (!model) return ctx.reply.status(500).send({ error: \"Model User missing\" });\n  try {\n    const row = await model.update(String(ctx.params.id), Object.assign({}, ctx.body || {}));\n    return ctx.reply.send({ data: row });\n  } catch (e) {\n    return ctx.reply.status(404).send({ error: String(e.message || e) });\n  }\n}\nmodule.exports = { handler };"),
+  },
+  // 34 user POST /user (2d7eee66)
+  {
+    module: "user",
+    method: "POST",
+    path: "/user",
+    authMode: "actor",
+    webhookSecretName: null,
+    requiredPermissions: [],
+    source: "cms3uesxo000xmk84nsl95232",
+    handler: compileController("async function handler(ctx) {\n  const model = ctx.models.User;\n  if (!model) return ctx.reply.status(500).send({ error: \"Model User missing\" });\n  const row = await model.create(Object.assign({}, ctx.body || {}));\n  return ctx.reply.status(201).send({ data: row });\n}\nmodule.exports = { handler };"),
+  },
+  // 35 user PUT /user/:id (e144ae28)
+  {
+    module: "user",
+    method: "PUT",
+    path: "/user/:id",
+    authMode: "actor",
+    webhookSecretName: null,
+    requiredPermissions: [],
+    source: "cms3uesxv0013mk84jsuqvfsg",
+    handler: compileController("async function handler(ctx) {\n  const model = ctx.models.User;\n  if (!model) return ctx.reply.status(500).send({ error: \"Model User missing\" });\n  try {\n    const row = await model.update(String(ctx.params.id), Object.assign({}, ctx.body || {}));\n    return ctx.reply.send({ data: row });\n  } catch (e) {\n    return ctx.reply.status(404).send({ error: String(e.message || e) });\n  }\n}\nmodule.exports = { handler };"),
+  }
+]

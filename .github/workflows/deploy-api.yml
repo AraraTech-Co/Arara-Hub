@@ -1,0 +1,136 @@
+name: Deploy API
+
+on:
+  workflow_call:
+  workflow_dispatch:
+  push:
+    branches: [master, main]
+    paths:
+      - "packages/api/**"
+      - "deploy/api.compose.yml"
+      - ".github/workflows/deploy-api.yml"
+      - ".github/actions/setup-ssh/**"
+
+concurrency:
+  group: deploy-api
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Build & restart arara-platform-prd
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: production
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        uses: ./.github/actions/setup-ssh
+        with:
+          ssh_key: ${{ secrets.SSH_PRIVATE_KEY }}
+          host: ${{ vars.DEPLOY_HOST }}
+          port: ${{ vars.DEPLOY_SSH_PORT || '22' }}
+          user: ${{ vars.DEPLOY_USER }}
+
+      - name: Rsync API sources
+        run: |
+          set -euo pipefail
+          : "${SSH_CONFIG:?Setup SSH did not export SSH_CONFIG}"
+          REMOTE_DIR="${{ vars.API_REMOTE_DIR || 'arara-platform-api' }}"
+          RSYNC_SSH="ssh -F ${SSH_CONFIG}"
+          rsync -az --delete \
+            --exclude node_modules --exclude dist --exclude coverage --exclude .git \
+            --exclude '*.log' --exclude data/hosting \
+            -e "$RSYNC_SSH" \
+            packages/api/ "deploy-target:${REMOTE_DIR}/"
+          scp -F "$SSH_CONFIG" deploy/api.compose.yml "deploy-target:${REMOTE_DIR}/api.compose.yml"
+
+      - name: Build image & recreate container
+        run: |
+          set -euo pipefail
+          : "${SSH_CONFIG:?Setup SSH did not export SSH_CONFIG}"
+          RAW="${{ vars.API_REMOTE_DIR || 'arara-platform-api' }}"
+          IMAGE="${{ vars.API_IMAGE || 'arara-api:local' }}"
+          DEFAULT_FETCH_BY_APP='portal-suporte:www.avisaapi.com.br,portal-suporte:mmg.whatsapp.net,portal-suporte:openrouter.ai,portal-suporte:api.arara-tech.com,portal-horas:api.arara-tech.com'
+          ssh -F "$SSH_CONFIG" deploy-target bash -s <<REMOTE
+          set -euo pipefail
+          RAW="${RAW}"
+          IMAGE="${IMAGE}"
+          DEFAULT_FETCH_BY_APP="${DEFAULT_FETCH_BY_APP}"
+          case "\$RAW" in
+            /*) DIR="\$RAW" ;;
+            *)  DIR="\$HOME/\$RAW" ;;
+          esac
+          cd "\$DIR"
+          docker build -t "\$IMAGE" .
+
+          ENV_FILE=prd.env
+          if docker inspect arara-platform-prd >/dev/null 2>&1; then
+            docker inspect arara-platform-prd --format '{{range .Config.Env}}{{println .}}{{end}}' > "\$ENV_FILE"
+          fi
+          touch "\$ENV_FILE"
+
+          ensure_env() {
+            local key="\$1" val="\$2"
+            if grep -q "^\${key}=" "\$ENV_FILE"; then
+              local cur
+              cur="\$(grep "^\${key}=" "\$ENV_FILE" | head -1 | cut -d= -f2-)"
+              if [ -z "\${cur}" ]; then
+                sed -i "s|^\${key}=.*|\${key}=\${val}|" "\$ENV_FILE"
+              fi
+            else
+              echo "\${key}=\${val}" >> "\$ENV_FILE"
+            fi
+          }
+
+          ensure_env DISABLE_HOSTING_RESTORE 1
+          ensure_env DISABLE_APP_HOSTING 1
+          ensure_env ALLOW_DB_CONTROLLER_PUBLISH 0
+          ensure_env SANDBOX_FETCH_ALLOWLIST_BY_APP "\$DEFAULT_FETCH_BY_APP"
+          ensure_env SANDBOX_FETCH_TIMEOUT_MS 8000
+
+          if grep -q '^SANDBOX_FETCH_ALLOWLIST_BY_APP=.*api\.anthropic\.com' "\$ENV_FILE" \\
+            && ! grep -q '^SANDBOX_FETCH_ALLOWLIST_BY_APP=.*openrouter\.ai' "\$ENV_FILE"; then
+            sed -i 's|portal-suporte:api\.anthropic\.com|portal-suporte:openrouter.ai|g' "\$ENV_FILE"
+          fi
+          if grep -q '^SANDBOX_FETCH_ALLOWLIST_BY_APP=' "\$ENV_FILE" \\
+            && ! grep -q '^SANDBOX_FETCH_ALLOWLIST_BY_APP=.*www\.avisaapi\.com\.br' "\$ENV_FILE"; then
+            sed -i "s|^SANDBOX_FETCH_ALLOWLIST_BY_APP=\\(.*\\)|SANDBOX_FETCH_ALLOWLIST_BY_APP=portal-suporte:www.avisaapi.com.br,\\1|" "\$ENV_FILE"
+          fi
+          # Midia do WhatsApp (15/09/2026): o webhook da Avisa traz so a referencia;
+          # o arquivo cifrado e baixado do CDN do WhatsApp pelo handler de entrada.
+          if grep -q '^SANDBOX_FETCH_ALLOWLIST_BY_APP=' "\$ENV_FILE" \\
+            && ! grep -q '^SANDBOX_FETCH_ALLOWLIST_BY_APP=.*mmg\.whatsapp\.net' "\$ENV_FILE"; then
+            sed -i "s|^SANDBOX_FETCH_ALLOWLIST_BY_APP=\\(.*\\)|SANDBOX_FETCH_ALLOWLIST_BY_APP=portal-suporte:mmg.whatsapp.net,\\1|" "\$ENV_FILE"
+          fi
+
+          docker rm -f arara-platform-prd
+          docker run -d \\
+            --name arara-platform-prd \\
+            --restart unless-stopped \\
+            --network arara_net \\
+            -p 4100:4100 \\
+            --env-file "\$ENV_FILE" \\
+            "\$IMAGE"
+
+          sleep 3
+          curl -sf http://127.0.0.1:4100/health
+          echo
+          docker ps --filter name=arara-platform-prd --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}'
+          REMOTE
+
+      - name: Smoke (public)
+        run: |
+          set -euo pipefail
+          URL="${{ vars.API_HEALTH_URL || 'https://api.arara-tech.com/health' }}"
+          for i in 1 2 3 4 5; do
+            if curl -sf "$URL" | tee /tmp/health.json; then
+              echo
+              exit 0
+            fi
+            sleep 3
+          done
+          echo "Health check failed: $URL" >&2
+          exit 1

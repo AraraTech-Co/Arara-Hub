@@ -1,0 +1,100 @@
+services:
+  server:
+    container_name: main_server_dev
+    build:
+      context: ./
+      dockerfile: ./server/Dockerfile
+      target: development
+    restart: always
+    environment:
+      - DOCKER=y
+      - DATABASE_URL=postgresql://db_admin:db_admin@postgres:5432/portal_araratech
+      - DB_PROVIDER=postgresql
+    volumes:
+      - ./server/src:/usr/src/app/server/src:rw
+      - ./prisma:/usr/src/app/prisma:ro
+    ports:
+      - "8080:8080"
+    env_file:
+      - ./server/.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - app
+
+  admin:
+    container_name: admin_server_dev
+    restart: always
+    build:
+      context: ./
+      dockerfile: ./mission-control/Dockerfile
+      target: development
+    volumes:
+      - ./mission-control/src:/usr/src/app/mission-control/src:rw
+      - ./prisma:/usr/src/app/prisma:ro
+    environment:
+      - DOCKER=y
+      - DATABASE_URL=postgresql://db_admin:db_admin@postgres:5432/portal_araratech
+      - DB_PROVIDER=postgresql
+    ports:
+      - "5001:5001"
+    env_file:
+      - ./mission-control/.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - app
+
+  client:
+    build:
+      context: ./
+      dockerfile: ./client/Dockerfile
+    container_name: main_client_dev
+    volumes:
+      - ./client/src:/usr/src/app/client/src:rw
+    restart: always
+    ports:
+      - "3000:3000"
+    networks:
+      - app
+
+  client-admin:
+    container_name: admin_client_dev
+    build:
+      context: ./
+      dockerfile: ./mission-control/client/Dockerfile
+    restart: always
+    volumes:
+      - ./mission-control/client/src:/usr/src/app/mission-control/client/src:rw
+    environment:
+      PORT: 5002
+    ports:
+      - "5002:5002"
+    networks:
+      - app
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: db_admin
+      POSTGRES_PASSWORD: db_admin
+      POSTGRES_DB: portal_araratech
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U db_admin -d portal_araratech"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+    driver: local

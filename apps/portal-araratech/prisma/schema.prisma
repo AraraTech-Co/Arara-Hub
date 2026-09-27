@@ -1,0 +1,237 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+generator serverClient {
+  provider = "prisma-client-js"
+  output   = "../server/node_modules/.prisma/client"
+}
+
+generator missionControlClient {
+  provider = "prisma-client-js"
+  output   = "../mission-control/node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Account {
+  id                   String        @id @db.Char(36)
+  plan                 String?       @db.VarChar(64)
+  name                 String?       @db.VarChar(256)
+  email                String?
+  active               Boolean
+  stripeSubscriptionId String?       @map("stripe_subscription_id") @db.VarChar(32)
+  stripeCustomerId     String?       @map("stripe_customer_id") @db.VarChar(32)
+  dateCreated          DateTime      @default(now()) @map("date_created")
+  accountUsers         AccountUser[]
+  invites              Invite[]
+  apiKeys              ApiKey[]
+  events               Event[]
+  logs                 Log[]
+  previews             Preview[]
+  trackers             Tracker[]
+
+  @@map("account")
+}
+
+model User {
+  id              String        @id @db.Char(36)
+  name            String        @db.VarChar(32)
+  email           String
+  password        String?
+  dateCreated     DateTime      @default(now()) @map("date_created")
+  lastActive      DateTime?     @default(now()) @map("last_active")
+  disabled        Boolean       @default(false)
+  supportEnabled  Boolean       @default(false) @map("support_enabled")
+  twoFaEnabled    Boolean       @default(false) @map("2fa_enabled")
+  twoFaSecret     String?       @map("2fa_secret")
+  twoFaBackupCode String?       @map("2fa_backup_code")
+  facebookId      String?       @map("facebook_id") @db.VarChar(128)
+  twitterId       String?       @map("twitter_id") @db.VarChar(128)
+  defaultAccount  String        @map("default_account") @db.Char(36)
+  accountUsers    AccountUser[]
+  pushTokens      PushToken[]
+  tokens          Token[]
+  logins          Login[]
+  feedbacks       Feedback[]
+  events          Event[]
+  logs            Log[]
+  trackers        Tracker[]
+
+  @@index([email])
+  @@map("user")
+}
+
+model AccountUser {
+  accountId   String  @map("account_id") @db.Char(36)
+  userId      String  @map("user_id") @db.Char(36)
+  permission  String  @db.VarChar(64)
+  onboarded   Boolean @default(false)
+  account     Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([accountId, userId])
+  @@index([accountId])
+  @@index([userId])
+  @@map("account_users")
+}
+
+model PushToken {
+  id     Int    @id @default(autoincrement())
+  userId String @map("user") @db.Char(36)
+  token  String @db.VarChar(512)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("push_token")
+}
+
+model Invite {
+  id        String   @id @db.Char(36)
+  email     String   @db.VarChar(512)
+  permission String  @default("user") @db.VarChar(32)
+  accountId String   @map("account_id") @db.Char(36)
+  dateSent  DateTime @map("date_sent")
+  used      Boolean
+  account   Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([accountId])
+  @@map("invite")
+}
+
+model Token {
+  id       String  @id @db.Char(36)
+  provider String  @db.VarChar(64)
+  jwt      String?
+  access   String?
+  refresh  String?
+  userId   String  @map("user_id") @db.Char(36)
+  user     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("token")
+}
+
+model ApiKey {
+  id          String   @id @db.Char(36)
+  name        String?
+  key         String   @unique
+  scope       Json     @default("[]")
+  dateCreated DateTime @default(now()) @map("date_created")
+  active      Boolean  @default(true)
+  accountId   String   @map("account_id") @db.Char(36)
+  account     Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([accountId])
+  @@map("api_key")
+}
+
+model Log {
+  id        String   @id @db.Char(36)
+  time      DateTime @default(now())
+  message   String?
+  body      String?
+  method    String?  @db.VarChar(64)
+  endpoint  String?
+  accountId String?  @map("account_id") @db.Char(36)
+  userId    String?  @map("user_id") @db.Char(36)
+  account   Account? @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([accountId])
+  @@index([userId])
+  @@map("log")
+}
+
+model Login {
+  id      String   @id @db.Char(36)
+  userId  String   @map("user_id") @db.Char(36)
+  ip      String
+  time    DateTime @default(now())
+  browser String?
+  device  String?
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("login")
+}
+
+model Event {
+  id        String   @id @db.Char(36)
+  name      String
+  metadata  Json?
+  time      DateTime @default(now())
+  userId    String?  @map("user_id") @db.Char(36)
+  accountId String?  @map("account_id") @db.Char(36)
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  account   Account? @relation(fields: [accountId], references: [id], onDelete: SetNull)
+
+  @@index([name, time])
+  @@index([accountId])
+  @@map("event")
+}
+
+model Feedback {
+  id          String   @id @db.Char(36)
+  rating      String   @db.VarChar(12)
+  comment     String?
+  dateCreated DateTime @default(now()) @map("date_created")
+  userId      String   @map("user_id") @db.Char(36)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("feedback")
+}
+
+model Preview {
+  id        String  @id @db.Char(36)
+  accountId String  @map("account_id") @db.Char(36)
+  account   Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([accountId])
+  @@map("preview")
+}
+
+model Tracker {
+  id        String         @id @default(uuid()) @db.Char(36)
+  accountId String         @map("account_id") @db.Char(36)
+  userId    String         @unique @map("user_id") @db.Char(36)
+  account   Account        @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entries   TrackerEntry[]
+
+  @@map("tracker")
+}
+
+model TrackerEntry {
+  id         String   @id @default(uuid()) @db.Char(36)
+  trackerId  String   @map("tracker_id") @db.Char(36)
+  path       String
+  permission String?
+  provider   String?
+  createdAt  DateTime @default(now()) @map("created_at")
+  tracker    Tracker  @relation(fields: [trackerId], references: [id], onDelete: Cascade)
+
+  @@index([trackerId])
+  @@map("tracker_entry")
+}
+
+model Plan {
+  id                String   @id @db.VarChar(64)
+  name              String   @db.VarChar(256)
+  price             Int
+  interval          String   @db.VarChar(32)
+  currency          String   @default("brl") @db.VarChar(8)
+  features          Json     @default("[]")
+  stripeProductId   String?  @map("stripe_product_id") @db.VarChar(64)
+  stripePriceId     String?  @map("stripe_price_id") @db.VarChar(64)
+  active            Boolean  @default(true)
+  isFree            Boolean  @default(false) @map("is_free")
+  dateCreated       DateTime @default(now()) @map("date_created")
+  dateUpdated       DateTime @updatedAt @map("date_updated")
+
+  @@map("plan")
+}

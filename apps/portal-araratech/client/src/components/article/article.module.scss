@@ -1,0 +1,44 @@
+@import 'components/global.scss';
+
+.article {
+
+  padding: $scale3 0;
+
+  h1 {
+
+    color: $c-purple;
+    font-weight: 600;
+    font-size: $scale2;
+    margin-bottom: $scale-2;
+
+  }
+
+  h2 {
+
+    color: $c-purple;
+    font-size: $scale1;
+    font-weight: 600;
+    margin: $scale3 0 $scale-2 0;
+
+  }
+
+  h3 {
+
+    color: $c-blue;
+    font-size: $scale;
+    margin-bottom: $scale;
+
+  }
+
+  p {
+
+    margin-bottom: $scale;
+
+  }
+
+  @media (min-width: $mobile){
+
+    padding: $scale6 0;
+
+  }
+}

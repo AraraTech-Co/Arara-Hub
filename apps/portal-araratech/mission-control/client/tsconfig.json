@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "target": "ES6",
+    "module": "ESNext",
+    "jsx": "react-jsx",
+    "strict": false, // Disable all strict type-checking
+    "noEmitOnError": false, // Allow output even if errors are present
+    "skipLibCheck": true, // Skip type-checking declaration files
+    // "suppressImplicitAnyIndexErrors": true, // Suppress warnings for implicit `any` in index types
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "outDir": "./build",
+    "baseUrl": "./src",
+    "paths": {
+      "@/*": ["./*"]
+    }
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "build"]
+}

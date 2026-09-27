@@ -1,0 +1,45 @@
+@import "components/global.scss";
+
+.steps {
+  list-style: none;
+  text-align: center;
+  counter-reset: step;
+
+  li {
+    display: inline-block;
+    counter-increment: step;
+    text-align: center;
+    margin-right: $scale4;
+    font-size: 0.8em;
+
+    a {
+      color: $c-text;
+      padding-top: 3em;
+      text-decoration: none;
+    }
+
+    &:before {
+      content: counter(step);
+      display: block;
+      color: white;
+      width: $scale3;
+      height: $scale3;
+      margin: 0 auto;
+      border-radius: 100%;
+      text-align: center;
+      font-weight: 700;
+      font-size: $scale1;
+      line-height: 2em;
+      background: lighten($c-primary, 4%);
+      margin-bottom: 0.5em;
+    }
+
+    &:last-child {
+      margin-right: 0;
+    }
+  }
+}
+
+.complete:before {
+  background-color: $c-green !important;
+}

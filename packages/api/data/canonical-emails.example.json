@@ -1,0 +1,9 @@
+{
+  "description": "Copy to canonical-emails.json (gitignored). Map legacy/alias emails → canonical staff identity.",
+  "aliases": {
+    "dev@local": "admin@example.com"
+  },
+  "coreStaff": [
+    "admin@example.com"
+  ]
+}

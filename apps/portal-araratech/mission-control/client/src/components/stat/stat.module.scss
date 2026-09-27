@@ -1,0 +1,51 @@
+@import 'components/global.scss';
+
+.stat {
+
+  position: relative;
+  text-align: center;
+  min-height: $scale4;
+
+}
+
+.icon {
+
+  position: absolute;
+  top: 50%;
+  left: $scale2;
+  transform: translateY(-50%);
+
+}
+
+.value {
+
+  font-size: $scale2;
+  font-weight: 700;
+
+}
+
+.change {
+
+  position: absolute;
+  top: 50%;
+  right: $scale3;
+  font-size: 0.9em;
+  text-align: center;
+  transform: translateY(-50%);
+
+}
+
+.changeIcon {
+
+  position: absolute;
+  top: 0.15em;
+  right: -$scale1;
+
+}
+
+.label {
+
+  font-size: 0.85em;
+  color: lighten($c-text, 10%);
+
+}

@@ -1,0 +1,62 @@
+@import 'components/global.scss';
+
+.list {
+
+  list-style: none;
+
+  li {
+
+    margin-bottom: $scale;
+    line-height: 1.4em;
+
+  }
+}
+
+ul.list {
+
+  li {
+
+    position: relative;
+    padding-left: $scale1;
+
+    &:before {
+
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 0;
+      width: 0.6em;
+      height: 0.6em;
+      border-radius: 100%;
+      background-color: $c-blue;
+      transform: translateY(-50%);
+      -ms-transform: translateY(-50%);
+
+    }
+  }
+}
+
+ol.list {
+
+  counter-reset: list-counter;
+
+  li {
+
+    &:before {
+
+      counter-increment: list-counter;
+      content: counter(list-counter);
+      display: inline-block;
+      margin-right: 0.75em;
+      width: 1.6em;
+      height: 1.6em;
+      text-align: center;
+      color: white;
+      line-height: 1.6em;
+      font-size: 0.9em;
+      border-radius: 100%;
+      background-color: $c-blue;
+
+    }
+  }
+}

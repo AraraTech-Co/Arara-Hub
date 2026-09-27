@@ -1,0 +1,35 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, #root, body {
+
+  height: 100%;
+
+}
+
+@layer base {
+  body {
+
+    @apply text-slate-600;
+
+  }
+  *, *:after, *:before {
+
+    @apply bg-no-repeat;
+
+  }
+  article p {
+
+    @apply mb-3;
+
+  }
+}
+
+@layer components {
+  table tbody tr:last-child td {
+    
+    @apply border-0 !important;
+
+  }
+}

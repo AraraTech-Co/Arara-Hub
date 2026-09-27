@@ -1,0 +1,31 @@
+name: Deploy hub-araratech
+
+# Deploy do Arara Hub — mesmo padrão dos demais fronts (reusa
+# deploy-frontend.reusable.yml). Auto-deploy em master ligado; segue também
+# disponível manualmente via workflow_dispatch. Pré-reqs de infra (serviço no
+# compose porta 10009, Nginx→10009, DNS) — ver apps/hub-araratech/docs/DEPLOY-HUB.md.
+on:
+  workflow_dispatch:
+  push:
+    branches: [master, main]
+    paths:
+      - "apps/hub-araratech/**"
+      - "deploy/Dockerfile.next-export"
+      - "deploy/nginx/**"
+      - "deploy/frontends.compose.yml"
+      - ".github/workflows/deploy-hub-araratech.yml"
+      - ".github/workflows/deploy-frontend.reusable.yml"
+      - ".github/actions/setup-ssh/**"
+
+concurrency:
+  group: deploy-hub-araratech
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    uses: ./.github/workflows/deploy-frontend.reusable.yml
+    with:
+      app: hub-araratech
+      smoke_url: https://hub.arara-tech.com/
+    secrets:
+      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}

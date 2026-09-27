@@ -1,0 +1,141 @@
+@import "components/global.scss";
+
+.base {
+  cursor: pointer;
+  font-family: "Source Sans Pro", "sans-serif" !important;
+}
+
+.loading {
+  &:after {
+    // display: none;
+    content: "";
+    position: absolute;
+    width: 17px;
+    height: 17px;
+    right: $scale;
+    top: $scale1;
+    z-index: 3;
+    background-size: contain;
+    background-image: url("./icons/ico-loader.svg");
+    transform-origin: center center;
+    -webkit-animation: rotate 1s infinite linear;
+    -moz-animation: rotate 1s infinite linear;
+    -o-animation: rotate 1s infinite linear;
+    animation: rotate 1s infinite linear;
+  }
+}
+
+.btn {
+  display: inline-block;
+  color: white;
+  font-size: $scale;
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none;
+  padding: $scale $scale5;
+  border-radius: $radius;
+  background-color: $c-green;
+  transition: all 0.4s ease-in-out;
+
+  &:hover {
+    background-color: darken($c-green, 6%);
+    transition: all 0.4s ease-in-out;
+  }
+}
+
+.red {
+  background-color: $c-red;
+
+  &:hover {
+    background-color: darken($c-red, 5%) !important;
+    border-color: darken($c-red, 5%) !important;
+  }
+}
+
+.blue {
+  background-color: $c-blue;
+
+  &:hover {
+    background-color: darken($c-blue, 5%) !important;
+    border-color: darken($c-blue, 5%) !important;
+  }
+}
+
+.green {
+  background-color: $c-green;
+
+  &:hover {
+    background-color: darken($c-green, 5%) !important;
+    border-color: darken($c-green, 5%) !important;
+  }
+}
+
+.small {
+  font-size: 0.9em;
+  padding: 0.8em $scale2;
+}
+
+.big {
+  @media (min-width: $mobile) {
+    font-size: $scale1;
+  }
+}
+
+.outline {
+  color: $c-text;
+  background: transparent;
+  border: 1px solid $c-border-dark;
+
+  &:hover {
+    color: white;
+    border-color: $c-red;
+    background: $c-red;
+  }
+}
+
+.text {
+  cursor: pointer;
+  color: $c-text;
+}
+
+.iconButton {
+  display: inline-block;
+  padding: 0;
+  width: $scale1;
+  height: $scale1;
+}
+
+.iconText {
+  position: relative;
+  padding-left: $scale4 + $scale;
+}
+
+.iconTextOnly {
+  padding-left: $scale3;
+}
+
+.fullWidth {
+  width: 100%;
+}
+
+.rounded {
+  border-radius: $scale3;
+}
+
+.alignRight {
+  padding-left: 0;
+  padding-right: $scale2;
+}
+
+.alignLeft {
+  padding-left: $scale2;
+  padding-right: 0;
+}
+
+.relative {
+  position: relative;
+}
+
+.absolute {
+  position: absolute;
+}

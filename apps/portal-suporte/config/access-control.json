@@ -1,0 +1,348 @@
+{
+  "levels": [
+    {
+      "id": "user",
+      "rank": 10,
+      "label": "Cliente"
+    },
+    {
+      "id": "support",
+      "rank": 20,
+      "label": "Suporte"
+    },
+    {
+      "id": "developer",
+      "rank": 30,
+      "label": "Desenvolvedor"
+    },
+    {
+      "id": "admin",
+      "rank": 40,
+      "label": "Administrador"
+    }
+  ],
+  "contexts": {
+    "admin": {
+      "pathPrefix": "/admin",
+      "floorLevel": "developer"
+    },
+    "client": {
+      "pathPrefix": "/dashboard",
+      "floorLevel": "user"
+    },
+    "apiAdmin": {
+      "pathPrefix": "/api/admin",
+      "floorLevel": "developer"
+    },
+    "apiDevops": {
+      "pathPrefix": "/api/devops",
+      "floorLevel": "developer"
+    },
+    "apiWhatsapp": {
+      "pathPrefix": "/api/whatsapp",
+      "floorLevel": "developer"
+    },
+    "apiExternal": {
+      "pathPrefix": "/api/external",
+      "floorLevel": "developer"
+    },
+    "apiTickets": {
+      "pathPrefix": "/api/tickets",
+      "floorLevel": "user"
+    },
+    "apiProfiles": {
+      "pathPrefix": "/api/profiles",
+      "floorLevel": "user"
+    },
+    "apiNotifications": {
+      "pathPrefix": "/api/notifications",
+      "floorLevel": "user"
+    },
+    "apiUpload": {
+      "pathPrefix": "/api/upload",
+      "floorLevel": "user"
+    },
+    "apiIntegrations": {
+      "pathPrefix": "/api/integrations",
+      "floorLevel": "developer"
+    },
+    "apiFileExplorer": {
+      "pathPrefix": "/api/file-explorer",
+      "floorLevel": "admin"
+    }
+  },
+  "publicPaths": [
+    "/",
+    "/auth/**",
+    "/criar-ticket",
+    "/criar-ticket/**",
+    "/acompanhar",
+    "/acompanhar/**",
+    "/ticket-criado",
+    "/ticket-criado/**",
+    "/avaliar/**",
+    "/api/auth/**",
+    "/api/health",
+    "/api/tickets/public",
+    "/api/tickets/public/**",
+    "/api/rate/**",
+    "/api/cron/**",
+    "/api/webhooks/whatsapp",
+    "/api/webhooks/avisa",
+    "/api/uptime"
+  ],
+  "routes": [
+    {
+      "pattern": "/admin/kanban",
+      "minLevel": "support"
+    },
+    {
+      "pattern": "/admin/tickets/**",
+      "minLevel": "support"
+    },
+    {
+      "pattern": "/admin/tasks",
+      "minLevel": "developer"
+    },
+    {
+      "pattern": "/admin/emails",
+      "minLevel": "developer"
+    },
+    {
+      "pattern": "/admin/public-tickets",
+      "minLevel": "support"
+    },
+    {
+      "pattern": "/admin/post-mortems",
+      "minLevel": "support"
+    },
+    {
+      "pattern": "/admin/incidents",
+      "minLevel": "support"
+    },
+    {
+      "pattern": "/admin/schedule",
+      "minLevel": "support"
+    },
+    {
+      "pattern": "/admin/sla",
+      "minLevel": "support"
+    },
+    {
+      "pattern": "/admin/sla-calendar",
+      "minLevel": "developer"
+    },
+    {
+      "pattern": "/admin/sla-contracts",
+      "minLevel": "developer"
+    },
+    {
+      "pattern": "/admin/kb",
+      "minLevel": "support"
+    },
+    {
+      "pattern": "/admin/templates",
+      "minLevel": "developer"
+    },
+    {
+      "pattern": "/admin/companies",
+      "minLevel": "support"
+    },
+    {
+      "pattern": "/admin/companies/**",
+      "minLevel": "support"
+    },
+    {
+      "pattern": "/admin/teams",
+      "minLevel": "developer"
+    },
+    {
+      "pattern": "/admin/units",
+      "minLevel": "developer"
+    },
+    {
+      "pattern": "/admin/whatsapp",
+      "minLevel": "developer"
+    },
+    {
+      "pattern": "/inbox",
+      "minLevel": "support"
+    },
+    {
+      "pattern": "/inbox/**",
+      "minLevel": "support"
+    },
+    {
+      "pattern": "/admin/sgc",
+      "minLevel": "developer"
+    },
+    {
+      "pattern": "/admin/historico-trello",
+      "minLevel": "developer"
+    },
+    {
+      "pattern": "/admin/doc-de-apoio",
+      "minLevel": "support"
+    },
+    {
+      "pattern": "/admin/validador-sped",
+      "minLevel": "developer"
+    },
+    {
+      "pattern": "/admin/validador-sped/**",
+      "minLevel": "developer"
+    },
+    {
+      "pattern": "/admin/coleta-nfe-pdv",
+      "minLevel": "developer"
+    },
+    {
+      "pattern": "/admin/coleta-nfe-pdv/**",
+      "minLevel": "developer"
+    },
+    {
+      "pattern": "/admin/minha-conta",
+      "minLevel": "support"
+    },
+    {
+      "pattern": "/admin/devops",
+      "minLevel": "developer"
+    },
+    {
+      "pattern": "/admin/devops/**",
+      "minLevel": "developer"
+    },
+    {
+      "pattern": "/admin",
+      "minLevel": "support"
+    },
+    {
+      "pattern": "/admin/analytics",
+      "minLevel": "admin"
+    },
+    {
+      "pattern": "/admin/whatsapp-analytics",
+      "minLevel": "admin"
+    },
+    {
+      "pattern": "/admin/audit",
+      "minLevel": "admin"
+    },
+    {
+      "pattern": "/admin/api-docs",
+      "minLevel": "admin"
+    },
+    {
+      "pattern": "/admin/reports",
+      "minLevel": "admin"
+    },
+    {
+      "pattern": "/admin/integrations",
+      "minLevel": "admin"
+    },
+    {
+      "pattern": "/admin/automation",
+      "minLevel": "admin"
+    },
+    {
+      "pattern": "/admin/webhooks",
+      "minLevel": "admin"
+    },
+    {
+      "pattern": "/admin/api-keys",
+      "minLevel": "admin"
+    },
+    {
+      "pattern": "/admin/ia",
+      "minLevel": "admin"
+    },
+    {
+      "pattern": "/admin/import",
+      "minLevel": "admin"
+    },
+    {
+      "pattern": "/admin/users",
+      "minLevel": "admin"
+    },
+    {
+      "pattern": "/admin/team-members",
+      "minLevel": "admin"
+    },
+    {
+      "pattern": "/admin/crm-usuarios",
+      "minLevel": "master"
+    },
+    {
+      "pattern": "/admin/settings",
+      "minLevel": "admin"
+    },
+    {
+      "pattern": "/admin/permissions",
+      "minLevel": "admin"
+    },
+    {
+      "pattern": "/api/whatsapp/analytics",
+      "minLevel": "admin"
+    },
+    {
+      "pattern": "/api/admin/analytics/**",
+      "minLevel": "admin"
+    },
+    {
+      "pattern": "/api/admin/audit/**",
+      "minLevel": "admin"
+    },
+    {
+      "pattern": "/api/admin/reports/**",
+      "minLevel": "admin"
+    },
+    {
+      "pattern": "/api/admin/automation/**",
+      "minLevel": "admin"
+    },
+    {
+      "pattern": "/api/admin/impersonate/**",
+      "minLevel": "admin"
+    },
+    {
+      "pattern": "/api/admin/users/**",
+      "minLevel": "admin"
+    },
+    {
+      "pattern": "/api/admin/settings/**",
+      "minLevel": "admin"
+    },
+    {
+      "pattern": "/api/admin/permissions/**",
+      "minLevel": "admin"
+    },
+    {
+      "pattern": "/api/admin/ssh-servers/**",
+      "minLevel": "developer"
+    },
+    {
+      "pattern": "/api/devops/terminal",
+      "minLevel": "developer"
+    },
+    {
+      "pattern": "/api/devops/terminal-ws",
+      "minLevel": "developer"
+    },
+    {
+      "pattern": "/api/devops/**",
+      "minLevel": "developer"
+    },
+    {
+      "pattern": "/api/devops/**",
+      "minLevel": "developer"
+    },
+    {
+      "pattern": "/api/external/**",
+      "minLevel": "developer"
+    },
+    {
+      "pattern": "/api/api-keys/**",
+      "minLevel": "admin"
+    }
+  ]
+}

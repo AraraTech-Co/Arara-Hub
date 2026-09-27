@@ -1,0 +1,44 @@
+@import 'components/global.scss';
+
+.checklist {
+
+  margin-left: 0;
+  list-style: none;
+
+}
+
+.item {
+
+  position: relative;
+  text-align: left;
+  background-position: left center;
+  background-size: 0.8em;
+  padding-left: 1.5em;
+  margin-bottom: $scale-1;
+  line-height: 1.4em;
+    
+}
+
+.checkGreen {
+
+  background-image: url('./icons/ico-check-green.svg');
+
+}
+
+.checkWhite {
+
+  background-image: url('./icons/ico-check-white.svg');
+
+}
+
+.cross {
+
+  background-image: url('./icons/ico-cross-red.svg');
+
+}
+
+.interactive {
+
+  cursor: pointer;
+
+}

@@ -1,0 +1,10 @@
+# Projeto Compose isolado — sem `name`, o diretório `remote/` vira projeto
+# "remote" e colide com o portal-suporte (mesmo project + service `app`).
+name: crm
+
+# Rede compartilhada do VPS (criada pelo stack `remote` do portal-suporte).
+# O CRM anexa a ela para alcançar o Postgres pgvector já existente (remote-database-1).
+networks:
+  portal:
+    external: true
+    name: remote_portal

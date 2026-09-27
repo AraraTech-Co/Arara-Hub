@@ -1,0 +1,102 @@
+# Produção — portal-suporte Arara Tech
+# Uso: docker compose -f docker-compose.prod.yml up -d --build
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}?schema=public
+    container_name: portal-suporte-app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      meilisearch:
+        condition: service_started
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}?schema=public
+      AUTH_SECRET: ${AUTH_SECRET}
+      AUTH_URL: ${AUTH_URL}
+      AUTH_TRUST_HOST: "true"
+      SSH_ENCRYPTION_KEY: ${SSH_ENCRYPTION_KEY}
+      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      REDIS_DB: 0
+      MEILISEARCH_HOST: http://meilisearch:7700
+      MEILISEARCH_API_KEY: ${MEILISEARCH_API_KEY}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
+      # Liga/desliga TODAS as features de IA (triagem automática, chat, análise).
+      # Default = false: instância roda sem IA e endpoints /api/ai/* devolvem 503.
+      AI_FEATURES_ENABLED: ${AI_FEATURES_ENABLED:-false}
+      DISCORD_WEBHOOK_URL: ${DISCORD_WEBHOOK_URL:-}
+      WHATSAPP_BUSINESS_TOKEN: ${WHATSAPP_BUSINESS_TOKEN:-}
+      WHATSAPP_BUSINESS_PHONE_ID: ${WHATSAPP_BUSINESS_PHONE_ID:-}
+      TRELLO_API_KEY: ${TRELLO_API_KEY:-}
+      TRELLO_TOKEN: ${TRELLO_TOKEN:-}
+      CRON_SECRET: ${CRON_SECRET}
+      EMPLOYEE_INVITE_CODE: ${EMPLOYEE_INVITE_CODE:-}
+    ports:
+      - "3000:3000"
+    volumes:
+      - uploads_data:/app/public/uploads
+    networks:
+      - portal
+
+  db:
+    image: postgres:16-alpine
+    container_name: portal-suporte-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - portal
+
+  redis:
+    image: redis:7-alpine
+    container_name: portal-suporte-redis
+    restart: unless-stopped
+    command: redis-server --maxmemory 128mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    networks:
+      - portal
+
+  meilisearch:
+    image: getmeili/meilisearch:v1.11
+    container_name: portal-suporte-search
+    restart: unless-stopped
+    environment:
+      MEILI_MASTER_KEY: ${MEILISEARCH_API_KEY}
+      MEILI_ENV: production
+      MEILI_MAX_INDEXING_MEMORY: 200MB
+    volumes:
+      - meilisearch_data:/meili_data
+    networks:
+      - portal
+
+
+volumes:
+  postgres_data:
+  redis_data:
+  meilisearch_data:
+  uploads_data:
+
+networks:
+  portal:
+    driver: bridge

@@ -1,0 +1,38 @@
+@import 'components/global.scss';
+
+.base {
+
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: $scale1;
+  height: $scale1;
+  transform: translateY(-50%);
+
+}
+
+.insideButton {
+
+  left: $scale1;
+
+}
+
+.fill {
+
+  fill: white;
+  
+}
+
+.alignLeft {
+
+  left: 0;
+  right: auto;
+
+}
+
+.alignRight {
+
+  left: auto;
+  right: 0;
+
+}

@@ -1,0 +1,116 @@
+/* ─── Status tokens — 16 ticket statuses ─────────────────────────────────────
+   Naming: --status-{name}     = background
+           --status-{name}-fg  = foreground (text)
+           --status-{name}-bd  = border
+   ──────────────────────────────────────────────────────────────────────────── */
+:root {
+  /* backlog / novos_chamados — orange */
+  --status-backlog:    oklch(0.954 0.038 75);
+  --status-backlog-fg: oklch(0.553 0.195 38);
+  --status-backlog-bd: oklch(0.901 0.076 71);
+
+  /* triagem — purple */
+  --status-triage:    oklch(0.946 0.033 307);
+  --status-triage-fg: oklch(0.496 0.265 302);
+  --status-triage-bd: oklch(0.902 0.063 307);
+
+  /* pendencia_suporte — rose */
+  --status-pending:    oklch(0.941 0.030 17);
+  --status-pending-fg: oklch(0.514 0.222 17);
+  --status-pending-bd: oklch(0.892 0.058 16);
+
+  /* pendencia_dev — violet */
+  --status-pending-dev:    oklch(0.943 0.029 295);
+  --status-pending-dev-fg: oklch(0.491 0.270 277);
+  --status-pending-dev-bd: oklch(0.900 0.057 293);
+
+  /* em_atendimento — yellow */
+  --status-in-progress:    oklch(0.973 0.071 103);
+  --status-in-progress-fg: oklch(0.554 0.135 66);
+  --status-in-progress-bd: oklch(0.945 0.129 102);
+
+  /* em_teste — blue */
+  --status-testing:    oklch(0.932 0.032 256);
+  --status-testing-fg: oklch(0.488 0.243 264);
+  --status-testing-bd: oklch(0.882 0.059 254);
+
+  /* aguardando_cliente — amber */
+  --status-waiting:    oklch(0.962 0.059 96);
+  --status-waiting-fg: oklch(0.555 0.163 49);
+  --status-waiting-bd: oklch(0.924 0.120 96);
+
+  /* resolvido — emerald */
+  --status-resolved:    oklch(0.950 0.052 163);
+  --status-resolved-fg: oklch(0.508 0.118 166);
+  --status-resolved-bd: oklch(0.905 0.093 164);
+
+  /* resolvido_com/sem_manual — green */
+  --status-resolved-manual:    oklch(0.962 0.044 157);
+  --status-resolved-manual-fg: oklch(0.527 0.154 150);
+  --status-resolved-manual-bd: oklch(0.925 0.084 156);
+
+  /* cancelado — red */
+  --status-cancelled:    oklch(0.936 0.032 18);
+  --status-cancelled-fg: oklch(0.505 0.213 28);
+  --status-cancelled-bd: oklch(0.885 0.061 18);
+
+  /* migracao_sat_nfce — indigo */
+  --status-migration:    oklch(0.930 0.034 273);
+  --status-migration-fg: oklch(0.457 0.240 277);
+  --status-migration-bd: oklch(0.870 0.065 274);
+
+  /* migracao_concluida — teal */
+  --status-migration-done:    oklch(0.953 0.051 181);
+  --status-migration-done-fg: oklch(0.511 0.096 186);
+  --status-migration-done-bd: oklch(0.910 0.096 180);
+}
+
+.dark {
+  --status-backlog:    oklch(0.26 0.06 55);
+  --status-backlog-fg: oklch(0.80 0.08 65);
+  --status-backlog-bd: oklch(0.40 0.09 55);
+
+  --status-triage:    oklch(0.25 0.05 307);
+  --status-triage-fg: oklch(0.78 0.08 307);
+  --status-triage-bd: oklch(0.38 0.08 307);
+
+  --status-pending:    oklch(0.26 0.05 17);
+  --status-pending-fg: oklch(0.79 0.08 17);
+  --status-pending-bd: oklch(0.40 0.08 17);
+
+  --status-pending-dev:    oklch(0.25 0.05 277);
+  --status-pending-dev-fg: oklch(0.78 0.08 277);
+  --status-pending-dev-bd: oklch(0.38 0.08 277);
+
+  --status-in-progress:    oklch(0.27 0.06 95);
+  --status-in-progress-fg: oklch(0.82 0.08 95);
+  --status-in-progress-bd: oklch(0.42 0.09 95);
+
+  --status-testing:    oklch(0.25 0.05 256);
+  --status-testing-fg: oklch(0.77 0.07 256);
+  --status-testing-bd: oklch(0.38 0.08 256);
+
+  --status-waiting:    oklch(0.27 0.06 80);
+  --status-waiting-fg: oklch(0.82 0.08 85);
+  --status-waiting-bd: oklch(0.42 0.09 80);
+
+  --status-resolved:    oklch(0.25 0.06 165);
+  --status-resolved-fg: oklch(0.77 0.07 165);
+  --status-resolved-bd: oklch(0.38 0.08 165);
+
+  --status-resolved-manual:    oklch(0.25 0.06 150);
+  --status-resolved-manual-fg: oklch(0.78 0.07 150);
+  --status-resolved-manual-bd: oklch(0.38 0.08 150);
+
+  --status-cancelled:    oklch(0.26 0.05 25);
+  --status-cancelled-fg: oklch(0.79 0.08 25);
+  --status-cancelled-bd: oklch(0.40 0.08 25);
+
+  --status-migration:    oklch(0.24 0.05 270);
+  --status-migration-fg: oklch(0.76 0.07 270);
+  --status-migration-bd: oklch(0.37 0.08 270);
+
+  --status-migration-done:    oklch(0.25 0.05 186);
+  --status-migration-done-fg: oklch(0.77 0.07 186);
+  --status-migration-done-bd: oklch(0.38 0.07 186);
+}
