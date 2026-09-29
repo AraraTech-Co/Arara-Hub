@@ -719,7 +719,9 @@ export const KanbanCard = memo(function KanbanCard({ ticket, isDragging = false,
                           <UserCheck className="h-3.5 w-3.5 text-muted-foreground/70 hover:text-sem-success-fg" />
                         </button>
                       </TooltipTrigger>
-                      <TooltipContent side="top">Atribuir a mim</TooltipContent>
+                      <TooltipContent side="top">
+                        {ticket.assignee && ticket.assignee.id !== currentUserId ? 'Assumir chamado' : 'Atribuir a mim'}
+                      </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
                 )}

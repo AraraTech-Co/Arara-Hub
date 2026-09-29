@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { X, Download, FileText, ImageOff } from "lucide-react";
 import { AVISO_ARQUIVO_SUMIDO } from "./attachment-media";
+import { urlExibicaoAnexo } from "@/lib/anexo-url";
 
 // Estrutural — aceita tanto AttachmentItem (ticket-attachments.tsx) quanto
 // CardImage (card-images.tsx), já que o modal só lê esses 3 campos.
@@ -23,15 +24,26 @@ export function AttachmentPreviewModal({ attachment, onClose }: Props) {
   // Mesmo caso da miniatura: o arquivo pode não existir mais no servidor.
   const [sumiu, setSumiu] = useState(false);
 
+  const mediaUrl = attachment
+    ? urlExibicaoAnexo({
+        id: (attachment as PreviewableFile & { id?: string }).id,
+        fileUrl: attachment.fileUrl,
+      })
+    : '';
+
   useEffect(() => {
     setSumiu(false);
   }, [attachment]);
 
   useEffect(() => {
     if (!attachment) { setTextContent(null); return; }
+    if (!mediaUrl) {
+      setSumiu(true);
+      return;
+    }
     if (attachment.fileType === "text/plain") {
       setTextLoading(true);
-      fetch(attachment.fileUrl)
+      fetch(mediaUrl)
         .then((r) => r.text())
         .then((t) => setTextContent(t))
         .catch(() => setTextContent("Não foi possível carregar o conteúdo."))
@@ -39,7 +51,7 @@ export function AttachmentPreviewModal({ attachment, onClose }: Props) {
     } else {
       setTextContent(null);
     }
-  }, [attachment]);
+  }, [attachment, mediaUrl]);
 
   if (!attachment) return null;
 
@@ -64,7 +76,7 @@ export function AttachmentPreviewModal({ attachment, onClose }: Props) {
           </p>
           <div className="flex items-center gap-2 shrink-0">
             <a
-              href={attachment.fileUrl}
+              href={mediaUrl || undefined}
               download
               className="inline-flex items-center gap-1.5 text-xs text-foreground/60 hover:text-foreground border border-border rounded px-2 py-1"
             >
@@ -91,7 +103,7 @@ export function AttachmentPreviewModal({ attachment, onClose }: Props) {
 
           {isImage && !sumiu && (
             <img
-              src={attachment.fileUrl}
+              src={mediaUrl}
               alt={attachment.fileName}
               onError={() => setSumiu(true)}
               className="max-w-full max-h-full object-contain p-4"
@@ -100,7 +112,7 @@ export function AttachmentPreviewModal({ attachment, onClose }: Props) {
 
           {isVideo && !sumiu && (
             <video
-              src={attachment.fileUrl}
+              src={mediaUrl}
               controls
               onError={() => setSumiu(true)}
               className="max-w-full max-h-full"
@@ -110,7 +122,7 @@ export function AttachmentPreviewModal({ attachment, onClose }: Props) {
 
           {isPdf && !sumiu && (
             <iframe
-              src={attachment.fileUrl}
+              src={mediaUrl}
               title={attachment.fileName}
               className="w-full"
               style={{ height: "calc(90vh - 56px)", border: "none" }}
@@ -134,7 +146,7 @@ export function AttachmentPreviewModal({ attachment, onClose }: Props) {
               <FileText className="h-12 w-12" />
               <p className="text-sm">Pré-visualização não disponível para este tipo de arquivo.</p>
               <a
-                href={attachment.fileUrl}
+                href={mediaUrl || undefined}
                 download
                 className="text-sm text-primary hover:underline"
               >

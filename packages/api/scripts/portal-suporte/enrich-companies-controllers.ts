@@ -19,14 +19,16 @@ const CONTROLLERS: Spec[] = [
   if (!Company) return ctx.reply.status(500).send({ success: false, error: "Model Company missing" });
   const q = ctx.query || {};
   const search = String(q.search || q.q || "").trim().toLowerCase();
-  const limit = Math.min(Number(q.limit || 50), 200);
+  var reqLimit = Number(q.limit);
+  var limit = reqLimit > 0 ? Math.min(reqLimit, 2000) : 2000;
   var rows = await Company.findMany({});
   rows = (rows || []).filter(function (c) { return c.active !== false; });
   if (search) {
     rows = rows.filter(function (c) {
+      var aliases = c.name_aliases || c.nameAliases || [];
       var hay = [
         c.name, c.trade_name, c.tradeName, c.cnpj, c.city, c.state
-      ].map(function (x) { return String(x || "").toLowerCase(); }).join(" ");
+      ].concat(Array.isArray(aliases) ? aliases : []).map(function (x) { return String(x || "").toLowerCase(); }).join(" ");
       return hay.indexOf(search) >= 0;
     });
   }

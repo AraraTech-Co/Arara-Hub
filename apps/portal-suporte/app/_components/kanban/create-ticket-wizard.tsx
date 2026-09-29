@@ -502,8 +502,8 @@ export function CreateTicketWizard({
           type="tel"
           value={form.contact_phone ?? ''}
           onChange={e => { set('contact_phone', mascaraTelefone(e.target.value)); if (campoEmFalta === 'contact_phone') setCampoEmFalta(null); }}
-          placeholder="(00) 00000-0000"
-          maxLength={15}
+          placeholder="+55 (00) 00000-0000"
+          maxLength={20}
           aria-invalid={campoEmFalta === 'contact_phone'}
           className={`bg-background text-foreground placeholder:text-muted-foreground ${
             campoEmFalta === 'contact_phone'

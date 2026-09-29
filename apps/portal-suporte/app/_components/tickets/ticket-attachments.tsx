@@ -136,7 +136,7 @@ export function TicketAttachments({
     );
     void Promise.all(
       semThumb.map(async (a) => {
-        const ok = await arquivoAlcancavel(a.fileUrl, a.fileType);
+        const ok = await arquivoAlcancavel(a.fileUrl, a.fileType, { attachmentId: a.id });
         if (vivo && !ok) marcarSemArquivo(a.id);
       }),
     );

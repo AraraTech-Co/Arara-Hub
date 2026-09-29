@@ -24,6 +24,7 @@
 // =============================================================================
 
 import { useState } from 'react'
+import { anexoLegadoSemConteudo, urlExibicaoAnexo } from '@/lib/anexo-url'
 import {
   FileArchive,
   FileText,
@@ -41,6 +42,7 @@ export function iconePorTipo(type: string) {
 }
 
 export type MidiaAnexo = {
+  id?: string
   fileName: string
   fileUrl: string
   fileType: string
@@ -59,13 +61,15 @@ export function MiniaturaAnexo({
   onIndisponivel?: (v: boolean) => void
 }) {
   const [falhou, setFalhou] = useState(false)
+  const src = urlExibicaoAnexo({ id: anexo.id, fileUrl: anexo.fileUrl })
+  const legadoSemRota = anexoLegadoSemConteudo(anexo.fileUrl) && !src
 
   const marcarFalha = () => {
     setFalhou(true)
     onIndisponivel?.(true)
   }
 
-  if (falhou) {
+  if (falhou || legadoSemRota) {
     return (
       <span
         title="Arquivo indisponível — o anexo foi enviado numa versão anterior do portal e o conteúdo não está mais armazenado."
@@ -79,7 +83,7 @@ export function MiniaturaAnexo({
   if (anexo.fileType.startsWith('video/')) {
     return (
       <video
-        src={anexo.fileUrl}
+        src={src}
         className="h-full w-full object-cover"
         preload="metadata"
         muted
@@ -91,7 +95,7 @@ export function MiniaturaAnexo({
   return (
     // eslint-disable-next-line @next/next/no-img-element -- export estático: sem otimizador de imagem, e data: URL não passa pelo <Image>
     <img
-      src={anexo.fileUrl}
+      src={src}
       alt={anexo.fileName}
       loading="lazy"
       className="h-full w-full object-cover"
@@ -112,11 +116,16 @@ export const AVISO_ARQUIVO_SUMIDO =
  *
  * Só vale para URL de caminho: `data:` carrega o conteúdo consigo.
  */
-export async function arquivoAlcancavel(url: string, fileType: string): Promise<boolean> {
-  if (!url) return false
-  if (url.startsWith('data:')) return true
+export async function arquivoAlcancavel(
+  url: string,
+  fileType: string,
+  opts?: { attachmentId?: string | null },
+): Promise<boolean> {
+  const resolved = urlExibicaoAnexo({ id: opts?.attachmentId, fileUrl: url })
+  if (!resolved) return false
+  if (resolved.startsWith('data:')) return true
   try {
-    const res = await fetch(url, { method: 'HEAD' })
+    const res = await fetch(resolved, { method: 'HEAD' })
     if (!res.ok) return false
     const servido = (res.headers.get('content-type') || '').toLowerCase()
     // O portal é uma SPA: qualquer rota desconhecida devolve o index.html com

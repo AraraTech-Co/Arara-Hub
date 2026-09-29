@@ -278,6 +278,21 @@ module.exports = { handler };`,
     : (body.assigned_to !== undefined ? body.assigned_to : body.userId);
   const actor = (ctx.user && (ctx.user.id || ctx.user.userId)) || null;
   try {
+    const ticket = await model.findById(id);
+    if (!ticket) return ctx.reply.status(404).send({ error: "Ticket not found" });
+    const fromUserId = ticket.assigned_to || ticket.assignedTo || null;
+    var RESOLVED = {
+      resolvido: 1, resolvido_com_manual: 1, resolvido_sem_manual: 1,
+      post_mortem: 1, migracao_concluida: 1, fechado: 1
+    };
+    var force = body.force === true || body.takeover === true;
+    var st = String(ticket.status || "");
+    if (assignee && fromUserId && String(fromUserId) !== String(assignee) && !force && !RESOLVED[st]) {
+      return ctx.reply.status(409).send({
+        error: "Chamado já atribuído a outro atendente. Use assumir com confirmação.",
+        assigned_to: fromUserId,
+      });
+    }
     const row = await model.update(id, {
       assigned_to: assignee,
       updated_at: new Date().toISOString(),
@@ -314,6 +329,21 @@ module.exports = { handler };`,
     : (body.assigned_to !== undefined ? body.assigned_to : body.userId);
   const actor = (ctx.user && (ctx.user.id || ctx.user.userId)) || null;
   try {
+    const ticket = await model.findById(id);
+    if (!ticket) return ctx.reply.status(404).send({ error: "Ticket not found" });
+    const fromUserId = ticket.assigned_to || ticket.assignedTo || null;
+    var RESOLVED = {
+      resolvido: 1, resolvido_com_manual: 1, resolvido_sem_manual: 1,
+      post_mortem: 1, migracao_concluida: 1, fechado: 1
+    };
+    var force = body.force === true || body.takeover === true;
+    var st = String(ticket.status || "");
+    if (assignee && fromUserId && String(fromUserId) !== String(assignee) && !force && !RESOLVED[st]) {
+      return ctx.reply.status(409).send({
+        error: "Chamado já atribuído a outro atendente. Use assumir com confirmação.",
+        assigned_to: fromUserId,
+      });
+    }
     const row = await model.update(id, {
       assigned_to: assignee,
       updated_at: new Date().toISOString(),

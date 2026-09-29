@@ -43,8 +43,11 @@ export const ticketsApi = {
     api.put<ApiOne<TicketSummary>>(`/api/tickets/${id}`, body),
   changeStatus: (id: string, status: string, opts?: Record<string, unknown>) =>
     api.post<ApiOne<TicketSummary>>(`/api/tickets/${id}/status`, { status, ...opts }),
-  assign: (id: string, assigneeId: string | null) =>
-    api.patch<ApiOne<TicketSummary>>(`/api/tickets/${id}/assign`, { assignee_id: assigneeId }),
+  assign: (id: string, assigneeId: string | null, opts?: { force?: boolean }) =>
+    api.patch<ApiOne<TicketSummary>>(`/api/tickets/${id}/assign`, {
+      assignee_id: assigneeId,
+      ...(opts?.force ? { force: true } : {}),
+    }),
   escalate: (id: string, toUserId: string, reason?: string) =>
     api.post<ApiOne<TicketSummary>>(`/api/tickets/${id}/escalate`, { to_user_id: toUserId, reason }),
   archive: (id: string) =>

@@ -117,6 +117,10 @@ async function applyTicketStatusChange(ctx, Ticket, Log, Co, id, body) {
   if (!isResolved && wasResolved) {
     patch.resolved_at = null;
   }
+  var prevAssignee = ticket.assigned_to || ticket.assignedTo || null;
+  if (isResolved && prevAssignee) {
+    patch.assigned_to = null;
+  }
   var row = await Ticket.update(id, patch);
   try {
     if (Log) {
@@ -129,6 +133,7 @@ async function applyTicketStatusChange(ctx, Ticket, Log, Co, id, body) {
           to: toStatus,
           resolved_at: patch.resolved_at || null,
           completed_by: isResolved ? actor : null,
+          assignee_cleared: isResolved && prevAssignee ? prevAssignee : null,
         },
         created_at: now,
         visible_to_client: true,
@@ -633,6 +638,8 @@ module.exports = { handler };`,
     evidence_added: "Evidência anexada",
     evidence_removed: "Evidência removida",
     occurred_at_changed: "Data do atendimento alterada",
+    assignee_cleared_on_resolve: "Responsável liberado ao concluir",
+    ticket_takeover: "Chamado assumido por outro atendente",
   };
   const ACTION_ICONS = {
     ticket_created: "🎫", ticket_updated: "✏️", status_changed: "🔄", ticket_completed: "✅",
@@ -759,6 +766,8 @@ async function upsertTicketSchemaFields(appId: string) {
     source: { type: 'string' },
     impact: { type: 'string' },
     urgency: { type: 'string' },
+    dev_ticket_number: { type: 'string' },
+    origem_ticket_number: { type: 'string' },
   }
   let changed = false
   for (const [k, v] of Object.entries(extras)) {

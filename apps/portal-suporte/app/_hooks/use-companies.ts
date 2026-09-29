@@ -100,7 +100,12 @@ export function useCompanies(params?: {
     // Casa no nome, no nome fantasia e nos apelidos — é assim que um chamado
     // antigo com o nome errado ainda encontra a empresa certa.
     return base.filter((c) => {
-      const alvos = [c.name, c.tradeName ?? '', ...(((c as { name_aliases?: string[] }).name_aliases) ?? [])]
+      const alvos = [
+        c.name,
+        c.tradeName ?? '',
+        c.cnpj ?? '',
+        ...(((c as { name_aliases?: string[] }).name_aliases) ?? []),
+      ]
       return alvos.some((t) => chaveEmpresa(String(t)).includes(q))
     })
   }, [todas, cadastradas, soCadastradas, params?.search])

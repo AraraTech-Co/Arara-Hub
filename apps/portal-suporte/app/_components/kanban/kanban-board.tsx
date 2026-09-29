@@ -435,6 +435,10 @@ export function KanbanBoard({ tickets: initialTickets, agents, currentUser }: Ka
   ) => {
     if (type === 'assign') {
       const me = currentUser ?? null;
+      const prevTicket = tickets.find((tk) => tk.id === id);
+      const needsForce = Boolean(
+        prevTicket?.assignee?.id && me?.id && prevTicket.assignee.id !== me.id,
+      );
       const assigneeObj = me
         ? { id: me.id, full_name: me.full_name ?? me.name ?? null, email: me.email ?? '' }
         : null;
@@ -442,12 +446,12 @@ export function KanbanBoard({ tickets: initialTickets, agents, currentUser }: Ka
         t.id === id ? { ...t, assignee: assigneeObj, assigned_to: me?.id ?? null } : t
       ));
       try {
-        await ticketsApi.assign(id, me?.id ?? null);
-        toast({ title: 'Ticket atribuído a você' });
+        await ticketsApi.assign(id, me?.id ?? null, { force: needsForce });
+        toast({ title: needsForce ? 'Chamado assumido por você' : 'Ticket atribuído a você' });
       } catch {
         toast({ title: 'Erro ao atribuir ticket', variant: 'destructive' });
         setTickets((prev) => prev.map((t) =>
-          t.id === id ? { ...t, assignee: tickets.find((tk) => tk.id === id)?.assignee ?? null } : t
+          t.id === id ? { ...t, assignee: prevTicket?.assignee ?? null, assigned_to: prevTicket?.assigned_to ?? null } : t
         ));
       }
     } else if (type === 'priority' && value) {
@@ -474,7 +478,7 @@ export function KanbanBoard({ tickets: initialTickets, agents, currentUser }: Ka
     } else if (type === 'resolve') {
       const prevStatus = tickets.find((t) => t.id === id)?.status;
       setTickets((prev) => prev.map((t) =>
-        t.id === id ? { ...t, status: 'resolvido' } : t
+        t.id === id ? { ...t, status: 'resolvido', assignee: null, assigned_to: null } : t
       ));
       try {
         await ticketsApi.patchStatus(id, { status: 'resolvido' });
@@ -670,7 +674,15 @@ export function KanbanBoard({ tickets: initialTickets, agents, currentUser }: Ka
     if (!stage) return;
     if (VIRTUAL_COLUMN_IDS.has(stage.id)) return;
     // "pendencia" (virtual) já foi filtrado acima — o que resta é sempre um TicketStatus real.
-    setTickets((prev) => prev.map(t => t.id === draggedId ? { ...t, status: stage.id as TicketStatus } : t));
+    setTickets((prev) => prev.map((t) => {
+      if (t.id !== draggedId) return t;
+      const next: KanbanTicket = { ...t, status: stage.id as TicketStatus };
+      if (stage.id === 'resolvido') {
+        next.assignee = null;
+        next.assigned_to = null;
+      }
+      return next;
+    }));
   };
 
   const handleDragEnd = async (e: DragEndEvent) => {

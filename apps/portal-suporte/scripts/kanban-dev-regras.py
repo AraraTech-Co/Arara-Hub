@@ -167,6 +167,74 @@ async function alocarNumero(Ticket, Seq) {
 }
 """
 
+# Sequência própria do quadro Dev (bug 3.11): DEV-00142 — não consome TCK do Suporte.
+ALOCADOR_DEV = """
+async function alocarNumeroDev(Ticket, Seq) {
+  var PREFIX = "DEV-";
+  var PAD = 5;
+  var tickets = await Ticket.findMany({});
+  var max = 0;
+  var used = {};
+  for (var j = 0; j < (tickets || []).length; j++) {
+    var dn = String(tickets[j].dev_ticket_number || tickets[j].devTicketNumber || "");
+    used[dn] = 1;
+    if (dn.indexOf(PREFIX) === 0) {
+      var n = parseInt(dn.slice(PREFIX.length), 10);
+      if (!isNaN(n) && n > max) max = n;
+    }
+  }
+  var next = max + 1;
+  if (Seq) {
+    try {
+      var rows = await Seq.findMany({});
+      for (var i = 0; i < (rows || []).length; i++) {
+        if (String(rows[i].key || "") === "dev_ticket_number") {
+          var sn = Number(rows[i].next || 0);
+          if (sn > next) next = sn;
+        }
+      }
+    } catch (e) {}
+  }
+  for (var attempt = 0; attempt < 80; attempt++) {
+    var candidate = next + attempt;
+    var num = PREFIX + String(candidate).padStart(PAD, "0");
+    if (used[num]) continue;
+    if (Seq) {
+      try {
+        await Seq.create({
+          id: "devclaim_" + num,
+          key: "claim:dev:" + num,
+          next: candidate + 1,
+          updated_at: new Date().toISOString(),
+        });
+      } catch (e) { continue; }
+      try {
+        var seqRows = await Seq.findMany({});
+        var seq = null;
+        for (var k = 0; k < (seqRows || []).length; k++) {
+          if (String(seqRows[k].key || "") === "dev_ticket_number") { seq = seqRows[k]; break; }
+        }
+        if (seq) {
+          var cur = Number(seq.next || 0);
+          if (candidate + 1 > cur) {
+            await Seq.update(seq.id, { next: candidate + 1, updated_at: new Date().toISOString() });
+          }
+        } else {
+          await Seq.create({
+            id: "dev_ticket_number_seq",
+            key: "dev_ticket_number",
+            next: candidate + 1,
+            updated_at: new Date().toISOString(),
+          });
+        }
+      } catch (e) {}
+    }
+    return num;
+  }
+  throw new Error("Não foi possível alocar dev_ticket_number");
+}
+"""
+
 # Guarda de nível + grants — o mesmo desenho do módulo (chave de serviço passa).
 # Identidade: JWT (`ctx.user`) OU sessão do portal (`x-portal-sessao`). Sem
 # isso, com JWT vencido a chave de app não carrega pessoa e `servico: true`
@@ -207,7 +275,7 @@ async function _perfilDe(ctx) {
 ESCALAR = ("""// %s — POST /tickets/:id/escalar-dev
 // Escalar NÃO move o chamado para o quadro Dev: cria um card Dev NOVO
 // (decisão 2) e deixa o chamado em pendencia_dev esperando a resposta.
-""" % MARCA) + ALOCADOR + GUARDA + """
+""" % MARCA) + ALOCADOR_DEV + GUARDA + """
 async function handler(ctx) {
   var Ticket = ctx.models.Ticket;
   var Seq = ctx.models.TicketSequence;
@@ -246,14 +314,17 @@ async function handler(ctx) {
     return ctx.reply.status(400).send({ error: "Informe o motivo da escalada — é o que o Dev vai ler primeiro" });
   }
 
-  var numero = await alocarNumero(Ticket, Seq);
+  var numeroDev = await alocarNumeroDev(Ticket, Seq);
+  var numeroOrigem = origem.ticket_number || origem.ticketNumber || id;
   var card = await Ticket.create({
-    ticket_number: numero,
+    ticket_number: numeroDev,
+    dev_ticket_number: numeroDev,
     quadro: "dev",
     status: "no_status",
     origem_ticket_id: id,
+    origem_ticket_number: numeroOrigem,
     title: origem.title || "",
-    description: motivo + "\\n\\n— Escalado do chamado " + (origem.ticket_number || id) +
+    description: motivo + "\\n\\n— Escalado do chamado " + numeroOrigem +
       (origem.description ? "\\n\\nDescrição original:\\n" + origem.description : ""),
     priority: origem.priority || "medium",
     severity: origem.severity || null,
@@ -283,7 +354,7 @@ async function handler(ctx) {
       await Log.create({
         ticket_id: card.id, user_id: eu.id,
         action: "ticket_created",
-        details: { ticket_number: numero, origem: "escalada_suporte", origem_ticket_id: id },
+        details: { dev_ticket_number: numeroDev, origem_ticket_number: numeroOrigem, origem: "escalada_suporte", origem_ticket_id: id },
         created_at: now, visible_to_client: false,
       });
     }
@@ -293,7 +364,7 @@ async function handler(ctx) {
     if (Msg) {
       await Msg.create({
         ticket_id: id, user_id: eu.id,
-        message: "Escalado para o Desenvolvimento (card " + numero + "). Motivo: " + motivo,
+        message: "Escalado para o Desenvolvimento (card " + numeroDev + ", origem " + numeroOrigem + "). Motivo: " + motivo,
         is_internal: true, created_at: now,
       });
     }
@@ -328,7 +399,7 @@ module.exports = { handler };
 CRIAR = ("""// %s — POST /dev/tickets
 // Demanda interna (decisão 16): sem origem_ticket_id, fora dos indicadores de
 // atendimento. Suporte não cria aqui — o caminho dele é escalar um chamado.
-""" % MARCA) + ALOCADOR + GUARDA + """
+""" % MARCA) + ALOCADOR_DEV + GUARDA + """
 async function handler(ctx) {
   var Ticket = ctx.models.Ticket;
   var Seq = ctx.models.TicketSequence;
@@ -350,9 +421,10 @@ async function handler(ctx) {
   }
 
   var now = new Date().toISOString();
-  var numero = await alocarNumero(Ticket, Seq);
+  var numeroDev = await alocarNumeroDev(Ticket, Seq);
   var card = await Ticket.create({
-    ticket_number: numero,
+    ticket_number: numeroDev,
+    dev_ticket_number: numeroDev,
     quadro: "dev",
     status: "no_status",
     origem_ticket_id: null,
@@ -374,7 +446,7 @@ async function handler(ctx) {
       await Log.create({
         ticket_id: card.id, user_id: eu.id,
         action: "ticket_created",
-        details: { ticket_number: numero, origem: "dev_interno", tipo: tipo },
+        details: { dev_ticket_number: numeroDev, origem: "dev_interno", tipo: tipo },
         created_at: now, visible_to_client: false,
       });
     }
@@ -796,7 +868,75 @@ def conferir_regressao(rotas, forcar):
     print("   (--forcar: seguindo mesmo assim)")
 
 
+def _guarda_de_producao(codigo_prod):
+    if not codigo_prod:
+        return ""
+    idx = codigo_prod.find("// ── Guarda de sessão (scripts/guarda-sessao.py)")
+    if idx < 0:
+        return ""
+    return codigo_prod[idx:]
+
+
+def _fundir_guarda(novo, codigo_prod):
+    if "_gsComSessao" in novo:
+        return novo
+    guard = _guarda_de_producao(codigo_prod)
+    if not guard:
+        return novo
+    if novo.rstrip().endswith("module.exports = { handler: _gsComSessao };"):
+        return novo
+    base = novo.replace("module.exports = { handler };", "").rstrip()
+    return base + "\n" + guard
+
+
+def _substituir_handler_no_arquivo(texto, metodo, caminho, codigo_novo):
+    import re
+    for m in re.finditer(r'method:\s*"(\w+)",\s*\n\s*path:\s*"([^"]+)"', texto):
+        if m.group(1) != metodo or m.group(2) != caminho:
+            continue
+        corte = texto.index("compileController(", m.end())
+        fim = texto.index('")', corte)
+        while texto[fim - 1] == "\\":
+            fim = texto.index('")', fim + 1)
+        esc = json.dumps(codigo_novo)
+        return texto[: corte + len("compileController(")] + esc + texto[fim + 1 :]
+    return None
+
+
+def sync_routes_local():
+    """Grava handlers deste template em routes.generated.ts (sem API remota)."""
+    _, arq = _handler_em_producao("POST", ROTAS[0][1])
+    if not os.path.isfile(arq):
+        print(f"❌ {arq} não encontrado")
+        sys.exit(1)
+    texto = open(arq, encoding="utf-8").read()
+    for metodo, caminho, codigo in ROTAS:
+        prod, _ = _handler_em_producao(metodo, caminho)
+        merged = _fundir_guarda(codigo, prod)
+        novo_texto = _substituir_handler_no_arquivo(texto, metodo, caminho, merged)
+        if novo_texto is None:
+            print(f"❌ rota não encontrada: {metodo} {caminho}")
+            sys.exit(1)
+        texto = novo_texto
+        print(f"→ sync {metodo} {caminho} ({len(merged)} chars)")
+    open(arq, "w", encoding="utf-8").write(texto)
+    print(f"✓ {arq}")
+
+
+def dump_tmp():
+    for metodo, caminho, codigo in ROTAS:
+        nome = caminho.strip("/").replace("/", "_").replace(":", "")
+        open(f"/tmp/kdev_{nome}.js", "w").write(codigo)
+    print("→ handlers em /tmp/kdev_*.js")
+
+
 def main():
+    if "--dump-tmp" in sys.argv:
+        dump_tmp()
+        return
+    if "--sync-routes" in sys.argv:
+        sync_routes_local()
+        return
     aplicar = "--aplicar" in sys.argv
     forcar = "--forcar" in sys.argv
     conferir_regressao(ROTAS, forcar)

@@ -435,6 +435,18 @@ module.exports = { handler };`,
   const fromUserId = ticket.assigned_to || ticket.assignedTo || null;
   const actor = (ctx.user && (ctx.user.id || ctx.user.userId)) || assignee;
   const now = new Date().toISOString();
+  var RESOLVED = {
+    resolvido: 1, resolvido_com_manual: 1, resolvido_sem_manual: 1,
+    post_mortem: 1, migracao_concluida: 1, fechado: 1
+  };
+  var force = body.force === true || body.takeover === true;
+  var st = String(ticket.status || "");
+  if (assignee && fromUserId && String(fromUserId) !== String(assignee) && !force && !RESOLVED[st]) {
+    return ctx.reply.status(409).send({
+      error: "Chamado já atribuído a outro atendente. Use assumir com confirmação.",
+      assigned_to: fromUserId,
+    });
+  }
   const row = await Ticket.update(id, {
     assigned_to: assignee,
     updated_at: now,
@@ -446,18 +458,19 @@ module.exports = { handler };`,
         from_user_id: fromUserId,
         to_user_id: assignee,
         changed_by_id: actor,
-        reason: null,
+        reason: force ? "takeover" : null,
         changed_at: now,
       });
     }
   } catch (e) {}
   try {
     if (Log) {
+      var takeover = assignee && fromUserId && String(fromUserId) !== String(assignee);
       await Log.create({
         ticket_id: id,
         user_id: actor,
-        action: assignee ? "ticket_assigned" : "ticket_unassigned",
-        details: { assigned_to: assignee },
+        action: takeover ? "ticket_takeover" : (assignee ? "ticket_assigned" : "ticket_unassigned"),
+        details: { assigned_to: assignee, from: fromUserId, force: !!force },
         created_at: now,
         visible_to_client: true,
       });
@@ -484,6 +497,18 @@ module.exports = { handler };`,
   const fromUserId = ticket.assigned_to || ticket.assignedTo || null;
   const actor = (ctx.user && (ctx.user.id || ctx.user.userId)) || assignee;
   const now = new Date().toISOString();
+  var RESOLVED = {
+    resolvido: 1, resolvido_com_manual: 1, resolvido_sem_manual: 1,
+    post_mortem: 1, migracao_concluida: 1, fechado: 1
+  };
+  var force = body.force === true || body.takeover === true;
+  var st = String(ticket.status || "");
+  if (assignee && fromUserId && String(fromUserId) !== String(assignee) && !force && !RESOLVED[st]) {
+    return ctx.reply.status(409).send({
+      error: "Chamado já atribuído a outro atendente. Use assumir com confirmação.",
+      assigned_to: fromUserId,
+    });
+  }
   const row = await Ticket.update(id, {
     assigned_to: assignee,
     updated_at: now,
@@ -495,18 +520,19 @@ module.exports = { handler };`,
         from_user_id: fromUserId,
         to_user_id: assignee,
         changed_by_id: actor,
-        reason: null,
+        reason: force ? "takeover" : null,
         changed_at: now,
       });
     }
   } catch (e) {}
   try {
     if (Log) {
+      var takeover = assignee && fromUserId && String(fromUserId) !== String(assignee);
       await Log.create({
         ticket_id: id,
         user_id: actor,
-        action: assignee ? "ticket_assigned" : "ticket_unassigned",
-        details: { assigned_to: assignee },
+        action: takeover ? "ticket_takeover" : (assignee ? "ticket_assigned" : "ticket_unassigned"),
+        details: { assigned_to: assignee, from: fromUserId, force: !!force },
         created_at: now,
         visible_to_client: true,
       });

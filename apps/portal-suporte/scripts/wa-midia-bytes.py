@@ -82,13 +82,16 @@ COPIA = """
   try {
     var _Att = ctx.models.Attachment;
     if (_Att && m.Msg) {
-      var _msgs = (await m.Msg.findMany({ conversation_id: id })) || [];
+      var _msgs = (await m.Msg.findMany({})) || [];
       var _n = 0;
+      var _Log = ctx.models.ActivityLog;
       for (var _mi2 = 0; _mi2 < _msgs.length; _mi2++) {
         var _mm = _msgs[_mi2];
-        if (String(_mm.conversation_id || _mm.conversationId) !== String(id)) continue;
+        var _conv = String(_mm.conversation_id || _mm.conversationId || _mm.whatsapp_conversation_id || "");
+        if (_conv !== String(id)) continue;
         var _mu = String(_mm.media_url || _mm.mediaUrl || "");
-        if (_mu.indexOf("data:") !== 0) continue;
+        if (!_mu) continue;
+        if (_mu.indexOf("data:") !== 0 && _mu.indexOf("http") !== 0) continue;
         var _tipoArq = (_mu.split(";")[0] || "data:application/octet-stream").slice(5);
         var _ext = (_tipoArq.split("/")[1] || "bin").split("+")[0];
         var _quando = String(_mm.created_at || _mm.timestamp || ts).slice(0, 19).replace(/[:T]/g, "-");
@@ -98,12 +101,28 @@ COPIA = """
             file_name: "whatsapp-" + (_mm.media_type || "midia") + "-" + _quando + "." + _ext,
             file_url: _mu,
             file_type: _tipoArq,
-            file_size: Math.floor((_mu.length - _mu.indexOf(",") - 1) * 3 / 4),
+            file_size: _mu.indexOf("data:") === 0
+              ? Math.floor((_mu.length - _mu.indexOf(",") - 1) * 3 / 4)
+              : 0,
             uploaded_by: me || null,
+            message_id: _mm.id || null,
             created_at: ts,
           });
           _n++;
-        } catch (e) {}
+        } catch (e) {
+          try {
+            if (_Log) {
+              await _Log.create({
+                ticket_id: ticket.id,
+                user_id: me || null,
+                action: "evidence_copy_failed",
+                details: { message_id: _mm.id, conversation_id: id, error: String(e && e.message || e) },
+                created_at: ts,
+                visible_to_client: false,
+              });
+            }
+          } catch (e2) {}
+        }
       }
       if (_n > 0) {
         try {

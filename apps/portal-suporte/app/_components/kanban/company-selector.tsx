@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/select';
 import { companiesApi } from '@/lib/api/companies';
 import { useCompanies, chaveEmpresa } from '@/hooks/use-companies';
+import { mascaraTelefone } from '@/lib/utils';
 
 // ─── Types (shared with create-ticket-wizard) ─────────────────────────────────
 
@@ -45,6 +46,8 @@ export interface CompanySelectionUpdate {
   company_cnpj: string;
   unit_id: string | null;
   contact_id: string | null;
+  contact_phone?: string;
+  contact_email?: string;
 }
 
 interface CompanySelectorProps {
@@ -106,9 +109,9 @@ export function CompanySelector({
     const chave = chaveEmpresa(q);
     if (chave.length < 2) { setCompanyOptions([]); setShowSuggestions(false); return; }
     const achadas = todasEmpresas.filter(c =>
-      [c.name, c.tradeName ?? ''].some(t => chaveEmpresa(String(t)).includes(chave))
+      [c.name, c.tradeName ?? '', c.cnpj ?? ''].some(t => chaveEmpresa(String(t)).includes(chave))
     );
-    setCompanyOptions(achadas.slice(0, 30).map(c => ({
+    setCompanyOptions(achadas.slice(0, 80).map(c => ({
       id: c.id, name: c.name, tradeName: c.tradeName ?? null, cnpj: c.cnpj ?? null, city: c.city ?? null,
     })));
     setShowSuggestions(true);
@@ -277,7 +280,22 @@ export function CompanySelector({
       {companyContext && companyContext.contacts.length > 0 && (
         <div className="space-y-1.5">
           <Label className="text-muted-foreground/50">Contato solicitante</Label>
-          <Select value={contactId ?? '__none__'} onValueChange={v => onChange({ contact_id: v === '__none__' ? null : v })}>
+          <Select
+            value={contactId ?? '__none__'}
+            onValueChange={v => {
+              if (v === '__none__') {
+                onChange({ contact_id: null });
+                return;
+              }
+              const contato = companyContext.contacts.find(c => c.id === v);
+              const rawTel = contato?.whatsapp || contato?.phone || '';
+              onChange({
+                contact_id: v,
+                ...(rawTel ? { contact_phone: mascaraTelefone(rawTel) } : {}),
+                ...(contato?.email ? { contact_email: contato.email } : {}),
+              });
+            }}
+          >
             <SelectTrigger className="border-border bg-background text-foreground">
               <SelectValue placeholder="— Selecione o contato" />
             </SelectTrigger>

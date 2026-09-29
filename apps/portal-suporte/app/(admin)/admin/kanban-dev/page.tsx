@@ -53,6 +53,8 @@ const FLUXO_TRAVADO_KEY = 'kanban-dev-fluxo-travado'
 type Card = {
   id: string
   ticket_number?: string | null
+  dev_ticket_number?: string | null
+  devTicketNumber?: string | null
   title?: string | null
   status: DevStatus
   priority?: string | null
@@ -302,8 +304,8 @@ export default function KanbanDevPage() {
     if (!alvo) {
       setAvisoDrag(
         possiveis.length
-          ? `${numeroDev(card.ticket_number)} não vai para ${col.titulo} daqui — pode ir para: ${possiveis.map((p) => DEV_LABELS[p]).join(', ')}.`
-          : `${numeroDev(card.ticket_number)} está numa etapa final e não se move.`,
+          ? `${numeroDev(card.ticket_number, card.dev_ticket_number ?? card.devTicketNumber)} não vai para ${col.titulo} daqui — pode ir para: ${possiveis.map((p) => DEV_LABELS[p]).join(', ')}.`
+          : `${numeroDev(card.ticket_number, card.dev_ticket_number ?? card.devTicketNumber)} está numa etapa final e não se move.`,
       )
       return
     }
@@ -517,7 +519,7 @@ function CardDev({ card, podeMover, fluxoLivre, onMover, onAbrir }: {
       onClick={onAbrir ? () => onAbrir(card) : undefined}
       className={`rounded-md border border-l-4 bg-background p-3 shadow-sm ${onAbrir ? 'cursor-pointer hover:border-primary/50' : ''} ${getPriorityBorder(card.priority || 'medium')} ${urgente ? 'ring-2 ring-red-500/50 bg-red-500/[0.06]' : ''}`}>
       <div className="flex items-center justify-between gap-2">
-        <span className="font-mono text-xs font-semibold text-muted-foreground">{numeroDev(card.ticket_number)}</span>
+        <span className="font-mono text-xs font-semibold text-muted-foreground">{numeroDev(card.ticket_number, card.dev_ticket_number ?? card.devTicketNumber)}</span>
         {/* Um card pode ser bug E melhoria: mostra todos, não só o principal. */}
         <span className="flex flex-wrap justify-end gap-1">
           {tiposDoCard(card).map((t) => (
@@ -700,7 +702,7 @@ function DialogoMover({ card, para, cards, devs, euId, onFechar, onFeito }: {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onFechar}>
       <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-lg border bg-background p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
         <h2 className="text-base font-semibold text-foreground">
-          {numeroDev(card.ticket_number)} → {DEV_LABELS[para]}
+          {numeroDev(card.ticket_number, card.dev_ticket_number ?? card.devTicketNumber)} → {DEV_LABELS[para]}
         </h2>
         {exige.qa && <p className="mt-1 text-xs text-muted-foreground">Esta etapa exige a permissão de QA.</p>}
 
@@ -1170,7 +1172,7 @@ function PainelDetalhe({ card, devs, onFechar, onAtualizado }: {
         <div className="flex items-start justify-between gap-3">
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-mono text-sm font-semibold text-muted-foreground">{numeroDev(card.ticket_number)}</span>
+              <span className="font-mono text-sm font-semibold text-muted-foreground">{numeroDev(card.ticket_number, card.dev_ticket_number ?? card.devTicketNumber)}</span>
               <span className="rounded bg-muted px-2 py-0.5 text-xs">{DEV_LABELS[card.status]}</span>
               {card.migrado && <span className="rounded bg-amber-500/15 px-2 py-0.5 text-xs text-amber-600 dark:text-amber-400">migrado</span>}
             </div>

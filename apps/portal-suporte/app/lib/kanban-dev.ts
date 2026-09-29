@@ -129,9 +129,28 @@ export const DEV_EXIGE: Partial<Record<DevStatus, {
   descartado: { motivo: true },
 }
 
-/** Numeração única (decisão 11): TCK000472 exibido como DEV-472 no quadro Dev. */
-export function numeroDev(ticketNumber: string | null | undefined): string {
-  const n = String(ticketNumber || '')
+/** Número exibido no quadro Dev — usa `dev_ticket_number` real quando existir. */
+export type CardNumeroDev = {
+  ticket_number?: string | null
+  dev_ticket_number?: string | null
+  devTicketNumber?: string | null
+}
+
+export function numeroDevDoCard(card: CardNumeroDev): string {
+  return numeroDev(
+    card.ticket_number,
+    card.dev_ticket_number ?? card.devTicketNumber,
+  )
+}
+
+export function numeroDev(
+  ticketNumber: string | null | undefined,
+  devTicketNumber?: string | null,
+): string {
+  const dev = String(devTicketNumber || '').trim()
+  if (dev) return dev
+  const n = String(ticketNumber || '').trim()
+  if (n.startsWith('DEV-')) return n
   const m = n.match(/(\d+)\s*$/)
-  return m ? `DEV-${parseInt(m[1], 10)}` : n || 'DEV-?'
+  return m ? `DEV-${String(parseInt(m[1], 10)).padStart(5, '0')}` : n || 'DEV-?'
 }

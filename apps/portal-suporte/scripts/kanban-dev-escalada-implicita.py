@@ -61,29 +61,32 @@ BLOCO = '''
             ["aplicado_no_cliente", "descartado"].indexOf(String(_todos[_i2].status)) < 0) { _jaTem = true; break; }
       }
       if (!_jaTem) {
-        var _max = 0, _usados = {};
+        var _maxD = 0, _usadosD = {};
         for (var _j2 = 0; _j2 < _todos.length; _j2++) {
-          var _tn = String(_todos[_j2].ticket_number || "");
-          _usados[_tn] = 1;
-          if (_tn.indexOf("TCK") === 0) {
-            var _n2 = parseInt(_tn.slice(3), 10);
-            if (!isNaN(_n2) && _n2 > _max) _max = _n2;
+          var _dn = String(_todos[_j2].dev_ticket_number || _todos[_j2].devTicketNumber || _todos[_j2].ticket_number || "");
+          _usadosD[_dn] = 1;
+          if (_dn.indexOf("DEV-") === 0) {
+            var _n2 = parseInt(_dn.slice(4), 10);
+            if (!isNaN(_n2) && _n2 > _maxD) _maxD = _n2;
           }
         }
-        var _numero = null;
+        var _numeroDev = null;
         for (var _a2 = 1; _a2 < 80; _a2++) {
-          var _cand = "TCK" + String(_max + _a2).padStart(6, "0");
-          if (!_usados[_cand]) { _numero = _cand; break; }
+          var _cand = "DEV-" + String(_maxD + _a2).padStart(5, "0");
+          if (!_usadosD[_cand]) { _numeroDev = _cand; break; }
         }
-        if (_numero) {
+        if (_numeroDev) {
+          var _numeroOrigem = ticket.ticket_number || ticket.ticketNumber || id;
           var _motivo = String(body.pendency_reason || "").trim() || "Escalado pela pendência DEV no quadro de Suporte.";
           var _card = await Ticket.create({
-            ticket_number: _numero,
+            ticket_number: _numeroDev,
+            dev_ticket_number: _numeroDev,
+            origem_ticket_number: _numeroOrigem,
             quadro: "dev",
             status: "no_status",
             origem_ticket_id: id,
             title: ticket.title || "",
-            description: _motivo + "\\n\\n— Escalado do chamado " + (ticket.ticket_number || id) + ".",
+            description: _motivo + "\\n\\n— Escalado do chamado " + _numeroOrigem + ".",
             priority: ticket.priority || "medium",
             severity: ticket.severity || null,
             module: ticket.module || null,
@@ -101,7 +104,7 @@ BLOCO = '''
             if (Log) {
               await Log.create({
                 ticket_id: _card.id, user_id: actor, action: "ticket_created",
-                details: { ticket_number: _numero, origem: "escalada_pendencia", origem_ticket_id: id },
+                details: { dev_ticket_number: _numeroDev, origem_ticket_number: _numeroOrigem, origem: "escalada_pendencia", origem_ticket_id: id },
                 created_at: now, visible_to_client: false,
               });
             }
