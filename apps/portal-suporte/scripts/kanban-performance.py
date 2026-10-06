@@ -65,6 +65,9 @@ CAMPOS_DO_QUADRO = """
 var CAMPOS = ["id","title","status","priority","severity","category","ticket_number",
   "ticket_type","source","tags","recurring","impact","is_public","company_id",
   "company_name","company_cnpj","contact_email","position","created_at","updated_at",
+  // Um card do Dev pode ser bug E melhoria (18/09/2026): `category` é o
+  // principal, `categorias` traz todos.
+  "categorias",
   "user_id","assigned_to","requester","pendency_reason","pendency_type",
   "follow_up_date","is_blocked","blocked_reason","column_entered_at",
   "pull_request_url","quadro","origem_ticket_id","migrado","version","environment",

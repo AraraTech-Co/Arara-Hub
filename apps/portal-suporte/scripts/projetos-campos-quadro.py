@@ -41,9 +41,20 @@ API, KEY = env()
 MOD = f"{API}/v1/apps/portal-suporte/modules/tickets"
 
 VELHO = '"previsao_entrega","esforco_entrega","declaracoes","unit_id","attachment_count","resolved_at"];'
+# Aceita também a âncora com environment (HML) já na lista do performance script.
+VELHO_COM_ENV = (
+    '"pull_request_url","quadro","origem_ticket_id","migrado","version","environment",\n'
+    '  "previsao_entrega","esforco_entrega","declaracoes","unit_id","attachment_count","resolved_at"];'
+)
 NOVO = ('"previsao_entrega","esforco_entrega","declaracoes","unit_id","attachment_count","resolved_at",\n'
         '  // Planejamento (%s): `previsao_entrega`, logo acima, JÁ é o fim planejado.\n'
         '  "projeto_id","fase_id","inicio_planejado","estimativa_min","progresso"];' % MARCA)
+NOVO_COM_ENV = (
+    '"pull_request_url","quadro","origem_ticket_id","migrado","version","environment",\n'
+    '  "previsao_entrega","esforco_entrega","declaracoes","unit_id","attachment_count","resolved_at",\n'
+    '  // Planejamento (%s): `previsao_entrega`, logo acima, JÁ é o fim planejado.\n'
+    '  "projeto_id","fase_id","inicio_planejado","estimativa_min","progresso"];' % MARCA
+)
 
 
 def req(url, metodo="GET", dados=None):
@@ -67,18 +78,22 @@ def main():
     if MARCA in cod:
         print("= já aplicado")
         return
-    if cod.count(VELHO) != 1:
-        print(f"! âncora aparece {cod.count(VELHO)}x — a lista de campos mudou; conferir antes")
+    if cod.count(VELHO_COM_ENV) == 1:
+        velho, novo = VELHO_COM_ENV, NOVO_COM_ENV
+    elif cod.count(VELHO) == 1:
+        velho, novo = VELHO, NOVO
+    else:
+        print(f"! âncora não achada (VELHO={cod.count(VELHO)}x, VELHO_COM_ENV={cod.count(VELHO_COM_ENV)}x)")
         sys.exit(1)
-    novo = cod.replace(VELHO, NOVO, 1)
-    open("/tmp/kanban_campos_projeto.js", "w").write(novo)
+    novo_cod = cod.replace(velho, novo, 1)
+    open("/tmp/kanban_campos_projeto.js", "w").write(novo_cod)
     if subprocess.run(["node", "--check", "/tmp/kanban_campos_projeto.js"]).returncode != 0:
         sys.exit(1)
-    print(f"→ /tickets/kanban: +5 campos de planejamento ({len(cod)} → {len(novo)} chars)")
+    print(f"→ /tickets/kanban: +5 campos de planejamento ({len(cod)} → {len(novo_cod)} chars)")
     if not aplicar:
         print("   (simulação — use --aplicar)")
         return
-    corpo = {"method": "GET", "path": "/tickets/kanban", "controllerCode": novo}
+    corpo = {"method": "GET", "path": "/tickets/kanban", "controllerCode": novo_cod}
     for extra in ("authMode", "webhookSecretName"):
         if rota.get(extra):
             corpo[extra] = rota[extra]
