@@ -368,8 +368,36 @@ export function KanbanBoard({ tickets: initialTickets, agents, currentUser }: Ka
 
   const [pendencyOpen, setPendencyOpen] = useState(false);
   const [subTypeOpen, setSubTypeOpen]   = useState(false);
+  /** Confirmação ao soltar na coluna Resolvido (mantém ou tira o responsável). */
+  const [resolveConfirm, setResolveConfirm] = useState<{
+    ticketId: string;
+    fromStatus: TicketStatus;
+  } | null>(null);
+  const [resolveClearAssignee, setResolveClearAssignee] = useState(false);
+  const [resolveSaving, setResolveSaving] = useState(false);
   const pendingMoveRef = useRef<{ ticketId: string; toStatus: TicketStatus; fromStatus: TicketStatus; pendencyType?: string | null } | null>(null);
   const ticketPrevStatus = useRef<Record<string, TicketStatus>>({});
+  const ticketPrevAssignee = useRef<Record<string, {
+    assigned_to: string | null;
+    assignee: KanbanTicket['assignee'];
+  }>>({});
+
+  /** Volta status + responsável do snapshot do arrasto (rollback completo). */
+  const restaurarArrasto = useCallback((ticketId: string, status?: TicketStatus | null) => {
+    const prevStatus = status ?? ticketPrevStatus.current[ticketId];
+    const prevAss = ticketPrevAssignee.current[ticketId];
+    if (!prevStatus && !prevAss) return;
+    setTickets((prev) => prev.map((t) => {
+      if (t.id !== ticketId) return t;
+      return {
+        ...t,
+        ...(prevStatus ? { status: prevStatus } : {}),
+        ...(prevAss
+          ? { assigned_to: prevAss.assigned_to, assignee: prevAss.assignee }
+          : {}),
+      };
+    }));
+  }, []);
 
   // 30s polling
   const fetchLatest = useCallback(async () => {
@@ -476,18 +504,23 @@ export function KanbanBoard({ tickets: initialTickets, agents, currentUser }: Ka
         setTickets((prev) => prev.map((t) => (t.id === id ? { ...t, status: (anterior ?? t.status) as KanbanTicket['status'] } : t)));
       }
     } else if (type === 'resolve') {
-      const prevStatus = tickets.find((t) => t.id === id)?.status;
+      const prevTicket = tickets.find((t) => t.id === id);
+      const prevStatus = prevTicket?.status;
+      const prevAssignee = prevTicket?.assignee ?? null;
+      const prevAssignedTo = prevTicket?.assigned_to ?? null;
       setTickets((prev) => prev.map((t) =>
         t.id === id ? { ...t, status: 'resolvido', assignee: null, assigned_to: null } : t
       ));
       try {
-        await ticketsApi.patchStatus(id, { status: 'resolvido' });
+        await ticketsApi.patchStatus(id, { status: 'resolvido', clear_assignee: true });
         toast({ title: 'Ticket marcado como resolvido' });
       } catch (e) {
         toast({ title: 'Erro ao resolver ticket', description: motivo(e), variant: 'destructive' });
         if (prevStatus) {
           setTickets((prev) => prev.map((t) =>
-            t.id === id ? { ...t, status: prevStatus } : t
+            t.id === id
+              ? { ...t, status: prevStatus, assignee: prevAssignee, assigned_to: prevAssignedTo }
+              : t
           ));
         }
       }
@@ -662,7 +695,13 @@ export function KanbanBoard({ tickets: initialTickets, agents, currentUser }: Ka
     const id = e.active.id as string;
     setActiveId(id);
     const t = tickets.find((tk) => tk.id === id);
-    if (t) ticketPrevStatus.current[id] = t.status;
+    if (t) {
+      ticketPrevStatus.current[id] = t.status;
+      ticketPrevAssignee.current[id] = {
+        assigned_to: t.assigned_to ?? null,
+        assignee: t.assignee ?? null,
+      };
+    }
   };
 
   const handleDragOver = (e: DragOverEvent) => {
@@ -673,16 +712,11 @@ export function KanbanBoard({ tickets: initialTickets, agents, currentUser }: Ka
     const stage = resolveStage(over.id as string);
     if (!stage) return;
     if (VIRTUAL_COLUMN_IDS.has(stage.id)) return;
-    // "pendencia" (virtual) já foi filtrado acima — o que resta é sempre um TicketStatus real.
-    setTickets((prev) => prev.map((t) => {
-      if (t.id !== draggedId) return t;
-      const next: KanbanTicket = { ...t, status: stage.id as TicketStatus };
-      if (stage.id === 'resolvido') {
-        next.assignee = null;
-        next.assigned_to = null;
-      }
-      return next;
-    }));
+    // Só muda o status no preview — NÃO zera assignee (antes sumia ao passar
+    // pela coluna Resolvido mesmo sem soltar lá).
+    setTickets((prev) => prev.map((t) =>
+      t.id === draggedId ? { ...t, status: stage.id as TicketStatus } : t
+    ));
   };
 
   const handleDragEnd = async (e: DragEndEvent) => {
@@ -693,13 +727,13 @@ export function KanbanBoard({ tickets: initialTickets, agents, currentUser }: Ka
     const userIsAdmin = currentUser ? verify('admin', currentUser) : false;
 
     if (!over) {
-      if (prevStatus) setTickets((prev) => prev.map(t => t.id === draggedId ? { ...t, status: prevStatus } : t));
+      if (prevStatus) restaurarArrasto(draggedId, prevStatus);
       return;
     }
 
     const stage = resolveStage(over.id as string);
     if (!stage) {
-      if (prevStatus) setTickets((prev) => prev.map(t => t.id === draggedId ? { ...t, status: prevStatus } : t));
+      if (prevStatus) restaurarArrasto(draggedId, prevStatus);
       return;
     }
     if (!prevStatus) return;
@@ -708,7 +742,7 @@ export function KanbanBoard({ tickets: initialTickets, agents, currentUser }: Ka
     if (isSameKanbanColumn(prevStatus, stage.id)) {
       // Se ordenação não é manual, não persiste reorder — volta ao lugar
       if (sortBy !== 'position') {
-        setTickets((prev) => prev.map(t => t.id === draggedId ? { ...t, status: prevStatus } : t));
+        restaurarArrasto(draggedId, prevStatus);
         return;
       }
 
@@ -723,7 +757,7 @@ export function KanbanBoard({ tickets: initialTickets, agents, currentUser }: Ka
         : colTickets.length - 1;
 
       if (oldIndex === -1 || oldIndex === newIndex) {
-        setTickets((prev) => prev.map(t => t.id === draggedId ? { ...t, status: prevStatus } : t));
+        restaurarArrasto(draggedId, prevStatus);
         return;
       }
 
@@ -744,13 +778,13 @@ export function KanbanBoard({ tickets: initialTickets, agents, currentUser }: Ka
 
     // ── Cross column ─────────────────────────────────────────────────────────
     if (stage.id === 'fechado') {
-      setTickets((prev) => prev.map(t => t.id === draggedId ? { ...t, status: prevStatus } : t));
+      restaurarArrasto(draggedId, prevStatus);
       toast({ title: '🔒 Fechado é imutável', description: 'Use o botão "Fechar ticket" na tela do ticket.', variant: 'destructive' });
       return;
     }
 
     if (stage.id === 'pendencia') {
-      setTickets((prev) => prev.map(t => t.id === draggedId ? { ...t, status: prevStatus } : t));
+      restaurarArrasto(draggedId, prevStatus);
       const canMoveToPendencia = PENDENCIA_REAL_STATUSES.some(
         s => isValidTransition(prevStatus, s, userIsAdmin).allowed
       );
@@ -769,24 +803,28 @@ export function KanbanBoard({ tickets: initialTickets, agents, currentUser }: Ka
     }
 
     if (stage.id === 'resolvido') {
-      try {
-        await ticketsApi.patchStatus(draggedId, { status: 'resolvido' });
-      } catch {
-        setTickets((prev) => prev.map(t => t.id === draggedId ? { ...t, status: prevStatus } : t));
-        toast({ title: 'Erro ao mover ticket', description: 'Transição não permitida pelo servidor.', variant: 'destructive' });
-      }
+      // Não grava ainda — confirma se mantém ou tira o responsável.
+      restaurarArrasto(draggedId, prevStatus);
+      setResolveClearAssignee(false);
+      setResolveConfirm({ ticketId: draggedId, fromStatus: prevStatus });
       return;
     }
 
     if (PENDENCY_STATUSES.has(stage.id)) {
-      setTickets((prev) => prev.map(t => t.id === draggedId ? { ...t, status: prevStatus } : t));
+      restaurarArrasto(draggedId, prevStatus);
       pendingMoveRef.current = { ticketId: draggedId, toStatus: stage.id as TicketStatus, fromStatus: prevStatus };
       setPendencyOpen(true);
       return;
     }
 
     // Normal status change — optimistic update já ocorreu no handleDragOver
-    ticketsApi.patchStatus(draggedId, { status: stage.id }).catch(console.error);
+    try {
+      await ticketsApi.patchStatus(draggedId, { status: stage.id });
+    } catch (err) {
+      restaurarArrasto(draggedId, prevStatus);
+      const description = err instanceof Error ? err.message : 'Transição não permitida pelo servidor.';
+      toast({ title: 'Erro ao mover ticket', description, variant: 'destructive' });
+    }
   };
 
   // ── Pendency dialog handlers ──────────────────────────────────────────────
@@ -805,7 +843,7 @@ export function KanbanBoard({ tickets: initialTickets, agents, currentUser }: Ka
     try {
       await ticketsApi.patchStatus(ticketId, { status: toStatus, pendency_reason: reason, pendency_type: pendencyType, follow_up_date: followUpDate });
     } catch (err) {
-      setTickets((prev) => prev.map(t => t.id === ticketId ? { ...t, status: fromStatus } : t));
+      restaurarArrasto(ticketId, fromStatus);
       const description = err instanceof Error ? err.message : 'Transição de status rejeitada.';
       toast({ title: 'Erro ao mover ticket', description, variant: 'destructive' });
       return;
@@ -816,6 +854,8 @@ export function KanbanBoard({ tickets: initialTickets, agents, currentUser }: Ka
   }
 
   function handlePendencyCancel() {
+    const move = pendingMoveRef.current;
+    if (move) restaurarArrasto(move.ticketId, move.fromStatus);
     setPendencyOpen(false);
     pendingMoveRef.current = null;
   }
@@ -827,6 +867,7 @@ export function KanbanBoard({ tickets: initialTickets, agents, currentUser }: Ka
     const { allowed, reason } = isValidTransition(move.fromStatus, selection.dbStatus, userIsAdmin);
     if (!allowed) {
       toast({ title: 'Transição não permitida', description: reason ?? 'Esta movimentação não é permitida.', variant: 'destructive' });
+      restaurarArrasto(move.ticketId, move.fromStatus);
       pendingMoveRef.current = null;
       setSubTypeOpen(false);
       return;
@@ -838,8 +879,58 @@ export function KanbanBoard({ tickets: initialTickets, agents, currentUser }: Ka
   }
 
   function handleSubTypeCancel() {
+    const move = pendingMoveRef.current;
+    if (move) restaurarArrasto(move.ticketId, move.fromStatus);
     setSubTypeOpen(false);
     pendingMoveRef.current = null;
+  }
+
+  async function handleResolveConfirm() {
+    if (!resolveConfirm) return;
+    const { ticketId, fromStatus } = resolveConfirm;
+    const prevAss = ticketPrevAssignee.current[ticketId];
+    setResolveSaving(true);
+    setTickets((prev) => prev.map((t) => {
+      if (t.id !== ticketId) return t;
+      return {
+        ...t,
+        status: 'resolvido' as TicketStatus,
+        ...(resolveClearAssignee
+          ? { assignee: null, assigned_to: null }
+          : {}),
+      };
+    }));
+    try {
+      await ticketsApi.patchStatus(ticketId, {
+        status: 'resolvido',
+        ...(resolveClearAssignee ? { clear_assignee: true } : {}),
+      });
+      setResolveConfirm(null);
+      setResolveClearAssignee(false);
+      toast({
+        title: 'Ticket marcado como resolvido',
+        description: resolveClearAssignee ? 'Responsável removido da fila.' : undefined,
+      });
+    } catch (err) {
+      restaurarArrasto(ticketId, fromStatus);
+      if (prevAss) {
+        setTickets((prev) => prev.map((t) =>
+          t.id === ticketId
+            ? { ...t, assigned_to: prevAss.assigned_to, assignee: prevAss.assignee }
+            : t
+        ));
+      }
+      const description = err instanceof Error ? err.message : 'Transição não permitida pelo servidor.';
+      toast({ title: 'Erro ao mover ticket', description, variant: 'destructive' });
+    } finally {
+      setResolveSaving(false);
+    }
+  }
+
+  function handleResolveCancel() {
+    if (resolveConfirm) restaurarArrasto(resolveConfirm.ticketId, resolveConfirm.fromStatus);
+    setResolveConfirm(null);
+    setResolveClearAssignee(false);
   }
 
   const activeTicket    = activeId ? tickets.find((t) => t.id === activeId) : null;
@@ -1144,6 +1235,50 @@ export function KanbanBoard({ tickets: initialTickets, agents, currentUser }: Ka
           {activeTicket ? <KanbanCard ticket={activeTicket} isDragging /> : null}
         </DragOverlay>
       </DndContext>
+
+      {/* Confirmação ao soltar em Resolvido */}
+      <AlertDialog
+        open={!!resolveConfirm}
+        onOpenChange={(open) => {
+          if (!open && !resolveSaving) handleResolveCancel();
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Marcar como resolvido?</AlertDialogTitle>
+            <AlertDialogDescription>
+              O chamado sai da fila ativa. Por padrão o responsável continua no card —
+              marque abaixo só se quiser tirar da fila do agente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <label className="flex items-start gap-2 rounded-md border border-border px-3 py-2 text-sm">
+            <input
+              type="checkbox"
+              className="mt-0.5"
+              checked={resolveClearAssignee}
+              onChange={(e) => setResolveClearAssignee(e.target.checked)}
+              disabled={resolveSaving}
+            />
+            <span>
+              Tirar da fila do agente
+              <span className="block text-xs text-muted-foreground">
+                Remove o responsável deste chamado.
+              </span>
+            </span>
+          </label>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={resolveSaving} onClick={handleResolveCancel}>
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction disabled={resolveSaving} onClick={(e) => {
+              e.preventDefault();
+              void handleResolveConfirm();
+            }}>
+              {resolveSaving ? 'Salvando…' : 'Resolver'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Confirmação de arquivamento em massa */}
       <AlertDialog open={confirmBulkArchive} onOpenChange={setConfirmBulkArchive}>

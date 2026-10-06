@@ -1,7 +1,13 @@
 #!/usr/bin/env python3
 # =============================================================================
-# 3.3 — Limpar assigned_to ao resolver + takeover no PATCH/POST assign.
+# 3.3 — Limpar assigned_to ao resolver (só com flag) + takeover no assign.
 # Aplica em packages/api/src/apps/portal-suporte/routes.generated.ts (fonte de prod).
+#
+# Histórico:
+#   - Versão inicial zerava assigned_to em TODO resolve via PATCH/POST status.
+#     Arrastar p/ Resolvido no Kanban perdia o dono; reabrir ficava órfão.
+#   - Agora: limpa só com body.clear_assignee === true. Ao reabrir (sai de
+#     resolvido sem dono), tenta devolver o último details.assignee_cleared.
 #
 #   python3 scripts/tickets-assignee-on-resolve.py
 #   python3 scripts/tickets-assignee-on-resolve.py --aplicar
@@ -17,23 +23,58 @@ ROUTES = os.path.join(
 ROUTES = os.path.normpath(ROUTES)
 MARCA = "scripts/tickets-assignee-on-resolve.py"
 
-STATUS_OLD = (
-    '  if (!isResolved && wasResolved) {\\n    patch.resolved_at = null;\\n  }\\n  var row = await Ticket.update(id, patch);'
-)
-STATUS_NEW = (
-    '  if (!isResolved && wasResolved) {\\n    patch.resolved_at = null;\\n  }\\n'
+# Bloco antigo (auto-clear em todo resolve)
+STATUS_AUTO_CLEAR = (
     '  var prevAssignee = ticket.assigned_to || ticket.assignedTo || null;\\n'
-    '  if (isResolved && prevAssignee) {\\n    patch.assigned_to = null;\\n  }\\n'
-    '  var row = await Ticket.update(id, patch);'
+    '  if (isResolved && prevAssignee) {\\n'
+    '    patch.assigned_to = null;\\n'
+    '  }\\n'
 )
 
-DETAILS_OLD = (
-    'completed_by: isResolved ? actor : null,\\n        },'
+# Bloco novo (flag + restore)
+STATUS_FLAG_CLEAR = (
+    '  var prevAssignee = ticket.assigned_to || ticket.assignedTo || null;\\n'
+    '  // Limpar responsável só com flag explícita (scripts/tickets-assignee-on-resolve.py).\\n'
+    '  // Arrastar p/ Resolvido sem clear_assignee mantém o dono — antes o PATCH\\n'
+    '  // zerava sempre e o card reaberto ficava órfão.\\n'
+    '  var clearAssignee = body.clear_assignee === true || body.clearAssignee === true;\\n'
+    '  if (isResolved && clearAssignee && prevAssignee) {\\n'
+    '    patch.assigned_to = null;\\n'
+    '  }\\n'
+    '  // Reabrir: se ficou sem dono ao resolver, devolve o último assignee_cleared.\\n'
+    '  if (!isResolved && wasResolved && !prevAssignee && Log) {\\n'
+    '    try {\\n'
+    '      var _logs = (await Log.findMany({})) || [];\\n'
+    '      var _restored = null;\\n'
+    '      for (var _li = 0; _li < _logs.length; _li++) {\\n'
+    '        var _lg = _logs[_li];\\n'
+    '        if (String(_lg.ticket_id || _lg.ticketId || "") !== String(id)) continue;\\n'
+    '        var _det = _lg.details || {};\\n'
+    '        if (_det.assignee_cleared) {\\n'
+    '          var _when = String(_lg.created_at || _lg.createdAt || "");\\n'
+    '          if (!_restored || _when > _restored.when) _restored = { id: _det.assignee_cleared, when: _when };\\n'
+    '        }\\n'
+    '      }\\n'
+    '      if (_restored && _restored.id) patch.assigned_to = _restored.id;\\n'
+    '    } catch (_e) {}\\n'
+    '  }\\n'
 )
-DETAILS_NEW = (
-    'completed_by: isResolved ? actor : null,\\n'
-    '          assignee_cleared: isResolved && prevAssignee ? prevAssignee : null,\\n'
-    '        },'
+
+DETAILS_AUTO = (
+    'assignee_cleared: isResolved && prevAssignee ? prevAssignee : null,\\n'
+)
+DETAILS_FLAG = (
+    'assignee_cleared: isResolved && clearAssignee && prevAssignee ? prevAssignee : null,\\n'
+)
+
+# Primeira instalação (antes do auto-clear existir)
+STATUS_BARE = (
+    '  if (!isResolved && wasResolved) {\\n    patch.resolved_at = null;\\n  }\\n  var row = await Ticket.update(id, patch);'
+)
+STATUS_BARE_NEW = (
+    '  if (!isResolved && wasResolved) {\\n    patch.resolved_at = null;\\n  }\\n'
+    + STATUS_FLAG_CLEAR
+    + '  var row = await Ticket.update(id, patch);'
 )
 
 ASSIGN_INSERT_OLD = (
@@ -61,7 +102,7 @@ ASSIGN_INSERT_NEW = (
 ASSIGN_INSERT_OLD_TICKET = (
     'const now = new Date().toISOString();\\n  const row = await Ticket.update(id, {\\n    assigned_to: assignee,'
 )
-ASSIGN_INSERT_NEW = (
+ASSIGN_INSERT_NEW_TICKET = (
     'const now = new Date().toISOString();\\n'
     '  var RESOLVED = {\\n'
     '    resolvido: 1, resolvido_com_manual: 1, resolvido_sem_manual: 1,\\n'
@@ -89,49 +130,74 @@ LOG_ASSIGN_NEW = (
 def main():
     aplicar = "--aplicar" in sys.argv
     text = open(ROUTES, encoding="utf-8").read()
-    if MARCA in text:
-        print("= já aplicado em routes.generated.ts")
-        return
-
     mud = 0
-    if STATUS_OLD in text:
-        text = text.replace(STATUS_OLD, STATUS_NEW, 1)
-        mud += 1
-        print("→ status: limpar assigned_to ao resolver")
-    else:
-        print("! bloco status não encontrado (assignee clear)")
 
-    if DETAILS_OLD in text:
-        text = text.replace(DETAILS_OLD, DETAILS_NEW, 1)
+    if STATUS_FLAG_CLEAR in text and DETAILS_FLAG in text:
+        print("= clear_assignee + restore já aplicados")
+    elif STATUS_AUTO_CLEAR in text:
+        text = text.replace(STATUS_AUTO_CLEAR, STATUS_FLAG_CLEAR)
         mud += 1
-        print("→ activity log assignee_cleared")
+        print(f"→ status: auto-clear → clear_assignee explícito ({text.count(STATUS_FLAG_CLEAR)}x)")
+        if DETAILS_AUTO in text:
+            text = text.replace(DETAILS_AUTO, DETAILS_FLAG)
+            mud += 1
+            print("→ activity log assignee_cleared só com flag")
+    elif STATUS_BARE in text:
+        text = text.replace(STATUS_BARE, STATUS_BARE_NEW, 1)
+        mud += 1
+        print("→ status: instalou clear_assignee + restore")
+        details_old_bare = 'completed_by: isResolved ? actor : null,\\n        },'
+        details_new_bare = (
+            'completed_by: isResolved ? actor : null,\\n'
+            '          assignee_cleared: isResolved && clearAssignee && prevAssignee ? prevAssignee : null,\\n'
+            '        },'
+        )
+        if details_old_bare in text and 'assignee_cleared' not in text[
+            text.find(details_old_bare) : text.find(details_old_bare) + 200
+        ]:
+            text = text.replace(details_old_bare, details_new_bare, 1)
+            mud += 1
+            print("→ activity log assignee_cleared")
     else:
-        print("! bloco details não encontrado")
+        print("! bloco status assignee não encontrado")
+
+    if DETAILS_AUTO in text:
+        text = text.replace(DETAILS_AUTO, DETAILS_FLAG)
+        mud += 1
+        print("→ details: assignee_cleared com clearAssignee")
 
     n = text.count(ASSIGN_INSERT_OLD)
     if n:
         text = text.replace(ASSIGN_INSERT_OLD, ASSIGN_INSERT_NEW)
         mud += 1
         print(f"→ assign takeover ({n} handlers)")
-    else:
-        print("! bloco assign não encontrado")
+
+    if ASSIGN_INSERT_OLD_TICKET in text and "var force = body.force" not in text[text.find(ASSIGN_INSERT_OLD_TICKET):text.find(ASSIGN_INSERT_OLD_TICKET)+800]:
+        text = text.replace(ASSIGN_INSERT_OLD_TICKET, ASSIGN_INSERT_NEW_TICKET)
+        mud += 1
+        print("→ assign takeover (Ticket.update)")
 
     n2 = text.count(LOG_ASSIGN_OLD)
     if n2:
         text = text.replace(LOG_ASSIGN_OLD, LOG_ASSIGN_NEW)
         mud += 1
         print(f"→ assign log takeover ({n2})")
-    else:
-        print("! bloco assign log não encontrado")
+
+    if 'clear_assignee === true' in text and MARCA not in text[max(0, text.find('async function applyTicketStatusChange') - 120):text.find('async function applyTicketStatusChange') + 40]:
+        text = text.replace(
+            'async function applyTicketStatusChange',
+            f'// {MARCA} — clear_assignee explícito + restore ao reabrir\\nasync function applyTicketStatusChange',
+            1,
+        )
+        mud += 1
+        print("→ marca no applyTicketStatusChange")
+
+    if not mud and 'clear_assignee === true' in text:
+        print("= já aplicado")
+        return
 
     if not mud:
         sys.exit(1)
-
-    text = text.replace(
-        'async function applyTicketStatusChange',
-        f'// {MARCA}\\nasync function applyTicketStatusChange',
-        1,
-    )
 
     if not aplicar:
         print("\\n(simulação — use --aplicar)")

@@ -89,7 +89,8 @@ export const ticketsApi = {
   suggestPriority: (body: { impact: string; urgency?: string | null; companyId?: string | null }) =>
     api.post<{ data: { priority: string; score: number } | null }>('/api/tickets/suggest-priority', body),
 
-  // Status change (PATCH variant used by some components)
+  // Status change (PATCH). `clear_assignee: true` tira o responsável ao resolver;
+  // sem a flag o dono permanece (arrastar no Kanban não deve órfão o card).
   patchStatus: (id: string, body: Record<string, unknown>) =>
     api.patch<{ success: boolean }>(`/api/tickets/${id}/status`, body),
 
