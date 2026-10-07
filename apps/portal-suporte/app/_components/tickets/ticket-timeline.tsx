@@ -214,6 +214,16 @@ function buildDetailText(evt: TimelineEvent): string | null {
     return `Atribuído a: ${d.assigned_to}`
   }
 
+  if (evt.action === 'esforco_reestimado') {
+    const from = (d.from ?? {}) as { esforco?: string | null; previsao?: string | null }
+    const to = (d.to ?? {}) as { esforco?: string | null; previsao?: string | null }
+    const de = from.esforco || from.previsao || '?'
+    const para = to.esforco || to.previsao || '?'
+    const motivo = typeof d.motivo === 'string' ? d.motivo.trim() : ''
+    const trecho = `${String(de).replace(/_/g, ' ')} → ${String(para).replace(/_/g, ' ')}`
+    return motivo ? `${trecho} — ${motivo}` : trecho
+  }
+
   // Desfecho do aviso por WhatsApp. O servidor grava isto justamente para a
   // falha não ficar invisível — mas até aqui a tela não sabia lê-lo, e o
   // registro existia sem ninguém conseguir ver. Agora diz onde parou.

@@ -19,10 +19,10 @@ import { ANEXO_ACCEPT, ANEXO_MAX_MB, anexarAoChamado, motivoRecusaAnexo } from '
 import { TicketAttachments, type AttachmentItem } from '@/components/tickets/ticket-attachments'
 import { TicketInternalComments, type InternalComment } from '@/components/tickets/ticket-internal-comments'
 import { PRIORITY_OPTIONS, getPriorityBorder, getPriorityLabel } from '@/lib/ticket-priority'
-import { prazoDoCard, SITUACAO_PRAZO_LABEL } from '@/lib/dev-prazo'
+import { podeReestimar, prazoDoCard, SITUACAO_PRAZO_LABEL } from '@/lib/dev-prazo'
 import {
-  ESFORCO_OPCOES, esforcoValido, labelEsforco, previsaoDeEsforco,
-  type EsforcoEntrega,
+  ESFORCO_OPCOES, ESFORCO_REESTIMAR_OPCOES, esforcoValido, labelEsforco, previsaoDeEsforco,
+  type EsforcoEntrega, type EsforcoReestimar,
 } from '@/lib/dev-esforco'
 import { aplicarFiltros, contarAtivos, FILTROS_VAZIOS, filtrosDaUrl, filtrosNaUrl, type FiltrosDev } from '@/lib/dev-filtros'
 import { DevFilterBar } from '@/components/kanban-dev/dev-filter-bar'
@@ -33,8 +33,6 @@ import {
   useSensor, useSensors, type DragEndEvent, type DragStartEvent,
 } from '@dnd-kit/core'
 import { useAuth } from '@/lib/arara/AuthProvider'
-import { hasMinLevel } from '@/lib/auth/access-control'
-import { useMeuAcesso } from '@/hooks/use-meu-acesso'
 import { hasMinRole } from '@/lib/arara/auth-storage'
 import {
   DEV_COLUNAS, DEV_EXIGE, DEV_LABELS, DEV_MARCADOR, DEV_TRANSICOES,
@@ -46,9 +44,6 @@ import {
 import { ServidoresHmlPanel } from '@/components/kanban-dev/servidores-hml-panel'
 import { araraFetchIndicadores, carregarDescricaoCompleta, carregarOrigem, kanbanDevApi, type OrigemPacote, type Versao, type Reprovacao } from '@/lib/api/kanban-dev'
 import { arara, araraFetch } from '@/lib/arara/client'
-import { Lock, LockOpen } from 'lucide-react'
-
-const FLUXO_TRAVADO_KEY = 'kanban-dev-fluxo-travado'
 
 type Card = {
   id: string
@@ -110,6 +105,7 @@ export default function KanbanDevPage() {
     tempo_por_etapa: Record<string, { media_horas: number; amostras: number }>
   } | null>(null)
   const [movendo, setMovendo] = useState<{ card: Card; para: DevStatus } | null>(null)
+  const [reestimando, setReestimando] = useState<Card | null>(null)
   const [detalhe, setDetalhe] = useState<Card | null>(null)
   // Equipe elegível a responsável de desenvolvimento: developer+.
   const [devs, setDevs] = useState<{ id: string; nome: string }[]>([])
@@ -123,27 +119,8 @@ export default function KanbanDevPage() {
   const sensores = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }))
 
   // A régua de quem MOVE — espelho da regra do servidor, só para desabilitar botão.
+  // Arraste/destinos são livres (qualquer coluna); a confirmação é o DialogoMover.
   const podeMover = hasMinRole(user?.roles?.[0], 'developer')
-
-  // Admin+ vê o cadeado: padrão LIGADO (fluxo coluna a coluna). Descadear
-  // libera saltos no quadro — o servidor também aceita salto de admin.
-  const { nivel } = useMeuAcesso()
-  const souAdmin = hasMinLevel(nivel ?? 'user', 'admin')
-  const [fluxoTravado, setFluxoTravado] = useState(true)
-  useEffect(() => {
-    if (typeof window === 'undefined' || !souAdmin) return
-    const v = sessionStorage.getItem(FLUXO_TRAVADO_KEY)
-    if (v === '0') setFluxoTravado(false)
-    if (v === '1') setFluxoTravado(true)
-  }, [souAdmin])
-  const alternarCadeado = () => {
-    setFluxoTravado((atual) => {
-      const prox = !atual
-      if (typeof window !== 'undefined') sessionStorage.setItem(FLUXO_TRAVADO_KEY, prox ? '1' : '0')
-      return prox
-    })
-  }
-  const fluxoLivre = souAdmin && !fluxoTravado
 
   const carregar = useCallback(() => {
     kanbanDevApi.listar()
@@ -296,21 +273,11 @@ export default function KanbanDevPage() {
       col = colAlvo
     }
     if (!col || col.statuses.includes(card.status)) return
-    const possiveis = DEV_TRANSICOES[card.status] || []
-    // Com o cadeado aberto (só admin), a coluna alvo é a primeira status dela.
-    const alvo = fluxoLivre
-      ? col.statuses[0]
-      : col.statuses.find((st) => possiveis.includes(st))
-    if (!alvo) {
-      setAvisoDrag(
-        possiveis.length
-          ? `${numeroDev(card.ticket_number, card.dev_ticket_number ?? card.devTicketNumber)} não vai para ${col.titulo} daqui — pode ir para: ${possiveis.map((p) => DEV_LABELS[p]).join(', ')}.`
-          : `${numeroDev(card.ticket_number, card.dev_ticket_number ?? card.devTicketNumber)} está numa etapa final e não se move.`,
-      )
-      return
-    }
+    // Arraste livre: a coluna alvo é o primeiro status dela; DialogoMover confirma.
+    const alvo = col.statuses[0]
+    if (!alvo) return
     setMovendo({ card, para: alvo })
-  }, [fluxoLivre, cards, manual, ordenacao.por, carregar])
+  }, [cards, manual, ordenacao.por, carregar])
 
   if (carregando) return <div className="p-6 text-sm text-muted-foreground">Carregando Kanban Dev…</div>
   if (erro) return <div className="m-6 rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm">{erro}</div>
@@ -335,23 +302,6 @@ export default function KanbanDevPage() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            {souAdmin && (
-              <button
-                type="button"
-                onClick={alternarCadeado}
-                title={fluxoTravado
-                  ? 'Fluxo travado: arraste coluna a coluna. Clique para descadear.'
-                  : 'Fluxo livre: pode saltar colunas. Clique para travar de novo.'}
-                className={`inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm ${
-                  fluxoTravado
-                    ? 'border-foreground/20 text-foreground hover:bg-muted'
-                    : 'border-amber-500/50 bg-amber-500/10 text-amber-800 dark:text-amber-300'
-                }`}
-              >
-                {fluxoTravado ? <Lock className="h-3.5 w-3.5" /> : <LockOpen className="h-3.5 w-3.5" />}
-                {fluxoTravado ? 'Fluxo travado' : 'Descadeado'}
-              </button>
-            )}
             <button
               onClick={() => setVerDescartados((v) => !v)}
               className="rounded-md border px-3 py-1.5 text-sm text-muted-foreground hover:bg-muted"
@@ -403,8 +353,9 @@ export default function KanbanDevPage() {
                     <div className="flex-1 space-y-2 overflow-y-auto px-2 pb-2">
                       {doGrupo.map((c) => (
                         <CartaoArrastavel key={c.id} card={c} habilitado={podeMover} alvoDeOrdem={manual && podeMover}>
-                          <CardDev card={c} podeMover={podeMover} fluxoLivre={fluxoLivre} onAbrir={setDetalhe}
-                            onMover={(para) => setMovendo({ card: c, para })} />
+                          <CardDev card={c} podeMover={podeMover} onAbrir={setDetalhe}
+                            onMover={(para) => setMovendo({ card: c, para })}
+                            onReestimar={podeMover ? setReestimando : undefined} />
                         </CartaoArrastavel>
                       ))}
                     </div>
@@ -414,7 +365,7 @@ export default function KanbanDevPage() {
               <DragOverlay>
                 {arrastando && (
                   <div className="w-[260px] rotate-2 opacity-90">
-                    <CardDev card={arrastando} podeMover={false} fluxoLivre={false} onMover={() => {}} />
+                    <CardDev card={arrastando} podeMover={false} onMover={() => {}} />
                   </div>
                 )}
               </DragOverlay>
@@ -424,7 +375,7 @@ export default function KanbanDevPage() {
                   <div className="px-3 py-2.5 text-sm font-semibold text-muted-foreground">Descartados</div>
                   <div className="flex-1 space-y-2 overflow-y-auto px-2 pb-2">
                     {descartados.map((c) => (
-                      <CardDev key={c.id} card={c} podeMover={false} fluxoLivre={false} onAbrir={setDetalhe} onMover={() => {}} />
+                      <CardDev key={c.id} card={c} podeMover={false} onAbrir={setDetalhe} onMover={() => {}} />
                     ))}
                   </div>
                 </div>
@@ -442,9 +393,15 @@ export default function KanbanDevPage() {
           onFechar={() => setMovendo(null)}
           onFeito={() => { setMovendo(null); carregar() }} />
       )}
+      {reestimando && (
+        <DialogoReestimar card={reestimando}
+          onFechar={() => setReestimando(null)}
+          onFeito={() => { setReestimando(null); setDetalhe(null); carregar() }} />
+      )}
       {detalhe && (
         <PainelDetalhe card={detalhe} devs={devs} onFechar={() => setDetalhe(null)}
-          onAtualizado={carregar} />
+          onAtualizado={carregar}
+          onReestimar={podeMover ? () => { setReestimando(detalhe); setDetalhe(null) } : undefined} />
       )}
       {criando && (
         <DialogoCriar onFechar={() => setCriando(false)}
@@ -501,19 +458,20 @@ function PrazoSelo({ card, vazio }: { card: Card; vazio?: string }) {
   return <span title={titulo} className={`rounded px-1.5 py-0.5 font-medium ${cor}`}>{texto}</span>
 }
 
-function CardDev({ card, podeMover, fluxoLivre, onMover, onAbrir }: {
-  card: Card; podeMover: boolean; fluxoLivre?: boolean; onMover: (para: DevStatus) => void; onAbrir?: (c: Card) => void
+function CardDev({ card, podeMover, onMover, onAbrir, onReestimar }: {
+  card: Card; podeMover: boolean
+  onMover: (para: DevStatus) => void; onAbrir?: (c: Card) => void
+  onReestimar?: (c: Card) => void
 }) {
   const marcador = DEV_MARCADOR[card.status]
   const grafo = DEV_TRANSICOES[card.status] || []
-  // Fluxo livre (admin descadeado): qualquer coluna do quadro + descartar se o grafo permitir.
-  const listaDestinos: DevStatus[] = fluxoLivre
-    ? [
-        ...DEV_COLUNAS.flatMap((c) => c.statuses).filter((s) => s !== card.status),
-        ...(grafo.includes('descartado') ? (['descartado'] as DevStatus[]) : []),
-      ]
-    : grafo
+  // Destinos livres: qualquer coluna do quadro + descartar se o grafo permitir.
+  const listaDestinos: DevStatus[] = [
+    ...DEV_COLUNAS.flatMap((c) => c.statuses).filter((s) => s !== card.status),
+    ...(grafo.includes('descartado') ? (['descartado'] as DevStatus[]) : []),
+  ]
   const urgente = prazoDoCard(card).urgente
+  const reestimavel = !!onReestimar && podeReestimar(card)
   return (
     <div
       onClick={onAbrir ? () => onAbrir(card) : undefined}
@@ -550,16 +508,118 @@ function CardDev({ card, podeMover, fluxoLivre, onMover, onAbrir }: {
         <PrazoSelo card={card} />
         {card.assignee?.full_name && <span className="truncate">· {card.assignee.full_name}</span>}
       </div>
-      {podeMover && listaDestinos.length > 0 && (
+      {(podeMover && listaDestinos.length > 0) || reestimavel ? (
         <div className="mt-2 flex flex-wrap gap-1">
-          {listaDestinos.map((d) => (
+          {reestimavel && (
+            <button type="button" onClick={(e) => { e.stopPropagation(); onReestimar?.(card) }}
+              className="rounded border border-sem-error/40 px-1.5 py-0.5 text-[11px] font-medium text-sem-error-fg hover:bg-sem-error/15">
+              Reestimar
+            </button>
+          )}
+          {podeMover && listaDestinos.map((d) => (
             <button key={d} onClick={(e) => { e.stopPropagation(); onMover(d) }}
               className="rounded border px-1.5 py-0.5 text-[11px] text-muted-foreground hover:bg-muted">
               → {DEV_LABELS[d]}
             </button>
           ))}
         </div>
-      )}
+      ) : null}
+    </div>
+  )
+}
+
+// ── Reestimar prazo atrasado (não-ASAP) ──────────────────────────────────────
+function DialogoReestimar({ card, onFechar, onFeito }: {
+  card: Card; onFechar: () => void; onFeito: () => void
+}) {
+  const [esforco, setEsforco] = useState<EsforcoReestimar | ''>('')
+  const [motivo, setMotivo] = useState('')
+  const [salvando, setSalvando] = useState(false)
+  const [erro, setErro] = useState('')
+  const previsaoPreview = esforco ? previsaoDeEsforco(esforco) : null
+  const pronto = !!esforco && motivo.trim().length >= 5
+
+  const confirmar = async () => {
+    if (!esforco) return
+    setErro('')
+    setSalvando(true)
+    try {
+      await kanbanDevApi.reestimar(card.id, {
+        esforco_entrega: esforco,
+        motivo: motivo.trim(),
+      })
+      onFeito()
+    } catch (e) {
+      setErro(e instanceof Error ? e.message : String(e))
+    } finally {
+      setSalvando(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onFechar}>
+      <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-lg border bg-background p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
+        <h2 className="text-base font-semibold text-foreground">
+          Reestimar {numeroDev(card.ticket_number, card.dev_ticket_number ?? card.devTicketNumber)}
+        </h2>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Previsão atual atrasada
+          {card.previsao_entrega ? ` (${dataCurta(card.previsao_entrega)})` : ''}.
+          Informe o motivo e escolha um novo prazo.
+        </p>
+
+        <div className="mt-4">
+          <label className="text-sm font-medium text-foreground">Novo prazo *</label>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            Sprint = 2 semanas (terça → sexta meio-dia).
+          </p>
+          <div className="mt-2 space-y-1.5">
+            {ESFORCO_REESTIMAR_OPCOES.map((op) => (
+              <label key={op.value} className={`flex cursor-pointer items-start gap-2 rounded-md border px-3 py-2 text-sm ${esforco === op.value ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'}`}>
+                <input
+                  type="radio"
+                  name="esforco-reestimar"
+                  className="mt-0.5"
+                  checked={esforco === op.value}
+                  onChange={() => setEsforco(op.value)}
+                />
+                <span>
+                  <span className="font-medium text-foreground">{op.label}</span>
+                  <span className="mt-0.5 block text-xs text-muted-foreground">{op.ajuda}</span>
+                </span>
+              </label>
+            ))}
+          </div>
+          {previsaoPreview && (
+            <p className="mt-2 text-xs text-muted-foreground">
+              Nova entrega até <strong className="text-foreground">{dataCurta(previsaoPreview)}</strong> às 12:00.
+            </p>
+          )}
+        </div>
+
+        <div className="mt-4">
+          <label className="text-sm font-medium text-foreground">Motivo do atraso *</label>
+          <textarea
+            value={motivo}
+            onChange={(e) => setMotivo(e.target.value)}
+            rows={3}
+            placeholder="O que atrasou e por quê (mín. 5 caracteres)"
+            className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm"
+          />
+        </div>
+
+        {erro && <p className="mt-3 text-sm text-destructive">{erro}</p>}
+
+        <div className="mt-5 flex justify-end gap-2">
+          <button type="button" onClick={onFechar} className="rounded-md border px-3 py-1.5 text-sm hover:bg-muted">
+            Cancelar
+          </button>
+          <button type="button" onClick={confirmar} disabled={!pronto || salvando}
+            className="rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground disabled:opacity-50">
+            {salvando ? 'Salvando…' : 'Reestimar'}
+          </button>
+        </div>
+      </div>
     </div>
   )
 }
@@ -1057,9 +1117,10 @@ function CartaoArrastavel({ card, habilitado, alvoDeOrdem, children }: {
 // Painel do PRÓPRIO quadro, de propósito: a tela de detalhe do Suporte oferece
 // as ações daquele quadro (Em Atendimento, Resolvido…), que corromperiam o
 // estado de um card Dev. Aqui é leitura + o link para o chamado de origem.
-function PainelDetalhe({ card, devs, onFechar, onAtualizado }: {
+function PainelDetalhe({ card, devs, onFechar, onAtualizado, onReestimar }: {
   card: Card; devs: { id: string; nome: string }[]
   onFechar: () => void; onAtualizado: () => void
+  onReestimar?: () => void
 }) {
   // Branch/PR editável AQUI, a qualquer momento — não só na transição para
   // Dev Finalizado, onde o link passa a ser obrigatório.
@@ -1214,7 +1275,15 @@ function PainelDetalhe({ card, devs, onFechar, onAtualizado }: {
           {card.previsao_entrega && <><dt className="text-muted-foreground">Previsão (interna)</dt>
             <dd>{dataCurta(card.previsao_entrega)}{String(card.previsao_entrega).includes('T12') || !String(card.previsao_entrega).includes('T') ? ' · 12:00' : ''}</dd></>}
           <dt className="text-muted-foreground">Prazo</dt>
-          <dd><PrazoSelo card={card} vazio="Sem prazo" /></dd>
+          <dd className="flex flex-wrap items-center gap-2">
+            <PrazoSelo card={card} vazio="Sem prazo" />
+            {podeEditar && onReestimar && podeReestimar(card) && (
+              <button type="button" onClick={onReestimar}
+                className="rounded border border-sem-error/40 px-2 py-0.5 text-xs font-medium text-sem-error-fg hover:bg-sem-error/15">
+                Reestimar
+              </button>
+            )}
+          </dd>
           {card.created_at && <><dt className="text-muted-foreground">Criado em</dt>
             <dd>{new Date(card.created_at).toLocaleDateString('pt-BR')}</dd></>}
         </dl>

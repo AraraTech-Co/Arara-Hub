@@ -24,6 +24,13 @@ export const ESFORCO_OPCOES: {
   { value: 'indeterminado', label: '4+ Sprints', ajuda: 'Entrega indeterminada — sem data.' },
 ]
 
+/** Opções ao reestimar atraso — só as que geram data (sem ASAP / 4+). */
+export const ESFORCO_REESTIMAR_OPCOES = ESFORCO_OPCOES.filter(
+  (o) => o.value === 'meio_sprint' || o.value === 'um_sprint' || o.value === 'dois_sprints',
+)
+
+export type EsforcoReestimar = (typeof ESFORCO_REESTIMAR_OPCOES)[number]['value']
+
 const ESFORCO_VALIDO = new Set<string>(ESFORCO_OPCOES.map((o) => o.value))
 
 export function esforcoValido(v: unknown): v is EsforcoEntrega {

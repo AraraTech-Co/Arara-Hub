@@ -84,6 +84,15 @@ export const kanbanDevApi = {
     },
   ) => araraFetch.post<Ok<Record<string, unknown>>>(`/api/dev/tickets/${id}/mover`, { status, ...extras }),
 
+  /**
+   * Reestima prazo de card atrasado (não-ASAP). Servidor recalcula a sexta 12:00
+   * e exige motivo do atraso. Não muda status.
+   */
+  reestimar: (
+    id: string,
+    body: { esforco_entrega: string; motivo: string },
+  ) => araraFetch.post<Ok<Record<string, unknown>>>(`/api/dev/tickets/${id}/reestimar`, body),
+
   /** Mensagens do PRÓPRIO card; o painel mostra só as internas. */
   mensagens: (id: string) =>
     araraFetch.get<Ok<(InternalComment & { is_internal?: boolean })[]>>(`/api/tickets/${id}/messages`),

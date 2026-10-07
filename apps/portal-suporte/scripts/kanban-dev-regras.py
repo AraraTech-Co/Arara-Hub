@@ -16,6 +16,12 @@
 #                                             como interna e fora dos
 #                                             indicadores de atendimento.
 #
+#   POST /dev/tickets/:id/reestimar developer+  card não-ASAP com previsão
+#                                             vencida: novo esforço (½/1/2
+#                                             sprints) + motivo do atraso.
+#                                             Recalcula previsao_entrega (sexta
+#                                             12:00) sem mudar status.
+#
 #   POST /dev/tickets/:id/mover     developer+  a máquina de estados do quadro
 #                                             Dev, com as validações do §17
 #                                             BLOQUEANDO no servidor (uma trava
@@ -34,7 +40,8 @@
 #     teste_reprovado → em_desenvolvimento
 #     teste_aprovado → aplicado_no_cliente (exige versão; carimba resolved_at)
 #     aplicado_no_cliente, descartado → terminais
-#     admin+ pode saltar o grafo (cadeado do Kanban Dev é só na UI)
+#     developer+ pode saltar o grafo (arraste livre no Kanban Dev; confirmação
+#     e campos da etapa ficam no DialogoMover da UI)
 #
 #     HML: Ticket.environment = slug do standalone SGC. Ocupado enquanto o
 #     card estiver em pronto_para_teste ou em_testes. Em Revisão removida
@@ -271,6 +278,97 @@ async function _perfilDe(ctx) {
 }
 """
 
+# Sexta 12:00 — espelho de apps/portal-suporte/app/lib/dev-esforco.ts / dev-prazo.ts
+PRAZO_HELPERS = """
+function _sextaMeioDia(semanas) {
+  var agora = new Date();
+  var d = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
+  var dia = d.getDay();
+  var delta = dia === 6 ? -1 : (5 - dia + 7) % 7;
+  d.setDate(d.getDate() + delta + (semanas || 0) * 7);
+  d.setHours(12, 0, 0, 0);
+  function p(n) { return (n < 10 ? "0" : "") + n; }
+  return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate())
+    + "T" + p(d.getHours()) + ":" + p(d.getMinutes()) + ":" + p(d.getSeconds());
+}
+function _previsaoDeEsforco(esforco) {
+  if (esforco === "asap" || esforco === "indeterminado") return null;
+  if (esforco === "meio_sprint") return _sextaMeioDia(0);
+  if (esforco === "um_sprint") return _sextaMeioDia(1);
+  if (esforco === "dois_sprints") return _sextaMeioDia(4);
+  return null;
+}
+function _limitePrevisaoMs(data) {
+  var s = String(data || "");
+  var comHora = s.match(/^(\\d{4})-(\\d{2})-(\\d{2})[T ](\\d{2}):(\\d{2})(?::(\\d{2}))?/);
+  if (comHora) {
+    var d = new Date(
+      Number(comHora[1]), Number(comHora[2]) - 1, Number(comHora[3]),
+      Number(comHora[4]), Number(comHora[5]), Number(comHora[6] || 0), 0
+    );
+    return isNaN(d.getTime()) ? null : d.getTime();
+  }
+  var soData = s.match(/^(\\d{4})-(\\d{2})-(\\d{2})/);
+  if (!soData) return null;
+  var d2 = new Date(Number(soData[1]), Number(soData[2]) - 1, Number(soData[3]), 12, 0, 0, 0);
+  return isNaN(d2.getTime()) ? null : d2.getTime();
+}
+"""
+
+# Guarda de sessão embutida (igual ao MOVER) — rotas novas não têm handler em
+# produção para _fundir_guarda copiar.
+GUARDA_SESSAO = """
+// ── Guarda de sessão (scripts/guarda-sessao.py) ──
+// Nada responde sem pessoa identificada. A identidade vem do JWT (`ctx.user`)
+// ou da sessão do portal (`x-portal-sessao`); sem nenhuma das duas, 401.
+//
+// O desenho anterior tratava "sem pessoa" como chamada de serviço e liberava
+// tudo. Como a chave de API de app não carrega pessoa, qualquer credencial
+// aceita pelo app — inclusive a de um cliente — passava por cima do nível.
+async function _gsSessao(ctx) {
+  try {
+    var h = (ctx.headers && (ctx.headers["x-portal-sessao"] || ctx.headers["X-Portal-Sessao"])) || "";
+    var partes = String(h).split(".");
+    if (partes.length !== 2 || !partes[0] || !partes[1]) return null;
+    var S = ctx.models && ctx.models.Sessao;
+    if (!S) return null;
+    var linha = await S.findById("ses_" + partes[0]);
+    if (!linha || linha.revogada === true) return null;
+    if (String(linha.verificador || "") !== partes[1]) return null;
+    if (linha.expira_em && new Date(linha.expira_em).getTime() < Date.now()) return null;
+    return linha.user_id || null;
+  } catch (e) { return null; }
+}
+var _gsRANK = { user: 10, support: 20, developer: 30, admin: 40 };
+var _gsAPELIDOS = { master: "admin", gerente: "admin", member: "support", agent: "support", vendedor: "user" };
+function _gsCanonico(cru) {
+  var v = String(cru || "").trim().toLowerCase();
+  return _gsRANK[v] !== undefined ? v : (_gsAPELIDOS[v] || "");
+}
+async function _gsEuSou(ctx) {
+  var u = ctx.user || {};
+  var quem = u.id || u.userId || (await _gsSessao(ctx));
+  if (!quem) return null;
+  var p = null;
+  if (ctx.models && ctx.models.Profile) {
+    p = await ctx.models.Profile.findById(quem).catch(function () { return null; });
+  }
+  return { id: quem, nivel: _gsRANK[_gsCanonico(p ? p.role : "")] || 0 };
+}
+var _gsOriginal = handler;
+async function _gsComSessao(ctx) {
+  var eu = await _gsEuSou(ctx);
+  if (!eu) {
+    return ctx.reply.status(401).send({ success: false, error: "Requer sessão do portal" });
+  }
+  if (eu.nivel < _gsRANK["user"]) {
+    return ctx.reply.status(403).send({ success: false, error: "Sem permissão para esta operação" });
+  }
+  return _gsOriginal(ctx);
+}
+module.exports = { handler: _gsComSessao };
+"""
+
 # ── Rota 1: escalar para o Dev ───────────────────────────────────────────────
 ESCALAR = ("""// %s — POST /tickets/:id/escalar-dev
 // Escalar NÃO move o chamado para o quadro Dev: cria um card Dev NOVO
@@ -415,14 +513,29 @@ async function handler(ctx) {
   if (!body.title || !String(body.title).trim()) {
     return ctx.reply.status(400).send({ error: "Informe o título da demanda" });
   }
-  var tipo = String(body.tipo || "").trim().toLowerCase();
-  if (["desenvolvimento", "bug", "melhoria"].indexOf(tipo) < 0) {
+  // A tela manda `tipos` (array, seleção múltipla desde 18/09). Aceitar também
+  // `tipo` singular por compat. Sem isso o front marca bug/melhoria e o
+  // servidor responde "Classifique a demanda" mesmo com a opção marcada.
+  var VALIDOS = { desenvolvimento: 1, bug: 1, melhoria: 1 };
+  var tipos = [];
+  if (Array.isArray(body.tipos)) {
+    for (var ti = 0; ti < body.tipos.length; ti++) {
+      var t = String(body.tipos[ti] || "").trim().toLowerCase();
+      if (VALIDOS[t] && tipos.indexOf(t) < 0) tipos.push(t);
+    }
+  }
+  if (!tipos.length && body.tipo) {
+    var unico = String(body.tipo || "").trim().toLowerCase();
+    if (VALIDOS[unico]) tipos.push(unico);
+  }
+  if (!tipos.length) {
     return ctx.reply.status(400).send({ error: "Classifique a demanda: desenvolvimento, bug ou melhoria" });
   }
+  var tipo = tipos[0];
 
   var now = new Date().toISOString();
   var numeroDev = await alocarNumeroDev(Ticket, Seq);
-  var card = await Ticket.create({
+  var patch = {
     ticket_number: numeroDev,
     dev_ticket_number: numeroDev,
     quadro: "dev",
@@ -431,22 +544,34 @@ async function handler(ctx) {
     title: String(body.title).trim(),
     description: String(body.description || ""),
     category: tipo,
+    categorias: tipos,
     priority: body.priority || "medium",
     module: body.module || null,
     source: "dev_interno",
     user_id: eu.id || null,
     assigned_to: body.assigned_to || null,
+    company_id: body.company_id || null,
     is_public: false,
     position: 0,
     created_at: now,
     updated_at: now,
-  });
+  };
+  try {
+    if (body.company_id && ctx.models.Company) {
+      var emp = await ctx.models.Company.findById(String(body.company_id));
+      if (emp) {
+        patch.company_name = emp.name || emp.trade_name || emp.tradeName || null;
+        if (emp.cnpj) patch.company_cnpj = emp.cnpj;
+      }
+    }
+  } catch (e) {}
+  var card = await Ticket.create(patch);
   try {
     if (Log) {
       await Log.create({
         ticket_id: card.id, user_id: eu.id,
         action: "ticket_created",
-        details: { dev_ticket_number: numeroDev, origem: "dev_interno", tipo: tipo },
+        details: { dev_ticket_number: numeroDev, origem: "dev_interno", tipo: tipo, tipos: tipos },
         created_at: now, visible_to_client: false,
       });
     }
@@ -459,8 +584,9 @@ module.exports = { handler };
 # ── Rota 3: a máquina de estados ─────────────────────────────────────────────
 MOVER = ("""// %s — POST /dev/tickets/:id/mover
 // As validações do §17 vivem AQUI, no servidor. A tela repete por cortesia.
-// REVISADO 15/09/2026: Aguardando Início exige esforço/prazo; admin pode saltar o grafo.
-""" % MARCA) + GUARDA + """
+// REVISADO 15/09/2026: Aguardando Início exige esforço/prazo.
+// REVISADO: developer+ pode saltar o grafo (arraste livre no Kanban Dev).
+""" % MARCA) + GUARDA + PRAZO_HELPERS + """
 var TRANSICOES = {
   no_status: ["backlog", "descartado"],
   backlog: ["em_desenvolvimento", "descartado"],
@@ -517,8 +643,8 @@ async function handler(ctx) {
   }
 
   var permitidas = TRANSICOES[de] || [];
-  // Admin+ pode saltar colunas (cadeado do Kanban Dev é só na UI).
-  var podeSaltar = eu.servico || eu.nivel >= _RANK.admin;
+  // Developer+ pode saltar colunas — espelho do arraste livre na UI.
+  var podeSaltar = eu.servico || eu.nivel >= _RANK.developer;
   if (permitidas.indexOf(para) < 0 && !podeSaltar) {
     return ctx.reply.status(400).send({
       error: "Transição inválida: " + de + " → " + para,
@@ -552,27 +678,7 @@ async function handler(ctx) {
         });
       }
       patch.esforco_entrega = esforco;
-      // Sexta 12:00 local — espelho de apps/portal-suporte/app/lib/dev-esforco.ts
-      function _sextaMeioDia(semanas) {
-        var agora = new Date();
-        var d = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
-        var dia = d.getDay();
-        var delta = dia === 6 ? -1 : (5 - dia + 7) % 7;
-        d.setDate(d.getDate() + delta + (semanas || 0) * 7);
-        d.setHours(12, 0, 0, 0);
-        function p(n) { return (n < 10 ? "0" : "") + n; }
-        return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate())
-          + "T" + p(d.getHours()) + ":" + p(d.getMinutes()) + ":" + p(d.getSeconds());
-      }
-      if (esforco === "asap" || esforco === "indeterminado") {
-        patch.previsao_entrega = null;
-      } else if (esforco === "meio_sprint") {
-        patch.previsao_entrega = _sextaMeioDia(0);
-      } else if (esforco === "um_sprint") {
-        patch.previsao_entrega = _sextaMeioDia(1);
-      } else {
-        patch.previsao_entrega = _sextaMeioDia(4);
-      }
+      patch.previsao_entrega = _previsaoDeEsforco(esforco);
     }
     if (para === "em_desenvolvimento" && de === "backlog") {
       var resp = body.assigned_to || card.assigned_to || card.assignedTo;
@@ -729,63 +835,96 @@ async function handler(ctx) {
 
   return ctx.reply.send({ success: true, data: row });
 }
+""" + GUARDA_SESSAO
 
-// ── Guarda de sessão (scripts/guarda-sessao.py) ──
-// Nada responde sem pessoa identificada. A identidade vem do JWT (`ctx.user`)
-// ou da sessão do portal (`x-portal-sessao`); sem nenhuma das duas, 401.
-//
-// O desenho anterior tratava "sem pessoa" como chamada de serviço e liberava
-// tudo. Como a chave de API de app não carrega pessoa, qualquer credencial
-// aceita pelo app — inclusive a de um cliente — passava por cima do nível.
-async function _gsSessao(ctx) {
+# ── Rota 4: reestimar prazo atrasado ─────────────────────────────────────────
+REESTIMAR = ("""// %s — POST /dev/tickets/:id/reestimar
+// Card Dev não-ASAP com previsão vencida: novo esforço (½/1/2 sprints) + motivo.
+// Não muda status — só esforco_entrega / previsao_entrega + ActivityLog.
+""" % MARCA) + GUARDA + PRAZO_HELPERS + """
+async function handler(ctx) {
+  var Ticket = ctx.models.Ticket;
+  var Log = ctx.models.ActivityLog;
+  if (!Ticket) return ctx.reply.status(500).send({ error: "Model Ticket missing" });
+
+  var eu = await _perfilDe(ctx);
+  if (!eu.servico && eu.nivel < _RANK.developer) {
+    return ctx.reply.status(403).send({ error: "Reestimar card do quadro Dev exige nível developer" });
+  }
+
+  var id = ctx.params.id;
+  var body = ctx.body || {};
+  var card = await Ticket.findById(id);
+  if (!card) return ctx.reply.status(404).send({ error: "Ticket not found" });
+  if (String(card.quadro || "suporte") !== "dev") {
+    return ctx.reply.status(400).send({ error: "Este card não é do quadro Dev" });
+  }
+
+  var status = String(card.status || "");
+  if (status === "aplicado_no_cliente" || status === "descartado") {
+    return ctx.reply.status(400).send({ error: "Card fechado não pode ser reestimado" });
+  }
+
+  var esforcoAtual = String(card.esforco_entrega || "").trim();
+  if (esforcoAtual === "asap") {
+    return ctx.reply.status(400).send({ error: "Cards ASAP não têm prazo para reestimar" });
+  }
+
+  var previsaoAtual = card.previsao_entrega || null;
+  if (!previsaoAtual) {
+    return ctx.reply.status(400).send({ error: "Card sem previsão de entrega — não há prazo para reestimar" });
+  }
+  var fim = _limitePrevisaoMs(previsaoAtual);
+  if (fim === null || fim > Date.now()) {
+    return ctx.reply.status(400).send({ error: "Só é possível reestimar quando a previsão já passou" });
+  }
+
+  var ESFORCOS = { meio_sprint: 1, um_sprint: 1, dois_sprints: 1 };
+  var esforco = String(body.esforco_entrega || "").trim();
+  if (!ESFORCOS[esforco]) {
+    return ctx.reply.status(400).send({
+      error: "Escolha o novo prazo: 1/2 Sprint, 1 Sprint ou 2 Sprints",
+    });
+  }
+
+  var motivo = String(body.motivo || "").trim();
+  if (motivo.length < 5) {
+    return ctx.reply.status(400).send({ error: "Informe o motivo do atraso (mínimo 5 caracteres)" });
+  }
+
+  var previsaoNova = _previsaoDeEsforco(esforco);
+  var now = new Date().toISOString();
+  var row = await Ticket.update(id, {
+    esforco_entrega: esforco,
+    previsao_entrega: previsaoNova,
+    updated_at: now,
+  });
+
   try {
-    var h = (ctx.headers && (ctx.headers["x-portal-sessao"] || ctx.headers["X-Portal-Sessao"])) || "";
-    var partes = String(h).split(".");
-    if (partes.length !== 2 || !partes[0] || !partes[1]) return null;
-    var S = ctx.models && ctx.models.Sessao;
-    if (!S) return null;
-    var linha = await S.findById("ses_" + partes[0]);
-    if (!linha || linha.revogada === true) return null;
-    if (String(linha.verificador || "") !== partes[1]) return null;
-    if (linha.expira_em && new Date(linha.expira_em).getTime() < Date.now()) return null;
-    return linha.user_id || null;
-  } catch (e) { return null; }
-}
-var _gsRANK = { user: 10, support: 20, developer: 30, admin: 40 };
-var _gsAPELIDOS = { master: "admin", gerente: "admin", member: "support", agent: "support", vendedor: "user" };
-function _gsCanonico(cru) {
-  var v = String(cru || "").trim().toLowerCase();
-  return _gsRANK[v] !== undefined ? v : (_gsAPELIDOS[v] || "");
-}
-async function _gsEuSou(ctx) {
-  var u = ctx.user || {};
-  var quem = u.id || u.userId || (await _gsSessao(ctx));
-  if (!quem) return null;
-  var p = null;
-  if (ctx.models && ctx.models.Profile) {
-    p = await ctx.models.Profile.findById(quem).catch(function () { return null; });
-  }
-  return { id: quem, nivel: _gsRANK[_gsCanonico(p ? p.role : "")] || 0 };
-}
-var _gsOriginal = handler;
-async function _gsComSessao(ctx) {
-  var eu = await _gsEuSou(ctx);
-  if (!eu) {
-    return ctx.reply.status(401).send({ success: false, error: "Requer sessão do portal" });
-  }
-  if (eu.nivel < _gsRANK["user"]) {
-    return ctx.reply.status(403).send({ success: false, error: "Sem permissão para esta operação" });
-  }
-  return _gsOriginal(ctx);
-}
-module.exports = { handler: _gsComSessao };
+    if (Log) {
+      await Log.create({
+        ticket_id: id, user_id: eu.id,
+        action: "esforco_reestimado",
+        details: {
+          from: { esforco: esforcoAtual || null, previsao: previsaoAtual },
+          to: { esforco: esforco, previsao: previsaoNova },
+          motivo: motivo,
+          origem: "kanban_dev",
+        },
+        created_at: now, visible_to_client: false,
+      });
+    }
+  } catch (e) {}
 
-"""
+  return ctx.reply.send({ success: true, data: row });
+}
+""" + GUARDA_SESSAO
 
 ROTAS = [
     ("POST", "/tickets/:id/escalar-dev", ESCALAR),
     ("POST", "/dev/tickets", CRIAR),
     ("POST", "/dev/tickets/:id/mover", MOVER),
+    ("POST", "/dev/tickets/:id/reestimar", REESTIMAR),
 ]
 
 
@@ -903,6 +1042,43 @@ def _substituir_handler_no_arquivo(texto, metodo, caminho, codigo_novo):
     return None
 
 
+def _inserir_handler_apos(texto, metodo, caminho, codigo_novo, apos_metodo, apos_caminho):
+    """Insere rota nova logo após outra (quando ainda não existe em routes.generated.ts)."""
+    import re
+    for m in re.finditer(r'method:\s*"(\w+)",\s*\n\s*path:\s*"([^"]+)"', texto):
+        if m.group(1) != apos_metodo or m.group(2) != apos_caminho:
+            continue
+        # Início do objeto da rota âncora: `{` antes de `method`.
+        bloco = texto.rfind("\n  {", 0, m.start())
+        if bloco < 0:
+            return None
+        corte = texto.index("compileController(", m.end())
+        fim = texto.index('")', corte)
+        while texto[fim - 1] == "\\":
+            fim = texto.index('")', fim + 1)
+        # Fecha `"),` + `\n  },`
+        fecha = texto.find("\n  },", fim)
+        if fecha < 0:
+            return None
+        fim_bloco = fecha + len("\n  },")
+        esc = json.dumps(codigo_novo)
+        insert = (
+            f'\n  // tickets {metodo} {caminho} ({MARCA})\n'
+            f'  {{\n'
+            f'    module: "tickets",\n'
+            f'    method: "{metodo}",\n'
+            f'    path: "{caminho}",\n'
+            f'    authMode: "actor",\n'
+            f'    webhookSecretName: null,\n'
+            f'    requiredPermissions: [],\n'
+            f'    source: "local-{MARCA}",\n'
+            f'    handler: compileController({esc}),\n'
+            f'  }},'
+        )
+        return texto[:fim_bloco] + insert + texto[fim_bloco:]
+    return None
+
+
 def sync_routes_local():
     """Grava handlers deste template em routes.generated.ts (sem API remota)."""
     _, arq = _handler_em_producao("POST", ROTAS[0][1])
@@ -912,14 +1088,27 @@ def sync_routes_local():
     texto = open(arq, encoding="utf-8").read()
     for metodo, caminho, codigo in ROTAS:
         prod, _ = _handler_em_producao(metodo, caminho)
-        merged = _fundir_guarda(codigo, prod)
+        # Rota nova: copiar guarda do mover se o template ainda não embute.
+        if prod is None:
+            prod_mover, _ = _handler_em_producao("POST", "/dev/tickets/:id/mover")
+            merged = _fundir_guarda(codigo, prod_mover)
+        else:
+            merged = _fundir_guarda(codigo, prod)
         novo_texto = _substituir_handler_no_arquivo(texto, metodo, caminho, merged)
         if novo_texto is None:
-            print(f"❌ rota não encontrada: {metodo} {caminho}")
-            sys.exit(1)
+            novo_texto = _inserir_handler_apos(
+                texto, metodo, caminho, merged,
+                "POST", "/dev/tickets/:id/mover",
+            )
+            if novo_texto is None:
+                print(f"❌ rota não encontrada nem inserível: {metodo} {caminho}")
+                sys.exit(1)
+            print(f"→ insert {metodo} {caminho} ({len(merged)} chars)")
+        else:
+            print(f"→ sync {metodo} {caminho} ({len(merged)} chars)")
         texto = novo_texto
-        print(f"→ sync {metodo} {caminho} ({len(merged)} chars)")
-    open(arq, "w", encoding="utf-8").write(texto)
+        # Recarrega helpers de busca no texto já atualizado (próxima iteração).
+        open(arq, "w", encoding="utf-8").write(texto)
     print(f"✓ {arq}")
 
 

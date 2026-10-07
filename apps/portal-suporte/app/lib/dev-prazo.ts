@@ -109,3 +109,19 @@ export function prazoDoCard(card: CardComPrazo, agora: number = Date.now()): Pra
 
   return { situacao: 'sem_prazo', minutos: null, fonte: null, urgente: false }
 }
+
+/**
+ * Elegível a reestimar: não-ASAP, previsão já passou, card ainda aberto.
+ * Independente do SLA da origem — o prazo reestimado é a previsão de sprint.
+ */
+export function podeReestimar(
+  card: CardComPrazo & { status?: string | null },
+  agora: number = Date.now(),
+): boolean {
+  if (card.esforco_entrega === 'asap') return false
+  const st = String(card.status || '')
+  if (st === 'aplicado_no_cliente' || st === 'descartado') return false
+  if (!card.previsao_entrega) return false
+  const fim = limitePrevisao(card.previsao_entrega)
+  return fim !== null && fim <= agora
+}
