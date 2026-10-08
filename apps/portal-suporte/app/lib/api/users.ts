@@ -21,6 +21,11 @@ export interface UserProfile {
   /** Permissões extras por pessoa (ex.: 'wa_flow_editor'). */
   feature_grants?: string[]
   /**
+   * Membro desativado: sai dos quadros e das listas de agente, mas o
+   * histórico dele continua. `undefined` de cadastro antigo conta como ativo.
+   */
+  active?: boolean
+  /**
    * WhatsApp com DDD, só dígitos. É por ele que a recuperação de senha
    * acontece: o código vai para o número JÁ CADASTRADO, nunca para o que a
    * pessoa digita na hora — senão qualquer um recuperaria a conta alheia.
@@ -85,9 +90,19 @@ export const usersApi = {
   update: (id: string, data: UpdateUserPayload) =>
     api.put<{ data: UserProfile }>(`/api/profiles/${id}`, data),
 
-  /** DELETE /api/admin/users?id=[id] — exclui usuário */
-  delete: (id: string) =>
-    api.delete<{ success: boolean }>(`/api/admin/users?id=${id}`),
+  /**
+   * POST /api/admin/membros/[id]/ativacao — desativa ou reativa o membro.
+   *
+   * Substitui o antigo DELETE: apagar deixaria chamado apontando para quem não
+   * existe mais, e a rota nunca funcionou (o id ia na query e o servidor lia do
+   * caminho, então todo clique devolvia "Missing id"). Desativar tira a pessoa
+   * dos quadros e devolve o que era dela para a fila, sem responsável.
+   */
+  setActive: (id: string, active: boolean) =>
+    api.post<{ data: { chamados_liberados?: number; times_removidos?: number } }>(
+      `/api/admin/membros/${id}/ativacao`,
+      { active },
+    ),
 
   /** GET /api/admin/invite-codes — lista códigos de convite */
   listInviteCodes: () =>

@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useState } from 'react'
 import { arara, araraFetch } from '@/lib/arara/client'
-import { ehEquipe } from '@/lib/arara/auth-storage'
+import { ehAgenteAtivo } from '@/lib/arara/auth-storage'
 
 /** `/tickets/kanban` devolve `{ data: {coluna: [...]}, columns, count }`. */
 type Resposta = { data?: unknown; count?: number }
@@ -84,10 +84,11 @@ export default function KanbanPage() {
         }))
         setTickets(serialized)
 
-        // `ehEquipe` e não a lista literal: `support` é agente de suporte e
-        // ficava de fora — 7 dos 11 perfis. Ver lib/arara/auth-storage.ts.
+        // `ehAgenteAtivo` e não a lista literal: `support` é agente de suporte
+        // e ficava de fora — 7 dos 11 perfis; e quem foi desativado não pode
+        // continuar sendo oferecido. Ver lib/arara/auth-storage.ts.
         const staff = (p.data || [])
-          .filter((pr) => ehEquipe(pr.role ?? pr.role_title))
+          .filter((pr) => ehAgenteAtivo(pr))
           .map((pr) => ({
             id: pr.id,
             full_name: pr.full_name || pr.fullName || pr.name || pr.email || 'Agente',

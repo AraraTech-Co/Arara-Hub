@@ -36,7 +36,17 @@ from concurrent.futures import ThreadPoolExecutor
 RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Container antigo, ainda de pé, servindo o que sobrou de public/uploads.
-ORIGEM = "http://YOUR_DEPLOY_HOST:3000"
+# O endereço vem do ambiente: este repositório é público, e endereço de
+# servidor interno não entra em código aberto.
+ORIGEM = os.environ.get("ANEXOS_ORIGEM", "").rstrip("/")
+
+
+def exigir_origem():
+    if not ORIGEM:
+        raise SystemExit(
+            "Defina ANEXOS_ORIGEM com a URL do container antigo, ex.:\n"
+            "  ANEXOS_ORIGEM=http://servidor:3000 python3 scripts/anexos-rehidratar.py"
+        )
 
 
 def env():
@@ -166,6 +176,7 @@ def inventario():
 
 
 def baixar(caminho):
+    exigir_origem()
     try:
         with urllib.request.urlopen(ORIGEM + caminho, timeout=60) as r:
             return r.read() if r.status == 200 else None

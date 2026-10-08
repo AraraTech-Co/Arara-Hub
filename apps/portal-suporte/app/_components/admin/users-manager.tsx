@@ -33,7 +33,7 @@ import {
 import { useToast } from '@/hooks/use-toast'
 import {
   Search, UserPlus, Pencil, Trash2, Users, ShieldCheck, Headphones,
-  User, Ticket, Copy, Check, Plus, Clock, X, KeyRound,
+  User, Ticket, Copy, Check, Plus, Clock, X, KeyRound, UserMinus, UserCheck,
 } from 'lucide-react'
 import { EmptyState } from '@/components/ui/empty-state'
 import { companiesApi } from '@/lib/api/companies'
@@ -368,18 +368,41 @@ export function UsersManager({ audience }: Props) {
     setSaving(false)
   }
 
-  async function handleDelete() {
+  // Desativar, não excluir: apagar deixaria o chamado antigo apontando para
+  // quem não existe mais. O servidor solta o que estava com a pessoa e conta
+  // quantos chamados voltaram para a fila — dizer o número aqui é o que mostra
+  // que a desativação fez o que prometeu.
+  async function handleDesativar() {
     if (!deleteUser) return
     setSaving(true)
     try {
-      await usersApi.delete(deleteUser.id)
-      toast({ title: 'Usuário excluído' })
+      const r = await usersApi.setActive(deleteUser.id, false)
+      const n = r?.data?.chamados_liberados ?? 0
+      toast({
+        title: 'Membro desativado',
+        description: n
+          ? `${n} ${n === 1 ? 'chamado voltou' : 'chamados voltaram'} para a fila sem responsável.`
+          : 'Não havia chamado atribuído a essa pessoa.',
+      })
       setDeleteUser(null)
       loadUsers()
     } catch (err: unknown) {
-      toast({ title: 'Erro ao excluir', description: err instanceof Error ? err.message : 'Erro', variant: 'destructive' })
+      toast({ title: 'Erro ao desativar', description: err instanceof Error ? err.message : 'Erro', variant: 'destructive' })
     }
     setSaving(false)
+  }
+
+  async function handleReativar(u: Profile) {
+    try {
+      await usersApi.setActive(u.id, true)
+      toast({
+        title: 'Membro reativado',
+        description: 'Volta a aparecer nas listas. Chamados e times não são devolvidos.',
+      })
+      loadUsers()
+    } catch (err: unknown) {
+      toast({ title: 'Erro ao reativar', description: err instanceof Error ? err.message : 'Erro', variant: 'destructive' })
+    }
   }
 
   function getExpiryStatus(expiresAt?: string | null): null | 'warning' | 'expired' {
@@ -604,7 +627,16 @@ export function UsersManager({ audience }: Props) {
                     const expiryStatus = getExpiryStatus(u.expires_at)
                     return (
                       <TableRow key={u.id}>
-                        <TableCell className="font-medium">{u.full_name || '—'}</TableCell>
+                        <TableCell className="font-medium">
+                          <span className={u.active === false ? 'text-muted-foreground line-through' : undefined}>
+                            {u.full_name || '—'}
+                          </span>
+                          {u.active === false && (
+                            <span className="ml-2 rounded-full border border-border bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                              inativo
+                            </span>
+                          )}
+                        </TableCell>
                         <TableCell className="text-muted-foreground">
                           {u.email}
                           {/* Quem está sem WhatsApp não tem como recuperar a
@@ -684,14 +716,26 @@ export function UsersManager({ audience }: Props) {
                             >
                               <Pencil className="h-4 w-4" />
                             </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-destructive hover:text-destructive"
-                              onClick={() => setDeleteUser(u)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                            {u.active === false ? (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                title="Reativar membro"
+                                onClick={() => handleReativar(u)}
+                              >
+                                <UserCheck className="h-4 w-4 text-sem-success-fg" />
+                              </Button>
+                            ) : (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-destructive hover:text-destructive"
+                                title="Desativar membro"
+                                onClick={() => setDeleteUser(u)}
+                              >
+                                <UserMinus className="h-4 w-4" />
+                              </Button>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>
@@ -1086,15 +1130,26 @@ export function UsersManager({ audience }: Props) {
       <Dialog open={!!deleteUser} onOpenChange={(open) => !open && setDeleteUser(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Excluir {isTeam ? 'Membro' : 'Usuário'}</DialogTitle>
-            <DialogDescription>
-              Tem certeza que deseja excluir <strong>{deleteUser?.full_name || deleteUser?.email}</strong>? Esta ação não pode ser desfeita.
+            <DialogTitle>Desativar {isTeam ? 'membro' : 'usuário'}</DialogTitle>
+            <DialogDescription asChild>
+              <div className="space-y-2">
+                <p>
+                  <strong>{deleteUser?.full_name || deleteUser?.email}</strong> sai dos quadros e das
+                  listas de agente, e perde o acesso ao portal.
+                </p>
+                <ul className="list-disc space-y-0.5 pl-4 text-sm">
+                  <li>Os chamados e cards que estavam com a pessoa voltam para a fila, <strong>sem responsável</strong>.</li>
+                  <li>Ela sai dos times.</li>
+                  <li>O histórico dela — mensagens, movimentos, quem fez o quê — continua inteiro.</li>
+                </ul>
+                <p className="text-sm">Dá para reativar depois, mas chamados e times não voltam sozinhos.</p>
+              </div>
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteUser(null)}>Cancelar</Button>
-            <Button variant="destructive" onClick={handleDelete} disabled={saving}>
-              {saving ? 'Excluindo...' : 'Excluir'}
+            <Button variant="destructive" onClick={handleDesativar} disabled={saving}>
+              {saving ? 'Desativando...' : 'Desativar'}
             </Button>
           </DialogFooter>
         </DialogContent>

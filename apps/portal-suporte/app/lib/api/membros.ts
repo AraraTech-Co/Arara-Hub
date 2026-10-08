@@ -114,8 +114,20 @@ export async function adicionarMembro(
     if (e instanceof ApiError && e.status === 403) {
       throw new Error('Só administradores do portal podem adicionar membros.')
     }
+    // 404 aqui tem DUAS causas, e confundi-las custou caro em 07/10/2026: o
+    // handler devolve 404 com `codigo: "sem_conta"` quando o e-mail não existe
+    // na plataforma, mas o ROTEADOR devolve 404 "No static route matched"
+    // quando a própria rota não está publicada. Mostrar "a conta ainda não
+    // aparece" no segundo caso manda todo mundo procurar defeito na conta da
+    // pessoa, enquanto o que falta é o deploy do backend.
     if (e instanceof ApiError && e.status === 404) {
-      throw new Error('A conta ainda não aparece na plataforma. Espere alguns segundos e clique de novo — repetir é seguro.')
+      const semRota = /no static route|route.*matched|cannot (POST|post)/i.test(e.message || '')
+      throw new Error(
+        semRota
+          ? 'A rota de adicionar membro não está publicada no servidor (404 do roteador, não da conta). '
+            + 'Isso é deploy do backend, não cadastro: avise quem publica. Nada foi gravado.'
+          : 'A conta ainda não aparece na plataforma. Espere alguns segundos e clique de novo — repetir é seguro.',
+      )
     }
     throw new Error(`Conta ok, mas o perfil não foi gravado: ${e instanceof Error ? e.message : String(e)}. Clique de novo — repetir é seguro.`)
   }

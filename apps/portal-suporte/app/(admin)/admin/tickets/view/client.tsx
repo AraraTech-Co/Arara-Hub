@@ -30,7 +30,7 @@ import { TicketAttachments, type AttachmentItem } from '@/components/tickets/tic
 import { TicketTimeline } from '@/components/tickets/ticket-timeline'
 import { TicketInternalComments } from '@/components/tickets/ticket-internal-comments'
 import { companiesApi } from '@/lib/api/companies'
-import { ehEquipe } from '@/lib/arara/auth-storage'
+import { ehAgenteAtivo } from '@/lib/arara/auth-storage'
 
 type Row = Record<string, unknown>
 
@@ -100,7 +100,7 @@ export default function AdminTicketViewPage() {
       setAgents(
         rows(profs)
           // `support` é agente de suporte e precisa poder ser responsável.
-          .filter((p) => ehEquipe(p.role))
+          .filter((p) => ehAgenteAtivo(p))
           .map((p) => ({
             id: String(p.id),
             full_name: (p.full_name as string) ?? null,
