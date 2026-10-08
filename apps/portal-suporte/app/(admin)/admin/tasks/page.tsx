@@ -17,7 +17,7 @@ import { useAuth } from '@/lib/arara/AuthProvider'
 import { TaskList } from '@/components/tasks/task-list'
 import { CreateTaskDialog } from '@/components/tasks/create-task-dialog'
 import { ProductivityPanel } from '@/components/tasks/productivity-panel'
-import { ehEquipe } from '@/lib/arara/auth-storage'
+import { ehAgenteAtivo } from '@/lib/arara/auth-storage'
 
 type Row = Record<string, unknown>
 
@@ -54,7 +54,7 @@ export default function TasksPage() {
     setAgents(
       rows(p)
         // `support` é agente de suporte — ver lib/arara/auth-storage.ts.
-        .filter((a) => ehEquipe(a.role))
+        .filter((a) => ehAgenteAtivo(a))
         .map((a) => ({ id: a.id, full_name: a.full_name, email: a.email, role: a.role })),
     )
     setTickets(

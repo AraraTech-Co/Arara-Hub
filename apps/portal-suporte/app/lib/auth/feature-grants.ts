@@ -117,10 +117,11 @@ export function canPlanejar(actor: GrantActor): boolean {
 /**
  * Pode concluir a revisão de código — aprovar para teste ou devolver ao dev?
  *
- * Espelha admin/master por nível, OU quem tem o grant `code_review`.
- * A coluna Em Revisão saiu do quadro (25/09/2026); o grant permanece disponível.
+ * Espelha a regra que o servidor aplica em POST /dev/tickets/:id/mover ao sair
+ * de `em_revisao`: admin/master por nível, OU quem tem o grant `code_review`.
  * Existe para a TELA não oferecer um movimento que o servidor vai recusar com
- * 403. O servidor continua sendo a verdade.
+ * 403 — quem arrastava via o diálogo da declaração e só descobria a falta da
+ * permissão depois de confirmar. O servidor continua sendo a verdade.
  */
 export function canRevisarCodigo(actor: GrantActor): boolean {
   return hasMinLevel(actor.role, 'admin') || hasGrant(actor, 'code_review')

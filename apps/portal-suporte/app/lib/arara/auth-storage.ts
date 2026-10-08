@@ -73,6 +73,24 @@ export function ehEquipe(raw: unknown): boolean {
   return hasMinRole(raw, 'support')
 }
 
+/**
+ * Agente que pode receber trabalho HOJE: é da equipe e não foi desativado.
+ *
+ * `ehEquipe` sozinho responde só pelo papel, e por isso membro desativado
+ * continuava aparecendo em filtro e seletor de responsável — a pessoa saía da
+ * equipe e o portal seguia oferecendo ela. `active` ausente (cadastro antigo)
+ * conta como ativo: quem nunca foi desativado não pode sumir por omissão.
+ */
+export function ehAgenteAtivo(p: {
+  role?: unknown
+  role_title?: unknown
+  active?: boolean | null
+} | null | undefined): boolean {
+  if (!p) return false
+  if (p.active === false) return false
+  return ehEquipe(p.role ?? p.role_title)
+}
+
 export type AraraUser = {
   id: string
   email: string
