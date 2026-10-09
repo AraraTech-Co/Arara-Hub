@@ -26,6 +26,7 @@ import {
   Check, Pencil, Clock, AlertTriangle, BookOpen, Sparkles,
 } from 'lucide-react';
 import { cn, formatDate , telefoneCompleto } from '@/lib/utils';
+import { procurarClientePorWhatsapp, type ClienteCadastrado } from '@/lib/api/companies';
 import { CompanySelector } from './company-selector';
 import type { CompanySelectionUpdate } from './company-selector';
 import { ticketsApi } from '@/lib/api/tickets';
@@ -165,6 +166,10 @@ export function CreateTicketWizard({
   // campo: quem olhava o formulário não via exigência nenhuma, só um asterisco.
   const [campoEmFalta, setCampoEmFalta] = useState<string | null>(null);
   const [form, setForm]             = useState<WizardFormData>(EMPTY_FORM);
+  // Quem já está cadastrado com o WhatsApp digitado. O seletor de empresa faz
+  // o caminho de ida (escolhe contato, preenche telefone); aqui é a volta — o
+  // atendente costuma ter só o número (TCK000675 3.14).
+  const [achadoPeloFone, setAchadoPeloFone] = useState<ClienteCadastrado | null>(null);
   const [error, setError]           = useState('');
   const [loading, setLoading]       = useState(false);
   const [pasteFlash, setPasteFlash] = useState(false);
@@ -465,6 +470,36 @@ export function CreateTicketWizard({
     setForm(prev => ({ ...prev, ...update }));
   };
 
+  // Procura quem já está cadastrado com o número digitado. Espera a digitação
+  // parar, para não consultar a cada tecla, e não mostra nada quando o contato
+  // já foi escolhido pelo seletor — ali o número veio dele.
+  useEffect(() => {
+    const digitos = String(form.contact_phone || '').replace(/\D/g, '');
+    if (form.contact_id || digitos.length < 10) { setAchadoPeloFone(null); return; }
+    let vivo = true;
+    const t = setTimeout(() => {
+      void procurarClientePorWhatsapp(digitos)
+        .then(achados => { if (vivo) setAchadoPeloFone(achados[0] ?? null); })
+        .catch(() => { if (vivo) setAchadoPeloFone(null); });
+    }, 400);
+    return () => { vivo = false; clearTimeout(t); };
+  }, [form.contact_phone, form.contact_id]);
+
+  /** Usa a pessoa encontrada: preenche empresa, unidade, contato e e-mail. */
+  const usarContatoAchado = (c: ClienteCadastrado) => {
+    setForm(prev => ({
+      ...prev,
+      contact_id: c.id,
+      company_id: c.companyId ?? prev.company_id,
+      company_name: c.companyName ?? prev.company_name,
+      unit_id: c.unitId ?? prev.unit_id,
+      contact_email: c.email || prev.contact_email,
+      requester: prev.requester || c.name,
+      reporter_role: prev.reporter_role || (c.roleTitle ?? ''),
+    }));
+    setAchadoPeloFone(null);
+  };
+
   const renderStep0 = () => (
     <div className="space-y-4">
       <CompanySelector
@@ -515,6 +550,22 @@ export function CreateTicketWizard({
           <p className="mt-1 text-xs text-sem-error-fg">
             Sem o WhatsApp o chamado nasce mudo: o cliente não recebe o número nem o código para acompanhar.
           </p>
+        )}
+        {achadoPeloFone && (
+          <div className="mt-1.5 flex flex-wrap items-center gap-2 rounded-md bg-muted px-2.5 py-1.5 text-xs">
+            <span className="text-muted-foreground">
+              Este número é de <strong className="text-foreground">{achadoPeloFone.name}</strong>
+              {achadoPeloFone.companyName ? ` · ${achadoPeloFone.companyName}` : ''}
+              {achadoPeloFone.unitName ? ` · ${achadoPeloFone.unitName}` : ''}
+            </span>
+            <button
+              type="button"
+              onClick={() => usarContatoAchado(achadoPeloFone)}
+              className="rounded border border-border px-2 py-0.5 text-foreground hover:bg-background"
+            >
+              Usar este contato
+            </button>
+          </div>
         )}
       </Field>
 
