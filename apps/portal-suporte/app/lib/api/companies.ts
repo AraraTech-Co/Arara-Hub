@@ -139,6 +139,39 @@ export interface HealthScore {
 
 // ─── API client ───────────────────────────────────────────────────────────────
 
+/** Pessoa cadastrada de um cliente, como `GET /admin/client-users` devolve. */
+export interface ClienteCadastrado {
+  id: string
+  name: string
+  whatsapp: string
+  email: string | null
+  roleTitle: string | null
+  companyId: string | null
+  companyName: string | null
+  unitId: string | null
+  unitName: string | null
+}
+
+/**
+ * Procura a pessoa pelo WhatsApp — o caminho inverso do seletor de empresa,
+ * que preenche o telefone depois de escolher o contato.
+ *
+ * O atendente costuma ter só o número: é com ele que o cliente aparece. Sem
+ * isto, era preciso adivinhar a empresa para então achar a pessoa
+ * (TCK000675 3.14). A rota compara os últimos 11 dígitos, então funciona com
+ * ou sem código do país.
+ */
+export async function procurarClientePorWhatsapp(telefone: string): Promise<ClienteCadastrado[]> {
+  const digitos = String(telefone || '').replace(/\D/g, '')
+  // Abaixo de 10 dígitos ainda não é número para procurar: pesquisar a cada
+  // tecla devolveria meia agenda.
+  if (digitos.length < 10) return []
+  const r = await api.get<{ data?: ClienteCadastrado[] }>(
+    `/api/admin/client-users?whatsapp=${encodeURIComponent(digitos)}`,
+  )
+  return r?.data ?? []
+}
+
 export const companiesApi = {
   /**
    * GET /api/admin/companies — lista o CADASTRO de empresas.
