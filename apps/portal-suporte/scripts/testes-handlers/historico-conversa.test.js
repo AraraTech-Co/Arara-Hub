@@ -11,11 +11,13 @@ const iso = (ms) => new Date(ms).toISOString()
 // mensagem vira suspeita. Datas fixas no teste mentiriam sobre isso.
 const AGORA = Date.now()
 
-function mundo({ criadaEm, mensagens = [] }) {
+function mundo({ criadaEm, mensagens = [], filtroFunciona = true }) {
   return {
     conv: { id: 'c1', created_at: criadaEm, unread_count: 0 },
     mensagens,
     eventos: [],
+    chamadas: [],
+    filtroFunciona,
   }
 }
 
@@ -38,7 +40,18 @@ function ctxDe(w, { quem = 'u1' } = {}) {
       Sessao: { findById: async () => null },
       Profile: { findById: async () => ({ id: 'u1', role: 'support' }) },
       WhatsAppConversation: modelo([w.conv]),
-      WhatsAppMessage: modelo(w.mensagens),
+      WhatsAppMessage: Object.assign(modelo(w.mensagens), {
+        // Registra como a rota pediu as mensagens, e simula o teto de 500 da
+        // plataforma quando o pedido vem sem filtro.
+        findMany: async (filtro) => {
+          w.chamadas.push(filtro && filtro.conversation_id ? 'filtro' : 'varredura')
+          if (filtro && filtro.conversation_id) {
+            if (!w.filtroFunciona) return []
+            return w.mensagens.filter((m) => m.conversation_id === filtro.conversation_id)
+          }
+          return w.mensagens.slice(-500)
+        },
+      }),
       WaConversationEvents: modelo(w.eventos),
     },
     reply: reply(),
@@ -95,6 +108,38 @@ const diags = (w) => w.eventos.filter((e) => e.kind === 'diag_historico')
   r = await handler(ctxDe(w))
   ok('abrir a conversa continua zerando o não lido', w.conv.unread_count === 0, w.conv)
   ok('  e devolvendo quantas estavam por ler', r.body.nao_lidas === 4, r.body.nao_lidas)
+
+  // ── O teto de 500 do findMany (causa raiz do "Sem mensagem") ──
+
+  // Conversa antiga com muita mensagem nova no banco: antes a varredura
+  // trazia só as 500 últimas do portal INTEIRO e a conversa parecia vazia.
+  const muitas = []
+  for (let i = 0; i < 900; i++) {
+    muitas.push({ id: 'outra' + i, conversation_id: 'c-outra', timestamp: iso(AGORA - (900 - i) * 1000), body: 'x', direction: 'inbound' })
+  }
+  muitas.push(msg('minha1', iso(AGORA - 40 * HORA)))
+  muitas.push(msg('minha2', iso(AGORA - 39 * HORA)))
+  w = mundo({ criadaEm: iso(AGORA - 41 * HORA), mensagens: muitas })
+  r = await handler(ctxDe(w))
+  ok('conversa antiga aparece mesmo com 900 mensagens de outras na frente',
+    r.body.data.length === 2, { qtd: r.body.data.length, via: hist(r).via })
+  ok('  pediu ao banco com filtro, não varreu tudo',
+    w.chamadas[0] === 'filtro' && !w.chamadas.includes('varredura'), w.chamadas)
+  ok('  e não acusa truncamento', hist(r).truncado === false, hist(r))
+
+  // Se o banco não aceitar o filtro, a varredura ainda responde.
+  w = mundo({ criadaEm: iso(AGORA - 3 * HORA), mensagens: [msg('m1', iso(AGORA - HORA))], filtroFunciona: false })
+  r = await handler(ctxDe(w))
+  ok('filtro não aceito: cai na varredura e ainda devolve a mensagem',
+    r.body.data.length === 1 && hist(r).via === 'varredura', { r: r.body.data.length, h: hist(r) })
+
+  // Varredura que bate no teto é sinalizada.
+  const cheio = []
+  for (let i = 0; i < 500; i++) cheio.push({ id: 'z' + i, conversation_id: 'c-outra', timestamp: iso(AGORA - i * 1000), body: 'x', direction: 'inbound' })
+  w = mundo({ criadaEm: iso(AGORA - 3 * HORA), mensagens: cheio, filtroFunciona: false })
+  r = await handler(ctxDe(w))
+  ok('varredura no teto de 500 é marcada como truncada', hist(r).truncado === true, hist(r))
+  ok('  e nenhuma mensagem de outra conversa vaza', r.body.data.length === 0, r.body.data.length)
 
   fim()
 })().catch((e) => { console.error('ERRO NO TESTE:', e); process.exit(1) })
