@@ -168,6 +168,7 @@ function normalizeTicket(t: RawKanbanTicket): KanbanTicket {
     blocked_reason: t.blocked_reason ?? t.blockedReason ?? null,
     pull_request_url: t.pull_request_url ?? t.pullRequestUrl ?? null,
     column_entered_at: t.column_entered_at ?? t.columnEnteredAt ?? null,
+    occurred_at: t.occurred_at ?? t.occurredAt ?? null,
     coAssignees: t.coAssignees,
     team: t.team,
     teamId: t.teamId,

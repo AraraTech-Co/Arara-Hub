@@ -133,6 +133,9 @@ export interface RawKanbanTicket {
   pullRequestUrl?: string | null
   column_entered_at?: string | null
   columnEnteredAt?: string | null
+  /** Início do atendimento — distinto de quando o chamado foi cadastrado. */
+  occurred_at?: string | null
+  occurredAt?: string | null
   coAssignees?: { userId: string }[]
   team?: { name: string } | null
   teamId?: string | null
@@ -181,6 +184,8 @@ export interface KanbanTicket {
   blocked_reason: string | null
   pull_request_url: string | null
   column_entered_at: string | null
+  /** Início do atendimento (TCK000675 3.2). `null` quando não informado. */
+  occurred_at: string | null
   // Presentes no payload inicial (page.tsx) e lidos direto por card/column/filter-bar,
   // mas não tocados por normalizeTicket — preservados via spread.
   coAssignees?: { userId: string }[]

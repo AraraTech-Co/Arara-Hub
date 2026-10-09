@@ -779,12 +779,24 @@ export const KanbanCard = memo(function KanbanCard({ ticket, isDragging = false,
                   </TooltipProvider>
                 )}
 
-                <span
-                  className="text-[10px] text-muted-foreground/70"
-                  title={`Aberto em ${formatDate(ticket.created_at)}`}
-                >
-                  {formatDateShort(ticket.created_at)}
-                </span>
+                {(() => {
+                  // Início do atendimento × cadastro do chamado (TCK000675 3.2).
+                  // O início já era gravado — pela conversa do WhatsApp e pelo
+                  // campo "Data do atendimento" do formulário —, mas o card só
+                  // mostrava "Aberto em". Quando o atendimento começou em outro
+                  // dia, é essa a data que importa para quem olha o quadro.
+                  const inicio = ticket.occurred_at
+                  const outroDia =
+                    !!inicio && formatDateShort(inicio) !== formatDateShort(ticket.created_at)
+                  const titulo = inicio
+                    ? `Atendimento iniciado em ${formatDate(inicio)} · Aberto em ${formatDate(ticket.created_at)}`
+                    : `Aberto em ${formatDate(ticket.created_at)}`
+                  return (
+                    <span className="text-[10px] text-muted-foreground/70" title={titulo}>
+                      {outroDia ? `Atend. ${formatDateShort(inicio)}` : formatDateShort(ticket.created_at)}
+                    </span>
+                  )
+                })()}
 
                 {(() => {
                   const duration = formatColumnDuration(ticket.column_entered_at)
