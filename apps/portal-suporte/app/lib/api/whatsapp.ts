@@ -94,6 +94,13 @@ export interface WAInboxConversation {
   company: WAInboxRef | null
   contact: WAInboxRef | null
   last_message: WAInboxLastMessage | null
+  /**
+   * A conversa tem mensagens, mas elas ficaram fora do alcance da leitura
+   * (09/10/2026: a plataforma devolve no máximo 500 registros por consulta e
+   * não pagina). Diferente de `last_message: null` numa conversa nova, que
+   * está mesmo vazia.
+   */
+  previa_indisponivel?: boolean
   phase: WAPhase
   priority: WAPriority
   assigned_to: WAAssignedRef | null
