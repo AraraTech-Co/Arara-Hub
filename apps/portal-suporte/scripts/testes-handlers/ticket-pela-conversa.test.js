@@ -117,5 +117,52 @@ const acoes = (w) => w.logs.map((l) => l.action)
   ok('conversa que já tem chamado: 409 e nenhum evento gravado',
     r.status === 409 && w.logs.length === 0, { r, logs: w.logs })
 
+  // ── Entrega 4 (TCK000675 3.2 e 2.5) ──
+
+  // Início do atendimento: a primeira mensagem do cliente, não o cadastro.
+  w = mundo()
+  await handler(ctxDe(w))
+  ok('início do atendimento = primeira mensagem recebida (3.2)',
+    w.tickets[0].occurred_at === '2026-10-06T13:00:00Z', w.tickets[0].occurred_at)
+
+  // Conversa reaberta: o início conta a partir da última reabertura, não do
+  // atendimento anterior.
+  w = mundo()
+  w.mensagens = [
+    { id: 'velha', conversation_id: 'c1', direction: 'inbound', created_at: '2026-10-01T09:00:00Z' },
+    { id: 'nova', conversation_id: 'c1', direction: 'inbound', created_at: '2026-10-06T15:00:00Z' },
+  ]
+  w.eventosConversa.push({ id: 'e1', conversation_id: 'c1', type: 'reopened', created_at: '2026-10-06T14:59:00Z' })
+  await handler(ctxDe(w))
+  ok('conversa reaberta: início é a primeira mensagem DEPOIS da reabertura',
+    w.tickets[0].occurred_at === '2026-10-06T15:00:00Z', w.tickets[0].occurred_at)
+
+  // Reabertura de OUTRA conversa não interfere.
+  w = mundo()
+  w.eventosConversa.push({ id: 'e2', conversation_id: 'outra', type: 'reopened', created_at: '2026-10-09T00:00:00Z' })
+  await handler(ctxDe(w))
+  ok('reabertura de outra conversa não mexe neste início',
+    w.tickets[0].occurred_at === '2026-10-06T13:00:00Z', w.tickets[0].occurred_at)
+
+  // Grupo: o código de acompanhamento é pessoal e NÃO pode ir para o grupo.
+  w = mundo()
+  w.conv.remote_jid = '120363012345678901@g.us'
+  w.conv.contact_name = 'Suporte Loja Centro'
+  w.mensagens[0].sender_name = 'Maria'
+  r = await handler(ctxDe(w))
+  aviso = w.logs.find((l) => l.action === 'acompanhamento_aviso')
+  ok('grupo: o chamado é criado', r.status === 201, r)
+  ok('grupo: NADA é enviado ao provedor — o código não vai para o grupo', w.envios.length === 0, w.envios)
+  ok('grupo: a etapa registra o motivo', aviso && aviso.details.desfecho.etapa === 'grupo', aviso)
+  ok('grupo: o solicitante é o grupo, com quem iniciou como complemento (2.5)',
+    w.tickets[0].requester === 'Suporte Loja Centro — Maria', w.tickets[0].requester)
+
+  // Conversa individual: o solicitante continua sendo o contato, sem sufixo.
+  w = mundo()
+  w.mensagens[0].sender_name = 'Outro Nome'
+  await handler(ctxDe(w))
+  ok('conversa individual: solicitante continua sendo o contato',
+    w.tickets[0].requester === 'Contato de Teste', w.tickets[0].requester)
+
   fim()
 })().catch((e) => { console.error('ERRO NO TESTE:', e); process.exit(1) })

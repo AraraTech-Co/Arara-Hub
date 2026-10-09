@@ -76,6 +76,7 @@ export default function KanbanPage() {
           is_blocked: Boolean(row.is_blocked),
           blocked_reason: row.blocked_reason ?? null,
           column_entered_at: row.column_entered_at ?? null,
+          occurred_at: row.occurred_at ?? null,
           pull_request_url: row.pull_request_url ?? null,
           // Vinha fixo em null: com isso os filtros Vencido / Crítico / No
           // prazo e o botão Escalado nunca casavam com nada, porque o campo
