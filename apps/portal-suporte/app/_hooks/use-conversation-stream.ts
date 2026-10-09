@@ -97,10 +97,22 @@ export function useConversationStream(
   /** A última tentativa de buscar falhou. Diferente de não haver mensagem. */
   const [falhou, setFalhou] = useState(false)
   const primeira = useRef(true)
+  // ── Isolamento entre conversas (TCK000675 3.12, 09/10/2026) ──────────────
+  // Qual conversa está aberta AGORA. Toda resposta é marcada com a conversa
+  // que pediu, e só entra se ainda for essa.
+  //
+  // O defeito: com uma busca da conversa A em andamento, o atendente abre a B;
+  // a tela limpa, a resposta de A chega atrasada e é MESCLADA na lista que já
+  // é da B. Como `merge` só acrescenta e nunca remove, as mensagens de A
+  // ficavam na B até alguém recarregar a página — é o relato de 23/09
+  // ("conversa exibindo mensagens de outro cliente") e o texto do PDF de
+  // 26/09 ("necessário atualizar a página para corrigir a visualização").
+  const aberta = useRef<string | null>(conversationId ?? null)
 
   // Trocar de conversa zera a thread antes da primeira consulta; sem isso as
   // mensagens do contato anterior ficam visíveis por um instante.
   useEffect(() => {
+    aberta.current = conversationId ?? null
     setMessages([])
     setLoading(Boolean(conversationId))
     setNaoLidasAoAbrir(0)
@@ -110,9 +122,13 @@ export function useConversationStream(
   }, [conversationId])
 
   const carregar = useCallback(async () => {
-    if (!conversationId) return
+    const alvo = conversationId
+    if (!alvo) return
     try {
-      const res = await whatsappApi.getMessages(conversationId)
+      const res = await whatsappApi.getMessages(alvo)
+      // Resposta de uma conversa que não está mais aberta: descarta tudo —
+      // mensagens, não lidas, histórico. Nada dela pode tocar a conversa atual.
+      if (aberta.current !== alvo) return
       const lista = (res.data ?? []).map(fromLegacy).sort(byTimestampAsc)
       if (primeira.current) {
         primeira.current = false
@@ -126,9 +142,11 @@ export function useConversationStream(
       // dizia "Nenhuma mensagem nesta conversa", que é outra coisa. Quem
       // atende precisa saber a diferença entre não ter mensagem e não ter
       // conseguido buscar (TCK000638).
-      setFalhou(true)
+      if (aberta.current === alvo) setFalhou(true)
     } finally {
-      setLoading(false)
+      // A falha ou o fim do carregamento de outra conversa também não
+      // podem mexer nesta.
+      if (aberta.current === alvo) setLoading(false)
     }
   }, [conversationId])
 
