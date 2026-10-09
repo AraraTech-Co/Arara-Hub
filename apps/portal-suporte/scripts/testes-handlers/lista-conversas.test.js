@@ -15,12 +15,12 @@ function ctxDe({ conversas, mensagens, filtroStatusFunciona = true, varredura = 
   const Conv = {
     findMany: async (arg) => {
       const chaves = Object.keys(arg || {})
+      consultas.push(arg || {})
       if (chaves.length === 0) {
         // A varredura é truncada pelo teto, como em produção.
         return (varredura || conversas).slice(0, TETO)
       }
       if (!filtroStatusFunciona) return []
-      consultas.push(arg)
       return conversas.filter((c) => c.status === arg.status).slice(0, TETO)
     },
     update: async () => {},
@@ -72,6 +72,14 @@ function ctxDe({ conversas, mensagens, filtroStatusFunciona = true, varredura = 
   ok('aberta além do teto aparece na lista', ids.includes('c550'), {
     total: ids.length, achou: ids.includes('c550'),
   })
+
+  // A correção não pode custar nada enquanto a tabela couber: partir por status
+  // em toda leitura trocaria 1 consulta por várias, sem necessidade.
+  const cabe = []
+  await handler(ctxDe({ conversas: muitas.slice(0, 120), mensagens: [], consultas: cabe }))
+  ok('tabela que cabe no teto: UMA consulta de conversas',
+    cabe.filter((a) => !Object.keys(a).length || 'status' in a).length === 1,
+    cabe.filter((a) => !Object.keys(a).length || 'status' in a).length)
 
   // ── 2. filtro por status quebrado não pode esvaziar a lista ───────────────
   r = await handler(ctxDe({ conversas: muitas, mensagens: [], filtroStatusFunciona: false }))

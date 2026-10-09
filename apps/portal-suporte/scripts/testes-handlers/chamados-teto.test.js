@@ -44,8 +44,8 @@ function models(tudo, { filtroFunciona = true, consultas = [] } = {}) {
   const Ticket = {
     findMany: async (arg) => {
       const chaves = Object.keys(arg || {})
+      consultas.push(arg || {})
       if (!chaves.length) return tudo.slice(0, TETO)
-      consultas.push(arg)
       if (!filtroFunciona) return []
       return tudo.filter((t) => chaves.every((k) => String(t[k] ?? '') === String(arg[k]))).slice(0, TETO)
     },
@@ -91,6 +91,16 @@ const corpo = (r) => (r.body && (r.body.data !== undefined ? r.body.data : r.bod
   const consultas = []
   r = await lista(ctxDe(tudo, { query: { status: 'novos_chamados' }, opts: { consultas } }))
   ok('lista: query com filtro faz uma consulta só', consultas.length === 1, consultas)
+  // O que motivou a terceira passada: partir por status em toda leitura
+  // trocaria 1 consulta por até 20, e a lista responde em ~550ms hoje. A
+  // varredura já diz se precisou — devolve exatamente 500 quando truncou.
+  const cabe = []
+  const pequena = tudo.slice(0, 120)
+  await lista(ctxDe(pequena, { opts: { consultas: cabe } }))
+  ok('lista: tabela que cabe no teto faz UMA consulta', cabe.length === 1, cabe.length)
+  const estourou = []
+  await lista(ctxDe(tudo, { opts: { consultas: estourou } }))
+  ok('lista: tabela estourada parte por status', estourou.length > 1, estourou.length)
   ok('lista: e devolve os 14', corpo(r).length === 14, corpo(r).length)
 
   // ── o quadro ──────────────────────────────────────────────────────────────
