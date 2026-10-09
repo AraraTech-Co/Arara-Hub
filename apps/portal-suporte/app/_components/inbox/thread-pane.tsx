@@ -33,6 +33,12 @@ interface ThreadPaneProps {
   loading: boolean
   /** Quantas estavam por ler quando a conversa foi aberta — desenha o divisor. */
   naoLidas?: number
+  /** A última busca de mensagens falhou — não é conversa vazia. */
+  falhou?: boolean
+  /** O que o portal tem desta conversa — ver use-conversation-stream. */
+  historico?: { total: number; desde: string | null; lacuna: boolean } | null
+  /** Tentar buscar de novo depois de uma falha. */
+  onRefresh?: () => void
   agentFirstName: string | null
   /** Id do atendente logado (de /api/auth/me). */
   meId: string | null
@@ -53,6 +59,9 @@ export function ThreadPane({
   messages,
   loading,
   naoLidas = 0,
+  falhou = false,
+  historico = null,
+  onRefresh,
   onSent,
   agentFirstName,
   meId,
@@ -205,6 +214,9 @@ export function ThreadPane({
           <MessageList
             messages={messages}
             loading={loading}
+            falhou={falhou}
+            historico={historico}
+            onTentarDeNovo={onRefresh}
             naoLidas={naoLidas}
             meId={meId}
             onResponder={(m) => {

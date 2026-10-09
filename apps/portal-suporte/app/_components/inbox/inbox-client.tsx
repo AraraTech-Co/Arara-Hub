@@ -51,7 +51,7 @@ export function InboxClient() {
   const [metrics, setMetrics] = useState<WAMetrics | null>(null)
 
   const { conversations, loading: listLoading, status: streamStatus } = useInboxStream()
-  const { messages, loading: threadLoading, refresh: refreshThread, naoLidasAoAbrir } =
+  const { messages, loading: threadLoading, refresh: refreshThread, naoLidasAoAbrir, historico: historicoThread, falhou: threadFalhou } =
     useConversationStream(selectedId)
 
   // Link direto para uma conversa (/inbox?c=<id>) — é o que faz o "Ver conversa"
@@ -279,6 +279,9 @@ export function InboxClient() {
         >
           <ThreadPane
             naoLidas={naoLidasAoAbrir}
+            falhou={threadFalhou}
+            historico={historicoThread}
+            onRefresh={refreshThread}
             onSent={refreshThread}
             conversation={selectedConversation}
             messages={messages}

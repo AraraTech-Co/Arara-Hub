@@ -326,9 +326,19 @@ export const whatsappApi = {
   /** GET /api/whatsapp — listar conversas */
   listConversations: () => api.get<{ data: WAConversation[] }>('/api/whatsapp'),
 
-  /** GET /api/whatsapp/[id]/messages — mensagens de uma conversa */
+  /**
+   * GET /api/whatsapp/[id]/messages — mensagens de uma conversa.
+   *
+   * `historico` diz o que o portal TEM: desde quando, e se há lacuna entre a
+   * criação da conversa e a primeira mensagem guardada. Serve para a tela não
+   * chamar de "conversa vazia" um histórico que não chegou (TCK000638).
+   */
   getMessages: (id: string) =>
-    api.get<{ data: WAMessage[]; nao_lidas?: number }>(`/api/whatsapp/${id}/messages`),
+    api.get<{
+      data: WAMessage[]
+      nao_lidas?: number
+      historico?: { total: number; desde: string | null; conversa_desde: string | null; lacuna: boolean }
+    }>(`/api/whatsapp/${id}/messages`),
 
   /** GET /api/whatsapp/dispositivos — aparelhos que já responderam pelo número (admin) */
   dispositivos: () =>
