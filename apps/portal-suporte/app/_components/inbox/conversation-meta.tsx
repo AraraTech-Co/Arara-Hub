@@ -41,7 +41,9 @@ export function displayName(c: WAInboxConversation): string {
 }
 
 export function previewText(c: WAInboxConversation): string {
-  if (!c.last_message) return 'Sem mensagens'
+  // Sem prévia pode ser conversa vazia ou histórico fora do alcance da
+  // leitura — o backend distingue, e a tela não afirma o que não sabe.
+  if (!c.last_message) return c.previa_indisponivel ? 'Prévia indisponível' : 'Sem mensagens'
   if (c.last_message.body) {
     // Tira o autor embutido (assinatura do atendente ou nome do remetente em
     // grupo) — no preview ele só rouba espaço do que interessa.
