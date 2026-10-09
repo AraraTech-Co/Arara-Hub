@@ -64,9 +64,23 @@ interface UseConversationStreamResult {
   status: StreamStatus
   /** Atualiza na hora — usado logo após enviar uma mensagem. */
   refresh: () => Promise<void>
+  /** Quantas estavam por ler quando a conversa foi aberta. */
+  naoLidasAoAbrir: number
+  /** O que o portal tem desta conversa, ou `null` enquanto não souber. */
+  historico: Historico | null
+  /** A última busca falhou — não confundir com conversa sem mensagem. */
+  falhou: boolean
 }
 
 const INTERVALO_MS = 5_000
+
+export type Historico = {
+  total: number
+  desde: string | null
+  conversa_desde: string | null
+  /** A conversa é bem anterior à primeira mensagem guardada: falta histórico. */
+  lacuna: boolean
+}
 
 export function useConversationStream(
   conversationId: string | null,
@@ -78,6 +92,10 @@ export function useConversationStream(
   // número — a partir dela o contador já é zero, e o divisor tem que ficar
   // onde está enquanto a conversa estiver aberta.
   const [naoLidasAoAbrir, setNaoLidasAoAbrir] = useState(0)
+  /** O que o portal tem desta conversa — ver getMessages. */
+  const [historico, setHistorico] = useState<Historico | null>(null)
+  /** A última tentativa de buscar falhou. Diferente de não haver mensagem. */
+  const [falhou, setFalhou] = useState(false)
   const primeira = useRef(true)
 
   // Trocar de conversa zera a thread antes da primeira consulta; sem isso as
@@ -86,6 +104,8 @@ export function useConversationStream(
     setMessages([])
     setLoading(Boolean(conversationId))
     setNaoLidasAoAbrir(0)
+    setHistorico(null)
+    setFalhou(false)
     primeira.current = true
   }, [conversationId])
 
@@ -99,6 +119,14 @@ export function useConversationStream(
         setNaoLidasAoAbrir(Number(res.nao_lidas ?? 0) || 0)
       }
       setMessages((prev) => merge(prev, lista))
+      setHistorico(res.historico ?? null)
+      setFalhou(false)
+    } catch {
+      // Sem isto a falha virava silêncio: `messages` ficava vazio e a tela
+      // dizia "Nenhuma mensagem nesta conversa", que é outra coisa. Quem
+      // atende precisa saber a diferença entre não ter mensagem e não ter
+      // conseguido buscar (TCK000638).
+      setFalhou(true)
     } finally {
       setLoading(false)
     }
@@ -109,5 +137,5 @@ export function useConversationStream(
     enabled: Boolean(conversationId),
   })
 
-  return { messages, loading, status, refresh: carregar, naoLidasAoAbrir }
+  return { messages, loading, status, refresh: carregar, naoLidasAoAbrir, historico, falhou }
 }

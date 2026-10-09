@@ -28,6 +28,17 @@ function messageTime(iso: string): string {
 interface MessageListProps {
   messages: WAThreadMessage[]
   loading: boolean
+  /**
+   * A última busca falhou. Separado de "sem mensagem" de propósito: até
+   * 09/10/2026 os dois desenhavam a mesma frase, e quem atendia não tinha
+   * como saber se a conversa estava vazia ou se o portal não conseguiu
+   * buscar (TCK000638).
+   */
+  falhou?: boolean
+  /** O que o portal tem desta conversa — ver use-conversation-stream. */
+  historico?: { total: number; desde: string | null; lacuna: boolean } | null
+  /** Tentar buscar de novo, quando falhou. */
+  onTentarDeNovo?: () => void
   /** Quantas estavam por ler ao abrir: o divisor entra antes dessas. */
   naoLidas?: number
   /** Id do atendente logado — marca a reação que é sua. */
@@ -47,7 +58,10 @@ function autorDe(m: WAThreadMessage): string | null {
   return author ?? m.sender_name ?? null
 }
 
-export function MessageList({ messages, loading, naoLidas = 0, meId = null, onResponder, onMudou }: MessageListProps) {
+export function MessageList({
+  messages, loading, naoLidas = 0, meId = null, onResponder, onMudou,
+  falhou = false, historico = null, onTentarDeNovo,
+}: MessageListProps) {
   // Onde entra o divisor: antes da N-ésima mensagem RECEBIDA contando do fim.
   // Só mensagem do cliente conta como "por ler" — o que nós mandamos já foi
   // lido por quem escreveu.
@@ -71,13 +85,46 @@ export function MessageList({ messages, loading, naoLidas = 0, meId = null, onRe
     <div className="flex-1 overflow-y-auto p-4">
       {loading && messages.length === 0 ? (
         <p className="text-sm text-muted-foreground">Carregando mensagens…</p>
+      ) : falhou && messages.length === 0 ? (
+        <div className="space-y-2">
+          <p className="text-sm text-foreground">Não foi possível carregar as mensagens.</p>
+          <p className="text-sm text-muted-foreground">
+            A conversa pode ter histórico — isto é uma falha ao buscar, não uma conversa vazia.
+          </p>
+          {onTentarDeNovo && (
+            <button
+              type="button"
+              onClick={onTentarDeNovo}
+              className="rounded-md border border-border px-2.5 py-1 text-xs text-foreground hover:bg-muted"
+            >
+              Tentar de novo
+            </button>
+          )}
+        </div>
       ) : messages.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Nenhuma mensagem nesta conversa.</p>
+        <p className="text-sm text-muted-foreground">
+          {historico?.lacuna
+            ? 'O portal não recebeu mensagens desta conversa. Se houver histórico no WhatsApp, ele não chegou aqui.'
+            : 'Nenhuma mensagem nesta conversa.'}
+        </p>
       ) : (
         // Mensagens seguidas da mesma pessoa formam um bloco: o nome aparece uma
         // vez e o respiro entre blocos é maior que dentro deles. Repetir "Erika
         // Baisi" a cada linha vira ruído e some com a informação de quem falou.
         messages.map((m, i) => {
+          // Lacuna: a conversa é bem anterior à mensagem mais antiga que o
+          // portal tem. Dizer desde quando é mais honesto que deixar o
+          // atendente achar que viu tudo.
+          const avisoLacuna =
+            i === 0 && historico?.lacuna && historico.desde ? (
+              <p className="mb-3 rounded-md bg-muted px-3 py-2 text-xs text-muted-foreground">
+                O portal tem o histórico desta conversa desde{' '}
+                {new Date(historico.desde).toLocaleString('pt-BR', {
+                  day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit',
+                })}
+                . Mensagens anteriores podem existir no WhatsApp e não aparecem aqui.
+              </p>
+            ) : null
           const anterior = i > 0 ? messages[i - 1] : null
           const mesmoBloco =
             !!anterior &&
@@ -85,6 +132,7 @@ export function MessageList({ messages, loading, naoLidas = 0, meId = null, onRe
             autorDe(anterior) === autorDe(m)
           return (
             <div key={m.id}>
+              {avisoLacuna}
               {i === iDivisor && (
                 <div className="my-4 flex items-center gap-3" role="separator">
                   <span className="h-px flex-1 bg-primary/35" />
