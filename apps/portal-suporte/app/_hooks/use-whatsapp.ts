@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { whatsappApi, type WAConversation, type WAMessage } from '@/lib/api/whatsapp'
 import { ApiError } from '@/lib/api/client'
 
@@ -53,25 +53,34 @@ export function useWhatsappMessages(conversationId: string | null): UseWhatsappM
   const [messages, setMessages] = useState<WAMessage[]>([])
   const [loading, setLoading]   = useState(false)
   const [error, setError]       = useState<string | null>(null)
+  // Mesma proteção de use-conversation-stream (TCK000675 3.12): resposta de
+  // uma conversa que não está mais aberta não entra. Aqui o estrago era maior
+  // — `setMessages` SUBSTITUI a lista, então uma resposta atrasada da conversa
+  // A trocava todas as mensagens da B pelas de A.
+  const aberta = useRef<string | null>(conversationId)
 
   const load = useCallback(async () => {
-    if (!conversationId) return
+    const alvo = conversationId
+    if (!alvo) return
     setLoading(true)
     try {
-      const result = await whatsappApi.getMessages(conversationId)
+      const result = await whatsappApi.getMessages(alvo)
+      if (aberta.current !== alvo) return
       setMessages(result.data ?? [])
       setError(null)
     } catch (err) {
+      if (aberta.current !== alvo) return
       setError(err instanceof ApiError ? err.message : 'Erro ao carregar mensagens')
     } finally {
-      setLoading(false)
+      if (aberta.current === alvo) setLoading(false)
     }
   }, [conversationId])
 
   useEffect(() => {
+    aberta.current = conversationId
     setMessages([])
     load()
-  }, [load])
+  }, [load, conversationId])
 
   const sendMessage = useCallback(async (content: string): Promise<WAMessage | null> => {
     if (!conversationId) return null
