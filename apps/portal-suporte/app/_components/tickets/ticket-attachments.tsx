@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { AttachmentPreviewModal } from "./attachment-preview-modal";
 import { MiniaturaAnexo, arquivoAlcancavel, AVISO_ARQUIVO_SUMIDO } from "./attachment-media";
+import { anexoLegadoSemConteudo } from "@/lib/anexo-url";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -249,7 +250,9 @@ export function TicketAttachments({
               const isImage = att.fileType.startsWith("image/");
               const isVideo = att.fileType.startsWith("video/");
               const hasThumb = isImage || isVideo;
-              const sumiu = semArquivo.has(att.id);
+              // Legado nunca tem conteúdo: não depende da checagem de rede, que
+              // pode falhar e deixar o botão de baixar ativo (TCK000675 3.5).
+              const sumiu = semArquivo.has(att.id) || anexoLegadoSemConteudo(att.fileUrl);
               return (
                 <li
                   key={att.id}

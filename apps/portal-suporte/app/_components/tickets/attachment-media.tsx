@@ -121,6 +121,9 @@ export async function arquivoAlcancavel(
   fileType: string,
   opts?: { attachmentId?: string | null },
 ): Promise<boolean> {
+  // Legado: sem URL que abra e sem conteúdo no servidor. Não custa uma ida à
+  // rede para descobrir o que já se sabe.
+  if (anexoLegadoSemConteudo(url)) return false
   const resolved = urlExibicaoAnexo({ id: opts?.attachmentId, fileUrl: url })
   if (!resolved) return false
   if (resolved.startsWith('data:')) return true
