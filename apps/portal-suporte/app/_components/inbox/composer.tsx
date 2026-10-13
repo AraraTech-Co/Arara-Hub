@@ -7,6 +7,8 @@ import { Textarea } from '@/components/ui/textarea'
 import { whatsappApi, type WAQuickReply } from '@/lib/api/whatsapp'
 import { ANEXO_ACCEPT, ANEXO_MAX_MB, lerDataUri, motivoRecusaAnexo } from '@/lib/anexos'
 import { Citacao } from './message-actions'
+import { TrechoFormatado } from '@/components/inbox/texto-formatado'
+import { formatarWhatsApp, textoPuro } from '@/lib/wa-formato'
 
 interface ComposerProps {
   conversationId: string
@@ -16,10 +18,23 @@ interface ComposerProps {
   /** Chamado após o envio: atualiza a thread sem esperar o próximo ciclo. */
   onSent?: () => void
   agentFirstName: string | null
+  /**
+   * Rascunho guardado pelo PAI, por conversa (Fase 1, A1).
+   *
+   * Sem isto, fechar o painel com `Esc` perdia o que estava escrito — e a
+   * pessoa tinha acabado de apertar uma tecla que ela espera que só feche.
+   * O rascunho continua sendo limpo ao trocar de conversa; o que ele atravessa
+   * é fechar e reabrir a MESMA conversa.
+   */
+  rascunho?: string
+  onRascunho?: (texto: string) => void
 }
 
-export function Composer({ conversationId, agentFirstName, onSent, respondendoA, onCancelarResposta }: ComposerProps) {
-  const [draft, setDraft] = useState('')
+export function Composer({
+  conversationId, agentFirstName, onSent, respondendoA, onCancelarResposta,
+  rascunho, onRascunho,
+}: ComposerProps) {
+  const [draft, setDraft] = useState(rascunho ?? '')
   const [sending, setSending] = useState(false)
   const [erro, setErro] = useState('')
   const [quickReplies, setQuickReplies] = useState<WAQuickReply[] | null>(null)
@@ -29,9 +44,16 @@ export function Composer({ conversationId, agentFirstName, onSent, respondendoA,
   const arquivoRef = useRef<HTMLInputElement>(null)
   const [arquivo, setArquivo] = useState<File | null>(null)
 
-  // Limpa o rascunho ao trocar de conversa — senão o texto vaza para outro cliente.
+  // A prévia só vale a pena quando há marcação: comparar o texto puro com o
+  // original diz isso sem uma segunda regra para manter em sincronia com o
+  // parser.
+  const temFormatacao = draft.length > 0 && textoPuro(formatarWhatsApp(draft)) !== draft
+
+  // Troca de conversa: pega o rascunho DAQUELA conversa (vazio, se não houver).
+  // Continua não vazando texto entre clientes — o que muda é que voltar para a
+  // conversa anterior devolve o que estava escrito nela.
   useEffect(() => {
-    setDraft('')
+    setDraft(rascunho ?? '')
     setPickerOpen(false)
     setArquivo(null)
     onCancelarResposta?.()
@@ -116,6 +138,7 @@ export function Composer({ conversationId, agentFirstName, onSent, respondendoA,
         | undefined
       const dados = r?.data ?? (r as { entregue?: boolean; erro_entrega?: string } | undefined)
       setDraft('')
+      onRascunho?.('')
       setArquivo(null)
       onCancelarResposta?.()
       if (arquivoRef.current) arquivoRef.current.value = ''
@@ -166,6 +189,7 @@ export function Composer({ conversationId, agentFirstName, onSent, respondendoA,
                   type="button"
                   onClick={() => {
                     setDraft(qr.body)
+                    onRascunho?.(qr.body)
                     setPickerOpen(false)
                   }}
                   className="flex w-full flex-col items-start gap-0.5 px-3 py-2 text-left hover:bg-muted"
@@ -263,6 +287,7 @@ export function Composer({ conversationId, agentFirstName, onSent, respondendoA,
           value={draft}
           onChange={(e) => {
             setDraft(e.target.value)
+            onRascunho?.(e.target.value)
             setPickerOpen(e.target.value.startsWith('/'))
           }}
           onKeyDown={handleKeyDown}
@@ -275,6 +300,15 @@ export function Composer({ conversationId, agentFirstName, onSent, respondendoA,
           // cursor onde estava.
           readOnly={sending}
         />
+        {/* Prévia da formatação (Fase 1, A3): só aparece quando o texto TEM
+            marcação, senão seria uma segunda cópia da mensagem ocupando a tela
+            a cada tecla. Mostra como o cliente vai ver. */}
+        {temFormatacao && (
+          <p className="mt-1 whitespace-pre-wrap break-words rounded-md bg-muted/50 px-2 py-1 text-xs text-muted-foreground">
+            <span className="mr-1 font-medium uppercase tracking-wide">Prévia:</span>
+            <TrechoFormatado texto={draft} />
+          </p>
+        )}
         <Button
           type="button"
           onClick={() => void handleSend()}

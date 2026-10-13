@@ -1,6 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { BuscaNaConversa } from './busca-na-conversa'
+import { ATALHOS_DA_INBOX } from '@/hooks/use-atalhos-inbox'
 import { rotuloDoContato } from '@/lib/wa-contato'
 import { Info, StickyNote } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -47,6 +49,15 @@ interface ThreadPaneProps {
   /** Alterna o painel de contato onde ele não cabe como 3ª coluna. */
   onToggleCrm?: () => void
   crmOpen?: boolean
+  /** Rascunho desta conversa, guardado pelo pai (Fase 1, A1). */
+  rascunho?: string
+  onRascunho?: (texto: string) => void
+  /**
+   * Contador que sobe quando o atalho Ctrl+F pede a busca (Fase 1, A2).
+   * É um número, e não um booleano, porque pedir duas vezes seguidas tem de
+   * reabrir — com booleano o segundo pedido não mudaria nada.
+   */
+  pedidoDeBusca?: number
 }
 
 /**
@@ -67,7 +78,25 @@ export function ThreadPane({
   meId,
   onToggleCrm,
   crmOpen,
+  rascunho = '',
+  onRascunho,
+  pedidoDeBusca = 0,
 }: ThreadPaneProps) {
+  // ── Busca na conversa (Fase 1, A2) ─────────────────────────────────────
+  const [ajudaAberta, setAjudaAberta] = useState(false)
+  const [buscaAberta, setBuscaAberta] = useState(false)
+  const [destacada, setDestacada] = useState<string | null>(null)
+  // O atalho Ctrl+F sobe um contador; abrir já com a busca visível refoca o
+  // campo, que é o que quem aperta espera.
+  useEffect(() => {
+    if (pedidoDeBusca > 0) setBuscaAberta(true)
+  }, [pedidoDeBusca])
+  // Trocar de conversa fecha a busca: o termo era daquela conversa.
+  useEffect(() => {
+    setBuscaAberta(false)
+    setDestacada(null)
+  }, [conversation?.id])
+
   // Mensagem citada pelo menu → composer. Some ao trocar de conversa e ao enviar.
   const [respondendoA, setRespondendoA] = useState<
     { id: string; message_id?: string | null; autor: string | null; corpo: string } | null
@@ -174,7 +203,7 @@ export function ThreadPane({
           })}
         </div>
 
-        <div className="mt-3 flex gap-4 border-b border-border" role="tablist" aria-label="Painel">
+        <div className="mt-3 flex items-center gap-4 border-b border-border" role="tablist" aria-label="Painel">
           <button
             type="button"
             role="tab"
@@ -204,6 +233,43 @@ export function ThreadPane({
             <StickyNote className="h-3.5 w-3.5" />
             Notas internas
           </button>
+          {/* Ajuda dos atalhos (Fase 1, A2). A lista vem do MESMO mapa que o
+              hook usa, para não existir uma segunda verdade sobre o que cada
+              tecla faz. */}
+          <div className="relative ml-auto">
+            <button
+              type="button"
+              aria-label="Atalhos de teclado"
+              onClick={() => setAjudaAberta((v) => !v)}
+              className="rounded-full border border-border px-2 py-0.5 text-[11px] text-muted-foreground hover:bg-muted hover:text-foreground"
+            >
+              ?
+            </button>
+            {ajudaAberta && (
+              <div
+                role="dialog"
+                aria-label="Lista de atalhos"
+                className="absolute right-0 top-7 z-30 w-72 rounded-lg border border-border bg-background p-3 shadow-lg"
+              >
+                <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  Atalhos
+                </p>
+                <ul className="space-y-1">
+                  {ATALHOS_DA_INBOX.map((a) => (
+                    <li key={a.teclas} className="flex items-start gap-2 text-xs">
+                      <kbd className="shrink-0 rounded border border-border bg-muted px-1 font-mono text-[10px]">
+                        {a.teclas}
+                      </kbd>
+                      <span className={a.disponivel ? '' : 'text-muted-foreground'}>{a.o_que_faz}</span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-2 text-[11px] italic text-muted-foreground">
+                  Nenhum atalho dispara enquanto você está escrevendo num campo.
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -211,7 +277,18 @@ export function ThreadPane({
         <NotesPanel conversationId={conversation.id} />
       ) : (
         <>
+          <BuscaNaConversa
+            aberta={buscaAberta}
+            mensagens={messages.map((m) => ({ id: m.id, texto: m.body ?? null }))}
+            onFechar={() => { setBuscaAberta(false); setDestacada(null) }}
+            onIr={setDestacada}
+            // A thread carrega sob demanda: quando o portal sabe que a conversa
+            // tem mais mensagens do que as que estão na tela, a busca diz isso
+            // em vez de deixar concluir que a mensagem não existe.
+            podeHaverMais={!!historico && historico.total > messages.length}
+          />
           <MessageList
+            destacada={destacada}
             messages={messages}
             loading={loading}
             falhou={falhou}
@@ -236,6 +313,8 @@ export function ThreadPane({
             onSent={onSent}
             respondendoA={respondendoA}
             onCancelarResposta={() => setRespondendoA(null)}
+            rascunho={rascunho}
+            onRascunho={onRascunho}
           />
         </>
       )}
