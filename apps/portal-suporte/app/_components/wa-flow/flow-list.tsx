@@ -116,7 +116,10 @@ export function FlowList({ canEdit }: { canEdit: boolean }) {
     )
   }
 
-  // O que está de fato no ar: o 1º habilitado e publicado (a lista já vem por prioridade).
+  // O que está de fato no ar: o 1º habilitado e publicado. A lista vem
+  // ordenada por prioridade pelo servidor desde a entrega 1 do Fluxo v2 — antes
+  // vinha na ordem do banco, e esta linha podia apontar um fluxo enquanto o
+  // motor rodava outro.
   const noArId = flows.find((f) => f.enabled && f.published)?.id ?? null
 
   return (

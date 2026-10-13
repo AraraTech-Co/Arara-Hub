@@ -305,16 +305,6 @@ function FlowEditorInner({ flowId, canEdit }: { flowId: string; canEdit: boolean
         </span>
       </div>
 
-      {/* "Publicar" hoje só promove o rascunho e soma 1 na versão: nenhum
-          controller do módulo lê o grafo, e o webhook de entrada não consulta
-          fluxo nenhum. Sem este aviso, quem monta o fluxo acredita que ele
-          passou a atender. Sai quando existir o motor de execução. */}
-      <p className="mb-3 rounded-lg border border-sem-warning-bd bg-sem-warning px-3 py-2 text-xs text-sem-warning-fg">
-        <span className="font-semibold">Este fluxo ainda não é executado.</span>{' '}
-        O desenho fica salvo e versionado, mas não há motor que o rode nas conversas —
-        publicar registra a versão, não coloca o fluxo no ar.
-      </p>
-
       <div className="relative h-[calc(100dvh-16rem)] w-full overflow-hidden rounded-xl border border-border bg-muted/20">
         <ReactFlow
           nodes={nodes}

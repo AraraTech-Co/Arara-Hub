@@ -16,6 +16,10 @@ const ARQ = path.resolve(
 
 /** @param marca trecho do cabeçalho, ex.: "490b profiles POST /admin/membros" */
 function carregarHandler(marca) {
+  return _carregar(marca).handler
+}
+
+function _carregar(marca) {
   const s = fs.readFileSync(ARQ, 'utf8')
   const at = s.indexOf(marca)
   if (at < 0) {
@@ -42,7 +46,22 @@ function carregarHandler(marca) {
   vm.runInContext(codigo, c)
   // O handler EXPORTADO, não a função crua: é nele que moram as guardas de
   // sessão e de nível, que são justamente o que precisa ser testado.
-  return c.module.exports.handler
+  return { handler: c.module.exports.handler, contexto: c }
+}
+
+/**
+ * O contexto `vm` inteiro, para alcançar funções internas do módulo.
+ *
+ * O motor do WhatsApp mora em `_triagem`, uma função de topo do handler do
+ * inbound que não é exportada. Testá-la pelo `handler` exigiria montar um body
+ * de webhook completo e percorrer gravação de mensagem, deduplicação e mídia —
+ * muito longe do que se quer provar. As declarações de topo ficam no contexto,
+ * então `carregarContexto(marca)._triagem` chega direto no motor.
+ *
+ * @param marca trecho do cabeçalho, ex.: "485 whatsapp POST /whatsapp/inbound"
+ */
+function carregarContexto(marca) {
+  return _carregar(marca).contexto
 }
 
 /** Resposta mínima no formato que os handlers usam. */
@@ -60,4 +79,4 @@ function fim() {
   if (falhas) process.exit(1)
 }
 
-module.exports = { carregarHandler, reply, ok, fim, ARQ }
+module.exports = { carregarHandler, carregarContexto, reply, ok, fim, ARQ }
