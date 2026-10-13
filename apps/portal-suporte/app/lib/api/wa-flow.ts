@@ -51,7 +51,13 @@ export const waFlowApi = {
     id: string,
     body: {
       graph: WAGraph
-      mensagens: string[]
+      /**
+       * A conversa inteira, reenviada a cada passo. Um item de texto é fala do
+       * cliente; `{ semResposta: true }` é o cliente NÃO falando — é assim que
+       * dá para intercalar silêncio entre falas, que um sentinela de texto não
+       * permitiria (o cliente pode digitar qualquer coisa).
+       */
+      mensagens: (string | { semResposta: true })[]
       agora?: string | null
       estado?: WASimulacaoEstado
     },

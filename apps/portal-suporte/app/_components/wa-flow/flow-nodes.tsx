@@ -28,10 +28,41 @@ function TargetHandle() {
   return <Handle type="target" position={Position.Left} className="!h-2 !w-2 !border !border-border !bg-muted" />
 }
 
+// ─── Espera pela resposta (menu e pergunta) ─────────────────────────────────
+
+/**
+ * A porta "sem resposta" e a linha que a explica.
+ *
+ * Fica num componente só porque o menu e a pergunta têm o MESMO campo: dois
+ * JSX iguais lado a lado é como as duas telas passam a divergir. A porta só
+ * aparece quando há prazo — bolinha sem prazo é um caminho que nunca é usado,
+ * e o validador avisa justamente sobre isso.
+ */
+function SaidaSemResposta({ minutos, cor }: { minutos: number; cor: string }) {
+  if (!(minutos > 0)) return null
+  return (
+    <>
+      <p className="pt-1 text-[11px] text-muted-foreground">
+        Sem resposta em {minutos} min →
+      </p>
+      <Handle
+        type="source"
+        id="timeout"
+        title="sem resposta"
+        aria-label="Saída: sem resposta"
+        position={Position.Bottom}
+        className={cn('!h-2 !w-2 !border', cor)}
+      />
+    </>
+  )
+}
+
 // ─── Menu ────────────────────────────────────────────────────────────────────
 
 export const MenuNode = memo(function MenuNode({ data }: NodeProps) {
-  const d = data as { label: string; text: string; options?: { id: string; label: string }[] }
+  const d = data as {
+    label: string; text: string; options?: { id: string; label: string }[]; semRespostaMin?: number
+  }
   const options = d.options ?? []
   return (
     <div className={cn(CARD, 'border-sem-info-bd')}>
@@ -60,6 +91,10 @@ export const MenuNode = memo(function MenuNode({ data }: NodeProps) {
             </li>
           ))}
         </ul>
+        <SaidaSemResposta
+          minutos={Number(d.semRespostaMin ?? 0)}
+          cor="!border-sem-info-bd !bg-sem-info"
+        />
       </Body>
     </div>
   )
@@ -318,7 +353,7 @@ const RESPOSTA_ESPERADA: Record<string, string> = {
 
 export const QuestionNode = memo(function QuestionNode({ data }: NodeProps) {
   const d = data as {
-    label: string; text?: string; validacao?: string; tentativas?: number
+    label: string; text?: string; validacao?: string; tentativas?: number; semRespostaMin?: number
   }
   return (
     <div className={cn(CARD, 'border-border')}>
@@ -335,6 +370,10 @@ export const QuestionNode = memo(function QuestionNode({ data }: NodeProps) {
           Espera {RESPOSTA_ESPERADA[d.validacao ?? 'qualquer'] ?? 'qualquer texto'} ·{' '}
           {d.tentativas ?? 2} tentativa(s)
         </p>
+        <SaidaSemResposta
+          minutos={Number(d.semRespostaMin ?? 0)}
+          cor="!border-muted-foreground !bg-muted-foreground"
+        />
       </Body>
       {/* Duas saídas: respondeu certo, e desistiu depois das tentativas. */}
       <Handle

@@ -46,6 +46,8 @@ export function FlowCardEditor({
   const branches = d.branches ?? []
   // 0, ausente ou vazio = "na hora". Qualquer número >= 1 abre o campo de minutos.
   const avisaDepois = Number(d.avisarApos ?? 0) > 0
+  // 0, ausente ou vazio = espera para sempre.
+  const semResposta = Number(d.semRespostaMin ?? 0)
   // Cards de lógica não falam com o cliente — nada de campo "mensagem" neles.
   const semMensagem =
     node.type === 'condition' ||
@@ -496,6 +498,58 @@ export function FlowCardEditor({
             )}
             <p className="pt-1 text-[11px] italic text-muted-foreground">
               Arraste da bolinha ao lado da opção até outro card para ligar o caminho.
+            </p>
+          </div>
+        )}
+
+        {/* Espera pela resposta do cliente — menu e pergunta. Fica fora dos
+            blocos por tipo porque o campo é o MESMO nos dois, e duplicar o
+            JSX é como as telas passam a divergir. */}
+        {(node.type === 'menu' || node.type === 'question') && (
+          <div className="space-y-1 border-t border-border pt-3">
+            <label
+              htmlFor="card-sem-resposta"
+              className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground"
+            >
+              Se o cliente não responder
+            </label>
+            <div className="flex items-center gap-2">
+              <Input
+                id="card-sem-resposta"
+                type="number"
+                min={1}
+                max={1440}
+                inputMode="numeric"
+                className="w-24"
+                placeholder="nunca"
+                aria-label="Minutos de espera pela resposta do cliente"
+                value={semResposta > 0 ? String(semResposta) : ''}
+                disabled={!canEdit}
+                onChange={(e) => {
+                  const cru = e.target.value.trim()
+                  if (cru === '') { onChange({ semRespostaMin: undefined }); return }
+                  const n = Math.round(Number(cru))
+                  if (!Number.isFinite(n)) return
+                  onChange({ semRespostaMin: Math.min(1440, Math.max(1, n)) })
+                }}
+              />
+              <span className="text-xs text-muted-foreground">minutos (vazio = nunca)</span>
+            </div>
+            <p className="pt-1 text-[11px] italic text-muted-foreground">
+              {semResposta > 0 ? (
+                <>
+                  Passados {semResposta} min sem o cliente escrever, o fluxo segue pela saída{' '}
+                  <strong>sem resposta</strong> — ligue essa bolinha a um card de lembrete,
+                  encerramento ou atendente, senão nada acontece. Acontece uma vez só por
+                  parada. O relógio bate de minuto em minuto, então o prazo tem precisão de 1
+                  minuto. Vale para conversas que pararem neste card a partir da publicação.
+                </>
+              ) : (
+                <>
+                  Em branco, a conversa espera a resposta do cliente para sempre — é o que o
+                  portal faz hoje.
+                </>
+              )}
             </p>
           </div>
         )}

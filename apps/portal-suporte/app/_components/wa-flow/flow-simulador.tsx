@@ -14,7 +14,7 @@
 import { useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Loader2, Play, RotateCcw, Send, X } from 'lucide-react'
+import { Clock, Loader2, Play, RotateCcw, Send, X } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { waFlowApi, type WASimulacao, type WASimulacaoPasso } from '@/lib/api/wa-flow'
 import type { WAGraph } from '@/lib/wa-flow-graph'
@@ -36,7 +36,8 @@ export function FlowSimulador({
   onFechar: () => void
 }) {
   const { toast } = useToast()
-  const [mensagens, setMensagens] = useState<string[]>([])
+  type Fala = string | { semResposta: true }
+  const [mensagens, setMensagens] = useState<Fala[]>([])
   const [rascunho, setRascunho] = useState('')
   const [quando, setQuando] = useState<string | null>(null)
   const [resultado, setResultado] = useState<WASimulacao | null>(null)
@@ -45,7 +46,7 @@ export function FlowSimulador({
 
   // O servidor recebe a conversa inteira a cada passo: o estado da simulação
   // não mora em lugar nenhum, então repetir a sequência é o que a mantém.
-  async function rodar(todas: string[]) {
+  async function rodar(todas: Fala[]) {
     setRodando(true)
     try {
       const r = await waFlowApi.simular(flowId, { graph, mensagens: todas, agora: quando })
@@ -69,6 +70,10 @@ export function FlowSimulador({
     setRascunho('')
     void rodar([...mensagens, t])
   }
+
+  // O silêncio do cliente é um passo da conversa como outro qualquer: entra na
+  // mesma lista e pode ser intercalado entre falas.
+  const naoRespondeu = () => void rodar([...mensagens, { semResposta: true }])
 
   const cor = (p: WASimulacaoPasso) =>
     p.de === 'cliente'
@@ -170,6 +175,15 @@ export function FlowSimulador({
             onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); enviar() } }}
             className="h-9"
           />
+          <Button
+            type="button" size="sm" variant="outline" className="gap-1"
+            disabled={rodando}
+            onClick={naoRespondeu}
+            title="Avança o relógio até o prazo do card e segue a saída “sem resposta”"
+          >
+            <Clock className="h-3.5 w-3.5" />
+            Não respondeu
+          </Button>
           <Button type="button" size="sm" disabled={rodando || !rascunho.trim()} onClick={enviar} className="gap-1">
             {rodando ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
             Enviar
