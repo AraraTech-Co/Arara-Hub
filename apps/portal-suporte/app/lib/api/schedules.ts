@@ -28,6 +28,15 @@ export interface PlantaoDia {
   id: string
   agent_ids: string[]
   agentes: PlantaoAgente[]
+  /**
+   * Backup técnico do dia — retaguarda de quem está de plantão.
+   *
+   * Papel diferente do plantonista, com gatilho diferente: o plantonista o
+   * sistema chama sozinho; o backup SÓ o plantonista chama, quando o problema
+   * exige intervenção técnica. Nunca automático.
+   */
+  backup_ids: string[]
+  backup: PlantaoAgente[]
 }
 
 export interface QuemAvisarAgora {
@@ -41,6 +50,9 @@ export interface QuemAvisarAgora {
   avisar: PlantaoAgente[]
   /** Escalados que ficaram de fora por não ter telefone — buraco visível. */
   sem_telefone: PlantaoAgente[]
+  /** Backup técnico de hoje. Aparece mesmo fora da janela: ver não depende de poder chamar. */
+  backup_do_dia: PlantaoAgente[]
+  backup_sem_telefone: PlantaoAgente[]
   plantao_do_dia: { date: string; agent_ids: string[]; notes: string | null; origem: string } | null
   motivo: string | null
 }
@@ -56,9 +68,9 @@ export const schedulesApi = {
   quemAvisarAgora: () => api.get<{ data: QuemAvisarAgora }>('/api/schedules/on-call'),
 
   /** POST /api/schedules — salva o dia (a data é a chave: salvar atualiza). */
-  salvarDia: (date: string, agentIds: string[], notes?: string | null) =>
+  salvarDia: (date: string, agentIds: string[], backupIds: string[], notes?: string | null) =>
     api.post<{ data: PlantaoDia; criado: boolean }>('/api/schedules', {
-      date, agent_ids: agentIds, notes: notes ?? null,
+      date, agent_ids: agentIds, backup_ids: backupIds, notes: notes ?? null,
     }),
 
   /** DELETE /api/schedules?date= — tira o plantão do dia. */

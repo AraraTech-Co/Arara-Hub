@@ -17,6 +17,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { whatsappApi, type WAConversationDetail } from '@/lib/api/whatsapp'
+import { schedulesApi, type QuemAvisarAgora } from '@/lib/api/schedules'
 import { formatDate, mascaraTelefone } from '@/lib/utils'
 import { ehGrupo, rotuloDoContato, telefoneDaConversa } from '@/lib/wa-contato'
 import { CadastrarContatoDialog } from './cadastrar-contato-dialog'
@@ -46,6 +47,13 @@ function initialOf(name: string | null | undefined): string {
 export function CrmContextPanel({ conversationId }: CrmContextPanelProps) {
   const { toast } = useToast()
   const [detail, setDetail] = useState<WAConversationDetail | null>(null)
+  // Estado do plantão AGORA: é o que decide se o botão de backup técnico
+  // aparece. Vem do servidor porque a janela mora na configuração de horário,
+  // e porque quem decide de verdade é ele — a tela só evita oferecer o que
+  // seria recusado.
+  const [plantao, setPlantao] = useState<QuemAvisarAgora | null>(null)
+  const [backupBusy, setBackupBusy] = useState(false)
+  const [backupAvisadoEm, setBackupAvisadoEm] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [ticketDialogOpen, setTicketDialogOpen] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -66,8 +74,21 @@ export function CrmContextPanel({ conversationId }: CrmContextPanelProps) {
     [],
   )
 
+  // O estado do plantão vale para a tela toda, não para uma conversa: carrega
+  // uma vez e vale enquanto o painel estiver aberto.
+  useEffect(() => {
+    let cancelado = false
+    schedulesApi.quemAvisarAgora()
+      .then((r) => { if (!cancelado) setPlantao(r.data) })
+      .catch(() => { if (!cancelado) setPlantao(null) })
+    return () => { cancelado = true }
+  }, [])
+
   // Refetch ao trocar de conversa.
   useEffect(() => {
+    // A trava de 10 min é por CONVERSA: trocar de conversa limpa o aviso de
+    // "backup avisado às HH:MM" da anterior.
+    setBackupAvisadoEm(null)
     if (!conversationId) {
       setDetail(null)
       return
@@ -89,6 +110,42 @@ export function CrmContextPanel({ conversationId }: CrmContextPanelProps) {
   } = useAssignment(conversationId, {
     onDone: () => (conversationId ? load(conversationId) : undefined),
   })
+
+  /**
+   * Chama o backup técnico do dia.
+   *
+   * Confirma antes porque isso toca o telefone de alguém: dentro da janela de
+   * plantão, quem recebe não está no portal — está em casa, de prontidão.
+   */
+  async function chamarBackup() {
+    if (!conversationId) return
+    const nomes = (plantao?.backup_do_dia ?? []).map((b) => b.nome ?? b.id).join(', ')
+    if (!window.confirm(`Avisar ${nomes || 'o backup técnico'} agora?`)) return
+    setBackupBusy(true)
+    try {
+      const r = await whatsappApi.chamarBackupTecnico(conversationId)
+      setBackupAvisadoEm(r.data.avisado_em)
+      toast({
+        title: r.data.enviado ? 'Backup técnico avisado' : 'Registrado, mas o envio falhou',
+        // O provedor não confirma entrega: dizer "avisado" sem a ressalva seria
+        // prometer o que não dá para saber.
+        description: r.data.enviado
+          ? `${r.data.avisado?.nome ?? 'O backup'} recebeu a mensagem. O provedor não confirma entrega.`
+          : 'O aviso ficou registrado na conversa, mas o provedor não aceitou o envio.',
+        variant: r.data.enviado ? undefined : 'destructive',
+      })
+    } catch (err) {
+      // As recusas do servidor explicam o motivo (fora da janela, sem backup,
+      // avisado há menos de 10 min) — vale mostrar o texto dele.
+      toast({
+        title: 'Não foi possível chamar o backup',
+        description: err instanceof Error ? err.message : undefined,
+        variant: 'destructive',
+      })
+    } finally {
+      setBackupBusy(false)
+    }
+  }
 
   /** Executa uma ação e recarrega o detalhe (refetch) ao final. */
   const runAction = useCallback(
@@ -277,6 +334,28 @@ export function CrmContextPanel({ conversationId }: CrmContextPanelProps) {
               >
                 Remover atribuição
               </button>
+
+              {/* Backup técnico: retaguarda de quem atende, chamada À MÃO.
+                  Só aparece dentro da janela de plantão e quando há backup com
+                  telefone no dia — e o servidor recusa nos mesmos casos, então
+                  esconder aqui é cortesia, não proteção. */}
+              {plantao?.agora.em_plantao && (plantao.backup_do_dia?.length ?? 0) > 0 && (
+                backupAvisadoEm ? (
+                  <p className="text-xs text-muted-foreground">
+                    Backup avisado às{' '}
+                    {new Date(backupAvisadoEm).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={busy || assignBusy || backupBusy}
+                    onClick={() => void chamarBackup()}
+                    className="text-xs font-medium text-sem-warning-fg hover:underline disabled:opacity-50"
+                  >
+                    {backupBusy ? 'Chamando…' : 'Chamar backup técnico'}
+                  </button>
+                )
+              )}
             </div>
           ) : (
             <Button

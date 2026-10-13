@@ -114,13 +114,16 @@ export default function PlantaoPage() {
     return equipe.map((a) => ({ ...a, telefone_ok: conhecido.get(a.id) ?? a.telefone_ok }))
   }, [equipe, dias])
 
-  async function salvarDia(data: string, ids: string[]) {
+  async function salvarDia(data: string, ids: string[], backupIds: string[]) {
     setSalvando(true)
     try {
-      await schedulesApi.salvarDia(data, ids)
+      await schedulesApi.salvarDia(data, ids, backupIds)
       setEditando(null)
       await carregar()
-      toast({ title: 'Plantão salvo', description: `${data}: ${ids.length} pessoa(s) na ordem de chamada.` })
+      toast({
+        title: 'Plantão salvo',
+        description: `${data}: ${ids.length} de plantão` + (backupIds.length ? `, ${backupIds.length} de backup técnico.` : '.'),
+      })
     } catch (err) {
       // A recusa do servidor diz o que está errado (pessoa repetida, agente
       // que não existe) — vale mostrar o texto dele.
@@ -197,6 +200,19 @@ export default function PlantaoPage() {
               {agora.avisar.length === 0 && !agora.agora.em_plantao && (
                 <span className="text-sm text-muted-foreground">— ninguém é avisado agora</span>
               )}
+              {/* O backup técnico aparece junto do plantonista: quem olha o topo
+                  quer saber os DOIS de uma vez. Fora da janela nada disso
+                  aparece, porque não há quem avisar agora. */}
+              {agora.agora.em_plantao && agora.backup_do_dia.length > 0 && (
+                <span className="flex items-center gap-1 text-sm">
+                  <span className="text-muted-foreground">· Backup técnico:</span>
+                  {agora.backup_do_dia.map((b) => b.nome ?? b.id).join(', ')}
+                  <Phone className="h-3 w-3 text-emerald-600" aria-label="telefone cadastrado" />
+                </span>
+              )}
+              {agora.agora.em_plantao && agora.backup_do_dia.length === 0 && (
+                <span className="text-sm text-muted-foreground">· sem backup técnico</span>
+              )}
               {agora.sem_telefone.length > 0 && (
                 <span className="flex items-center gap-1.5 rounded-md bg-sem-warning px-2 py-1 text-xs text-sem-warning-fg">
                   <AlertCircle className="h-3.5 w-3.5" />
@@ -272,6 +288,19 @@ export default function PlantaoPage() {
                     ))}
                   </span>
                 )}
+                {dia && dia.backup.length > 0 && (
+                  <span className="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
+                    <span>Backup:</span>
+                    {dia.backup.map((b) => (
+                      <span key={b.id} className="flex items-center gap-1">
+                        <span className="truncate">{b.nome ?? b.id}</span>
+                        {b.telefone_ok
+                          ? <Phone className="h-3 w-3 shrink-0 text-emerald-600" aria-label="telefone cadastrado" />
+                          : <PhoneOff className="h-3 w-3 shrink-0 text-amber-600" aria-label="sem telefone — não recebe aviso" />}
+                      </span>
+                    ))}
+                  </span>
+                )}
                 {dia && dia.origem !== 'plantao' && (
                   <span className="mt-auto text-[11px] italic text-muted-foreground">
                     {dia.origem === 'semanal' ? 'da escala semanal antiga' : 'do plantão diário antigo'}
@@ -293,10 +322,11 @@ export default function PlantaoPage() {
         <DiaDoPlantaoDialog
           data={editando}
           escolhidos={porData.get(editando)?.agent_ids ?? []}
+          backupEscolhido={porData.get(editando)?.backup_ids ?? []}
           agentes={equipeComTelefone}
           salvando={salvando}
           onFechar={() => setEditando(null)}
-          onSalvar={(ids) => void salvarDia(editando, ids)}
+          onSalvar={(ids, backupIds) => void salvarDia(editando, ids, backupIds)}
           onLimpar={() => void limparDia(editando)}
         />
       )}
