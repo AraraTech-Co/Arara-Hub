@@ -21,6 +21,7 @@ import { restoreAllHosts } from './lib/hosting.js'
 import { BODY_LIMIT_BYTES } from './plugins/raw-body.js'
 import { registerAllStaticApps } from './apps/register-all.js'
 import { listRegisteredSlugs } from './lib/static-registry.js'
+import { iniciarAgendadorPortalSuporte } from './apps/portal-suporte/agendador.js'
 
 const port = Number(process.env.PORT ?? 4100)
 const host = process.env.HOST ?? '0.0.0.0'
@@ -84,6 +85,23 @@ async function main() {
     }
   } catch (err) {
     app.log.error({ err }, 'Hosting restore failed')
+  }
+
+  // Relógio do portal de suporte (13/10/2026, sugestão do Hefler): a fila de
+  // plantão passa a ser varrida por tempo, e não só quando alguém escreve.
+  // Roda dentro deste processo — sem cron na VPS, sem porta nova, sem segredo
+  // em arquivo. Ver src/apps/portal-suporte/agendador.ts, inclusive a nota
+  // sobre o que muda se a API passar a rodar em mais de um container.
+  try {
+    if (process.env.DISABLE_AGENDADOR === '1') {
+      app.log.info('Agendador do portal-suporte desligado (DISABLE_AGENDADOR=1)')
+    } else {
+      iniciarAgendadorPortalSuporte(app)
+    }
+  } catch (err) {
+    // O agendador não pode derrubar a subida da API: sem ele, a varredura no
+    // primeiro inbound da janela continua valendo como rede de segurança.
+    app.log.error({ err }, 'Agendador do portal-suporte não iniciou')
   }
 }
 
