@@ -301,14 +301,16 @@ export function FlowCardEditor({
               id="card-seconds"
               type="number"
               min={1}
-              max={900}
-              value={d.seconds ?? 5}
+              max={3}
+              value={d.seconds ?? 3}
               disabled={!canEdit}
-              onChange={(e) => onChange({ seconds: Math.min(Math.max(Number(e.target.value) || 1, 1), 900) })}
+              onChange={(e) => onChange({ seconds: Math.min(Math.max(Number(e.target.value) || 1, 1), 3) })}
             />
             <p className="pt-1 text-[11px] italic text-muted-foreground">
-              Máximo de 15 minutos. Enquanto espera, o fluxo ignora o que o cliente escrever — é o
-              card seguinte que continua a conversa.
+              Até 3 segundos por card, e 6 segundos somados por mensagem recebida. O limite é
+              baixo de propósito: enquanto o robô espera, ele está segurando a resposta ao
+              WhatsApp, e demorar demais faz o provedor achar que falhamos e mandar a mensagem do
+              cliente outra vez.
             </p>
           </div>
         )}
