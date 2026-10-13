@@ -158,9 +158,14 @@ async function peloSimulador(grafo, mensagens, agoraISO) {
     ],
     edges: [{ source: 'd', target: 'm', sourceHandle: 'next' }],
   }
+  // Desde a entrega 6 o motor ESPERA de verdade, com teto de 3s por card e 6s
+  // somados por mensagem (o handler é o webhook da Avisa; segurar demais
+  // arrisca reentrega). O simulador não espera — diria a mesma coisa três
+  // segundos depois —, mas tem de dizer quanto esperaria e o que o teto corta.
   r = await peloSimulador(DELAY, ['oi'], '2026-10-12T13:00:00Z')
-  ok('avisa que o atraso não é executado hoje',
-    r.corpo.passos.some((p) => p.texto.includes('ATRAVESSA')), r.corpo.passos)
+  ok('diz quanto o atraso espera e o que o teto corta',
+    r.corpo.passos.some((p) => p.texto.includes('espera 3s') && p.texto.includes('pediu 30s')),
+    r.corpo.passos)
 
   const LACO = {
     root: 'a',

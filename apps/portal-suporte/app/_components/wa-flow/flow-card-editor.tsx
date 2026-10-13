@@ -33,6 +33,7 @@ export function FlowCardEditor({
     menu: 'Menu',
     handoff: 'Atendente',
     condition: 'Condição',
+    tag: 'Etiqueta',
     assistant: 'Assistente',
     content: 'Mensagem',
     delay: 'Atraso',
@@ -45,6 +46,7 @@ export function FlowCardEditor({
   // Cards de lógica não falam com o cliente — nada de campo "mensagem" neles.
   const semMensagem =
     node.type === 'condition' ||
+    node.type === 'tag' ||
     node.type === 'delay' ||
     node.type === 'random' ||
     node.type === 'integration'
@@ -162,6 +164,47 @@ export function FlowCardEditor({
                 </span>
               </span>
             </label>
+          </div>
+        )}
+
+        {node.type === 'tag' && (
+          <div className="space-y-2">
+            <div>
+              <label className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                Etiquetas
+              </label>
+              <p className="text-[11px] italic text-muted-foreground">
+                Uma por linha. A etiqueta que não existir no catálogo é criada na hora.
+              </p>
+            </div>
+            <div className="space-y-1">
+              <label htmlFor="card-tags-aplicar" className="text-[11px] text-muted-foreground">
+                Marcar na conversa
+              </label>
+              <Textarea
+                id="card-tags-aplicar"
+                rows={3}
+                value={(d.tagsAplicar ?? []).join('\n')}
+                disabled={!canEdit}
+                onChange={(e) => onChange({
+                  tagsAplicar: e.target.value.split('\n').map((t) => t.trim()).filter(Boolean),
+                })}
+              />
+            </div>
+            <div className="space-y-1">
+              <label htmlFor="card-tags-remover" className="text-[11px] text-muted-foreground">
+                Desmarcar da conversa
+              </label>
+              <Textarea
+                id="card-tags-remover"
+                rows={2}
+                value={(d.tagsRemover ?? []).join('\n')}
+                disabled={!canEdit}
+                onChange={(e) => onChange({
+                  tagsRemover: e.target.value.split('\n').map((t) => t.trim()).filter(Boolean),
+                })}
+              />
+            </div>
           </div>
         )}
 
