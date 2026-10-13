@@ -57,7 +57,7 @@ function ResourceHub() {
     { label: 'Base de Conhecimento', href: '/admin/kb', icon: <BookOpen className="h-4 w-4 text-sem-info-fg" />, desc: 'Artigos e soluções' },
     { label: 'Kanban', href: '/admin/kanban', icon: <LayoutDashboard className="h-4 w-4 text-sem-info-fg" />, desc: 'Visão do board' },
     { label: 'Relatórios', href: '/admin/reports', icon: <FileText className="h-4 w-4 text-sem-success-fg" />, desc: 'Métricas e exportações' },
-    { label: 'Escala de Suporte', href: '/admin/schedule', icon: <Headphones className="h-4 w-4 text-sem-info-fg" />, desc: 'Plantão e escalas' },
+    { label: 'Plantão', href: '/admin/schedule', icon: <Headphones className="h-4 w-4 text-sem-info-fg" />, desc: 'Quem está de plantão em cada dia' },
     { label: 'Automações', href: '/admin/automation', icon: <Zap className="h-4 w-4 text-sem-warning-fg" />, desc: 'Regras automáticas' },
     { label: 'Gestão de SLA', href: '/admin/sla', icon: <span className="text-base leading-none">⏱</span>, desc: 'Contratos e prazos' },
   ];
