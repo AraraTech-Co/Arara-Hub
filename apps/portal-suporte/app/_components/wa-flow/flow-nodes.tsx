@@ -163,12 +163,24 @@ export const AssistantNode = memo(function AssistantNode({ data }: NodeProps) {
 
 // ─── Atraso ──────────────────────────────────────────────────────────────────
 
-/** Segundos como "30s" / "2 min" — o card fica ilegível com números crus. */
-function formatSeconds(s: number): string {
-  if (s < 60) return `${s}s`
-  const min = Math.floor(s / 60)
-  const rest = s % 60
-  return rest ? `${min} min ${rest}s` : `${min} min`
+/**
+ * Quanto o robô ESPERA de verdade: 3 s por card, nunca mais.
+ *
+ * O card mostrava o valor gravado formatado em minutos ("5 min"), herança de
+ * quando o campo aceitava 900 s. O motor nunca esperou isso — corta em 3 s por
+ * card e 6 s somados por mensagem, porque o robô está segurando a resposta ao
+ * WhatsApp e demorar demais faz o provedor reenviar a mensagem do cliente.
+ *
+ * Fluxo antigo pode ter 300 gravado. Mostrar "5 min" seria mentir sobre o que
+ * acontece, então o card mostra o que o robô faz e diz que o resto é ignorado.
+ */
+const ESPERA_MAXIMA_POR_CARD = 3
+
+function textoDaEspera(pedido: number | undefined): string {
+  const quis = Number(pedido ?? ESPERA_MAXIMA_POR_CARD)
+  const vale = Math.max(0, Math.min(quis, ESPERA_MAXIMA_POR_CARD))
+  if (quis > ESPERA_MAXIMA_POR_CARD) return `Espera ${vale}s (o card pede ${quis}s; o resto é ignorado)`
+  return `Espera ${vale}s antes de continuar`
 }
 
 export const DelayNode = memo(function DelayNode({ data }: NodeProps) {
@@ -181,7 +193,7 @@ export const DelayNode = memo(function DelayNode({ data }: NodeProps) {
         {d.label}
       </div>
       <Body>
-        <p className="text-foreground/80">Espera {formatSeconds(d.seconds ?? 5)} antes de continuar</p>
+        <p className="text-foreground/80">{textoDaEspera(d.seconds)}</p>
       </Body>
       <Handle
         type="source"
