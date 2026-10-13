@@ -35,9 +35,19 @@ function _carregar(marca) {
   if (!m) throw new Error(`compileController não encontrado depois de: ${marca}`)
   const codigo = JSON.parse('"' + m[1] + '"')
 
+  // O contexto precisa ESPELHAR produção, senão o teste mente nos dois
+  // sentidos: esconde erro que lá aconteceria, e acusa erro que lá não existe.
+  // Em produção o handler é compilado com `new Function` (ver
+  // packages/api/src/lib/compile-controller.ts), que roda nos globais do Node —
+  // ou seja, tem timers, Intl, URL. Descobri isso quando o card de atraso da
+  // entrega 6 falhou aqui com "setTimeout is not defined" e eu fui conferir se
+  // produção quebraria também: não quebraria, era o contexto daqui que era mais
+  // restrito que o de verdade.
   const c = {
     console, Date, JSON, String, Number, Object, Array, Math, Promise, parseInt,
-    RegExp, Buffer, encodeURIComponent, decodeURIComponent,
+    parseFloat, isNaN, isFinite, RegExp, Buffer, Error, TypeError,
+    encodeURIComponent, decodeURIComponent, Intl, URL, URLSearchParams,
+    setTimeout, clearTimeout, setInterval, clearInterval,
     module: { exports: {} },
   }
   c.exports = c.module.exports

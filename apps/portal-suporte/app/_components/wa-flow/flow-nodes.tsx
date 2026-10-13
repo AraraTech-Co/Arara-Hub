@@ -3,7 +3,7 @@
 import { memo } from 'react'
 import { Handle, Position, type NodeProps } from '@xyflow/react'
 import {
-  ListChecks, MessageSquareText, UserRoundCheck, GitBranch, Sparkles, Timer, Shuffle, Webhook,
+  ListChecks, MessageSquareText, UserRoundCheck, GitBranch, Sparkles, Timer, Tag, Shuffle, Webhook,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -259,13 +259,49 @@ export const IntegrationNode = memo(function IntegrationNode({ data }: NodeProps
 })
 
 /** Mapa de tipos que o React Flow usa para escolher o componente. */
+export const TagNode = memo(function TagNode({ data }: NodeProps) {
+  const d = data as { label: string; tagsAplicar?: string[]; tagsRemover?: string[] }
+  const aplicar = d.tagsAplicar ?? []
+  const remover = d.tagsRemover ?? []
+  return (
+    <div className={cn(CARD, 'border-border')}>
+      <TargetHandle />
+      <div className={cn(HEADER, 'border-border bg-muted text-foreground')}>
+        <Tag className="h-3.5 w-3.5" aria-hidden />
+        {d.label}
+      </div>
+      <Body>
+        {aplicar.length === 0 && remover.length === 0 && (
+          <p className="italic text-muted-foreground">Nenhuma etiqueta escolhida</p>
+        )}
+        {aplicar.length > 0 && (
+          <p className="text-foreground/80">Marca: {aplicar.join(', ')}</p>
+        )}
+        {remover.length > 0 && (
+          <p className="text-foreground/80">Desmarca: {remover.join(', ')}</p>
+        )}
+      </Body>
+      <Handle
+        type="source"
+        id="next"
+        position={Position.Right}
+        className="!h-2 !w-2 !border !border-border !bg-muted-foreground"
+      />
+    </div>
+  )
+})
+
 export const waFlowNodeTypes = {
   menu: MenuNode,
   content: ContentNode,
   handoff: HandoffNode,
   condition: ConditionNode,
-  assistant: AssistantNode,
+  tag: TagNode,
   delay: DelayNode,
+  // Assistente, randomizador e integração saíram do editor na entrega 6 do
+  // Fluxo v2 (o motor nunca os executou), mas continuam desenhados: fluxo
+  // antigo que já os tem precisa aparecer na tela.
+  assistant: AssistantNode,
   random: RandomNode,
   integration: IntegrationNode,
 }

@@ -17,8 +17,7 @@ import {
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import {
-  Loader2, Save, Rocket, ListChecks, MessageSquareText, UserRoundCheck, GitBranch, Sparkles,
-  Timer, Shuffle, Webhook, Play, Download, Upload,
+  Loader2, Save, Rocket, ListChecks, MessageSquareText, UserRoundCheck, GitBranch, Timer, Tag, Play, Download, Upload,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { FlowSimulador } from '@/components/wa-flow/flow-simulador'
@@ -60,7 +59,8 @@ const NOVO_CARD: Record<WAGraphNodeType, { label: string; text: string; data: Pa
     text: 'Um instante, vou verificar isso para você.',
     data: {},
   },
-  delay: { label: 'Atraso', text: '', data: { seconds: 5 } },
+  delay: { label: 'Atraso', text: '', data: { seconds: 3 } },
+  tag: { label: 'Etiqueta', text: '', data: { tagsAplicar: [], tagsRemover: [] } },
   random: {
     label: 'Randomizador',
     text: '',
@@ -380,18 +380,22 @@ function FlowEditorInner({ flowId, canEdit }: { flowId: string; canEdit: boolean
             <Button size="sm" variant="outline" onClick={() => addNode('condition')}>
               <GitBranch className="mr-1 h-3.5 w-3.5" /> Condição
             </Button>
-            <Button size="sm" variant="outline" onClick={() => addNode('assistant')}>
-              <Sparkles className="mr-1 h-3.5 w-3.5" /> Assistente
-            </Button>
             <Button size="sm" variant="outline" onClick={() => addNode('delay')}>
               <Timer className="mr-1 h-3.5 w-3.5" /> Atraso
             </Button>
-            <Button size="sm" variant="outline" onClick={() => addNode('random')}>
-              <Shuffle className="mr-1 h-3.5 w-3.5" /> Randomizador
+            <Button size="sm" variant="outline" onClick={() => addNode('tag')}>
+              <Tag className="mr-1 h-3.5 w-3.5" /> Etiqueta
             </Button>
-            <Button size="sm" variant="outline" onClick={() => addNode('integration')}>
-              <Webhook className="mr-1 h-3.5 w-3.5" /> Integração
-            </Button>
+            {/* Assistente, Randomizador e Integração SAÍRAM do editor na
+                entrega 6 do Fluxo v2. O motor nunca os executou: todos caíam em
+                "vou chamar um atendente", em silêncio. Oferecer um card que não
+                faz o que diz é pior que não oferecer — quem monta o fluxo
+                acredita que ele funciona e descobre com o cliente.
+
+                Os cards que já existirem em fluxos antigos continuam sendo
+                desenhados e continuam entregando a uma pessoa, como sempre
+                fizeram; só não é mais possível criar novos. Voltam quando
+                existirem de verdade. */}
           </>
         )}
 
