@@ -43,6 +43,22 @@ export interface WAGraphNode {
     options?: { id: string; label: string; description?: string }[]
     /** Área do handoff (suporte/administrativo/vendas). */
     area?: string
+    /**
+     * Card `handoff`: quanto esperar antes de avisar o plantão, em minutos.
+     *
+     * 0 ou ausente = avisa na hora (o que o portal sempre fez). 1 a 240 = só
+     * avisa se, passados N minutos, ninguém tiver assumido a conversa.
+     *
+     * O TEMPO MORA NO CARD, e não numa configuração geral: fluxos diferentes
+     * têm urgências diferentes, e quem desenha o fluxo é quem sabe qual é a
+     * desta porta de saída.
+     *
+     * Vale para quem CHEGAR ao card depois da publicação: conversa que já
+     * está na fila não tem o prazo gravado, e para ela a ausência é 0 — mudar
+     * o prazo de quem já espera, sem nada na tela dizendo isso, seria pior do
+     * que não ter o campo.
+     */
+    avisarApos?: number
     /** Condição avaliada num card `condition`. */
     check?: string
     /** Espera do card `delay`, em segundos. */
@@ -172,6 +188,20 @@ export function validarGrafo(g: unknown): ValidacaoDoGrafo {
     }
     if ((n.type === 'content' || n.type === 'handoff') && !String(n.data.text ?? '').trim()) {
       avisos.push(`card "${id}": está sem mensagem.`)
+    }
+    if (n.type === 'handoff') {
+      // O motor trata o prazo como minutos inteiros porque o relógio bate de
+      // minuto em minuto; aceitar 0,5 aqui prometeria na tela uma precisão que
+      // o tick não tem.
+      const a = n.data.avisarApos
+      if (a !== undefined && a !== null && String(a) !== '') {
+        const n2 = Number(a)
+        if (!Number.isInteger(n2) || n2 < 0 || n2 > 240) {
+          erros.push(
+            `atendente "${id}": o prazo para avisar o plantão precisa ser um número inteiro de 0 a 240 minutos (0 = na hora).`,
+          )
+        }
+      }
     }
     if (n.type === 'question') {
       // Pergunta sem pergunta é um card que espera resposta sem dizer o que

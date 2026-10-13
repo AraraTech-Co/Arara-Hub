@@ -44,6 +44,8 @@ export function FlowCardEditor({
   const tipo = TIPO[node.type ?? 'content'] ?? 'Mensagem'
   const options = d.options ?? []
   const branches = d.branches ?? []
+  // 0, ausente ou vazio = "na hora". Qualquer número >= 1 abre o campo de minutos.
+  const avisaDepois = Number(d.avisarApos ?? 0) > 0
   // Cards de lógica não falam com o cliente — nada de campo "mensagem" neles.
   const semMensagem =
     node.type === 'condition' ||
@@ -397,6 +399,67 @@ export function FlowCardEditor({
               <option value="administrativo">Administrativo / Financeiro</option>
               <option value="vendas">Vendas</option>
             </select>
+
+            {/* O tempo mora aqui, no card, e não numa configuração geral: é
+                este ponto do fluxo que sabe se a espera pode ou não esperar. */}
+            <div className="space-y-1 pt-2">
+              <label
+                htmlFor="card-avisar-plantao"
+                className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground"
+              >
+                Avisar o plantão
+              </label>
+              <select
+                id="card-avisar-plantao"
+                value={avisaDepois ? 'depois' : 'na-hora'}
+                disabled={!canEdit}
+                onChange={(e) => onChange({ avisarApos: e.target.value === 'depois' ? 10 : 0 })}
+                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+              >
+                <option value="na-hora">na hora</option>
+                <option value="depois">depois de ___ minutos sem ninguém assumir</option>
+              </select>
+              {avisaDepois && (
+                <div className="flex items-center gap-2 pt-1">
+                  <Input
+                    id="card-avisar-minutos"
+                    type="number"
+                    min={1}
+                    max={240}
+                    inputMode="numeric"
+                    className="w-24"
+                    aria-label="Minutos sem ninguém assumir antes de avisar o plantão"
+                    value={String(d.avisarApos ?? 10)}
+                    disabled={!canEdit}
+                    onChange={(e) => {
+                      // Campo vazio não vira 0 (que significa "na hora"): ficaria
+                      // mudando o sentido do campo enquanto a pessoa digita.
+                      const cru = e.target.value.trim()
+                      if (cru === '') { onChange({ avisarApos: undefined }); return }
+                      const n = Math.round(Number(cru))
+                      if (!Number.isFinite(n)) return
+                      onChange({ avisarApos: Math.min(240, Math.max(1, n)) })
+                    }}
+                  />
+                  <span className="text-xs text-muted-foreground">minutos (1 a 240)</span>
+                </div>
+              )}
+              <p className="pt-1 text-[11px] italic text-muted-foreground">
+                {avisaDepois ? (
+                  <>
+                    O cliente recebe a mensagem deste card <strong>na hora</strong>; só o aviso à
+                    equipe espera. Se alguém assumir a conversa antes do prazo, nada é enviado. O
+                    relógio bate de minuto em minuto, então o prazo tem precisão de 1 minuto. Vale
+                    para conversas que chegarem a este card a partir da publicação.
+                  </>
+                ) : (
+                  <>
+                    O plantonista é avisado assim que a conversa entra na fila sem ninguém para
+                    assumir — dentro da janela de plantão.
+                  </>
+                )}
+              </p>
+            </div>
           </div>
         )}
 
