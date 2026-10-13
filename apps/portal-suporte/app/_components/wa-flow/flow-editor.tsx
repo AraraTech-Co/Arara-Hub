@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   ReactFlow,
   ReactFlowProvider,
@@ -18,10 +18,11 @@ import {
 import '@xyflow/react/dist/style.css'
 import {
   Loader2, Save, Rocket, ListChecks, MessageSquareText, UserRoundCheck, GitBranch, Sparkles,
-  Timer, Shuffle, Webhook, Play,
+  Timer, Shuffle, Webhook, Play, Download, Upload,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { FlowSimulador } from '@/components/wa-flow/flow-simulador'
+import { validarGrafo } from '@/lib/wa-flow-graph'
 import { useToast } from '@/hooks/use-toast'
 import { waFlowApi, type WAFlowDetail } from '@/lib/api/wa-flow'
 import type { WAGraph, WAGraphNode, WAGraphNodeType } from '@/lib/wa-flow-graph'
@@ -190,10 +191,78 @@ function FlowEditorInner({ flowId, canEdit }: { flowId: string; canEdit: boolean
   }
 
   const [simulando, setSimulando] = useState(false)
+  const entradaArquivo = useRef<HTMLInputElement>(null)
+
+  /** Exportar = baixar o grafo como JSON. Nenhuma rota nova é necessária. */
+  function exportar() {
+    const graph = currentGraph()
+    if (!flow || !graph) return
+    const nome = `fluxo-${flow.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-v${flow.version}.json`
+    const url = URL.createObjectURL(
+      new Blob([JSON.stringify(graph, null, 2)], { type: 'application/json' }),
+    )
+    const a = document.createElement('a')
+    a.href = url
+    a.download = nome
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  /**
+   * Importar = ler o JSON para o editor como RASCUNHO. Não publica nada: o
+   * que está no ar só muda quando alguém aperta Publicar, e a validação roda
+   * antes de qualquer coisa entrar na tela — arquivo malformado travava o
+   * editor na carga.
+   */
+  async function importar(arquivo: File) {
+    let lido: unknown
+    try {
+      lido = JSON.parse(await arquivo.text())
+    } catch {
+      toast({ title: 'Arquivo inválido', description: 'Não é um JSON.', variant: 'destructive' })
+      return
+    }
+    const v = validarGrafo(lido)
+    if (!v.ok) {
+      toast({
+        title: `O arquivo tem ${v.erros.length} problema(s)`,
+        description: v.erros.slice(0, 3).join(' · '),
+        variant: 'destructive',
+      })
+      return
+    }
+    const g = lido as WAGraph
+    setNodes(g.nodes.map((n) => ({ id: n.id, type: n.type, position: n.position, data: n.data })))
+    setEdges((g.edges ?? []).map((e) => ({
+      id: e.id, source: e.source, target: e.target,
+      sourceHandle: e.sourceHandle, label: e.label,
+    })))
+    setFlow({ ...flow!, graph: g })
+    setSelectedId(null)
+    setDirty(true)
+    toast({
+      title: 'Fluxo importado para o rascunho',
+      description: v.avisos.length
+        ? `${v.avisos.length} aviso(s): ${v.avisos[0]}`
+        : 'Confira no simulador e salve quando estiver certo.',
+    })
+  }
 
   async function handleSave() {
     const graph = currentGraph()
     if (!flow || !graph) return
+    // Valida aqui para o problema aparecer sem ida ao servidor. O servidor
+    // valida de novo — é ele que protege de verdade (a API aceita chamada
+    // direta), mas ver o erro na hora é melhor que ver depois do round-trip.
+    const v = validarGrafo(graph)
+    if (!v.ok) {
+      toast({
+        title: `O fluxo tem ${v.erros.length} problema(s)`,
+        description: v.erros.slice(0, 3).join(' · '),
+        variant: 'destructive',
+      })
+      return
+    }
     setSaving(true)
     try {
       await waFlowApi.saveDraft(flow.id, graph)
@@ -276,6 +345,26 @@ function FlowEditorInner({ flowId, canEdit }: { flowId: string; canEdit: boolean
               <Play className="mr-1.5 h-3.5 w-3.5" />
               Simular
             </Button>
+            <Button size="sm" variant="outline" onClick={exportar}>
+              <Download className="mr-1.5 h-3.5 w-3.5" />
+              Exportar
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => entradaArquivo.current?.click()}>
+              <Upload className="mr-1.5 h-3.5 w-3.5" />
+              Importar
+            </Button>
+            <input
+              ref={entradaArquivo}
+              type="file"
+              accept="application/json,.json"
+              className="hidden"
+              aria-hidden
+              onChange={(e) => {
+                const f = e.target.files?.[0]
+                e.target.value = ''
+                if (f) void importar(f)
+              }}
+            />
 
             <span className="mx-1 h-5 w-px bg-border" aria-hidden />
             <span className="text-xs text-muted-foreground">Adicionar:</span>
