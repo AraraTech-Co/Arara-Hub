@@ -126,7 +126,7 @@ const NAV_GROUPS: NavGroup[] = [
       // própria tela explica isso a quem não tiver.
       { href: '/admin/crm-usuarios', label: 'Usuários do CRM', icon: Building2, minLevel: 'master' },
       { href: '/admin/automation', label: 'Automações', icon: Zap, minLevel: 'admin' },
-      { href: '/admin/schedule',   label: 'Escala',     icon: CalendarDays },
+      { href: '/admin/schedule',   label: 'Plantão',    icon: CalendarDays },
     ],
   },
   {
