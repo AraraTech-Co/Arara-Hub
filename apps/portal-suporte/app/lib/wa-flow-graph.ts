@@ -43,6 +43,12 @@ export interface WAGraphNode {
     branches?: { id: string; label: string; weight: number }[]
     /** Webhook do card `integration`. */
     url?: string
+    /**
+     * Card de mensagem que avisa NO MÁXIMO uma vez por janela fechada, por
+     * conversa (Fluxo v2, entrega 2). É o aviso de fora do horário: cliente
+     * que manda cinco mensagens às 23h recebe um aviso, não cinco.
+     */
+    umaVezPorJanela?: boolean
   }
 }
 
