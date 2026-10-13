@@ -185,8 +185,17 @@ export default function PlantaoPage() {
                   ))}
                 </span>
               )}
-              {agora.avisar.length === 0 && agora.motivo && (
+              {/* O motivo só acrescenta quando diz algo que o rótulo ao lado
+                  ainda não disse. Fora da janela, os dois diziam a mesma frase:
+                  "Fora da janela de plantão — ninguém: fora da janela de
+                  plantão". Dentro da janela sem ninguém, o motivo é a
+                  informação que importa (sem plantão no dia, ou os escalados
+                  sem telefone). */}
+              {agora.avisar.length === 0 && agora.motivo && agora.agora.em_plantao && (
                 <span className="text-sm text-muted-foreground">— ninguém: {agora.motivo}</span>
+              )}
+              {agora.avisar.length === 0 && !agora.agora.em_plantao && (
+                <span className="text-sm text-muted-foreground">— ninguém é avisado agora</span>
               )}
               {agora.sem_telefone.length > 0 && (
                 <span className="flex items-center gap-1.5 rounded-md bg-sem-warning px-2 py-1 text-xs text-sem-warning-fg">
