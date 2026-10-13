@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Columns3, List, Loader2, WifiOff } from 'lucide-react'
 import { useInboxStream } from '@/hooks/use-inbox-stream'
 import { useConversationStream } from '@/hooks/use-conversation-stream'
@@ -22,6 +22,7 @@ import { MenuToggle } from './menu-toggle'
 import { StatusToggle } from './status-toggle'
 import { ConversationList } from './conversation-list'
 import { ThreadPane } from './thread-pane'
+import { useAtalhosInbox } from '@/hooks/use-atalhos-inbox'
 import { CrmContextPanel } from './crm-context-panel'
 import { WAKanbanBoard } from './wa-kanban-board'
 
@@ -122,6 +123,56 @@ export function InboxClient() {
     () => conversations.find((c) => c.id === selectedId) ?? null,
     [conversations, selectedId],
   )
+
+  // ── Rascunhos por conversa (Fase 1, A1) ────────────────────────────────
+  // Em memória, de propósito: é rascunho de atendimento, não dado. Recarregar a
+  // página limpa, e isso é o esperado — o que não pode é `Esc` apagar o que a
+  // pessoa acabou de escrever.
+  const rascunhos = useRef(new Map<string, string>())
+  const guardarRascunho = useCallback((id: string, texto: string) => {
+    if (texto) rascunhos.current.set(id, texto)
+    else rascunhos.current.delete(id)
+  }, [])
+
+  // ── Atalhos (Fase 1, A2) ───────────────────────────────────────────────
+  // As ações moram aqui porque é aqui que estão a lista filtrada e a seleção.
+  const irPara = useCallback((passo: number) => {
+    if (!conversations.length) return
+    const i = conversations.findIndex((c) => c.id === selectedId)
+    // Sem conversa aberta, ] abre a primeira e [ abre a última.
+    const alvo = i < 0
+      ? (passo > 0 ? 0 : conversations.length - 1)
+      : Math.min(Math.max(i + passo, 0), conversations.length - 1)
+    setSelectedId(conversations[alvo].id)
+  }, [conversations, selectedId])
+
+  const atenderAtual = useCallback(async () => {
+    if (!selectedId) return
+    const conv = conversations.find((c) => c.id === selectedId)
+    // Já tem dono: o atalho não rouba conversa de ninguém em silêncio.
+    if (!conv || conv.assigned_to) return
+    try {
+      await whatsappApi.assignConversation(selectedId)
+      toast({ title: 'Conversa atribuída a você' })
+    } catch (err) {
+      toast({
+        title: 'Não foi possível atender',
+        description: err instanceof Error ? err.message : undefined,
+        variant: 'destructive',
+      })
+    }
+  }, [selectedId, conversations, toast])
+
+  // A busca vive na thread; o atalho só levanta a bandeira.
+  const [pedidoDeBusca, setPedidoDeBusca] = useState(0)
+
+  useAtalhosInbox({
+    fechar: () => setSelectedId(null),
+    proxima: () => irPara(1),
+    anterior: () => irPara(-1),
+    atender: () => void atenderAtual(),
+    buscar: () => setPedidoDeBusca((n) => n + 1),
+  })
 
   // Mudar fase exige developer+ no servidor (requireDeveloper). Sem espelhar a
   // regra aqui, o card arrastaria e só falharia no PATCH.
@@ -288,6 +339,9 @@ export function InboxClient() {
             loading={threadLoading}
             agentFirstName={agentFirstName}
             meId={meId}
+            rascunho={selectedId ? (rascunhos.current.get(selectedId) ?? '') : ''}
+            onRascunho={(texto) => selectedId && guardarRascunho(selectedId, texto)}
+            pedidoDeBusca={pedidoDeBusca}
             onToggleCrm={selectedId ? () => setCrmOpen((v) => !v) : undefined}
             crmOpen={crmOpen}
           />

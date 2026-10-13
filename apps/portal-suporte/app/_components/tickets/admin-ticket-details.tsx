@@ -6,6 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { voltarAoQuadro } from '@/lib/voltar-ao-quadro';
 import { araraApiFetch } from '@/lib/arara/arara-api-fetch';
+import { whatsappApi } from '@/lib/api/whatsapp';
+import { ExportarConversaDialog } from '@/components/tickets/exportar-conversa-dialog';
 import {
   ArrowLeft,
   Calendar,
@@ -29,6 +31,7 @@ import {
   UserCircle,
   UserCheck,
   ArrowDownLeft,
+  MessageSquare,
 } from "lucide-react";
 import { cn, formatDate } from "@/lib/utils";
 import { ticketSourceLabel } from "@/lib/ticket-source";
@@ -144,6 +147,28 @@ export function AdminTicketDetails({ ticket, agents, companies = [], userRole = 
   // saída da API esteve vazia, os avisos não saíram e esses códigos ficaram
   // gravados sem ninguém nunca ter visto.
   const [copiado, setCopiado] = useState(false);
+  // Conversa de WhatsApp que originou este chamado (Fase 1, A4).
+  // O vínculo existe no sentido conversa -> chamado, então a descoberta é pela
+  // lista de conversas. `null` = o chamado não veio de conversa, e o botão de
+  // exportar não aparece.
+  const [conversaDoChamado, setConversaDoChamado] = useState<{ id: string; nome: string } | null>(null);
+  const [exportarConversa, setExportarConversa] = useState(false);
+
+  useEffect(() => {
+    let cancelado = false;
+    whatsappApi.listConversations()
+      .then((r) => {
+        if (cancelado) return;
+        const achada = (r.data ?? []).find((c) => c.ticket?.id === ticket.id);
+        setConversaDoChamado(
+          achada
+            ? { id: achada.id, nome: achada.contact?.name ?? achada.contact_name ?? 'Cliente' }
+            : null,
+        );
+      })
+      .catch(() => { if (!cancelado) setConversaDoChamado(null); });
+    return () => { cancelado = true };
+  }, [ticket.id]);
   const [reenviando, setReenviando] = useState(false);
   const [reenvio, setReenvio] = useState<string | null>(null);
 
@@ -865,6 +890,22 @@ export function AdminTicketDetails({ ticket, agents, companies = [], userRole = 
           Exportar PDF
         </Button>
 
+        {/* Exportar conversa (Fase 1, A4).
+            Só aparece quando o chamado VEIO de uma conversa de WhatsApp — o
+            vínculo é da conversa para o chamado, então ele é descoberto pela
+            lista. Chamado aberto pelo portal não tem conversa, e um botão que
+            abriria um diálogo vazio é pior que botão nenhum. */}
+        {conversaDoChamado && (
+          <Button
+            variant="outline"
+            className="w-full gap-2 border-border text-foreground/60 hover:text-foreground hover:bg-muted/50"
+            onClick={() => setExportarConversa(true)}
+          >
+            <MessageSquare className="h-4 w-4" />
+            Exportar conversa
+          </Button>
+        )}
+
         {/* Ver no Kanban */}
         <Button
           asChild
@@ -941,6 +982,14 @@ export function AdminTicketDetails({ ticket, agents, companies = [], userRole = 
 
       <AttachmentPreviewModal attachment={previewImage} onClose={() => setPreviewImage(null)} />
 
+      {exportarConversa && conversaDoChamado && (
+        <ExportarConversaDialog
+          conversationId={conversaDoChamado.id}
+          nomeDoCliente={conversaDoChamado.nome}
+          numeroDoChamado={String(ticket.ticket_number ?? ticket.id)}
+          onFechar={() => setExportarConversa(false)}
+        />
+      )}
     </div>
   );
 }

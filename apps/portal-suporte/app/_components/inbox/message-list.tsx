@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Paperclip } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
+import { TextoFormatado } from '@/components/inbox/texto-formatado'
 import { Citacao, MessageActions, Reacoes } from './message-actions'
 import { whatsappApi, type WAThreadMessage } from '@/lib/api/whatsapp'
 import { cn } from '@/lib/utils'
@@ -39,6 +40,11 @@ interface MessageListProps {
   historico?: { total: number; desde: string | null; lacuna: boolean } | null
   /** Tentar buscar de novo, quando falhou. */
   onTentarDeNovo?: () => void
+  /**
+   * Mensagem achada pela busca da conversa (Fase 1, A2): rola até ela e a
+   * destaca. `null` quando não há busca ativa ou nada casou.
+   */
+  destacada?: string | null
   /** Quantas estavam por ler ao abrir: o divisor entra antes dessas. */
   naoLidas?: number
   /** Id do atendente logado — marca a reação que é sua. */
@@ -60,8 +66,15 @@ function autorDe(m: WAThreadMessage): string | null {
 
 export function MessageList({
   messages, loading, naoLidas = 0, meId = null, onResponder, onMudou,
-  falhou = false, historico = null, onTentarDeNovo,
+  falhou = false, historico = null, onTentarDeNovo, destacada = null,
 }: MessageListProps) {
+  // Rola até a mensagem que a busca achou. `block: 'center'` em vez de 'start'
+  // porque a mensagem achada quase sempre precisa das vizinhas para fazer
+  // sentido — é uma conversa.
+  const refDestacada = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (destacada) refDestacada.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }, [destacada])
   // Onde entra o divisor: antes da N-ésima mensagem RECEBIDA contando do fim.
   // Só mensagem do cliente conta como "por ler" — o que nós mandamos já foi
   // lido por quem escreveu.
@@ -131,7 +144,11 @@ export function MessageList({
             anterior.from_me === m.from_me &&
             autorDe(anterior) === autorDe(m)
           return (
-            <div key={m.id}>
+            <div
+              key={m.id}
+              ref={m.id === destacada ? refDestacada : undefined}
+              className={m.id === destacada ? 'rounded-lg ring-2 ring-primary/60' : undefined}
+            >
               {avisoLacuna}
               {i === iDivisor && (
                 <div className="my-4 flex items-center gap-3" role="separator">
@@ -420,7 +437,15 @@ function MessageBubble({
             </div>
           </div>
         ) : (
-          text && <p className="whitespace-pre-wrap break-words leading-relaxed">{text}</p>
+          // A formatação do WhatsApp é aplicada aqui (Fase 1, A3). O texto é do
+          // cliente: vira árvore de nós e sai como elementos React, que escapam
+          // por natureza — `<b>oi</b>` dele aparece literal.
+          text && (
+            <TextoFormatado
+              texto={text}
+              className="whitespace-pre-wrap break-words leading-relaxed"
+            />
+          )
         )}
         {m.media_url
           ? <MessageMedia url={m.media_url} type={m.media_type} />
