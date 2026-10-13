@@ -74,6 +74,21 @@ function carregarContexto(marca) {
   return _carregar(marca).contexto
 }
 
+/**
+ * O handler E o contexto em que ele roda.
+ *
+ * Necessário quando o handler lê algo de `globalThis` — por exemplo o token do
+ * agendador interno. Em produção os handlers rodam com `new Function` nos
+ * globais do Node, e enxergam o `globalThis` do processo; aqui dentro do `vm` o
+ * `globalThis` é o contexto isolado, então o teste precisa instalar o valor
+ * NELE, e não no do processo de teste. Sem isso o teste reprova um desenho que
+ * funciona em produção.
+ */
+function carregarHandlerEContexto(marca) {
+  const { handler, contexto } = _carregar(marca)
+  return { handler, contexto }
+}
+
 /** Resposta mínima no formato que os handlers usam. */
 function reply() {
   return { status(x) { this._s = x; return this }, send(v) { return { status: this._s || 200, body: v } } }
@@ -89,4 +104,4 @@ function fim() {
   if (falhas) process.exit(1)
 }
 
-module.exports = { carregarHandler, carregarContexto, reply, ok, fim, ARQ }
+module.exports = { carregarHandler, carregarContexto, carregarHandlerEContexto, reply, ok, fim, ARQ }
