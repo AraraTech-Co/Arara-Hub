@@ -92,7 +92,10 @@ export const ContentNode = memo(function ContentNode({ data }: NodeProps) {
 // ─── Handoff (atendente) ─────────────────────────────────────────────────────
 
 export const HandoffNode = memo(function HandoffNode({ data }: NodeProps) {
-  const d = data as { label: string; text: string; area?: string }
+  const d = data as { label: string; text: string; area?: string; avisarApos?: number }
+  // O prazo aparece no card porque é o card que o decide: quem olha o quadro
+  // precisa ver que ESTA porta de saída espera, sem abrir o painel.
+  const apos = Number(d.avisarApos ?? 0)
   return (
     <div className={cn(CARD, 'border-sem-warning-bd')}>
       <TargetHandle />
@@ -102,7 +105,9 @@ export const HandoffNode = memo(function HandoffNode({ data }: NodeProps) {
       </div>
       <Body>
         <p className="line-clamp-3 whitespace-pre-wrap text-foreground/80">{d.text}</p>
-        <p className="mt-1 text-[11px] italic opacity-70">Encerra o menu e chama a equipe</p>
+        <p className="mt-1 text-[11px] italic opacity-70">
+          {apos > 0 ? `Avisa o plantão após ${apos} min` : 'Avisa o plantão na hora'}
+        </p>
       </Body>
     </div>
   )

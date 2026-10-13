@@ -144,5 +144,26 @@ const problemas = (r) => (r.body && r.body.problemas) || []
   r = await publish(ctxDe({ fluxo: { id: 'f1', version: 2, draft: JSON.stringify(BOM) } }))
   ok('rascunho em string JSON é aceito', r.status !== 400, r.body)
 
+  // ── prazo do card Atendente (PR A) ──────────────────────────────────────
+  // O campo é 0–240 inteiro nos TRÊS lugares que validam: editor, PATCH e
+  // publish. Aqui só dá para alcançar os dois do servidor.
+  for (const [prazo, deveRecusar] of [
+    [0, false], [1, false], [240, false],
+    [-1, true], [241, true], [10.5, true], ['dez', true],
+  ]) {
+    const g = {
+      root: 'a',
+      nodes: [{ id: 'a', type: 'handoff', data: { label: 'Atendente', text: 'ok', avisarApos: prazo } }],
+      edges: [],
+    }
+    const r = await patch(ctxDe({ body: { graph: g } }))
+    const recusou = r.status === 400
+    ok(`prazo ${JSON.stringify(prazo)}: ${deveRecusar ? 'recusado' : 'aceito'}`,
+      recusou === deveRecusar, { status: r.status, problemas: problemas(r) })
+    if (deveRecusar) {
+      ok('  e o erro diz a faixa', JSON.stringify(problemas(r)).includes('0 a 240'), problemas(r))
+    }
+  }
+
   fim()
 })().catch((e) => { console.error('ERRO NO TESTE:', e); process.exit(1) })
