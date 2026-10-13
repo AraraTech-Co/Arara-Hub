@@ -85,6 +85,18 @@ export interface WAGraphNode {
     erro?: string
     /** Card `question`: campo da conversa onde guardar a resposta já limpa. */
     guardarEm?: string
+    /**
+     * Cards `menu` e `question`: quanto esperar pela resposta do cliente, em
+     * minutos, antes de seguir pela saída "sem resposta" (porta `timeout`).
+     *
+     * Vazio, 0 ou ausente = espera para sempre, que é o que o portal sempre
+     * fez. 1 a 1440 (um dia) = o relógio segue a saída `timeout` se o cliente
+     * não escrever nesse prazo.
+     *
+     * Como o prazo do card Atendente, vale para quem PARAR no card depois da
+     * publicação: conversa já parada não tem o prazo gravado.
+     */
+    semRespostaMin?: number
   }
 }
 
@@ -203,6 +215,20 @@ export function validarGrafo(g: unknown): ValidacaoDoGrafo {
         }
       }
     }
+    if (n.type === 'menu' || n.type === 'question') {
+      // Minuto inteiro: o relógio bate de minuto em minuto, e 1440 é um dia —
+      // acima disso o prazo não é mais "o cliente não respondeu", é abandono,
+      // e quem fecha conversa parada é outro job.
+      const t = n.data.semRespostaMin
+      if (t !== undefined && t !== null && String(t) !== '') {
+        const n2 = Number(t)
+        if (!Number.isInteger(n2) || n2 < 0 || n2 > 1440) {
+          erros.push(
+            `card "${id}": o prazo de espera pela resposta precisa ser um número inteiro de 0 a 1440 minutos (0 = espera para sempre).`,
+          )
+        }
+      }
+    }
     if (n.type === 'question') {
       // Pergunta sem pergunta é um card que espera resposta sem dizer o que
       // quer: o cliente fica parado olhando a conversa.
@@ -233,6 +259,19 @@ export function validarGrafo(g: unknown): ValidacaoDoGrafo {
 
   // ── avisos: desenho incompleto, não quebrado ──
   for (const [id, no] of porId) {
+    // Prazo e saída "sem resposta" só servem juntos: um sem o outro é metade
+    // de um desenho, e o motor não faz nada em nenhum dos dois casos. Aviso, e
+    // não erro, porque desenhar em partes é normal.
+    if (no.type === 'menu' || no.type === 'question') {
+      const prazo = Number(no.data.semRespostaMin ?? 0)
+      const temSaida = saidas.has(`${id}|timeout`)
+      if (prazo > 0 && !temSaida) {
+        avisos.push(`card "${id}": espera ${prazo} min por resposta, mas a saída "sem resposta" não está ligada — nada vai acontecer quando o prazo vencer.`)
+      }
+      if (prazo <= 0 && temSaida) {
+        avisos.push(`card "${id}": a saída "sem resposta" está ligada, mas o card não tem prazo de espera — esse caminho nunca vai ser usado.`)
+      }
+    }
     if (no.type === 'menu') {
       for (const op of no.data.options ?? []) {
         if (!saidas.has(`${id}|opt:${op.id}`)) {

@@ -34,6 +34,15 @@ import { resolveStorageSlug } from '../../lib/app-slugs.js'
 
 const SLUG = 'portal-suporte'
 const ROTA_VARRER = '/whatsapp/plantao/varrer'
+/**
+ * O fluxo "sem resposta" entra pelo WEBHOOK, com corpo `{ __tarefa }`.
+ *
+ * Não é descuido: o motor do fluxo vive nesse handler, e copiá-lo para uma
+ * rota nova seriam 100 mil caracteres duplicados — tudo que fala com CLIENTE.
+ * O desvio é a primeira coisa do handler, atrás da mesma prova de origem da
+ * varredura, e sem ela um corpo com `__tarefa` é tratado como webhook comum.
+ */
+const ROTA_INBOUND = '/whatsapp/inbound'
 
 /**
  * Token que prova que a chamada veio daqui de dentro.
@@ -79,44 +88,68 @@ export function iniciarAgendadorPortalSuporte(app: FastifyInstance): void {
         const found = await app.prisma.app.findUnique({ where: { slug: storageSlug } })
         if (!found || found.status !== 'active') return
 
-        const rota = getAppRoutes(SLUG).find(
-          (r) => r.method.toUpperCase() === 'POST' && r.path === ROTA_VARRER,
-        )
-        if (!rota) {
-          app.log.error('[agendador] rota de varredura não encontrada no registry')
-          return
+        const models = await buildModelsApi(app.prisma, found.id, storageSlug)
+
+        /** Chama um handler pelo registry, com a prova de origem no ctx. */
+        const chamar = async (caminho: string, body: Record<string, unknown>) => {
+          const rota = getAppRoutes(SLUG).find(
+            (r) => r.method.toUpperCase() === 'POST' && r.path === caminho,
+          )
+          if (!rota) {
+            app.log.error({ caminho }, '[agendador] rota não encontrada no registry')
+            return null
+          }
+          const ctx = await buildHandlerCtx({
+            method: 'POST',
+            params: {},
+            query: {},
+            body,
+            rawBody: null,
+            headers: {},
+            user: { type: 'agendador', appSlug: SLUG },
+            app: { id: found.id, slug: SLUG, name: found.name },
+            models,
+            prisma: app.prisma,
+          })
+          // O campo que prova a origem. O caminho HTTP NUNCA o monta:
+          // `buildHandlerCtx` preenche headers, params, query e body, e nada
+          // mais. Um atacante pode mandar o header que quiser; não há como
+          // preencher isto de fora.
+          ;(ctx as Record<string, unknown>).agendadorInterno = token
+          return await rota.handler(ctx)
         }
 
-        const models = await buildModelsApi(app.prisma, found.id, storageSlug)
-        const ctx = await buildHandlerCtx({
-          method: 'POST',
-          params: {},
-          query: {},
-          body: {},
-          rawBody: null,
-          headers: {},
-          user: { type: 'agendador', appSlug: SLUG },
-          app: { id: found.id, slug: SLUG, name: found.name },
-          models,
-          prisma: app.prisma,
-        })
+        // As duas tarefas, cada uma no seu try: a do plantão falhar não pode
+        // cancelar a do fluxo, nem o contrário. A trava de reentrada é uma só
+        // e cobre o tick inteiro.
+        try {
+          const r = await chamar(ROTA_VARRER, {})
+          const d = (r as { body?: { data?: { avisou?: boolean; conversas?: number } } })?.body?.data
+          // Silêncio no tick vazio: um log por minuto, 1440 por dia,
+          // esconderia justamente a linha que importa.
+          if (d?.avisou) {
+            app.log.info(
+              { conversas: d.conversas ?? 0 },
+              '[agendador] plantonista avisado pela varredura da fila',
+            )
+          }
+        } catch (err) {
+          app.log.error({ err }, '[agendador] varredura do plantão falhou')
+        }
 
-        // O campo que prova a origem. O caminho HTTP NUNCA o monta:
-        // `buildHandlerCtx` preenche headers, params, query e body, e nada
-        // mais. Um atacante pode mandar o header que quiser; não há como
-        // preencher isto de fora.
-        ;(ctx as Record<string, unknown>).agendadorInterno = token
-
-        const resultado = await rota.handler(ctx)
-        const corpo = (resultado as { body?: { data?: { avisou?: boolean; conversas?: number } } })?.body
-        const dados = corpo?.data
-        // Silêncio no tick vazio: um log por minuto, 1440 por dia, esconderia
-        // justamente a linha que importa.
-        if (dados?.avisou) {
-          app.log.info(
-            { conversas: dados.conversas ?? 0 },
-            '[agendador] plantonista avisado pela varredura da fila',
-          )
+        try {
+          const r = await chamar(ROTA_INBOUND, { __tarefa: 'sem-resposta' })
+          const d = (r as { body?: { data?: { seguidas?: number; erros?: number } } })?.body?.data
+          // Aqui o log sai sempre que ALGO aconteceu: estas mensagens vão para
+          // CLIENTE, por iniciativa do relógio. Tem de haver rastro.
+          if (d?.seguidas) {
+            app.log.info({ seguidas: d.seguidas }, '[agendador] fluxo seguiu pela saída "sem resposta"')
+          }
+          if (d?.erros) {
+            app.log.warn({ erros: d.erros }, '[agendador] conversas que falharam ao seguir "sem resposta"')
+          }
+        } catch (err) {
+          app.log.error({ err }, '[agendador] tarefa "sem-resposta" falhou')
         }
       } catch (err) {
         app.log.error({ err }, '[agendador] falhou')

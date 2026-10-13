@@ -103,13 +103,43 @@ function appFalso({ status = 'active' } = {}) {
  * entrega o `resolver`/`rejeitar` da chamada mais recente.
  */
 function rotaControlada() {
-  espiao.rotas = [{
+  const controlado = (path) => ({
     method: 'POST',
-    path: '/whatsapp/plantao/varrer',
+    path,
     handler: (ctx) => new Promise((resolver, rejeitar) => {
-      espiao.chamadas.push({ ctx, resolver, rejeitar })
+      espiao.chamadas.push({ path, ctx, resolver, rejeitar })
     }),
-  }]
+  })
+  // O tick tem DUAS tarefas: a varredura do plantão e a de "sem resposta",
+  // que entra pelo webhook porque o motor do fluxo vive lá.
+  espiao.rotas = [controlado('/whatsapp/plantao/varrer'), controlado('/whatsapp/inbound')]
+}
+
+/** Resolve todas as chamadas pendentes, para o tick terminar. */
+function resolverTudo(valor = { body: { data: {} } }) {
+  for (const c of espiao.chamadas) if (!c.pronto) { c.pronto = true; c.resolver(valor) }
+}
+
+/** Quantas vezes CADA rota foi chamada — contar o total esconde qual tarefa rodou. */
+const vezes = (path) => espiao.chamadas.filter((c) => c.path === path).length
+const VARRER = '/whatsapp/plantao/varrer'
+const INBOUND = '/whatsapp/inbound'
+
+/** A chamada pendente mais recente (a que o tick está esperando). */
+const pendente = () => espiao.chamadas.filter((c) => !c.pronto).pop()
+function responder(valor = { body: { data: {} } }) {
+  const c = pendente()
+  if (!c) throw new Error('nada pendente para responder')
+  c.pronto = true
+  c.resolver(valor)
+  return c
+}
+function quebrar(erro) {
+  const c = pendente()
+  if (!c) throw new Error('nada pendente para quebrar')
+  c.pronto = true
+  c.rejeitar(erro)
+  return c
 }
 
 /** Deixa o microtask queue drenar — o tick é assíncrono. */
@@ -132,12 +162,13 @@ async function rodar() {
   // ── A trava de reentrada ─────────────────────────────────────────────────
   const tick1 = espiao.tick()
   await respira()
-  ok('o primeiro tick chama a varredura', espiao.chamadas.length === 1, espiao.chamadas.length)
+  ok('o primeiro tick chama a varredura do plantão', vezes(VARRER) === 1, espiao.chamadas.map((c) => c.path))
+  ok('  e ainda não a tarefa do fluxo (uma espera a outra)', vezes(INBOUND) === 0, vezes(INBOUND))
 
   const tick2 = espiao.tick()   // enquanto o tick 1 NÃO terminou
   await respira()
   ok('o tick de cima não entra enquanto o anterior roda',
-    espiao.chamadas.length === 1, espiao.chamadas.length)
+    espiao.chamadas.length === 1, espiao.chamadas.map((c) => c.path))
   const avisou = espiao.logs.warn.some((a) => JSON.stringify(a).includes('pulando'))
   ok('  e deixa dito no log por que pulou', avisou, espiao.logs.warn)
   await tick2
@@ -154,43 +185,67 @@ async function rodar() {
     JSON.stringify({ b: ctx.body, q: ctx.query, h: ctx.headers, p: ctx.params }) === '{"b":{},"q":{},"h":{},"p":{}}',
     { b: ctx.body, q: ctx.query, h: ctx.headers, p: ctx.params })
 
-  // ── A trava libera quando o trabalho acaba ───────────────────────────────
-  espiao.chamadas[0].resolver({ body: { data: { avisou: false, conversas: 0 } } })
+  // ── As DUAS tarefas do tick ──────────────────────────────────────────────
+  responder({ body: { data: { avisou: false, conversas: 0 } } })   // plantão
+  await respira()
+  ok('terminada a do plantão, o tick chama a do fluxo', vezes(INBOUND) === 1, espiao.chamadas.map((c) => c.path))
+  const ctxFluxo = espiao.chamadas.find((c) => c.path === INBOUND).ctx
+  ok('  com a tarefa dita no corpo, e só ela',
+    JSON.stringify(ctxFluxo.body) === '{"__tarefa":"sem-resposta"}', ctxFluxo.body)
+  ok('  e com a mesma prova de origem',
+    ctxFluxo.agendadorInterno === globalThis.__araraAgendadorToken, typeof ctxFluxo.agendadorInterno)
+  responder({ body: { data: { seguidas: 0 } } })
   await tick1
-  ok('tick vazio não escreve no log', espiao.logs.info.filter((a) => JSON.stringify(a).includes('varredura')).length === 0,
+  ok('tick vazio não escreve no log',
+    espiao.logs.info.filter((a) => /varredura|sem resposta/.test(JSON.stringify(a))).length === 0,
     espiao.logs.info)
 
+  // ── A trava libera quando o trabalho acaba ───────────────────────────────
   const tick3 = espiao.tick()
   await respira()
-  ok('terminado o anterior, o tick seguinte entra', espiao.chamadas.length === 2, espiao.chamadas.length)
-  espiao.chamadas[1].resolver({ body: { data: { avisou: true, conversas: 3 } } })
-  await tick3
+  ok('terminado o anterior, o tick seguinte entra', vezes(VARRER) === 2, vezes(VARRER))
+  responder({ body: { data: { avisou: true, conversas: 3 } } })
+  await respira()
   ok('  e quando avisa, registra quantas conversas',
     espiao.logs.info.some((a) => JSON.stringify(a).includes('"conversas":3')), espiao.logs.info)
+  responder({ body: { data: { seguidas: 2 } } })
+  await tick3
+  ok('  mensagem a CLIENTE por tempo sempre deixa rastro no log',
+    espiao.logs.info.some((a) => JSON.stringify(a).includes('"seguidas":2')), espiao.logs.info)
+
+  // ── Uma tarefa falhar não cancela a outra ───────────────────────────────
+  const tick4 = espiao.tick()
+  await respira()
+  ok('o tick que quebra é um tick de verdade', vezes(VARRER) === 3, vezes(VARRER))
+  quebrar(new Error('banco fora'))                       // a do plantão quebra
+  await respira()
+  ok('a do plantão falhou e a do fluxo rodou mesmo assim', vezes(INBOUND) === 3, vezes(INBOUND))
+  ok('  com o erro da primeira registrado',
+    espiao.logs.error.some((a) => JSON.stringify(a).includes('varredura do plantão falhou')), espiao.logs.error)
+  quebrar(new Error('motor fora'))                       // e a do fluxo também
+  await tick4
+  ok('  e o erro da segunda também',
+    // O JSON escapa as aspas do nome da tarefa, então a busca é pelas duas
+    // partes e não pela frase literal.
+    espiao.logs.error.some((a) => /sem-resposta.*falhou/.test(JSON.stringify(a))), espiao.logs.error)
 
   // ── A trava libera MESMO quando o tick quebra ────────────────────────────
   // Sem o `finally`, o agendador morreria calado aqui.
-  const tick4 = espiao.tick()
-  await respira()
-  ok('o tick que quebra é um tick de verdade', espiao.chamadas.length === 3, espiao.chamadas.length)
-  espiao.chamadas[2].rejeitar(new Error('banco fora'))
-  await tick4
-  ok('o erro é registrado, não propagado',
-    espiao.logs.error.some((a) => JSON.stringify(a).includes('falhou')), espiao.logs.error)
-
   const tick5 = espiao.tick()
   await respira()
-  ok('depois do erro o relógio continua andando', espiao.chamadas.length === 4, espiao.chamadas.length)
-  espiao.chamadas[3].resolver({ body: { data: { avisou: false } } })
+  ok('depois dos erros o relógio continua andando', vezes(VARRER) === 4, vezes(VARRER))
+  responder({ body: { data: { avisou: false } } })
+  await respira()
+  responder({ body: { data: {} } })
   await tick5
 
   // ── App desligado: não varre, e a trava não fica presa ───────────────────
-  const antes = espiao.chamadas.length
+  const antes = vezes(VARRER)
   const appParado = appFalso({ status: 'inactive' })
   espiao.tick = null
   iniciarAgendadorPortalSuporte(appParado)
   await espiao.tick()
-  ok('app inativo não é varrido', espiao.chamadas.length === antes, espiao.chamadas.length)
+  ok('app inativo não é varrido', vezes(VARRER) === antes, vezes(VARRER))
 
   // Mesmo tick, agora com o app ativo de novo: se o `return` de cima tivesse
   // deixado `rodando` em true, este tick pularia.
@@ -199,8 +254,10 @@ async function rodar() {
   const tick6 = espiao.tick()
   await respira()
   ok('  e a trava não ficou presa pelo caminho do return',
-    espiao.chamadas.length === antes + 1, espiao.chamadas.length)
-  espiao.chamadas[espiao.chamadas.length - 1].resolver({ body: { data: {} } })
+    vezes(VARRER) === antes + 1, vezes(VARRER))
+  responder()
+  await respira()
+  responder()
   await tick6
 
   // ── Rota ausente: fala, em vez de ficar quieto ───────────────────────────
@@ -208,7 +265,7 @@ async function rodar() {
   espiao.tick = null
   iniciarAgendadorPortalSuporte(appFalso())
   await espiao.tick()
-  ok('rota de varredura ausente vira erro no log',
+  ok('rota ausente no registry vira erro no log',
     espiao.logs.error.some((a) => JSON.stringify(a).includes('registry')), espiao.logs.error)
 
   // ── onClose para o relógio ───────────────────────────────────────────────
