@@ -396,6 +396,21 @@ export const whatsappApi = {
   unassignConversation: (id: string) =>
     api.post<{ data: unknown }>(`/api/whatsapp/${id}/unassign`, {}),
 
+  /**
+   * POST /api/whatsapp/[id]/backup — chama o backup técnico do dia.
+   *
+   * Nunca é automático: quem chama é quem está atendendo, quando o problema
+   * exige intervenção técnica. O servidor recusa fora da janela de plantão,
+   * sem atendente atribuído, e se já tiver avisado há menos de 10 minutos.
+   */
+  chamarBackupTecnico: (id: string) =>
+    api.post<{ data: {
+      avisado: { id: string; nome: string | null } | null
+      enviado: boolean
+      avisado_em: string
+      observacao: string
+    } }>(`/api/whatsapp/${id}/backup`, {}),
+
   /** POST /api/whatsapp/[id]/resolve — conclui a conversa (motivo é obrigatório) */
   resolveConversation: (id: string, closeReasonId: string) =>
     api.post<{ data: unknown }>(`/api/whatsapp/${id}/resolve`, { closeReasonId }),

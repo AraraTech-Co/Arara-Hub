@@ -24,20 +24,23 @@ export interface AgenteEscolhivel {
 }
 
 export function DiaDoPlantaoDialog({
-  data, escolhidos, agentes, salvando, onFechar, onSalvar, onLimpar,
+  data, escolhidos, backupEscolhido, agentes, salvando, onFechar, onSalvar, onLimpar,
 }: {
   data: string
   escolhidos: string[]
+  backupEscolhido: string[]
   agentes: AgenteEscolhivel[]
   salvando?: boolean
   onFechar: () => void
-  onSalvar: (ids: string[]) => void
+  onSalvar: (ids: string[], backupIds: string[]) => void
   onLimpar: () => void
 }) {
   const [ordem, setOrdem] = useState<string[]>(escolhidos)
+  const [backup, setBackup] = useState<string[]>(backupEscolhido)
   const [busca, setBusca] = useState('')
 
   useEffect(() => { setOrdem(escolhidos) }, [escolhidos])
+  useEffect(() => { setBackup(backupEscolhido) }, [backupEscolhido])
 
   // Fechar com Esc é o mínimo que um diálogo deve fazer.
   useEffect(() => {
@@ -48,18 +51,76 @@ export function DiaDoPlantaoDialog({
 
   const porId = new Map(agentes.map((a) => [a.id, a]))
   const alvo = busca.trim().toLowerCase()
+  // Fora das DUAS listas: a mesma pessoa não pode ser plantonista e backup —
+  // ela pediria retaguarda a si mesma, e o servidor recusa.
   const disponiveis = agentes.filter((a) => {
-    if (ordem.includes(a.id)) return false
+    if (ordem.includes(a.id) || backup.includes(a.id)) return false
     if (!alvo) return true
     return `${a.nome ?? ''} ${a.email ?? ''}`.toLowerCase().includes(alvo)
   })
 
-  const mover = (i: number, passo: number) => {
+  const mover = (lista: string[], setLista: (v: string[]) => void, i: number, passo: number) => {
     const j = i + passo
-    if (j < 0 || j >= ordem.length) return
-    const copia = ordem.slice()
+    if (j < 0 || j >= lista.length) return
+    const copia = lista.slice()
     ;[copia[i], copia[j]] = [copia[j], copia[i]]
-    setOrdem(copia)
+    setLista(copia)
+  }
+
+  /** As duas listas têm a mesma mecânica; só mudam o título e o destino. */
+  function Secao({ titulo, ajuda, lista, setLista }: {
+    titulo: string
+    ajuda: string
+    lista: string[]
+    setLista: (v: string[]) => void
+  }) {
+    return (
+      <div className="space-y-1.5">
+        <div>
+          <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+            {titulo} ({lista.length})
+          </p>
+          <p className="text-[11px] italic text-muted-foreground">{ajuda}</p>
+        </div>
+        {lista.map((id, i) => {
+          const a = porId.get(id)
+          return (
+            <div key={id} className="flex items-center gap-2 rounded-md border border-border/60 px-2 py-1.5">
+              <span className="w-5 shrink-0 text-center text-xs font-semibold tabular-nums text-muted-foreground">
+                {i + 1}
+              </span>
+              <span className="truncate text-sm">{a?.nome ?? id}</span>
+              {a && (a.telefone_ok
+                ? <Phone className="h-3.5 w-3.5 shrink-0 text-emerald-600" aria-label="telefone cadastrado" />
+                : <PhoneOff className="h-3.5 w-3.5 shrink-0 text-amber-600" aria-label="sem telefone — não recebe aviso" />)}
+              <div className="ml-auto flex items-center gap-0.5">
+                <button
+                  type="button" aria-label={`Subir ${a?.nome ?? id}`} disabled={i === 0}
+                  onClick={() => mover(lista, setLista, i, -1)}
+                  className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-30"
+                >
+                  <ArrowUp className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  type="button" aria-label={`Descer ${a?.nome ?? id}`} disabled={i === lista.length - 1}
+                  onClick={() => mover(lista, setLista, i, 1)}
+                  className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-30"
+                >
+                  <ArrowDown className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  type="button" aria-label={`Tirar ${a?.nome ?? id}`}
+                  onClick={() => setLista(lista.filter((x) => x !== id))}
+                  className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    )
   }
 
   return (
@@ -88,53 +149,25 @@ export function DiaDoPlantaoDialog({
         </header>
 
         <div className="flex-1 space-y-4 overflow-y-auto px-4 py-3">
-          <div className="space-y-1.5">
-            <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-              De plantão ({ordem.length})
+          <Secao
+            titulo="De plantão"
+            ajuda="Quem o sistema avisa sozinho quando um cliente fica esperando. A ordem é a ordem de chamada."
+            lista={ordem}
+            setLista={setOrdem}
+          />
+          {ordem.length === 0 && (
+            <p className="text-xs italic text-muted-foreground">
+              Ninguém de plantão neste dia. Salvar assim registra plantão vago — que é uma
+              informação, não um erro.
             </p>
-            {ordem.length === 0 && (
-              <p className="text-xs italic text-muted-foreground">
-                Ninguém neste dia. Salvar assim registra plantão vago — que é uma informação, não um erro.
-              </p>
-            )}
-            {ordem.map((id, i) => {
-              const a = porId.get(id)
-              return (
-                <div key={id} className="flex items-center gap-2 rounded-md border border-border/60 px-2 py-1.5">
-                  <span className="w-5 shrink-0 text-center text-xs font-semibold tabular-nums text-muted-foreground">
-                    {i + 1}
-                  </span>
-                  <span className="truncate text-sm">{a?.nome ?? id}</span>
-                  {a && (a.telefone_ok
-                    ? <Phone className="h-3.5 w-3.5 shrink-0 text-emerald-600" aria-label="telefone cadastrado" />
-                    : <PhoneOff className="h-3.5 w-3.5 shrink-0 text-amber-600" aria-label="sem telefone — não recebe aviso" />)}
-                  <div className="ml-auto flex items-center gap-0.5">
-                    <button
-                      type="button" aria-label={`Subir ${a?.nome ?? id}`} disabled={i === 0}
-                      onClick={() => mover(i, -1)}
-                      className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-30"
-                    >
-                      <ArrowUp className="h-3.5 w-3.5" />
-                    </button>
-                    <button
-                      type="button" aria-label={`Descer ${a?.nome ?? id}`} disabled={i === ordem.length - 1}
-                      onClick={() => mover(i, 1)}
-                      className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-30"
-                    >
-                      <ArrowDown className="h-3.5 w-3.5" />
-                    </button>
-                    <button
-                      type="button" aria-label={`Tirar ${a?.nome ?? id} do plantão`}
-                      onClick={() => setOrdem(ordem.filter((x) => x !== id))}
-                      className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
+          )}
+
+          <Secao
+            titulo="Backup técnico"
+            ajuda="Retaguarda: quem o PLANTONISTA chama quando o problema exige intervenção técnica. O sistema nunca chama sozinho."
+            lista={backup}
+            setLista={setBackup}
+          />
 
           <div className="space-y-1.5">
             <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
@@ -155,24 +188,37 @@ export function DiaDoPlantaoDialog({
                 {alvo ? 'Ninguém com esse nome.' : 'Todo mundo já está neste dia.'}
               </p>
             )}
+            {/* Dois botões por pessoa: com uma lista só, clicar num nome seria
+                ambíguo agora que existem dois papéis no mesmo dia. */}
             {disponiveis.map((a) => (
-              <button
-                key={a.id}
-                type="button"
-                onClick={() => setOrdem([...ordem, a.id])}
-                className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted"
-              >
+              <div key={a.id} className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted/60">
                 <span className="truncate">{a.nome ?? a.email ?? a.id}</span>
                 {a.telefone_ok
                   ? <Phone className="h-3.5 w-3.5 shrink-0 text-emerald-600" aria-label="telefone cadastrado" />
                   : <PhoneOff className="h-3.5 w-3.5 shrink-0 text-amber-600" aria-label="sem telefone — não recebe aviso" />}
-              </button>
+                <span className="ml-auto flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setOrdem([...ordem, a.id])}
+                    className="rounded border border-border px-1.5 py-0.5 text-[11px] text-muted-foreground hover:bg-muted hover:text-foreground"
+                  >
+                    de plantão
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setBackup([...backup, a.id])}
+                    className="rounded border border-border px-1.5 py-0.5 text-[11px] text-muted-foreground hover:bg-muted hover:text-foreground"
+                  >
+                    backup
+                  </button>
+                </span>
+              </div>
             ))}
           </div>
         </div>
 
         <footer className="flex items-center gap-2 border-t border-border px-4 py-3">
-          {escolhidos.length > 0 && (
+          {(escolhidos.length > 0 || backupEscolhido.length > 0) && (
             <Button type="button" variant="ghost" size="sm" onClick={onLimpar} disabled={salvando}>
               Tirar o plantão do dia
             </Button>
@@ -180,7 +226,7 @@ export function DiaDoPlantaoDialog({
           <Button
             type="button" size="sm" className="ml-auto gap-1.5"
             disabled={salvando}
-            onClick={() => onSalvar(ordem)}
+            onClick={() => onSalvar(ordem, backup)}
           >
             {salvando ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
             Salvar o dia
