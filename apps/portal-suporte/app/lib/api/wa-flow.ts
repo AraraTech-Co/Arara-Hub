@@ -39,4 +39,44 @@ export const waFlowApi = {
       `/api/whatsapp/flows/${id}/publish`,
       {},
     ),
+
+  /**
+   * POST /api/whatsapp/flows/[id]/simular — percorre o fluxo sem enviar nada.
+   *
+   * Manda o grafo do EDITOR (o rascunho aberto, ainda não salvo), que é o caso
+   * de uso: conferir antes de publicar. `agora` finge o relógio, para testar os
+   * dois ramos da condição de horário sem esperar as 18h.
+   */
+  simular: (
+    id: string,
+    body: {
+      graph: WAGraph
+      mensagens: string[]
+      agora?: string | null
+      estado?: WASimulacaoEstado
+    },
+  ) => api.post<{ data: WASimulacao }>(`/api/whatsapp/flows/${id}/simular`, body),
+}
+
+export interface WASimulacaoEstado {
+  menu_node?: string | null
+  phase?: string
+  aguardando?: boolean
+  nome?: string
+  tem_chamado?: boolean
+  ausencia_avisada?: boolean
+}
+
+export interface WASimulacaoPasso {
+  /** Quem "falou": o cliente, o robô, ou o próprio simulador explicando. */
+  de: 'cliente' | 'robo' | 'sistema'
+  texto: string
+}
+
+export interface WASimulacao {
+  passos: WASimulacaoPasso[]
+  desfecho: string | null
+  estado: WASimulacaoEstado
+  nada_foi_enviado: boolean
+  nada_foi_gravado: boolean
 }

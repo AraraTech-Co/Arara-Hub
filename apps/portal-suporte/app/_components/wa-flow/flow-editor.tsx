@@ -18,9 +18,10 @@ import {
 import '@xyflow/react/dist/style.css'
 import {
   Loader2, Save, Rocket, ListChecks, MessageSquareText, UserRoundCheck, GitBranch, Sparkles,
-  Timer, Shuffle, Webhook,
+  Timer, Shuffle, Webhook, Play,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { FlowSimulador } from '@/components/wa-flow/flow-simulador'
 import { useToast } from '@/hooks/use-toast'
 import { waFlowApi, type WAFlowDetail } from '@/lib/api/wa-flow'
 import type { WAGraph, WAGraphNode, WAGraphNodeType } from '@/lib/wa-flow-graph'
@@ -188,6 +189,8 @@ function FlowEditorInner({ flowId, canEdit }: { flowId: string; canEdit: boolean
     }
   }
 
+  const [simulando, setSimulando] = useState(false)
+
   async function handleSave() {
     const graph = currentGraph()
     if (!flow || !graph) return
@@ -267,6 +270,13 @@ function FlowEditorInner({ flowId, canEdit }: { flowId: string; canEdit: boolean
               Publicar
             </Button>
 
+            {/* Simular é mais barato que conferir mandando mensagem: o
+                provedor cobra por mensagem, e o simulador não envia nada. */}
+            <Button size="sm" variant="outline" onClick={() => setSimulando(true)}>
+              <Play className="mr-1.5 h-3.5 w-3.5" />
+              Simular
+            </Button>
+
             <span className="mx-1 h-5 w-px bg-border" aria-hidden />
             <span className="text-xs text-muted-foreground">Adicionar:</span>
             <Button size="sm" variant="outline" onClick={() => addNode('menu')}>
@@ -304,6 +314,14 @@ function FlowEditorInner({ flowId, canEdit }: { flowId: string; canEdit: boolean
           {flow.name} · versão {flow.version}
         </span>
       </div>
+
+      {simulando && currentGraph() && (
+        <FlowSimulador
+          flowId={flow.id}
+          graph={currentGraph()!}
+          onFechar={() => setSimulando(false)}
+        />
+      )}
 
       <div className="relative h-[calc(100dvh-16rem)] w-full overflow-hidden rounded-xl border border-border bg-muted/20">
         <ReactFlow
