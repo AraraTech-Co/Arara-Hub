@@ -72,12 +72,41 @@ function aberturaValida(texto: string, marca: string, i: number): boolean {
  * Nunca lança: texto malformado vira texto. O pior caso é o cliente ver o
  * asterisco que ele mesmo digitou.
  */
+/**
+ * Acima disto o texto sai sem formatação nenhuma.
+ *
+ * Uma mensagem de WhatsApp vai até ~65 kB, e 16 kB já não é conversa — é
+ * despejo. Formatar não acrescenta nada ali, e a rede de proteção custa uma
+ * comparação.
+ */
+const LIMITE_DE_FORMATACAO = 16 * 1024
+
 export function formatarWhatsApp(entrada: string | null | undefined): NoFormatado[] {
   const texto = String(entrada ?? '')
   if (!texto) return []
+  if (texto.length > LIMITE_DE_FORMATACAO) return [{ tipo: 'texto', texto }]
 
   const nos: NoFormatado[] = []
   let buffer = ''
+
+  // ── Memória de fechamento ausente ───────────────────────────────────────
+  //
+  // Sem isto o parser é QUADRÁTICO no pior caso real: `*a *a *a …`. Cada `*` é
+  // abertura válida (vem letra depois), e nenhum dos `*` seguintes serve de
+  // fechamento (todos têm espaço antes), então cada abertura varre o texto até
+  // o fim. Medido: 65 kB levavam 3,0 s — e a bolha re-renderiza a cada ciclo
+  // do polling, com texto que vem do cliente.
+  //
+  // Por que guardar um índice basta: se a varredura a partir de `abre` rejeitou
+  // TODOS os candidatos, uma varredura a partir de um índice MAIOR olha um
+  // subconjunto deles. O único motivo de rejeição que depende de `abre` é
+  // "candidato colado na abertura" (conteúdo vazio), e esse candidato fica para
+  // trás quando a abertura anda para a frente. Logo, não há fechamento adiante
+  // para nenhuma abertura posterior da mesma marca.
+  //
+  // A memória é LOCAL a esta chamada de propósito: a recursão trabalha sobre um
+  // pedaço fatiado, com índices próprios.
+  const semFechamento: Record<string, number> = {}
   const despejar = () => {
     if (buffer) { nos.push({ tipo: 'texto', texto: buffer }); buffer = '' }
   }
@@ -100,8 +129,10 @@ export function formatarWhatsApp(entrada: string | null | undefined): NoFormatad
     }
 
     const marca = MARCAS[texto[i]]
-    if (marca && aberturaValida(texto, texto[i], i)) {
+    const jaSemFecho = semFechamento[texto[i]] !== undefined && i >= semFechamento[texto[i]]
+    if (marca && !jaSemFecho && aberturaValida(texto, texto[i], i)) {
       const fim = acharFechamento(texto, texto[i], i)
+      if (fim < 0) semFechamento[texto[i]] = i
       if (fim > i) {
         despejar()
         // Recursão no conteúdo: *negrito com _itálico_ dentro* funciona, e a
