@@ -144,6 +144,27 @@ export function FlowCardEditor({
           </div>
         )}
 
+        {node.type === 'content' && (
+          <div className="space-y-1">
+            <label className="flex items-start gap-2 text-xs">
+              <input
+                type="checkbox"
+                className="mt-0.5"
+                checked={d.umaVezPorJanela === true}
+                disabled={!canEdit}
+                onChange={(e) => onChange({ umaVezPorJanela: e.target.checked })}
+              />
+              <span>
+                <strong>Avisar só uma vez por período fechado</strong>
+                <span className="block pt-0.5 text-[11px] italic text-muted-foreground">
+                  Para o aviso de fora do horário: quem manda cinco mensagens às 23h recebe um
+                  aviso, não cinco. O contador zera quando o atendimento abre de novo.
+                </span>
+              </span>
+            </label>
+          </div>
+        )}
+
         {node.type === 'delay' && (
           <div className="space-y-1">
             <label htmlFor="card-seconds" className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
