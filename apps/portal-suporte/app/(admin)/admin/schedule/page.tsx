@@ -1,548 +1,296 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+// =============================================================================
+// Plantão — uma tela só.
+//
+// Antes eram cinco abas (Semanal, Diária, Mensal, Warroom, Noturna) sobre um
+// único model sem schema, gravando dois esquemas diferentes. "Colocar o Fulano
+// de plantão esta noite" custava 4 cliques e uma digitação, e as abas Diária,
+// Mensal, Warroom e Noturna mostravam "Sem escala" MESMO COM DADOS GRAVADOS,
+// porque a listagem mandava start/end como filtro de coluna (corrigido no
+// backend, entrega 3a).
+//
+// Decisões do Leonardo (09/10/2026) que desenham esta tela:
+//  - uma escala só: o Plantão, por data, com ordem de chamada;
+//  - N1/N2/N3 é severidade do CHAMADO e saiu da escala;
+//  - war room é estado de incidente, não turno, e saiu também;
+//  - janela fixa seg–sex 18–22 e sáb–dom 8–22, configurada junto com o horário
+//    de atendimento (entrega 2). Fora dela ninguém é acordado.
+// =============================================================================
+
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { AdminHeader } from '@/components/admin/admin-header'
-import {
-  CalendarDays, Users, Plus, AlertCircle, Pencil,
-  Sun, Moon, Zap, Calendar, List,
-} from 'lucide-react'
-import { CreateScheduleDialog } from '@/components/schedule/create-schedule-dialog'
-import { ScheduleCalendar } from '@/components/schedule/schedule-calendar'
-import { DailyShiftDialog } from '@/components/schedule/daily-shift-dialog'
+import { AlertCircle, ChevronLeft, ChevronRight, Clock, Phone, PhoneOff, Plus } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
-import { schedulesApi } from '@/lib/api/schedules'
-import { formatDateShort } from '@/lib/utils'
+import { schedulesApi, type PlantaoDia, type QuemAvisarAgora } from '@/lib/api/schedules'
 import { araraApiFetch } from '@/lib/arara/arara-api-fetch'
+import { cn } from '@/lib/utils'
+import { DiaDoPlantaoDialog, type AgenteEscolhivel } from '@/components/schedule/dia-do-plantao-dialog'
 
-// ─── helpers ────────────────────────────────────────────────────────────────
+const DIAS_CURTOS = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']
 
-function weekRange(date: Date) {
-  const d = new Date(date)
-  const day = d.getDay()                       // 0=Sun
-  const mon = new Date(d)
-  mon.setDate(d.getDate() - ((day + 6) % 7))  // Monday
-  const sun = new Date(mon)
-  sun.setDate(mon.getDate() + 6)               // Sunday
-  mon.setHours(0, 0, 0, 0)
-  sun.setHours(23, 59, 59, 999)
-  return { start: mon, end: sun }
+/** AAAA-MM-DD no fuso local — `toISOString()` daria o dia errado à noite. */
+function isoLocal(d: Date): string {
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
+  return `${d.getFullYear()}-${mm}-${dd}`
 }
 
-function isoDate(d: Date) {
-  return d.toISOString().split('T')[0]
+/** Segunda da semana que contém `d`. */
+function segundaDa(d: Date): Date {
+  const base = new Date(d)
+  base.setHours(12, 0, 0, 0)
+  base.setDate(base.getDate() - ((base.getDay() + 6) % 7))
+  return base
 }
 
-function ptDate(iso: string) {
-  return formatDateShort(iso + 'T12:00:00')
-}
-
-function monthDays(year: number, month: number) {
-  // month is 0-based
-  const first = new Date(year, month, 1)
-  const last  = new Date(year, month + 1, 0)
-  const days: Date[] = []
-  for (let d = new Date(first); d <= last; d.setDate(d.getDate() + 1)) {
-    days.push(new Date(d))
-  }
-  return days
-}
-
-const SHIFT_LABELS: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
-  morning: { label: 'Diária',  icon: <Sun   className="w-4 h-4" />, color: 'bg-sem-warning  text-sem-warning-fg  border-sem-warning-bd' },
-  night:   { label: 'Noturna', icon: <Moon  className="w-4 h-4" />, color: 'bg-status-migration text-status-migration-fg border-status-migration-bd' },
-  warroom: { label: 'Warroom', icon: <Zap   className="w-4 h-4" />, color: 'bg-sem-error    text-sem-error-fg    border-sem-error-bd'    },
-}
-
-const LEVEL_COLORS: Record<string, string> = {
-  n1:     'bg-sem-success  text-sem-success-fg',
-  n2:     'bg-sem-info   text-sem-info-fg',
-  n3:     'bg-status-triage text-status-triage-fg',
-  backup: 'bg-status-waiting text-status-waiting-fg',
-}
-
-// ─── component ──────────────────────────────────────────────────────────────
-
-export default function SchedulePage() {
-  const { toast } = useToast()
-
-  // Weekly schedule state
-  const [schedules,        setSchedules]        = useState<any[]>([])
-  const [agents,           setAgents]           = useState<any[]>([])
-  const [currentSchedule,  setCurrentSchedule]  = useState<any>(null)
-  const [showWeeklyDialog, setShowWeeklyDialog] = useState(false)
-  const [editingSchedule,  setEditingSchedule]  = useState<any>(null)
-
-  // Daily shift state
-  const [dailyShifts,     setDailyShifts]     = useState<any[]>([])
-  const [dailyWeekStart,  setDailyWeekStart]  = useState<Date>(() => weekRange(new Date()).start)
-  const [showShiftDialog, setShowShiftDialog] = useState(false)
-  const [editingShift,    setEditingShift]    = useState<any>(null)
-  const [shiftType,       setShiftType]       = useState<'morning' | 'night' | 'warroom'>('morning')
-
-  // Monthly state
-  const [monthYear, setMonthYear] = useState<{ year: number; month: number }>(() => {
-    const now = new Date()
-    return { year: now.getFullYear(), month: now.getMonth() }
-  })
-  const [monthlyShifts, setMonthlyShifts] = useState<any[]>([])
-
-  const [loading, setLoading] = useState(true)
-
-  // ── load weekly ──────────────────────────────────────────────────────────
-
-  const loadWeekly = useCallback(async () => {
-    try {
-      const [currentRes, schedulesRes, agentsRes] = await Promise.all([
-        schedulesApi.getCurrent().catch(() => null),
-        schedulesApi.list().catch(() => null),
-        araraApiFetch('/api/profiles/agents'),
-      ])
-
-      setCurrentSchedule(currentRes?.data ?? null)
-      const all = schedulesRes?.data ?? []
-      setSchedules(Array.isArray(all) ? all : [])
-      const agentsData = agentsRes instanceof Response && agentsRes.ok ? await agentsRes.json() : { data: [] }
-      const ag = agentsData?.data ?? (Array.isArray(agentsData) ? agentsData : [])
-      setAgents(Array.isArray(ag) ? ag : [])
-    } catch {
-      // silent
-    }
-  }, [])
-
-  // ── load daily shifts for current week ──────────────────────────────────
-
-  const loadDailyShifts = useCallback(async (weekStart: Date) => {
-    const { start, end } = weekRange(weekStart)
-    try {
-      const res = await schedulesApi.listDaily({ start: isoDate(start), end: isoDate(end) })
-      if (res.data) setDailyShifts(res.data)
-    } catch { /* silent */ }
-  }, [])
-
-  // ── load shifts for a month ───────────────────────────────────────────
-
-  const loadMonthlyShifts = useCallback(async (year: number, month: number) => {
-    const start = new Date(year, month, 1)
-    const end   = new Date(year, month + 1, 0)
-    try {
-      const res = await schedulesApi.listDaily({ start: isoDate(start), end: isoDate(end) })
-      if (res.data) setMonthlyShifts(res.data)
-    } catch { /* silent */ }
-  }, [])
-
-  useEffect(() => {
-    Promise.all([
-      loadWeekly(),
-      loadDailyShifts(dailyWeekStart),
-      loadMonthlyShifts(monthYear.year, monthYear.month),
-    ]).finally(() => setLoading(false))
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // ── daily week navigation ─────────────────────────────────────────────
-
-  function navigateDailyWeek(delta: number) {
-    const next = new Date(dailyWeekStart)
-    next.setDate(next.getDate() + delta * 7)
-    setDailyWeekStart(next)
-    loadDailyShifts(next)
-  }
-
-  // ── monthly navigation ────────────────────────────────────────────────
-
-  function navigateMonth(delta: number) {
-    let { year, month } = monthYear
-    month += delta
-    if (month < 0)  { year -= 1; month = 11 }
-    if (month > 11) { year += 1; month = 0  }
-    setMonthYear({ year, month })
-    loadMonthlyShifts(year, month)
-  }
-
-  // ── open shift dialog ─────────────────────────────────────────────────
-
-  function openShiftDialog(date: string, type: 'morning' | 'night' | 'warroom', existing?: any) {
-    setEditingShift(existing ? { ...existing, date } : { date })
-    setShiftType(type)
-    setShowShiftDialog(true)
-  }
-
-  // ── helpers ───────────────────────────────────────────────────────────
-
-  function shiftsForDate(date: Date, shiftsArr: any[]) {
-    const iso = isoDate(date)
-    return shiftsArr.filter(s => s.date.split('T')[0] === iso)
-  }
-
-  const weekDays = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(dailyWeekStart)
-    d.setDate(dailyWeekStart.getDate() + i)
+function diasDaSemana(segunda: Date): Date[] {
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(segunda)
+    d.setDate(segunda.getDate() + i)
     return d
   })
+}
 
-  if (loading) {
-    return (
-      <div className="pt-14 lg:pt-0">
-        <div className="flex items-center justify-center h-[calc(100vh-4rem)]">
-          <div className="text-center text-muted-foreground">Carregando...</div>
-        </div>
-      </div>
-    )
+export default function PlantaoPage() {
+  const { toast } = useToast()
+  const [segunda, setSegunda] = useState(() => segundaDa(new Date()))
+  const [dias, setDias] = useState<PlantaoDia[]>([])
+  const [agora, setAgora] = useState<QuemAvisarAgora | null>(null)
+  const [equipe, setEquipe] = useState<AgenteEscolhivel[]>([])
+  const [carregando, setCarregando] = useState(true)
+  const [salvando, setSalvando] = useState(false)
+  const [editando, setEditando] = useState<string | null>(null)
+
+  const semana = useMemo(() => diasDaSemana(segunda), [segunda])
+  const de = isoLocal(semana[0])
+  const ate = isoLocal(semana[6])
+  const hoje = isoLocal(new Date())
+
+  const carregar = useCallback(async () => {
+    setCarregando(true)
+    try {
+      const [lista, oncall, agentesRes] = await Promise.all([
+        schedulesApi.listar(de, ate),
+        schedulesApi.quemAvisarAgora(),
+        araraApiFetch('/api/profiles/agents'),
+      ])
+      setDias(lista.data ?? [])
+      setAgora(oncall.data ?? null)
+      const brutos = agentesRes instanceof Response && agentesRes.ok
+        ? ((await agentesRes.json())?.data ?? [])
+        : []
+      setEquipe(
+        (brutos as Record<string, unknown>[]).map((a) => ({
+          id: String(a.id),
+          nome: (a.full_name as string) ?? (a.name as string) ?? null,
+          email: (a.email as string) ?? null,
+          // A lista de agentes não diz se tem telefone; o plantão do dia diz.
+          // Aqui começa otimista e é corrigido pelo que o servidor devolve.
+          telefone_ok: Boolean(a.phone),
+        })),
+      )
+    } catch {
+      toast({ title: 'Não foi possível carregar o plantão', variant: 'destructive' })
+    } finally {
+      setCarregando(false)
+    }
+  }, [de, ate, toast])
+
+  useEffect(() => { void carregar() }, [carregar])
+
+  const porData = useMemo(() => {
+    const m = new Map<string, PlantaoDia>()
+    for (const d of dias) m.set(d.date, d)
+    return m
+  }, [dias])
+
+  // O telefone conferido pelo servidor é a verdade: a lista de agentes pode
+  // não trazer o campo.
+  const equipeComTelefone = useMemo(() => {
+    const conhecido = new Map<string, boolean>()
+    for (const d of dias) for (const a of d.agentes) conhecido.set(a.id, a.telefone_ok)
+    return equipe.map((a) => ({ ...a, telefone_ok: conhecido.get(a.id) ?? a.telefone_ok }))
+  }, [equipe, dias])
+
+  async function salvarDia(data: string, ids: string[]) {
+    setSalvando(true)
+    try {
+      await schedulesApi.salvarDia(data, ids)
+      setEditando(null)
+      await carregar()
+      toast({ title: 'Plantão salvo', description: `${data}: ${ids.length} pessoa(s) na ordem de chamada.` })
+    } catch (err) {
+      // A recusa do servidor diz o que está errado (pessoa repetida, agente
+      // que não existe) — vale mostrar o texto dele.
+      toast({
+        title: 'Não salvou',
+        description: err instanceof Error ? err.message : undefined,
+        variant: 'destructive',
+      })
+    } finally {
+      setSalvando(false)
+    }
+  }
+
+  async function limparDia(data: string) {
+    setSalvando(true)
+    try {
+      await schedulesApi.limparDia(data)
+      setEditando(null)
+      await carregar()
+      toast({ title: 'Plantão removido', description: `${data} ficou sem plantão.` })
+    } catch (err) {
+      toast({
+        title: 'Não removeu',
+        description: err instanceof Error ? err.message : undefined,
+        variant: 'destructive',
+      })
+    } finally {
+      setSalvando(false)
+    }
   }
 
   return (
     <div className="pt-14 lg:pt-0">
-      <div className="mx-auto max-w-7xl px-4 pt-6 pb-8 lg:py-8 sm:px-6 lg:px-8 space-y-6">
-        {/* Header */}
+      <div className="mx-auto max-w-7xl space-y-6 px-4 pb-8 pt-6 sm:px-6 lg:px-8 lg:py-8">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Escala de Suporte</h1>
-          <p className="text-sm text-muted-foreground mt-1">Gerencie todos os tipos de escala da equipe</p>
+          <h1 className="text-2xl font-bold text-foreground">Plantão</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Quem é avisado quando um cliente escreve fora do horário de atendimento. A ordem dentro
+            do dia é a ordem de chamada.
+          </p>
         </div>
 
-        <Tabs defaultValue="semanal">
-          <TabsList className="bg-background border border-border shadow-sm">
-            <TabsTrigger value="semanal"  className="gap-1.5"><CalendarDays className="w-4 h-4" />Semanal</TabsTrigger>
-            <TabsTrigger value="diaria"   className="gap-1.5"><List          className="w-4 h-4" />Diária</TabsTrigger>
-            <TabsTrigger value="mensal"   className="gap-1.5"><Calendar      className="w-4 h-4" />Mensal</TabsTrigger>
-            <TabsTrigger value="warroom"  className="gap-1.5"><Zap           className="w-4 h-4" />Warroom</TabsTrigger>
-            <TabsTrigger value="noturna"  className="gap-1.5"><Moon          className="w-4 h-4" />Noturna</TabsTrigger>
-          </TabsList>
-
-          {/* ─── SEMANAL ─────────────────────────────────────────────────── */}
-          <TabsContent value="semanal" className="space-y-6 mt-6">
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-muted-foreground">Escala de plantão N1/N2/N3/Backup por semana</p>
-              <Button onClick={() => { setEditingSchedule(null); setShowWeeklyDialog(true) }}>
-                <Plus className="w-4 h-4 mr-2" />Nova Escala Semanal
-              </Button>
-            </div>
-
-            {currentSchedule ? (
-              <Card className="border p-6 bg-linear-to-br from-blue-50 to-indigo-50 border-sem-info-bd">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-3 bg-blue-600 rounded-lg">
-                      <CalendarDays className="w-5 h-5 text-white" />
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold text-foreground">Escala desta Semana</h3>
-                      <p className="text-sm text-muted-foreground">
-                        {formatDateShort(currentSchedule.week_start, { day: '2-digit', month: 'long' })}
-                        {' — '}
-                        {formatDateShort(currentSchedule.week_end, { day: '2-digit', month: 'long', year: 'numeric' })}
-                      </p>
-                    </div>
-                  </div>
-                  <Button variant="outline" size="sm" onClick={() => { setEditingSchedule(currentSchedule); setShowWeeklyDialog(true) }}>
-                    <Pencil className="w-4 h-4 mr-1.5" />Editar
-                  </Button>
-                </div>
-
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {[
-                    { label: 'N1 — Suporte',      color: 'bg-green-500',  user: currentSchedule.n1 },
-                    { label: 'N2 — Especialista',  color: 'bg-blue-500',   user: currentSchedule.n2 },
-                    { label: 'N3 — Dev Suporte',   color: 'bg-purple-500', user: currentSchedule.n3 },
-                    { label: 'Backup',             color: 'bg-orange-500', user: currentSchedule.backup },
-                  ].map(({ label, color, user }) => (
-                    <div key={label} className="p-4 bg-background/70 rounded-lg border border-white/60">
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className={`w-2 h-2 rounded-full ${color}`} />
-                        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{label}</span>
-                      </div>
-                      {user ? (
-                        <>
-                          <p className="font-semibold text-foreground text-sm">{user.full_name || user.email}</p>
-                          <p className="text-xs text-muted-foreground mt-0.5">{user.email}</p>
-                        </>
-                      ) : (
-                        <p className="text-sm text-muted-foreground/70 italic">Não atribuído</p>
-                      )}
-                    </div>
+        {/* Estado de agora: é a função quemAvisar(agora) mostrada na tela. */}
+        <Card className="p-4">
+          {carregando && <p className="text-sm text-muted-foreground">Carregando…</p>}
+          {!carregando && agora && (
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+              <Clock className="h-4 w-4 shrink-0 text-blue-600" />
+              <span className="text-sm font-medium">
+                {agora.agora.em_plantao
+                  ? `Em plantão agora${agora.agora.faixa ? ` (${agora.agora.faixa[0]}–${agora.agora.faixa[1]})` : ''}`
+                  : 'Fora da janela de plantão'}
+              </span>
+              {agora.avisar.length > 0 && (
+                <span className="flex flex-wrap items-center gap-1.5 text-sm">
+                  {agora.avisar.map((a, i) => (
+                    <span key={a.id} className="flex items-center gap-1">
+                      <span className="text-xs tabular-nums text-muted-foreground">{i + 1}.</span>
+                      {a.nome ?? a.id}
+                      <Phone className="h-3 w-3 text-emerald-600" aria-label="telefone cadastrado" />
+                    </span>
                   ))}
-                </div>
+                </span>
+              )}
+              {agora.avisar.length === 0 && agora.motivo && (
+                <span className="text-sm text-muted-foreground">— ninguém: {agora.motivo}</span>
+              )}
+              {agora.sem_telefone.length > 0 && (
+                <span className="flex items-center gap-1.5 rounded-md bg-sem-warning px-2 py-1 text-xs text-sem-warning-fg">
+                  <AlertCircle className="h-3.5 w-3.5" />
+                  Escalado sem telefone, não recebe aviso:{' '}
+                  {agora.sem_telefone.map((a) => a.nome ?? a.id).join(', ')}
+                </span>
+              )}
+              <span className="ml-auto text-xs text-muted-foreground">
+                {agora.agora.data} · {agora.agora.fuso}
+              </span>
+            </div>
+          )}
+        </Card>
 
-                {currentSchedule.notes && (
-                  <div className="mt-4 p-3 bg-sem-warning border border-sem-warning-bd rounded-lg flex gap-2">
-                    <AlertCircle className="w-4 h-4 text-yellow-600 mt-0.5 shrink-0" />
-                    <div>
-                      <p className="text-sm font-semibold text-sem-warning-fg">Observações</p>
-                      <p className="text-sm text-sem-warning-fg">{currentSchedule.notes}</p>
-                    </div>
-                  </div>
+        {/* A semana: uma célula por dia. "Fulano esta noite" = 2 ações. */}
+        <div className="flex items-center gap-2">
+          <Button
+            type="button" variant="outline" size="sm" aria-label="Semana anterior"
+            onClick={() => setSegunda((s) => { const d = new Date(s); d.setDate(s.getDate() - 7); return d })}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <span className="text-sm font-medium tabular-nums">{de} a {ate}</span>
+          <Button
+            type="button" variant="outline" size="sm" aria-label="Próxima semana"
+            onClick={() => setSegunda((s) => { const d = new Date(s); d.setDate(s.getDate() + 7); return d })}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+          {de > hoje || ate < hoje ? (
+            <Button type="button" variant="ghost" size="sm" onClick={() => setSegunda(segundaDa(new Date()))}>
+              Voltar para esta semana
+            </Button>
+          ) : null}
+        </div>
+
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
+          {semana.map((d, i) => {
+            const data = isoLocal(d)
+            const dia = porData.get(data)
+            const ehHoje = data === hoje
+            return (
+              <button
+                key={data}
+                type="button"
+                onClick={() => setEditando(data)}
+                className={cn(
+                  'flex min-h-[7rem] flex-col gap-1.5 rounded-xl border p-3 text-left transition-colors hover:bg-muted/40',
+                  ehHoje ? 'border-blue-600 ring-1 ring-blue-600/20' : 'border-border',
                 )}
-              </Card>
-            ) : (
-              <Card className="p-10 text-center border-dashed border-2 border-border">
-                <Users className="w-12 h-12 text-muted-foreground/50 mx-auto mb-3" />
-                <h3 className="font-semibold text-foreground/80 mb-1">Nenhuma escala para esta semana</h3>
-                <p className="text-sm text-muted-foreground/70 mb-4">Crie uma escala para gerenciar o suporte desta semana</p>
-                <Button onClick={() => { setEditingSchedule(null); setShowWeeklyDialog(true) }}>
-                  <Plus className="w-4 h-4 mr-2" />Criar Escala
-                </Button>
-              </Card>
-            )}
-
-            <ScheduleCalendar
-              schedules={schedules}
-              currentId={currentSchedule?.id}
-              onEdit={(s) => { setEditingSchedule(s); setShowWeeklyDialog(true) }}
-            />
-          </TabsContent>
-
-          {/* ─── DIÁRIA ──────────────────────────────────────────────────── */}
-          <TabsContent value="diaria" className="space-y-6 mt-6">
-            {/* Week navigation */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Button variant="outline" size="sm" onClick={() => navigateDailyWeek(-1)}>← Semana ant.</Button>
-                <span className="text-sm font-medium text-foreground/80">
-                  {formatDateShort(dailyWeekStart, { day: '2-digit', month: 'long' })}
-                  {' — '}
-                  {(() => { const e = new Date(dailyWeekStart); e.setDate(e.getDate() + 6); return formatDateShort(e, { day: '2-digit', month: 'long', year: 'numeric' }) })()}
+              >
+                <span className="flex items-baseline gap-1.5">
+                  <span className="text-sm font-semibold">{DIAS_CURTOS[i]}</span>
+                  <span className="text-xs tabular-nums text-muted-foreground">
+                    {data.slice(8, 10)}/{data.slice(5, 7)}
+                  </span>
+                  {ehHoje && <span className="text-[11px] font-medium text-blue-600">hoje</span>}
                 </span>
-                <Button variant="outline" size="sm" onClick={() => navigateDailyWeek(1)}>Próx. semana →</Button>
-              </div>
-              <Button size="sm" onClick={() => openShiftDialog(isoDate(new Date()), 'morning')}>
-                <Plus className="w-4 h-4 mr-2" />Adicionar Plantão
-              </Button>
-            </div>
+                {!dia || dia.agentes.length === 0 ? (
+                  <span className="flex items-center gap-1 text-xs italic text-muted-foreground">
+                    <Plus className="h-3 w-3" /> sem plantão
+                  </span>
+                ) : (
+                  <span className="space-y-0.5">
+                    {dia.agentes.map((a, j) => (
+                      <span key={a.id} className="flex items-center gap-1 text-sm">
+                        <span className="text-[11px] tabular-nums text-muted-foreground">{j + 1}.</span>
+                        <span className="truncate">{a.nome ?? a.id}</span>
+                        {a.telefone_ok
+                          ? <Phone className="h-3 w-3 shrink-0 text-emerald-600" aria-label="telefone cadastrado" />
+                          : <PhoneOff className="h-3 w-3 shrink-0 text-amber-600" aria-label="sem telefone — não recebe aviso" />}
+                      </span>
+                    ))}
+                  </span>
+                )}
+                {dia && dia.origem !== 'plantao' && (
+                  <span className="mt-auto text-[11px] italic text-muted-foreground">
+                    {dia.origem === 'semanal' ? 'da escala semanal antiga' : 'do plantão diário antigo'}
+                  </span>
+                )}
+              </button>
+            )
+          })}
+        </div>
 
-            {/* Day grid */}
-            <div className="grid grid-cols-1 md:grid-cols-7 gap-3">
-              {weekDays.map((day) => {
-                const dayShifts = shiftsForDate(day, dailyShifts).filter(s => s.type === 'morning')
-                const isToday   = isoDate(day) === isoDate(new Date())
-                return (
-                  <Card key={day.toISOString()} className={`p-3 ${isToday ? 'ring-2 ring-blue-400' : ''}`}>
-                    <div className="flex items-center justify-between mb-2">
-                      <div>
-                        <p className="text-xs font-semibold text-muted-foreground uppercase">
-                          {formatDateShort(day, { weekday: 'short' })}
-                        </p>
-                        <p className={`text-sm font-bold ${isToday ? 'text-blue-600' : 'text-foreground'}`}>
-                          {formatDateShort(day, { day: '2-digit', month: '2-digit' })}
-                        </p>
-                      </div>
-                      <Button
-                        variant="ghost" size="icon"
-                        className="w-6 h-6"
-                        onClick={() => openShiftDialog(isoDate(day), 'morning', dayShifts[0])}
-                      >
-                        {dayShifts.length > 0 ? <Pencil className="w-3 h-3" /> : <Plus className="w-3 h-3" />}
-                      </Button>
-                    </div>
-                    {dayShifts.length > 0 ? (
-                      <div className="space-y-1">
-                        {dayShifts[0].agents?.map((a: any) => (
-                          <div key={a.id} className="text-xs text-foreground/60 truncate">
-                            {a.full_name || a.email}
-                          </div>
-                        ))}
-                        {dayShifts[0].notes && (
-                          <p className="text-xs text-muted-foreground/70 italic truncate">{dayShifts[0].notes}</p>
-                        )}
-                      </div>
-                    ) : (
-                      <p className="text-xs text-muted-foreground/50 italic">Sem escala</p>
-                    )}
-                  </Card>
-                )
-              })}
-            </div>
-          </TabsContent>
-
-          {/* ─── MENSAL ──────────────────────────────────────────────────── */}
-          <TabsContent value="mensal" className="space-y-6 mt-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Button variant="outline" size="sm" onClick={() => navigateMonth(-1)}>← Mês ant.</Button>
-                <span className="text-sm font-medium text-foreground/80 capitalize">
-                  {formatDateShort(new Date(monthYear.year, monthYear.month, 1), { month: 'long', year: 'numeric' })}
-                </span>
-                <Button variant="outline" size="sm" onClick={() => navigateMonth(1)}>Próx. mês →</Button>
-              </div>
-            </div>
-
-            {/* Calendar grid */}
-            <Card className="p-4">
-              {/* Day-of-week header */}
-              <div className="grid grid-cols-7 gap-1 mb-2">
-                {['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'].map(d => (
-                  <div key={d} className="text-center text-xs font-semibold text-muted-foreground/70 py-1">{d}</div>
-                ))}
-              </div>
-              {/* Weeks */}
-              {(() => {
-                const days = monthDays(monthYear.year, monthYear.month)
-                // Pad to start on Monday
-                const firstDay = (days[0].getDay() + 6) % 7  // 0=Mon
-                const padded: (Date | null)[] = [
-                  ...Array(firstDay).fill(null),
-                  ...days,
-                ]
-                // Pad end to full weeks
-                while (padded.length % 7 !== 0) padded.push(null)
-
-                const weeks: (Date | null)[][] = []
-                for (let i = 0; i < padded.length; i += 7) weeks.push(padded.slice(i, i + 7))
-
-                return weeks.map((week, wi) => (
-                  <div key={wi} className="grid grid-cols-7 gap-1 mb-1">
-                    {week.map((day, di) => {
-                      if (!day) return <div key={di} className="h-16 rounded bg-muted/50" />
-                      const shifts = shiftsForDate(day, monthlyShifts)
-                      const isToday = isoDate(day) === isoDate(new Date())
-                      return (
-                        <div
-                          key={di}
-                          className={`h-16 rounded border p-1 cursor-pointer hover:border-blue-300 transition-colors ${
-                            isToday ? 'border-blue-400 bg-sem-info' : 'border-border/50'
-                          }`}
-                          onClick={() => openShiftDialog(isoDate(day), 'morning', shifts.find(s => s.type === 'morning'))}
-                        >
-                          <p className={`text-xs font-semibold mb-1 ${isToday ? 'text-blue-600' : 'text-foreground/60'}`}>
-                            {day.getDate()}
-                          </p>
-                          <div className="space-y-0.5">
-                            {shifts.slice(0, 2).map(s => (
-                              <div key={s.id} className={`text-xs px-1 rounded truncate border ${SHIFT_LABELS[s.type]?.color}`}>
-                                {SHIFT_LABELS[s.type]?.label} {s.agents?.length > 0 && `(${s.agents.length})`}
-                              </div>
-                            ))}
-                            {shifts.length > 2 && (
-                              <div className="text-xs text-muted-foreground/70">+{shifts.length - 2}</div>
-                            )}
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                ))
-              })()}
-            </Card>
-          </TabsContent>
-
-          {/* ─── WARROOM ─────────────────────────────────────────────────── */}
-          <TabsContent value="warroom" className="space-y-6 mt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Escalas de incidentes críticos / war room</p>
-              </div>
-              <Button size="sm" onClick={() => openShiftDialog(isoDate(new Date()), 'warroom')}>
-                <Plus className="w-4 h-4 mr-2" />Adicionar Warroom
-              </Button>
-            </div>
-
-            <ShiftList
-              shifts={dailyShifts.filter(s => s.type === 'warroom')}
-              type="warroom"
-              onEdit={(s) => openShiftDialog(s.date.split('T')[0], 'warroom', s)}
-            />
-          </TabsContent>
-
-          {/* ─── NOTURNA ─────────────────────────────────────────────────── */}
-          <TabsContent value="noturna" className="space-y-6 mt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Escalas de plantão noturno</p>
-              </div>
-              <Button size="sm" onClick={() => openShiftDialog(isoDate(new Date()), 'night')}>
-                <Plus className="w-4 h-4 mr-2" />Adicionar Noturna
-              </Button>
-            </div>
-
-            <ShiftList
-              shifts={dailyShifts.filter(s => s.type === 'night')}
-              type="night"
-              onEdit={(s) => openShiftDialog(s.date.split('T')[0], 'night', s)}
-            />
-          </TabsContent>
-        </Tabs>
+        <p className="text-xs text-muted-foreground">
+          A janela de plantão (seg–sex 18–22, sáb–dom 8–22) é configurada junto com o horário de
+          atendimento, em SLA → Horário de atendimento. Fora dela, ninguém é avisado: a conversa
+          entra na fila e o plantonista é chamado quando o turno dele começa.
+        </p>
       </div>
 
-      {/* Weekly dialog */}
-      <CreateScheduleDialog
-        open={showWeeklyDialog}
-        onOpenChange={setShowWeeklyDialog}
-        agents={agents}
-        existingSchedule={editingSchedule}
-        onSuccess={() => { setShowWeeklyDialog(false); setEditingSchedule(null); loadWeekly() }}
-      />
-
-      {/* Daily/Night/Warroom shift dialog */}
-      <DailyShiftDialog
-        open={showShiftDialog}
-        onOpenChange={setShowShiftDialog}
-        agents={agents}
-        type={shiftType}
-        existingShift={editingShift}
-        onSuccess={() => {
-          setShowShiftDialog(false)
-          setEditingShift(null)
-          loadDailyShifts(dailyWeekStart)
-          loadMonthlyShifts(monthYear.year, monthYear.month)
-          toast({ title: 'Escala salva com sucesso' })
-        }}
-      />
-    </div>
-  )
-}
-
-// ─── ShiftList sub-component ─────────────────────────────────────────────────
-
-function ShiftList({ shifts, type, onEdit }: {
-  shifts: any[]
-  type: 'morning' | 'night' | 'warroom'
-  onEdit: (s: any) => void
-}) {
-  const { label, icon, color } = SHIFT_LABELS[type]
-
-  if (shifts.length === 0) {
-    return (
-      <Card className="p-10 text-center border-dashed border-2 border-border">
-        <div className="text-muted-foreground/50 flex justify-center mb-3">{icon}</div>
-        <p className="text-sm text-muted-foreground/70">Nenhuma escala {label.toLowerCase()} cadastrada</p>
-      </Card>
-    )
-  }
-
-  return (
-    <div className="space-y-3">
-      {shifts
-        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-        .map(s => (
-          <Card key={s.id} className="p-4">
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-3">
-                <Badge variant="outline" className={`gap-1 ${color}`}>
-                  {icon}{label}
-                </Badge>
-                <span className="text-sm font-semibold text-foreground/80">
-                  {ptDate(s.date.split('T')[0])}
-                </span>
-              </div>
-              <Button variant="ghost" size="sm" onClick={() => onEdit(s)}>
-                <Pencil className="w-3.5 h-3.5 mr-1" />Editar
-              </Button>
-            </div>
-            {s.agents?.length > 0 && (
-              <div className="mt-2 flex flex-wrap gap-1.5">
-                {s.agents.map((a: any) => (
-                  <Badge key={a.id} variant="secondary" className="text-xs">
-                    {a.full_name || a.email}
-                  </Badge>
-                ))}
-              </div>
-            )}
-            {s.notes && (
-              <p className="mt-2 text-xs text-muted-foreground italic">{s.notes}</p>
-            )}
-          </Card>
-        ))}
+      {editando && (
+        <DiaDoPlantaoDialog
+          data={editando}
+          escolhidos={porData.get(editando)?.agent_ids ?? []}
+          agentes={equipeComTelefone}
+          salvando={salvando}
+          onFechar={() => setEditando(null)}
+          onSalvar={(ids) => void salvarDia(editando, ids)}
+          onLimpar={() => void limparDia(editando)}
+        />
+      )}
     </div>
   )
 }
