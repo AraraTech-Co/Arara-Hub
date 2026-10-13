@@ -34,6 +34,7 @@ export function FlowCardEditor({
     handoff: 'Atendente',
     condition: 'Condição',
     tag: 'Etiqueta',
+    question: 'Pergunta',
     assistant: 'Assistente',
     content: 'Mensagem',
     delay: 'Atraso',
@@ -134,7 +135,11 @@ export function FlowCardEditor({
         {!semMensagem && (
           <div className="space-y-1">
             <label htmlFor="card-text" className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-              {node.type === 'assistant' ? 'Mensagem antes de o assistente assumir' : 'Mensagem enviada ao cliente'}
+              {node.type === 'assistant'
+                ? 'Mensagem antes de o assistente assumir'
+                : node.type === 'question'
+                  ? 'A pergunta feita ao cliente'
+                  : 'Mensagem enviada ao cliente'}
             </label>
             <Textarea id="card-text" rows={5} value={d.text} disabled={!canEdit} onChange={(e) => onChange({ text: e.target.value })} />
             {node.type === 'assistant' && (
@@ -164,6 +169,85 @@ export function FlowCardEditor({
                 </span>
               </span>
             </label>
+          </div>
+        )}
+
+        {node.type === 'question' && (
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <label htmlFor="card-validacao" className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                A resposta tem de ser
+              </label>
+              <select
+                id="card-validacao"
+                value={d.validacao ?? 'qualquer'}
+                disabled={!canEdit}
+                onChange={(e) => onChange({ validacao: e.target.value as typeof d.validacao })}
+                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+              >
+                <option value="qualquer">Qualquer texto</option>
+                <option value="numero">Só números</option>
+                <option value="email">Um e-mail</option>
+                <option value="telefone">Um telefone</option>
+                <option value="cnpj">Um CNPJ válido (com dígitos conferidos)</option>
+              </select>
+            </div>
+            <div className="space-y-1">
+              <label htmlFor="card-tentativas" className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                Tentativas antes de desistir
+              </label>
+              <Input
+                id="card-tentativas"
+                type="number"
+                min={1}
+                max={5}
+                value={d.tentativas ?? 2}
+                disabled={!canEdit}
+                onChange={(e) => onChange({ tentativas: Math.min(Math.max(Number(e.target.value) || 1, 1), 5) })}
+                className="w-24"
+              />
+              <p className="pt-1 text-[11px] italic text-muted-foreground">
+                Esgotadas, o fluxo segue pela saída amarela. Sem ela ligada, vai para uma pessoa —
+                insistir para sempre é o que faz o cliente desistir.
+              </p>
+            </div>
+            <div className="space-y-1">
+              <label htmlFor="card-erro" className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                Quando a resposta não vale
+              </label>
+              <Textarea
+                id="card-erro"
+                rows={2}
+                value={d.erro ?? ''}
+                placeholder="Não consegui entender. Pode escrever de novo?"
+                disabled={!canEdit}
+                onChange={(e) => onChange({ erro: e.target.value })}
+              />
+            </div>
+            <div className="space-y-1">
+              <label htmlFor="card-guardar" className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                Guardar a resposta em
+              </label>
+              <select
+                id="card-guardar"
+                value={d.guardarEm ?? ''}
+                disabled={!canEdit}
+                onChange={(e) => onChange({ guardarEm: e.target.value })}
+                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+              >
+                <option value="">Não guardar</option>
+                <option value="resposta_1">Resposta 1</option>
+                <option value="resposta_2">Resposta 2</option>
+                <option value="resposta_3">Resposta 3</option>
+                <option value="documento">Documento (CNPJ/CPF)</option>
+                <option value="email_informado">E-mail informado</option>
+                <option value="telefone_informado">Telefone informado</option>
+              </select>
+              <p className="pt-1 text-[11px] italic text-muted-foreground">
+                A lista é fixa de propósito: um card do editor não escreve em qualquer campo da
+                conversa. Fica guardado o valor já limpo, sem pontuação.
+              </p>
+            </div>
           </div>
         )}
 

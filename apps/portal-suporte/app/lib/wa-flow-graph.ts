@@ -21,6 +21,8 @@ export type WAGraphNodeType =
   | 'condition'
   /** Aplica ou remove etiquetas na conversa (Fluxo v2 entrega 6). */
   | 'tag'
+  /** Pergunta ao cliente e confere a resposta (Fluxo v2 entrega 6b). */
+  | 'question'
   | 'delay'
   // Os três abaixo o motor NUNCA executou: caíam em "chamar atendente", em
   // silêncio. Saíram do editor na entrega 6 e continuam aqui pelos fluxos
@@ -59,6 +61,14 @@ export interface WAGraphNode {
     tagsAplicar?: string[]
     /** Etiquetas que o card `tag` remove da conversa. */
     tagsRemover?: string[]
+    /** Card `question`: o que a resposta tem de ser para valer. */
+    validacao?: 'qualquer' | 'numero' | 'email' | 'telefone' | 'cnpj'
+    /** Card `question`: quantas vezes insistir antes de desistir. */
+    tentativas?: number
+    /** Card `question`: o que dizer quando a resposta não vale. */
+    erro?: string
+    /** Card `question`: campo da conversa onde guardar a resposta já limpa. */
+    guardarEm?: string
   }
 }
 
@@ -99,7 +109,7 @@ export interface WAGraph {
 // ===========================================================================
 
 const TIPOS_VALIDOS: WAGraphNodeType[] = [
-  'menu', 'content', 'handoff', 'condition', 'tag', 'delay',
+  'menu', 'content', 'handoff', 'condition', 'tag', 'question', 'delay',
   // continuam válidos para os fluxos antigos que já os têm
   'assistant', 'random', 'integration',
 ]
@@ -163,6 +173,17 @@ export function validarGrafo(g: unknown): ValidacaoDoGrafo {
     if ((n.type === 'content' || n.type === 'handoff') && !String(n.data.text ?? '').trim()) {
       avisos.push(`card "${id}": está sem mensagem.`)
     }
+    if (n.type === 'question') {
+      // Pergunta sem pergunta é um card que espera resposta sem dizer o que
+      // quer: o cliente fica parado olhando a conversa.
+      if (!String(n.data.text ?? '').trim()) {
+        erros.push(`pergunta "${id}": está sem a pergunta — o cliente não saberia o que responder.`)
+      }
+      const t = n.data.tentativas
+      if (t !== undefined && (!Number.isFinite(Number(t)) || Number(t) < 1)) {
+        erros.push(`pergunta "${id}": o número de tentativas precisa ser 1 ou mais.`)
+      }
+    }
   })
 
   const raiz = graph.root ? String(graph.root) : String(graph.nodes[0]?.id ?? '')
@@ -192,6 +213,14 @@ export function validarGrafo(g: unknown): ValidacaoDoGrafo {
     if (no.type === 'condition') {
       if (!saidas.has(`${id}|true`)) avisos.push(`condição "${id}": a saída Sim não está ligada; o fluxo para aí.`)
       if (!saidas.has(`${id}|false`)) avisos.push(`condição "${id}": a saída Não não está ligada; o fluxo para aí.`)
+    }
+    if (no.type === 'question') {
+      if (!saidas.has(`${id}|next`)) {
+        avisos.push(`pergunta "${id}": a saída de resposta válida não está ligada — quem responder certo vai para uma pessoa.`)
+      }
+      if (!saidas.has(`${id}|fail`)) {
+        avisos.push(`pergunta "${id}": a saída de desistência não está ligada — quem errar as tentativas vai para uma pessoa.`)
+      }
     }
   }
 

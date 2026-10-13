@@ -17,7 +17,7 @@ import {
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import {
-  Loader2, Save, Rocket, ListChecks, MessageSquareText, UserRoundCheck, GitBranch, Timer, Tag, Play, Download, Upload,
+  Loader2, Save, Rocket, ListChecks, MessageSquareText, UserRoundCheck, GitBranch, Timer, Tag, MessageCircleQuestion, Play, Download, Upload,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { FlowSimulador } from '@/components/wa-flow/flow-simulador'
@@ -61,6 +61,11 @@ const NOVO_CARD: Record<WAGraphNodeType, { label: string; text: string; data: Pa
   },
   delay: { label: 'Atraso', text: '', data: { seconds: 3 } },
   tag: { label: 'Etiqueta', text: '', data: { tagsAplicar: [], tagsRemover: [] } },
+  question: {
+    label: 'Pergunta',
+    text: 'Qual o número do seu chamado?',
+    data: { validacao: 'qualquer', tentativas: 2, erro: 'Não consegui entender. Pode escrever de novo?' },
+  },
   random: {
     label: 'Randomizador',
     text: '',
@@ -382,6 +387,9 @@ function FlowEditorInner({ flowId, canEdit }: { flowId: string; canEdit: boolean
             </Button>
             <Button size="sm" variant="outline" onClick={() => addNode('delay')}>
               <Timer className="mr-1 h-3.5 w-3.5" /> Atraso
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => addNode('question')}>
+              <MessageCircleQuestion className="mr-1 h-3.5 w-3.5" /> Pergunta
             </Button>
             <Button size="sm" variant="outline" onClick={() => addNode('tag')}>
               <Tag className="mr-1 h-3.5 w-3.5" /> Etiqueta
