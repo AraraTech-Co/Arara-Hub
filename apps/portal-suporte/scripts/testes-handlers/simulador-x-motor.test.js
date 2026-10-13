@@ -56,6 +56,21 @@ const SEM_DESTINO = {
   edges: [],
 }
 
+// Pergunta com validação (entrega 6b): o simulador tem uma cópia dos
+// validadores, então é aqui que a divergência apareceria.
+const PERGUNTA = {
+  root: 'p',
+  nodes: [
+    { id: 'p', type: 'question', data: { text: 'Qual o seu e-mail?', validacao: 'email', tentativas: 2, erro: 'Esse e-mail não parece certo.' } },
+    { id: 'ok', type: 'content', data: { text: 'Obrigado!' } },
+    { id: 'desistiu', type: 'content', data: { text: 'Seguimos sem isso.' } },
+  ],
+  edges: [
+    { source: 'p', target: 'ok', sourceHandle: 'next' },
+    { source: 'p', target: 'desistiu', sourceHandle: 'fail' },
+  ],
+}
+
 const CASOS = [
   ['menu: escolha por número', MENU_SIMPLES, ['oi', '1'], '2026-10-12T13:00:00Z'],
   ['menu: escolha por texto', MENU_SIMPLES, ['oi', 'financeiro'], '2026-10-12T13:00:00Z'],
@@ -66,6 +81,10 @@ const CASOS = [
   ['horário: fora', COM_HORARIO, ['oi'], '2026-10-12T23:00:00Z'],
   ['horário: dentro e segue até a pessoa', COM_HORARIO, ['oi', '1'], '2026-10-12T13:00:00Z'],
   ['opção sem destino vai para uma pessoa', SEM_DESTINO, ['oi', '1'], '2026-10-12T13:00:00Z'],
+  ['pergunta: e-mail válido', PERGUNTA, ['oi', 'leonardo@arara-tech.com'], '2026-10-12T13:00:00Z'],
+  ['pergunta: e-mail inválido insiste', PERGUNTA, ['oi', 'nada'], '2026-10-12T13:00:00Z'],
+  ['pergunta: duas tentativas erradas desistem', PERGUNTA, ['oi', 'nada', 'nada2'], '2026-10-12T13:00:00Z'],
+  ['pergunta: erra e depois acerta', PERGUNTA, ['oi', 'nada', 'leonardo@arara-tech.com'], '2026-10-12T13:00:00Z'],
 ]
 
 /** O que o MOTOR REAL diz, com o envio interceptado. */

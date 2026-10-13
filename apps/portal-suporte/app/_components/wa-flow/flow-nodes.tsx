@@ -3,7 +3,7 @@
 import { memo } from 'react'
 import { Handle, Position, type NodeProps } from '@xyflow/react'
 import {
-  ListChecks, MessageSquareText, UserRoundCheck, GitBranch, Sparkles, Timer, Tag, Shuffle, Webhook,
+  ListChecks, MessageSquareText, UserRoundCheck, GitBranch, Sparkles, Timer, Tag, MessageCircleQuestion, Shuffle, Webhook,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -291,12 +291,54 @@ export const TagNode = memo(function TagNode({ data }: NodeProps) {
   )
 })
 
+const RESPOSTA_ESPERADA: Record<string, string> = {
+  qualquer: 'qualquer texto',
+  numero: 'só números',
+  email: 'um e-mail',
+  telefone: 'um telefone',
+  cnpj: 'um CNPJ válido',
+}
+
+export const QuestionNode = memo(function QuestionNode({ data }: NodeProps) {
+  const d = data as {
+    label: string; text?: string; validacao?: string; tentativas?: number
+  }
+  return (
+    <div className={cn(CARD, 'border-border')}>
+      <TargetHandle />
+      <div className={cn(HEADER, 'border-border bg-muted text-foreground')}>
+        <MessageCircleQuestion className="h-3.5 w-3.5" aria-hidden />
+        {d.label}
+      </div>
+      <Body>
+        <p className="whitespace-pre-wrap text-foreground/80">
+          {d.text?.trim() || <span className="italic text-muted-foreground">Sem a pergunta</span>}
+        </p>
+        <p className="pt-1 text-[11px] text-muted-foreground">
+          Espera {RESPOSTA_ESPERADA[d.validacao ?? 'qualquer'] ?? 'qualquer texto'} ·{' '}
+          {d.tentativas ?? 2} tentativa(s)
+        </p>
+      </Body>
+      {/* Duas saídas: respondeu certo, e desistiu depois das tentativas. */}
+      <Handle
+        type="source" id="next" position={Position.Right} style={{ top: '38%' }}
+        className="!h-2 !w-2 !border !border-emerald-600 !bg-emerald-500"
+      />
+      <Handle
+        type="source" id="fail" position={Position.Right} style={{ top: '72%' }}
+        className="!h-2 !w-2 !border !border-amber-600 !bg-amber-500"
+      />
+    </div>
+  )
+})
+
 export const waFlowNodeTypes = {
   menu: MenuNode,
   content: ContentNode,
   handoff: HandoffNode,
   condition: ConditionNode,
   tag: TagNode,
+  question: QuestionNode,
   delay: DelayNode,
   // Assistente, randomizador e integração saíram do editor na entrega 6 do
   // Fluxo v2 (o motor nunca os executou), mas continuam desenhados: fluxo
