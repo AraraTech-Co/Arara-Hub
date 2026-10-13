@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useToast } from '@/hooks/use-toast'
 import { waFlowApi, type WAFlowSummary } from '@/lib/api/wa-flow'
+import { MODELOS_DE_FLUXO, type ModeloDeFluxo } from '@/lib/wa-flow-modelos'
 
 /**
  * Ante-tela dos fluxos: escolhe qual fluxo abrir no editor.
@@ -50,12 +51,28 @@ export function FlowList({ canEdit }: { canEdit: boolean }) {
       variant: 'destructive',
     })
 
-  async function criar() {
-    const nome = novoNome.trim()
+  /**
+   * Cria o fluxo e, quando vem de um modelo, grava o grafo como rascunho.
+   *
+   * São duas chamadas (POST do nome + PATCH do grafo) e nenhuma rota nova — é
+   * o caminho que o diagnóstico já apontava. O modelo entra como RASCUNHO: o
+   * que está no ar não muda até alguém publicar.
+   */
+  async function criar(modelo?: ModeloDeFluxo) {
+    const nome = modelo ? modelo.nome : novoNome.trim()
     if (!nome) return
     setCreating(true)
     try {
       const res = await waFlowApi.create(nome)
+      if (modelo) {
+        try {
+          await waFlowApi.saveDraft(res.data.id, modelo.graph)
+        } catch (err) {
+          // O fluxo já existe; só o conteúdo falhou. Dizer isso é melhor que
+          // deixar a pessoa achar que o modelo entrou.
+          erro(err, 'O fluxo foi criado, mas o modelo não entrou')
+        }
+      }
       setNovoNome('')
       router.push(`/admin/whatsapp/flow/_/?id=${encodeURIComponent(res.data.id)}`) // já abre o editor do novo
     } catch (err) {
@@ -142,6 +159,27 @@ export function FlowList({ canEdit }: { canEdit: boolean }) {
             )}
             Criar fluxo
           </Button>
+        </div>
+      )}
+
+      {/* Modelos prontos: três, não um catálogo, e todos usando só os cards que
+          o motor executa de verdade. Modelo pronto que não funciona é pior que
+          modelo nenhum. Entram como RASCUNHO — nada vai ao ar sem publicar. */}
+      {canEdit && (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs text-muted-foreground">Começar de um modelo:</span>
+          {MODELOS_DE_FLUXO.map((m) => (
+            <button
+              key={m.id}
+              type="button"
+              disabled={creating}
+              title={m.descricao}
+              onClick={() => void criar(m)}
+              className="rounded-full border border-border px-3 py-1 text-xs hover:bg-muted disabled:opacity-50"
+            >
+              {m.nome}
+            </button>
+          ))}
         </div>
       )}
 
