@@ -2,10 +2,12 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pencil, Search, UserPlus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { api, getErrorMessage } from '../api/client.js';
+import { cadastrarUsuario, mensagemSucesso } from '../lib/cadastro-usuario.js';
 
 const defaultForm = () => ({
   email: '',
   password: '',
+  trocarSenha: false,
   fullName: '',
   role: 'user',
   managerRole: false,
@@ -138,10 +140,11 @@ export default function Users() {
     setSuccess('');
     setSubmitting(true);
     try {
-      const payload = {
+      const dados = {
         email: form.email.trim(),
-        password: form.password,
-        fullName: form.fullName.trim(),
+        nome: form.fullName.trim(),
+        senha: form.password,
+        trocarSenha: form.trocarSenha,
         role: form.role,
         managerRole: form.managerRole,
         active: form.active,
@@ -155,12 +158,12 @@ export default function Users() {
         canLogBackup: form.canLogBackup,
         emailNotifications: form.emailNotifications,
       };
-      await api.post('/api/users', payload);
-      setSuccess(t('users.created'));
+      const resultado = await cadastrarUsuario(dados);
+      setSuccess(mensagemSucesso(resultado));
       setForm(defaultForm());
       await load();
     } catch (err) {
-      setError(getErrorMessage(err));
+      setError(err instanceof Error ? err.message : getErrorMessage(err));
     } finally {
       setSubmitting(false);
     }
@@ -282,16 +285,47 @@ export default function Users() {
             />
           </label>
           <label className="block text-sm sm:col-span-2">
-            <span className="text-ink-muted">{t('users.initialPassword')}</span>
+            <span className="text-ink-muted">
+              {t('users.initialPassword')}{' '}
+              <span className="opacity-70">
+                {t('users.passwordOptional', { defaultValue: '(só para conta nova)' })}
+              </span>
+            </span>
             <input
               type="password"
-              required
               minLength={8}
               autoComplete="new-password"
               value={form.password}
               onChange={(e) => updateField('password', e.target.value)}
               className={inputClass}
             />
+            <span className="mt-1 block text-xs text-ink-muted">
+              {t('users.passwordHelp', {
+                defaultValue:
+                  'Deixe em branco se a pessoa já tem login na Arara. A senha vale para todos os sistemas da Arara.',
+              })}
+            </span>
+          </label>
+          <label className="flex items-start gap-2 text-sm sm:col-span-2">
+            <input
+              type="checkbox"
+              checked={form.trocarSenha}
+              onChange={(e) => updateField('trocarSenha', e.target.checked)}
+              className="mt-0.5"
+            />
+            <span>
+              <span className="text-ink">
+                {t('users.changeLoginPassword', {
+                  defaultValue: 'Trocar a senha de login (vale para todos os sistemas da Arara)',
+                })}
+              </span>
+              <span className="mt-0.5 block text-xs text-ink-muted">
+                {t('users.changeLoginPasswordHelp', {
+                  defaultValue:
+                    'Marque só se a pessoa já tem login e você quer definir uma nova senha. Sem marcar, a senha digitada não é aplicada a quem já existe.',
+                })}
+              </span>
+            </span>
           </label>
           <label className="block text-sm sm:col-span-2">
             <span className="text-ink-muted">{t('auth.fullName')}</span>
@@ -623,6 +657,11 @@ export default function Users() {
                     className={inputClass}
                   />
                 </label>
+                <p className="text-xs text-ink-muted sm:col-span-2">
+                  {t('users.passwordGlobalWarning', {
+                    defaultValue: 'A senha vale para todos os sistemas da Arara.',
+                  })}
+                </p>
               </fieldset>
               <label className="block text-sm">
                 <span className="text-ink-muted">{t('auth.fullName')}</span>

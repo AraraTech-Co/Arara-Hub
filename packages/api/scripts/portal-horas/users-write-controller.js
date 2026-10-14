@@ -178,18 +178,28 @@ async function handler(ctx) {
     var email = normalizeEmail(body.email);
     var fullName = String(body.full_name || body.fullName || '').trim();
     var password = readPassword(body).trim();
+    var trocarSenha = !!(body.trocar_senha != null ? body.trocar_senha : body.trocarSenha);
     if (!email || !fullName) {
       return ctx.reply.status(400).send({ error: 'email and fullName required' });
     }
-    if (!password) {
-      return ctx.reply.status(400).send({
-        error: 'password required (min 8 chars) — define a senha de login da plataforma',
-      });
-    }
+    // Perfil que ja existe NUNCA e sobrescrito: 409 com codigo e user_id, sem tocar em nada.
     var all = await Profile.findMany({});
     for (var i = 0; i < (all || []).length; i++) {
       if (String(pick(all[i], 'email', 'email') || '').toLowerCase() === email) {
-        return ctx.reply.status(409).send({ error: 'Email already registered' });
+        // Devolve o users.id da PLATAFORMA, nao o id do StaffProfile: perfis
+        // antigos podem ter id legado (sp_*) que nao existe na plataforma, e o
+        // passo 3 liberaria acesso para um id inexistente (404 User not found).
+        var perfilId = String(pick(all[i], 'id', 'id') || '');
+        var plataformaId = await resolvePlatformUserId(email, null);
+        if (!plataformaId) {
+          plataformaId = String(PLATFORM_USER_MAP['time-management:' + perfilId] || '');
+        }
+        if (!plataformaId) plataformaId = perfilId;
+        return ctx.reply.status(409).send({
+          error: 'Ja existe perfil no Gestao de Horas para este e-mail.',
+          codigo: 'perfil_existe',
+          user_id: plataformaId,
+        });
       }
     }
 
@@ -200,13 +210,25 @@ async function handler(ctx) {
     if (!newId) {
       return ctx.reply.status(409).send({
         error:
-          'Usuario ainda nao existe na plataforma (users). Crie a conta na plataforma primeiro ou informe userId/id; esta rota so vincula StaffProfile e define senha.',
+          'Usuario ainda nao existe na plataforma (users). Crie a conta na plataforma primeiro.',
+        codigo: 'sem_conta',
       });
     }
 
-    var pwResult = await setPlatformPassword(newId, password);
-    if (!pwResult.ok) {
-      return ctx.reply.status(pwResult.status || 409).send({ error: pwResult.error });
+    // Senha e OPCIONAL: so grava na conta da plataforma com trocar_senha explicito.
+    // Conta nova ja teve a senha definida no registro (passo 1 da tela); nao regrava.
+    var senhaDefinida = false;
+    if (trocarSenha) {
+      if (!password) {
+        return ctx.reply.status(400).send({
+          error: 'password required (min 8 chars) to change platform login password',
+        });
+      }
+      var pwResult = await setPlatformPassword(newId, password);
+      if (!pwResult.ok) {
+        return ctx.reply.status(pwResult.status || 409).send({ error: pwResult.error });
+      }
+      senhaDefinida = true;
     }
 
     var row = {
@@ -243,7 +265,13 @@ async function handler(ctx) {
     };
     try {
       var created = await Profile.create(row);
-      return ctx.reply.status(201).send({ data: created, passwordSet: true });
+      return ctx.reply.status(201).send({
+        data: created,
+        user_id: String(newId),
+        perfil_existia: false,
+        senha_definida: senhaDefinida,
+        passwordSet: senhaDefinida,
+      });
     } catch (e) {
       return ctx.reply.status(400).send({ error: String(e.message || e) });
     }
