@@ -62,6 +62,22 @@ export const arquivosApi = {
     api.delete<{ data: { id: string; apagado_em: string } }>(`/api/arquivos/${encodeURIComponent(id)}`),
 }
 
+/**
+ * As opções de "Quem pode ver", na ordem em que aparecem na tela.
+ *
+ * Os valores são o que o servidor valida: `acl_nivel` tem de estar na régua de
+ * níveis, `acl_grant` no catálogo de grants (ou no padrão `wa_conta_<id>`).
+ * Mandar qualquer outra coisa é 400 — e é por isso que a tela oferece lista em
+ * vez de campo livre.
+ *
+ * `support` NÃO entra como opção de nível: é a régua de entrada do portal, e
+ * "nível mínimo support" é o mesmo que "toda a equipe", que já é o padrão.
+ */
+export const NIVEIS_DE_ACESSO = [
+  { valor: 'developer', rotulo: 'Nível mínimo: developer' },
+  { valor: 'admin', rotulo: 'Nível mínimo: admin' },
+] as const
+
 /** "1,2 MB" / "840 kB" — tamanho legível, sem biblioteca. */
 export function tamanhoLegivel(bytes: number): string {
   const n = Number(bytes || 0)

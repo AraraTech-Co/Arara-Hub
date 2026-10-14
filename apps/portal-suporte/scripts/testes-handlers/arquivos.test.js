@@ -310,5 +310,33 @@ function cenario({ arquivos = [], perfis = [ANA, BIA, DEV, CHEFE], semModels = f
   ok('  a página seguinte não repete a primeira',
     p2.length > 0 && !p2.some((id) => p1.includes(id)), { p1: p1.slice(0, 2), p2: p2.slice(0, 2) })
 
+  // ══ as opções que a TELA oferece são as que o servidor aceita ═════════
+  // O seletor "Quem pode ver" manda nível ou grant; se a lista da tela e a
+  // régua do servidor divergirem, a pessoa escolhe uma opção e leva 400.
+  for (const nivel of ['developer', 'admin']) {
+    c = cenario()
+    r = await enviar(c.ctx(ANA, { body: { nome: 'x.png', conteudo: PNG, acl_nivel: nivel } }))
+    ok(`a tela oferece "Nível mínimo: ${nivel}" e o servidor aceita`, r.status === 200,
+      { status: r.status, erro: r.body?.error })
+    ok(`  e grava o nível`, c.estado.arquivos[0]?.acl_nivel === nivel, c.estado.arquivos[0]?.acl_nivel)
+  }
+  // Os cinco grants do catálogo que a tela lista.
+  for (const grant of ['qa', 'code_review', 'planejamento', 'cadastro_empresa', 'wa_flow_editor']) {
+    c = cenario()
+    r = await enviar(c.ctx(ANA, { body: { nome: 'x.png', conteudo: PNG, acl_grant: grant } }))
+    ok(`grant do catálogo "${grant}" é aceito`, r.status === 200, { status: r.status, erro: r.body?.error })
+  }
+  // E o grant de conta, que a tela monta a partir das contas ativas.
+  c = cenario()
+  r = await enviar(c.ctx(ANA, { body: { nome: 'x.png', conteudo: PNG, acl_grant: 'wa_conta_adm' } }))
+  ok('grant de conta (wa_conta_<id>) é aceito', r.status === 200, { status: r.status, erro: r.body?.error })
+  // `support` NÃO é oferecido pela tela: equivale a "toda a equipe", que é o
+  // padrão. O servidor aceita, e o teste registra isso para ninguém achar que
+  // a ausência na tela é um bloqueio.
+  c = cenario()
+  r = await enviar(c.ctx(ANA, { body: { nome: 'x.png', conteudo: PNG, acl_nivel: 'support' } }))
+  ok('"support" é aceito pelo servidor, mas a tela não o oferece (= toda a equipe)',
+    r.status === 200, r.status)
+
   fim()
 })()
