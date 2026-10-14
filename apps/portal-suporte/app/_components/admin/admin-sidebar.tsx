@@ -45,6 +45,7 @@ import {
   Store,
   TrendingUp,
   Upload,
+  UserCircle,
   UserSearch,
   Users,
   Users2,
@@ -478,6 +479,25 @@ function SidebarContent({
         {/* Avisos: fica na casca, e não num cabeçalho de página, porque a
             barra lateral é a única coisa presente em toda tela do portal —
             foi justamente por morar num cabeçalho que o sino sumiu antes. */}
+        {/* Minha conta — perfil, senha e os avisos no aparelho.
+            Fica no RODAPÉ porque é aqui que mora o que é da pessoa logada
+            (Hub, sino, tema, Sair), e não entre os módulos do portal.
+            Até agora a página existia e NADA linkava para ela: a aba de
+            avisos da Fase 4 só era alcançável digitando a URL. */}
+        <Link
+          href="/admin/minha-conta"
+          title={collapsed ? 'Minha conta' : undefined}
+          className={cn(
+            'flex items-center rounded-lg text-sm font-medium transition-all duration-150',
+            pathname.startsWith('/admin/minha-conta')
+              ? 'bg-white/[0.08] text-white'
+              : 'text-muted-foreground hover:bg-white/[0.08] hover:text-white',
+            collapsed ? 'justify-center w-10 h-10' : 'gap-3 w-full px-3 py-2.5'
+          )}
+        >
+          <UserCircle className="w-[18px] h-[18px]" />
+          {!collapsed && 'Minha conta'}
+        </Link>
         {/* Voltar ao Hub — troca de sistema sem usar o voltar do navegador */}
         <a
           href="https://hub.arara-tech.com"
