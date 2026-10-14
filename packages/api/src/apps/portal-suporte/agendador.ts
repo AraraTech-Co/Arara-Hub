@@ -31,6 +31,7 @@ import { buildHandlerCtx } from '../../lib/build-handler-ctx.js'
 import { buildModelsApi } from '../../lib/models.js'
 import { getAppRoutes } from '../../lib/static-registry.js'
 import { resolveStorageSlug } from '../../lib/app-slugs.js'
+import { enviarPushPendente } from './push.js'
 
 const SLUG = 'portal-suporte'
 const ROTA_VARRER = '/whatsapp/plantao/varrer'
@@ -135,6 +136,50 @@ export function iniciarAgendadorPortalSuporte(app: FastifyInstance): void {
           }
         } catch (err) {
           app.log.error({ err }, '[agendador] varredura do plantão falhou')
+        }
+
+        // ── Web Push (Fase 4) ─────────────────────────────────────────────
+        // O envio mora aqui, e não num handler, porque assinar VAPID e cifrar
+        // o payload vive na biblioteca `web-push` (import), e handler é string
+        // compilada sem require. O handler enfileira; este tick esvazia.
+        try {
+          // O cofre não existe no `app`: ele é montado DENTRO de
+          // `buildHandlerCtx`, a partir do prisma e da chave de cifra. Então o
+          // caminho honesto é montar um ctx e usar o `secrets` dele — o mesmo
+          // que os handlers usam, sem uma segunda via de leitura de segredo.
+          const segredos = {
+            publica: null as string | null,
+            privada: null as string | null,
+          }
+          const ctxPush = await buildHandlerCtx({
+            method: 'POST',
+            params: {},
+            query: {},
+            body: {},
+            rawBody: null,
+            headers: {},
+            user: { type: 'agendador', appSlug: SLUG },
+            app: { id: found.id, slug: SLUG, name: found.name },
+            models,
+            prisma: app.prisma,
+          })
+          const cofre = (ctxPush as unknown as {
+            secrets?: { get: (nome: string) => Promise<string | null> }
+          }).secrets
+          // Sem chaves o push está desligado e o portal segue com o sino.
+          if (cofre) {
+            try { segredos.publica = await cofre.get('push_vapid_public') } catch { /* desligado */ }
+            try { segredos.privada = await cofre.get('push_vapid_private') } catch { /* desligado */ }
+          }
+
+          const r = await enviarPushPendente(app, models as never, segredos)
+          // Aviso que vai para o CELULAR de alguém deixa rastro, como o
+          // WhatsApp por tempo.
+          if (r.enviadas || r.inscricoesApagadas) {
+            app.log.info(r, '[agendador] push enviado')
+          }
+        } catch (err) {
+          app.log.error({ err }, '[agendador] envio de push falhou')
         }
 
         try {

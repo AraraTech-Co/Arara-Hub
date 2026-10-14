@@ -9,13 +9,11 @@ import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { PreferenciasDeAviso } from '@/components/pwa/preferencias-de-aviso'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
-import {
-  AlertCircle, CheckCircle, KeyRound, User,
-  Copy, Plus, Trash2, Clock, ShieldCheck,
-} from 'lucide-react'
+import { AlertCircle, BellRing, CheckCircle, Clock, Copy, KeyRound, Plus, ShieldCheck, Trash2, User } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { formatDateShort } from '@/lib/utils'
 import { araraApiFetch } from '@/lib/arara/arara-api-fetch'
@@ -235,10 +233,23 @@ export default function MinhaContaPage() {
           <TabsList className="bg-background border border-border shadow-sm mb-6">
             <TabsTrigger value="perfil"  className="gap-1.5"><User      className="w-4 h-4" />Perfil</TabsTrigger>
             <TabsTrigger value="senha"   className="gap-1.5"><KeyRound  className="w-4 h-4" />Senha</TabsTrigger>
+            <TabsTrigger value="avisos"  className="gap-1.5"><BellRing  className="w-4 h-4" />Avisos</TabsTrigger>
             {profile.role === 'admin' && (
               <TabsTrigger value="convites" className="gap-1.5"><ShieldCheck className="w-4 h-4" />Convites</TabsTrigger>
             )}
           </TabsList>
+
+          {/* ── AVISOS (Fase 4) ─────────────────────────────────────────── */}
+          <TabsContent value="avisos">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Avisos no aparelho</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <PreferenciasDeAviso />
+              </CardContent>
+            </Card>
+          </TabsContent>
 
           {/* ── PERFIL ──────────────────────────────────────────────────── */}
           <TabsContent value="perfil">
