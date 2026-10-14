@@ -19,7 +19,21 @@ import urllib.request
 from collections import Counter, defaultdict
 
 RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-MARCA = "scripts/guarda-sessao.py"
+# Marcas que contam como guarda. A primeira é o carimbo que o guarda-sessao.py
+# deixa nas rotas que ele mesmo protegeu; as outras duas são as guardas
+# escritas À MÃO nas rotas manuais (490c, 490f, 490i, 490k, 490l, 490n, mídia,
+# dispositivos, membros, times…) e no relógio interno (490m).
+#
+# Sem elas, rota protegida à mão caía no relatório como se estivesse aberta —
+# e alarme falso repetido ensina a ignorar o alarme, que é pior do que não ter
+# o alarme. Procurar a função é tão frouxo quanto procurar o carimbo (os dois
+# são texto no código), mas erra para o lado certo: deixa de acusar quem está
+# protegido, e continua acusando quem não tem NENHUMA das três.
+MARCAS = (
+    "scripts/guarda-sessao.py",   # carimbo do aplicador
+    "_sessaoDoPortal",            # guarda de sessão escrita à mão
+    "_souOAgendador",             # prova de origem do relógio interno
+)
 FORA = {"auth", "health", "uptime", "rate", "cron", "webhooks", "external", "api"}
 
 
@@ -68,7 +82,7 @@ def main():
             codigo = r.get("controllerCode") or ""
             if r.get("authMode") == "webhook_secret":
                 cnt["público deliberado (webhook_secret)"] += 1
-            elif MARCA in codigo:
+            elif any(marca in codigo for marca in MARCAS):
                 cnt["exige sessão"] += 1
             elif mod in FORA:
                 cnt["fora da política (máquina/porta de entrada)"] += 1

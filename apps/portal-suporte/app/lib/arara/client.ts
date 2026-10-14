@@ -229,12 +229,6 @@ export const arara = {
       { auth: 'appKey' },
     ),
 
-  publicTicket: (id: string, email: string) =>
-    request<Record<string, unknown>>(
-      `/api/tickets/public?id=${encodeURIComponent(id)}&email=${encodeURIComponent(email)}`,
-      { auth: 'appKey' },
-    ),
-
   publicReply: (body: Record<string, unknown>) =>
     request<Record<string, unknown>>('/api/tickets/public/reply', {
       method: 'POST',

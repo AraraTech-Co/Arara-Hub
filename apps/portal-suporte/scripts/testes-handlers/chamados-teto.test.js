@@ -136,18 +136,28 @@ const corpo = (r) => (r.body && (r.body.data !== undefined ? r.body.data : r.bod
     ok(`${nome}: conta os ${ESPERADO} do suporte, não 500`, n === ESPERADO, n)
   }
 
-  // ── a consulta do cliente ─────────────────────────────────────────────────
+  // ── a consulta da equipe em /tickets/public ───────────────────────────────
+  // Esta rota passou a exigir sessão de atendente (ver
+  // tickets-public-guarda.test.js); o que se testa AQUI é só o teto de 500.
+  // O cliente que acompanha o próprio chamado usa POST /tickets/acompanhar.
+  //
+  // As asserções eram `status !== 404`, que passava com 401 e 403 também —
+  // frouxa o bastante para sobreviver à mudança de guarda sem notar. Agora
+  // conferem o 200 e o chamado certo.
   const pub = carregarHandler('381 tickets GET /tickets/public')
-  // chamado que está FORA das 500 da varredura: antes dava 404 para o cliente
   const fora = tudo.find((t) => t.id === 'novo7')
   r = await pub(ctxDe(tudo, { query: { id: fora.ticket_number } }))
-  ok('cliente: acha pelo número mesmo fora das 500', r.status !== 404, { status: r.status, body: r.body })
+  ok('equipe: acha pelo número mesmo fora das 500',
+    r.status === 200 && r.body?.ticket_number === fora.ticket_number,
+    { status: r.status, numero: r.body?.ticket_number })
   r = await pub(ctxDe(tudo, { query: { id: 'novo7' } }))
-  ok('cliente: acha pelo id mesmo fora das 500', r.status !== 404, { status: r.status })
+  ok('equipe: acha pelo id mesmo fora das 500',
+    r.status === 200 && r.body?.id === 'novo7', { status: r.status, id: r.body?.id })
   r = await pub(ctxDe(tudo, { query: { id: 'TCK-QUE-NAO-EXISTE' } }))
-  ok('cliente: chamado inexistente continua 404', r.status === 404, r.status)
+  ok('equipe: chamado inexistente continua 404', r.status === 404, r.status)
   r = await pub(ctxDe(tudo, { query: {} }))
-  ok('cliente: sem id continua 400', r.status === 400, r.status)
+  ok('equipe: sem id lista os chamados do site, por filtro',
+    r.status === 200 && Array.isArray(r.body?.data), { status: r.status, body: r.body })
 
   // ── o limite que sobra, registrado de propósito ───────────────────────────
   // Quando a PRÓPRIA partição passa de 500 (os fechados, um dia), nem a
