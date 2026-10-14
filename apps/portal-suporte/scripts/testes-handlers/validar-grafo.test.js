@@ -7,7 +7,10 @@
 // que protege de verdade: a API aceita chamada direta, sem passar pelo editor.
 //
 // Roda com: node validar-grafo.test.js
+const fs = require('fs')
+const path = require('path')
 const { carregarHandler, reply, ok, fim } = require('./_carregar.js')
+const { validarGrafo } = require(path.resolve(__dirname, '../../app/lib/wa-flow-graph.ts'))
 
 const patch = carregarHandler('whatsapp PATCH /whatsapp/flows/:id')
 const publish = carregarHandler('whatsapp POST /whatsapp/flows/:id/publish')
@@ -164,6 +167,33 @@ const problemas = (r) => (r.body && r.body.problemas) || []
       ok('  e o erro diz a faixa', JSON.stringify(problemas(r)).includes('0 a 240'), problemas(r))
     }
   }
+
+  // ── o exemplo do documento do formato JSON ───────────────────────────────
+  // O exemplo que a equipe (e uma IA) copia para escrever fluxo fora do portal
+  // mora em fixtures/fluxo-exemplo.json e é o MESMO texto do documento. Se ele
+  // não passar, o documento ensina a escrever um fluxo que não entra: por isso
+  // o exemplo é teste, e não só prosa.
+  const exemplo = JSON.parse(
+    fs.readFileSync(path.join(__dirname, 'fixtures/fluxo-exemplo.json'), 'utf8'),
+  )
+  const vf = validarGrafo(JSON.parse(JSON.stringify(exemplo)))
+  ok('exemplo do formato: front aceita sem nenhum erro', vf.ok && vf.erros.length === 0, vf.erros)
+  ok('  e sem nenhum aviso', vf.avisos.length === 0, vf.avisos)
+
+  const ce = ctxDe({ body: { graph: exemplo } })
+  r = await patch(ce)
+  ok('exemplo do formato: servidor salva', r.status === 200 && !!ce.guardado.fluxo.draft,
+    { status: r.status, problemas: problemas(r) })
+
+  const cep = ctxDe({ fluxo: { id: 'f1', version: 2, draft: exemplo } })
+  r = await publish(cep)
+  ok('exemplo do formato: servidor publica', r.status === 200 && cep.guardado.fluxo.version === 3,
+    { status: r.status, problemas: problemas(r) })
+
+  // Usar todos os cartões é o que faz o exemplo servir de referência.
+  const tipos = [...new Set(exemplo.nodes.map((n) => n.type))]
+  ok('exemplo do formato: usa os 7 cartões do editor',
+    ['menu', 'content', 'handoff', 'condition', 'delay', 'question', 'tag'].every((t) => tipos.includes(t)), tipos)
 
   fim()
 })().catch((e) => { console.error('ERRO NO TESTE:', e); process.exit(1) })

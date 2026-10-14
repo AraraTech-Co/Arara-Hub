@@ -1,15 +1,32 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
-  Loader2, Plus, Workflow, ChevronRight, Power, PowerOff, Trash2, Pencil, Check, X,
+  Loader2, Plus, Workflow, ChevronRight, Power, PowerOff, Trash2, Pencil, Check, X, Upload,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { useToast } from '@/hooks/use-toast'
 import { waFlowApi, type WAFlowSummary } from '@/lib/api/wa-flow'
 import { MODELOS_DE_FLUXO, type ModeloDeFluxo } from '@/lib/wa-flow-modelos'
+import { validarGrafo, type WAGraph } from '@/lib/wa-flow-graph'
+import {
+  criarFluxo,
+  lerArquivoDeFluxo,
+  mensagemDeArquivoRecusado,
+  nomeDoArquivoDeFluxo,
+} from '@/lib/wa-flow-importar'
 
 /**
  * Ante-tela dos fluxos: escolhe qual fluxo abrir no editor.
@@ -28,6 +45,10 @@ export function FlowList({ canEdit }: { canEdit: boolean }) {
   const [novoNome, setNovoNome] = useState('')
   const [renomeando, setRenomeando] = useState<string | null>(null)
   const [nomeEdit, setNomeEdit] = useState('')
+  // Arquivo já lido e validado, esperando o nome para virar fluxo novo.
+  const [importando, setImportando] = useState<{ graph: WAGraph; avisos: string[] } | null>(null)
+  const [nomeImport, setNomeImport] = useState('')
+  const entradaArquivo = useRef<HTMLInputElement>(null)
 
   const carregar = useCallback(async () => {
     try {
@@ -63,18 +84,66 @@ export function FlowList({ canEdit }: { canEdit: boolean }) {
     if (!nome) return
     setCreating(true)
     try {
-      const res = await waFlowApi.create(nome)
-      if (modelo) {
-        try {
-          await waFlowApi.saveDraft(res.data.id, modelo.graph)
-        } catch (err) {
-          // O fluxo já existe; só o conteúdo falhou. Dizer isso é melhor que
-          // deixar a pessoa achar que o modelo entrou.
-          erro(err, 'O fluxo foi criado, mas o modelo não entrou')
-        }
+      const r = await criarFluxo(waFlowApi, nome, modelo?.graph)
+      if (r.status === 'conteudo-recusado') {
+        // O fluxo já existe; só o conteúdo falhou. Dizer isso é melhor que
+        // deixar a pessoa achar que o modelo entrou.
+        erro(r.erro, 'O fluxo foi criado, mas o modelo não entrou')
       }
       setNovoNome('')
-      router.push(`/admin/whatsapp/flow/_/?id=${encodeURIComponent(res.data.id)}`) // já abre o editor do novo
+      router.push(`/admin/whatsapp/flow/_/?id=${encodeURIComponent(r.id)}`) // já abre o editor do novo
+    } catch (err) {
+      erro(err, 'Não foi possível criar o fluxo')
+      setCreating(false)
+    }
+  }
+
+  /**
+   * "Importar fluxo": o arquivo é lido e validado ANTES de qualquer chamada ao
+   * servidor. Arquivo ruim não cria nada — nem fluxo vazio.
+   */
+  async function escolherArquivo(arquivo: File) {
+    const lido = lerArquivoDeFluxo(await arquivo.text(), validarGrafo)
+    if (!lido.ok) {
+      toast(
+        lido.naoEJson
+          ? { title: 'Arquivo inválido', description: 'Não é um JSON.', variant: 'destructive' }
+          : {
+              title: `O arquivo tem ${lido.erros.length} problema(s)`,
+              description: lido.erros.slice(0, 3).join(' · '),
+              variant: 'destructive',
+            },
+      )
+      return
+    }
+    setNomeImport(nomeDoArquivoDeFluxo(arquivo.name))
+    setImportando({ graph: lido.graph, avisos: lido.avisos })
+  }
+
+  /** Cria pelo mesmo caminho do modelo; entra como RASCUNHO, sem publicar. */
+  async function criarDoArquivo() {
+    const nome = nomeImport.trim()
+    if (!importando || !nome) return
+    setCreating(true)
+    try {
+      const r = await criarFluxo(waFlowApi, nome, importando.graph, { apagarSeRecusado: true })
+      if (r.status === 'conteudo-recusado') {
+        const m = mensagemDeArquivoRecusado(r)
+        toast({ title: m.titulo, description: m.descricao, variant: 'destructive' })
+        setImportando(null)
+        setCreating(false)
+        await carregar()
+        return
+      }
+      const avisos = importando.avisos
+      toast({
+        title: 'Fluxo importado como rascunho',
+        description: avisos.length
+          ? `${avisos.length} aviso(s): ${avisos[0]}`
+          : 'Confira no simulador e publique quando estiver certo.',
+      })
+      setImportando(null)
+      router.push(`/admin/whatsapp/flow/_/?id=${encodeURIComponent(r.id)}`) // abre o editor do novo, como o modelo
     } catch (err) {
       erro(err, 'Não foi possível criar o fluxo')
       setCreating(false)
@@ -159,8 +228,67 @@ export function FlowList({ canEdit }: { canEdit: boolean }) {
             )}
             Criar fluxo
           </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => entradaArquivo.current?.click()}
+            disabled={creating}
+          >
+            <Upload className="mr-1.5 h-3.5 w-3.5" />
+            Importar fluxo
+          </Button>
+          <input
+            ref={entradaArquivo}
+            type="file"
+            accept="application/json,.json"
+            className="hidden"
+            aria-hidden
+            onChange={(e) => {
+              const f = e.target.files?.[0]
+              e.target.value = ''
+              if (f) void escolherArquivo(f)
+            }}
+          />
         </div>
       )}
+
+      <AlertDialog
+        open={importando !== null}
+        onOpenChange={(open) => {
+          if (!open && !creating) setImportando(null)
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Importar fluxo</AlertDialogTitle>
+            <AlertDialogDescription>
+              O fluxo entra como rascunho, desativado. O que está no ar não muda.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <Input
+            autoFocus
+            value={nomeImport}
+            onChange={(e) => setNomeImport(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && void criarDoArquivo()}
+            placeholder="Nome do novo fluxo"
+            aria-label="Nome do novo fluxo"
+            maxLength={80}
+          />
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={creating}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={creating || !nomeImport.trim()}
+              onClick={(e) => {
+                e.preventDefault()
+                void criarDoArquivo()
+              }}
+            >
+              {creating && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
+              Criar a partir do arquivo
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Modelos prontos: três, não um catálogo, e todos usando só os cards que
           o motor executa de verdade. Modelo pronto que não funciona é pior que
