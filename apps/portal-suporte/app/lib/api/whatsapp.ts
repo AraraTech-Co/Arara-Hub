@@ -83,6 +83,8 @@ export interface WADepartmentRef {
 
 /** Conversa como emitida por GET /api/whatsapp/stream (evento `conversations`). */
 export interface WAInboxConversation {
+  /** De qual conta de WhatsApp é a conversa. Ausente = a conta default. */
+  conta_id?: string | null
   id: string
   remote_jid: string
   /** Grupo do WhatsApp (17/09/2026): fixo na aba Grupos, sem dono, fora da fila. */
@@ -325,13 +327,36 @@ export interface WAMetrics {
   queue: number
   slaAtRisk: number
   byPhase: Record<string, number>
+  /**
+   * O servidor truncou a contagem na janela de 500 (Fase 3c).
+   *
+   * A tela precisa DIZER isso: número truncado sem aviso é pior que número
+   * ausente, porque quem olha decide com ele.
+   */
+  parcial?: boolean
 }
 
 // ─── API client ───────────────────────────────────────────────────────────────
 
 export const whatsappApi = {
   /** GET /api/whatsapp — listar conversas */
-  listConversations: () => api.get<{ data: WAConversation[] }>('/api/whatsapp'),
+  /**
+   * GET /api/whatsapp — a lista da inbox.
+   *
+   * `conta` escolhe a aba de conta (Fase 3c). Sem ela, vêm todas as contas que
+   * a pessoa pode ver — que é o comportamento de hoje, quando só existe a
+   * conta default. O SERVIDOR filtra: conversa de conta sem grant não vem,
+   * mesmo que a tela peça.
+   */
+  listConversations: (conta?: string | null) =>
+    api.get<{ data: WAConversation[] }>(
+      conta ? `/api/whatsapp?conta=${encodeURIComponent(conta)}` : '/api/whatsapp',
+    ),
+
+  /** GET /api/whatsapp/contas — contas ativas que a pessoa pode ver (Fase 3c). */
+  listContas: () => api.get<{ data: { id: string; nome: string; setor?: string | null }[] }>(
+    '/api/whatsapp/contas',
+  ),
 
   /**
    * GET /api/whatsapp/[id]/messages — mensagens de uma conversa.

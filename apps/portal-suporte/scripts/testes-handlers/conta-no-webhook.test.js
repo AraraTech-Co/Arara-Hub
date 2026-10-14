@@ -228,7 +228,13 @@ const conta = (c) => c.estado.conversas[0]?.conta_id
       models: {
         WhatsAppConversation: { findById: async () => conv, findMany: async () => [conv], update: async () => conv },
         WhatsAppMessage: { findMany: async () => [], create: async (m) => m, update: async () => ({}) },
-        Profile: { findById: async () => ({ id: 'u1', role: 'support', full_name: 'Ana' }), findMany: async () => [] },
+        // COM o grant da conta: a Fase 3c trava envio em conversa de conta que a
+        // pessoa não pode ver, então sem o grant isto daria 403 e o teste de
+        // token nem chegaria a ler segredo. O caso sem grant está logo abaixo.
+        Profile: {
+          findById: async () => ({ id: 'u1', role: 'support', full_name: 'Ana', feature_grants: ['wa_conta_vendas', 'wa_conta_semsegredo'] }),
+          findMany: async () => [],
+        },
         SystemSettings: { findMany: async () => [{}] },
         WaConversationEvents: { findMany: async () => [], create: async () => ({}) },
         Contact: { findMany: async () => [], findById: async () => null },
@@ -286,6 +292,36 @@ const conta = (c) => c.estado.conversas[0]?.conta_id
   r = await inbound(ctxDe(c, { query: { k: '' } }))
   ok('?k vazio é tratado como ausência: conta default',
     r.status !== 403 && conta(c) === 'default', { status: r.status, conta: conta(c) })
+
+  // Sem o grant, o envio nem chega a ler segredo: a trava da Fase 3c vem
+  // antes. É a prova de que as duas camadas se compõem na ordem certa.
+  {
+    const lidos = []
+    const conv = {
+      id: 'c1', remote_jid: '5519999990001', status: 'open', phase: 'em_atendimento',
+      assigned_to_id: 'u1', conta_id: 'vendas',
+    }
+    const r2 = await envio({
+      params: {}, query: {}, headers: {},
+      body: { conversationId: 'c1', message: 'ola' },
+      user: { id: 'u1' },
+      models: {
+        WhatsAppConversation: { findById: async () => conv, findMany: async () => [conv], update: async () => conv },
+        WhatsAppMessage: { findMany: async () => [], create: async (m) => m, update: async () => ({}) },
+        Profile: { findById: async () => ({ id: 'u1', role: 'support', feature_grants: [] }), findMany: async () => [] },
+        SystemSettings: { findMany: async () => [{}] },
+        WaConversationEvents: { findMany: async () => [], create: async () => ({}) },
+        Contact: { findMany: async () => [], findById: async () => null },
+        Company: { findMany: async () => [], findById: async () => null },
+        Sessao: { findById: async () => null },
+      },
+      secrets: { get: async (n) => { lidos.push(n); return 'tok' } },
+      fetch: async () => ({ status: 200, body: '{}' }),
+      reply: reply(),
+    })
+    ok('sem o grant da conta: 403 antes de qualquer envio', r2.status === 403, { status: r2.status })
+    ok('  e nenhum segredo foi lido', lidos.length === 0, lidos)
+  }
 
   fim()
 })()
