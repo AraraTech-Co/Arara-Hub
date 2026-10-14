@@ -35,6 +35,7 @@ const espiao = {
   rotas: [],
   logs: { info: [], warn: [], error: [] },
   chamadas: [],     // um registro por chamada ao handler da varredura
+  push: [],         // um registro por chamada ao envio de push
 }
 globalThis.__espiaoAgendador = espiao
 
@@ -57,6 +58,15 @@ const STUBS = {
     export async function buildModelsApi() { return { marcador: 'models' } }`,
   '../../lib/app-slugs.js': `
     export function resolveStorageSlug(slug) { return slug }`,
+  // O envio de push é um MÓDULO de verdade (`push.ts`), importado como
+  // `./push.js` porque o build compila TypeScript. Sem stub, o teste nem
+  // carrega o agendador — e um stub que só devolve zero ainda prova a ordem
+  // em que o tick chama as três tarefas.
+  './push.js': `
+    export async function enviarPushPendente(app, models, segredos) {
+      globalThis.__espiaoAgendador.push.push({ models, segredos })
+      return { enviadas: 0, inscricoesApagadas: 0 }
+    }`,
   '../../lib/build-handler-ctx.js': `
     // O de verdade preenche headers, params, query, body e models — e nada que
     // se pareça com \`agendadorInterno\`. Este stub tem a mesma superfície.
@@ -189,6 +199,14 @@ async function rodar() {
   responder({ body: { data: { avisou: false, conversas: 0 } } })   // plantão
   await respira()
   ok('terminada a do plantão, o tick chama a do fluxo', vezes(INBOUND) === 1, espiao.chamadas.map((c) => c.path))
+  // Entre as duas varreduras o tick esvazia a fila de push. Contar a chamada
+  // é o que prova que o envio participa do minuto, e não só existe.
+  ok('  e, no caminho, esvazia a fila de push uma vez', espiao.push.length === 1, espiao.push.length)
+  ok('  com os models do tick e sem chave nenhuma a oferecer',
+    espiao.push[0]?.models?.marcador === 'models'
+      && espiao.push[0]?.segredos?.publica === null
+      && espiao.push[0]?.segredos?.privada === null,
+    espiao.push[0])
   const ctxFluxo = espiao.chamadas.find((c) => c.path === INBOUND).ctx
   ok('  com a tarefa dita no corpo, e só ela',
     JSON.stringify(ctxFluxo.body) === '{"__tarefa":"sem-resposta"}', ctxFluxo.body)

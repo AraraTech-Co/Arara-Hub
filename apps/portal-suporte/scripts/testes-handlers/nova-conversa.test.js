@@ -10,6 +10,8 @@
 //    chamar `findMany({})`: com ~476 conversas e teto de 500, varredura
 //    acharia "nada" e criaria duplicata;
 //  - envio recusado não deixa conversa órfã na lista.
+//  - `conta_id` vindo do corpo só vale se a conta existir e o pedido tiver
+//    permissão nela — a conferência acontece antes de qualquer envio.
 //
 // Roda com: node nova-conversa.test.js
 const path = require('node:path')
@@ -56,6 +58,15 @@ function cenario({ conversas = [], token = 'tok', respostas = [{ status: 200, bo
     },
   }
 }
+
+// Cadastro de contas (Fase 3a). O model não existe até o schema ser aplicado,
+// e é por isso que o caso sem ele também está coberto acima.
+const contasFalsas = (contas = [{ id: 'vendas', nome: 'Vendas', ativa: true }]) => ({
+  findMany: async (arg) => {
+    const chaves = Object.keys(arg || {})
+    return contas.filter((x) => chaves.every((k) => x[k] === arg[k]))
+  },
+})
 
 const ctxDe = (c, body, extra = {}) => Object.assign({
   params: {}, query: {}, headers: {},
@@ -198,11 +209,45 @@ const ctxDe = (c, body, extra = {}) => Object.assign({
   const ev = c.estado.eventos.find((e) => e.kind === 'conversa_iniciada_pelo_portal')
   ok('  e o rastro de quem abriu', !!ev && JSON.parse(ev.payload).por === EU, c.estado.eventos)
 
-  // conta_id explícito é respeitado (Fase 3 vai usar; sem UI hoje)
+  // ══ conta_id do corpo: a conta tem de existir E ser permitida ═════════
+  // A rota lê `conta_id` do corpo porque a conversa ainda não existe, e por
+  // isso confere a conta ANTES de qualquer envio: conta desconhecida recusa,
+  // conta sem permissão recusa, e com permissão a conversa nasce nela.
+  // Nenhuma tela manda `conta_id` hoje; o caminho existe para a Fase 3.
+
+  // Sem cadastro de conta nenhum — que é o estado de hoje em produção.
   c = cenario()
   r = await nova(ctxDe(c, { telefone: '19999990001', message: 'oi', conta_id: 'vendas' }))
-  ok('conta_id do payload é respeitado', c.estado.conversas[0].conta_id === 'vendas',
-    c.estado.conversas[0].conta_id)
+  ok('conta_id de conta inexistente: 400', r.status === 400, r.status)
+  ok('  e nenhuma conversa foi criada', c.estado.conversas.length === 0, c.estado.conversas)
+  ok('  e nada foi enviado', c.estado.enviadas.length === 0, c.estado.enviadas)
+
+  // A conta existe e está ativa, mas quem pede não tem o grant dela.
+  c = cenario()
+  r = await nova(ctxDe(c, { telefone: '19999990001', message: 'oi', conta_id: 'vendas' }, {
+    models: Object.assign({}, c.models, { WaConta: contasFalsas() }),
+  }))
+  ok('conta existente sem o grant: 403', r.status === 403, r.status)
+  ok('  e nenhuma conversa foi criada', c.estado.conversas.length === 0, c.estado.conversas)
+  ok('  e nada foi enviado', c.estado.enviadas.length === 0, c.estado.enviadas)
+
+  // Com o grant da conta, o caminho legítimo passa — senão a trava acima
+  // estaria provando só que a rota recusa tudo.
+  c = cenario()
+  r = await nova(ctxDe(c, { telefone: '19999990001', message: 'oi', conta_id: 'vendas' }, {
+    models: Object.assign({}, c.models, {
+      WaConta: contasFalsas(),
+      Profile: {
+        findById: async (id) => (id === EU
+          ? Object.assign({}, PERFIL, { feature_grants: ['wa_conta_vendas'] })
+          : null),
+        findMany: async () => [PERFIL],
+      },
+    }),
+  }))
+  ok('com o grant da conta, a conversa nasce nela',
+    r.status === 200 && c.estado.conversas[0]?.conta_id === 'vendas',
+    { status: r.status, conta: c.estado.conversas[0]?.conta_id })
 
   // ══ recusa do provedor: texto do servidor, e sem conversa órfã ═══════
   c = cenario({ respostas: [{ status: 400, body: '{"error":"number not registered on whatsapp"}' }] })
