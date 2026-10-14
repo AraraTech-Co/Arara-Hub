@@ -118,7 +118,8 @@ export function ConversationList({
   // Depois de criar conversa, o inbox-client pede a aba onde ela está.
   useEffect(() => {
     if (pedidoDeAba > 0 && abaPedida) {
-      setEmGrupos(false)
+      // `setTab` já tira de Grupos: `emGrupos` é derivado da aba (ver acima),
+      // não é estado próprio.
       setTab(abaPedida)
     }
   }, [pedidoDeAba, abaPedida])
