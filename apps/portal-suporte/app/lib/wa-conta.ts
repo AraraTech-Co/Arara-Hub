@@ -49,6 +49,31 @@ export function nomeDoSegredoDaConta(contaId: string | null | undefined): string
 }
 
 /**
+ * Nome do segredo com o TOKEN DE WEBHOOK da conta (Fase 3b).
+ *
+ * A rota do webhook tem um segredo fixo, igual para todas as contas: ele diz
+ * "veio da Avisa", não "veio da conta X". Então cada conta ganha um valor
+ * opaco próprio, que vai na URL configurada na Avisa como `?k=<valor>` — e
+ * esse mesmo valor IDENTIFICA e PROVA a conta ao mesmo tempo.
+ *
+ * Por que um valor só, e não `?conta=<id>` mais um segredo: com o id na URL
+ * existe um campo para alguém trocar, e duas coisas para manter em par. Com o
+ * valor opaco, trocar o valor é a própria rotação, e um `k` desconhecido não
+ * identifica conta nenhuma.
+ *
+ * ⚠️ A URL entra em log de acesso do servidor e do provedor. Rotacionar =
+ * trocar este segredo e a URL na Avisa; o valor antigo deixa de resolver no
+ * mesmo instante.
+ *
+ * A conta default NÃO tem token: ela é o caminho de hoje, sem `?k`, e exigir
+ * um nela quebraria o webhook em produção no instante do deploy.
+ */
+export function nomeDoTokenDoWebhook(contaId: string | null | undefined): string | null {
+  const id = String(contaId ?? '').trim() || CONTA_DEFAULT
+  return id === CONTA_DEFAULT ? null : `avisa_webhook_token_${id}`
+}
+
+/**
  * Grant que dá acesso a uma conta.
  *
  * A conta default não exige grant: quem tem nível de atendimento vê o que
