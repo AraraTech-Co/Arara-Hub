@@ -14,7 +14,11 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useToast } from '@/hooks/use-toast'
-import { arquivosApi, tamanhoLegivel, ARQUIVO_MAX_MB, type ArquivoDeApoio } from '@/lib/api/arquivos'
+import {
+  arquivosApi, tamanhoLegivel, ARQUIVO_MAX_MB, NIVEIS_DE_ACESSO, type ArquivoDeApoio,
+} from '@/lib/api/arquivos'
+import { FEATURE_GRANTS } from '@/lib/auth/feature-grants'
+import { whatsappApi } from '@/lib/api/whatsapp'
 import { ANEXO_ACCEPT, lerDataUri, motivoRecusaAnexo } from '@/lib/anexos'
 import { formatDateShort } from '@/lib/utils'
 
@@ -28,6 +32,22 @@ export default function ArquivosPage() {
   // escolher um chip mudava para onde o próximo arquivo ia.
   const [pasta, setPasta] = useState('')
   const [destino, setDestino] = useState('')
+  // Quem pode ver o que for enviado. "" = toda a equipe, que é o padrão e o
+  // comportamento de antes deste campo existir.
+  const [acesso, setAcesso] = useState('')
+  // Contas de WhatsApp ativas: elas também geram grant (`wa_conta_<id>`), e
+  // material de um setor costuma ser exatamente o caso de "só quem atende
+  // aquele número".
+  const [contas, setContas] = useState<{ id: string; nome: string }[]>([])
+  useEffect(() => {
+    let vivo = true
+    whatsappApi.listContas()
+      .then((r) => { if (vivo) setContas(r.data ?? []) })
+      // Sem contas cadastradas a rota devolve lista vazia; falhar aqui só
+      // significa que não há grant de conta a oferecer.
+      .catch(() => { if (vivo) setContas([]) })
+    return () => { vivo = false }
+  }, [])
   const [busca, setBusca] = useState('')
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState<string | null>(null)
@@ -79,7 +99,14 @@ export default function ArquivosPage() {
           continue
         }
         const conteudo = await lerDataUri(file)
-        await arquivosApi.enviar({ nome: file.name, pasta: destino, conteudo })
+        // O prefixo diz qual dos dois campos o servidor recebe: nível e grant
+        // são regras diferentes, e mandar os dois juntos seria ambíguo.
+        const nivel = acesso.startsWith('nivel:') ? acesso.slice(6) : undefined
+        const grant = acesso.startsWith('grant:') ? acesso.slice(6) : undefined
+        await arquivosApi.enviar({
+          nome: file.name, pasta: destino, conteudo,
+          acl_nivel: nivel, acl_grant: grant,
+        })
       }
       await carregar(pasta, null, false)
       toast({ title: lista.length === 1 ? 'Arquivo enviado' : `${lista.length} arquivos enviados` })
@@ -93,7 +120,7 @@ export default function ArquivosPage() {
       setEnviando(false)
       if (entrada.current) entrada.current.value = ''
     }
-  }, [destino, pasta, carregar, toast])
+  }, [destino, acesso, pasta, carregar, toast])
 
   const baixar = useCallback(async (a: ArquivoDeApoio) => {
     try {
@@ -154,6 +181,31 @@ export default function ArquivosPage() {
                 onChange={(e) => setDestino(e.target.value)}
                 className="max-w-xs"
               />
+              {/* Quem pode ver — o servidor valida nível e grant, então aqui é
+                  lista e não campo livre. Sem este seletor, tudo que entrava
+                  pela tela ficava visível para toda a equipe, mesmo quando o
+                  material não era para todos. */}
+              <select
+                value={acesso}
+                aria-label="Quem pode ver os arquivos enviados"
+                onChange={(e) => setAcesso(e.target.value)}
+                className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+              >
+                <option value="">Quem pode ver: toda a equipe</option>
+                {NIVEIS_DE_ACESSO.map((n) => (
+                  <option key={n.valor} value={`nivel:${n.valor}`}>{n.rotulo}</option>
+                ))}
+                {FEATURE_GRANTS.map((g) => (
+                  <option key={g.key} value={`grant:${g.key}`}>
+                    Só quem tem: {g.label}
+                  </option>
+                ))}
+                {contas.map((c) => (
+                  <option key={c.id} value={`grant:wa_conta_${c.id}`}>
+                    Só quem atende: {c.nome}
+                  </option>
+                ))}
+              </select>
               <Button type="button" size="sm" disabled={enviando} onClick={() => entrada.current?.click()} className="gap-1">
                 {enviando ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
                 Escolher arquivo
@@ -184,6 +236,7 @@ export default function ArquivosPage() {
             >
               Arraste arquivos para cá
               {destino ? <> — vão para <strong>{destino}</strong></> : null}
+              {acesso ? <> · visíveis só para quem tem o acesso escolhido</> : null}
             </div>
           </CardContent>
         </Card>
