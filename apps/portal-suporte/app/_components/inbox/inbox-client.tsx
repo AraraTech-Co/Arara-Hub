@@ -20,7 +20,8 @@ import { DispositivosPanel } from './dispositivos-panel'
 import { BotToggle } from './bot-toggle'
 import { MenuToggle } from './menu-toggle'
 import { StatusToggle } from './status-toggle'
-import { ConversationList } from './conversation-list'
+import { ConversationList, type InboxTab } from './conversation-list'
+import { NovaConversaDialog } from './nova-conversa-dialog'
 import { ThreadPane } from './thread-pane'
 import { useAtalhosInbox } from '@/hooks/use-atalhos-inbox'
 import { CrmContextPanel } from './crm-context-panel'
@@ -166,12 +167,36 @@ export function InboxClient() {
   // A busca vive na thread; o atalho só levanta a bandeira.
   const [pedidoDeBusca, setPedidoDeBusca] = useState(0)
 
+  // ── Nova conversa (Fase 2) ───────────────────────────────────────────────
+  const [novaAberta, setNovaAberta] = useState(false)
+  const [abaPedida, setAbaPedida] = useState<InboxTab>('minhas')
+  const [pedidoDeAba, setPedidoDeAba] = useState(0)
+
+  const aposNovaConversa = useCallback((id: string, existente: boolean) => {
+    setSelectedId(id)
+    setView('lista')
+    // Criada, ela está em "Minhas" (o servidor atribui a quem criou). Já
+    // existente, pode estar em qualquer aba — mandar para "Minhas" esconderia
+    // a conversa que a pessoa acabou de pedir para ver.
+    if (!existente) {
+      setAbaPedida('minhas')
+      setPedidoDeAba((n) => n + 1)
+    }
+    toast({
+      title: existente ? 'Esta conversa já existia' : 'Conversa criada',
+      description: existente
+        ? 'Abri a conversa que já havia com esse número. Nada foi enviado.'
+        : 'A mensagem foi enviada e a conversa está em Minhas.',
+    })
+  }, [toast])
+
   useAtalhosInbox({
     fechar: () => setSelectedId(null),
     proxima: () => irPara(1),
     anterior: () => irPara(-1),
     atender: () => void atenderAtual(),
     buscar: () => setPedidoDeBusca((n) => n + 1),
+    novaConversa: () => setNovaAberta(true),
   })
 
   // Mudar fase exige developer+ no servidor (requireDeveloper). Sem espelhar a
@@ -317,6 +342,9 @@ export function InboxClient() {
             onSelect={setSelectedId}
             loading={listLoading}
             meId={meId}
+            onNovaConversa={() => setNovaAberta(true)}
+            abaPedida={abaPedida}
+            pedidoDeAba={pedidoDeAba}
           />
         </div>
 
@@ -361,6 +389,12 @@ export function InboxClient() {
         )}
       </div>
       )}
+      <NovaConversaDialog
+        aberto={novaAberta}
+        onFechar={() => setNovaAberta(false)}
+        conversas={conversations}
+        onPronto={aposNovaConversa}
+      />
     </div>
   )
 }

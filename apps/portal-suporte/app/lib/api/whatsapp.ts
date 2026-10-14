@@ -365,6 +365,20 @@ export const whatsappApi = {
     conversationId, message, anexo, responder_a: responderA,
   }),
 
+  /**
+   * POST /api/whatsapp/conversa/nova — abre conversa com um número (Fase 2).
+   *
+   * ⚠️ MANDA WHATSAPP DE VERDADE para o número enviado. `existente: true`
+   * significa que a conversa já havia: nada foi enviado, é só abrir.
+   *
+   * `conta_id` existe para a Fase 3 (contas por setor) e não tem UI: o
+   * servidor usa a conta única atual quando ele não vem.
+   */
+  novaConversa: (body: { telefone: string; message: string; conta_id?: string }) =>
+    api.post<{ data: { id: string; existente: boolean; telefone: string; conta_id?: string } }>(
+      '/api/whatsapp/conversa/nova', body,
+    ),
+
   /** POST /api/whatsapp/mensagem/[id]/acao — reagir (emoji vazio remove) ou apagar */
   acaoNaMensagem: (
     id: string,
