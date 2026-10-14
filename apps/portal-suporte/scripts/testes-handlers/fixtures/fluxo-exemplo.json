@@ -1,0 +1,149 @@
+{
+  "root": "boas_vindas",
+  "nodes": [
+    {
+      "id": "boas_vindas",
+      "type": "content",
+      "position": { "x": 0, "y": 200 },
+      "data": {
+        "label": "Boas-vindas",
+        "text": "Olá, {{nome}}! Aqui é o suporte da Arara Tech."
+      }
+    },
+    {
+      "id": "horario",
+      "type": "condition",
+      "position": { "x": 260, "y": 200 },
+      "data": {
+        "label": "Horário",
+        "text": "",
+        "check": "businessHours"
+      }
+    },
+    {
+      "id": "fora_do_horario",
+      "type": "content",
+      "position": { "x": 520, "y": 440 },
+      "data": {
+        "label": "Fora do horário",
+        "text": "Estamos fora do horário de atendimento. Voltamos {{proxima_abertura}}. Pode deixar sua mensagem que respondemos assim que abrirmos.",
+        "umaVezPorJanela": true
+      }
+    },
+    {
+      "id": "menu_principal",
+      "type": "menu",
+      "position": { "x": 520, "y": 160 },
+      "data": {
+        "label": "Menu principal",
+        "text": "Como podemos ajudar?",
+        "options": [
+          { "id": "suporte", "label": "Suporte técnico (SGC, PDV)" },
+          { "id": "financeiro", "label": "Financeiro e boletos" },
+          { "id": "vendas", "label": "Quero contratar" }
+        ],
+        "semRespostaMin": 30
+      }
+    },
+    {
+      "id": "pede_chamado",
+      "type": "question",
+      "position": { "x": 820, "y": 0 },
+      "data": {
+        "label": "Número do chamado",
+        "text": "Qual o número do seu chamado? Se ainda não tem, responda 0.",
+        "validacao": "numero",
+        "tentativas": 2,
+        "erro": "Não consegui entender. Responda só com números, por favor.",
+        "guardarEm": "resposta_1",
+        "semRespostaMin": 15
+      }
+    },
+    {
+      "id": "etiqueta_suporte",
+      "type": "tag",
+      "position": { "x": 1100, "y": -80 },
+      "data": {
+        "label": "Marcar como suporte",
+        "text": "",
+        "tagsAplicar": ["suporte", "triagem-automatica"],
+        "tagsRemover": ["sem-triagem"]
+      }
+    },
+    {
+      "id": "aguarde",
+      "type": "content",
+      "position": { "x": 1340, "y": -80 },
+      "data": {
+        "label": "Aguarde",
+        "text": "Obrigado! Vou chamar um técnico agora."
+      }
+    },
+    {
+      "id": "pausa",
+      "type": "delay",
+      "position": { "x": 1580, "y": -80 },
+      "data": {
+        "label": "Atraso",
+        "text": "",
+        "seconds": 2
+      }
+    },
+    {
+      "id": "atendente_suporte",
+      "type": "handoff",
+      "position": { "x": 1820, "y": 40 },
+      "data": {
+        "label": "Atendente — suporte",
+        "text": "Um técnico vai falar com você em instantes.",
+        "area": "suporte",
+        "avisarApos": 10
+      }
+    },
+    {
+      "id": "atendente_financeiro",
+      "type": "handoff",
+      "position": { "x": 820, "y": 200 },
+      "data": {
+        "label": "Atendente — financeiro",
+        "text": "Vou te passar para o financeiro.",
+        "area": "administrativo"
+      }
+    },
+    {
+      "id": "atendente_vendas",
+      "type": "handoff",
+      "position": { "x": 820, "y": 320 },
+      "data": {
+        "label": "Atendente — vendas",
+        "text": "Que bom! Alguém de vendas já vai falar com você.",
+        "area": "vendas",
+        "avisarApos": 0
+      }
+    },
+    {
+      "id": "sem_resposta",
+      "type": "content",
+      "position": { "x": 820, "y": 560 },
+      "data": {
+        "label": "Sem resposta",
+        "text": "Como não tivemos resposta, vou encerrar por aqui. É só mandar uma mensagem para recomeçar."
+      }
+    }
+  ],
+  "edges": [
+    { "id": "e1", "source": "boas_vindas", "target": "horario", "sourceHandle": "next" },
+    { "id": "e2", "source": "horario", "target": "menu_principal", "sourceHandle": "true" },
+    { "id": "e3", "source": "horario", "target": "fora_do_horario", "sourceHandle": "false" },
+    { "id": "e4", "source": "menu_principal", "target": "pede_chamado", "sourceHandle": "opt:suporte" },
+    { "id": "e5", "source": "menu_principal", "target": "atendente_financeiro", "sourceHandle": "opt:financeiro" },
+    { "id": "e6", "source": "menu_principal", "target": "atendente_vendas", "sourceHandle": "opt:vendas" },
+    { "id": "e7", "source": "menu_principal", "target": "sem_resposta", "sourceHandle": "timeout" },
+    { "id": "e8", "source": "pede_chamado", "target": "etiqueta_suporte", "sourceHandle": "next" },
+    { "id": "e9", "source": "pede_chamado", "target": "atendente_suporte", "sourceHandle": "fail" },
+    { "id": "e10", "source": "pede_chamado", "target": "sem_resposta", "sourceHandle": "timeout" },
+    { "id": "e11", "source": "etiqueta_suporte", "target": "aguarde", "sourceHandle": "next" },
+    { "id": "e12", "source": "aguarde", "target": "pausa", "sourceHandle": "next" },
+    { "id": "e13", "source": "pausa", "target": "atendente_suporte", "sourceHandle": "next" }
+  ]
+}

@@ -20,6 +20,16 @@ import {
   Loader2, Save, Rocket, ListChecks, MessageSquareText, UserRoundCheck, GitBranch, Timer, Tag, MessageCircleQuestion, Play, Download, Upload,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { FlowSimulador } from '@/components/wa-flow/flow-simulador'
 import { validarGrafo } from '@/lib/wa-flow-graph'
 import { useToast } from '@/hooks/use-toast'
@@ -197,6 +207,8 @@ function FlowEditorInner({ flowId, canEdit }: { flowId: string; canEdit: boolean
 
   const [simulando, setSimulando] = useState(false)
   const entradaArquivo = useRef<HTMLInputElement>(null)
+  // Arquivo já validado, esperando a confirmação para trocar o que não foi salvo.
+  const [importPendente, setImportPendente] = useState<{ graph: WAGraph; avisos: string[] } | null>(null)
 
   /** Exportar = baixar o grafo como JSON. Nenhuma rota nova é necessária. */
   function exportar() {
@@ -217,7 +229,8 @@ function FlowEditorInner({ flowId, canEdit }: { flowId: string; canEdit: boolean
    * Importar = ler o JSON para o editor como RASCUNHO. Não publica nada: o
    * que está no ar só muda quando alguém aperta Publicar, e a validação roda
    * antes de qualquer coisa entrar na tela — arquivo malformado travava o
-   * editor na carga.
+   * editor na carga. Com alteração não salva, pergunta antes de trocar — e só
+   * depois de validar: não perguntar para depois recusar.
    */
   async function importar(arquivo: File) {
     let lido: unknown
@@ -236,7 +249,14 @@ function FlowEditorInner({ flowId, canEdit }: { flowId: string; canEdit: boolean
       })
       return
     }
-    const g = lido as WAGraph
+    if (dirty) {
+      setImportPendente({ graph: lido as WAGraph, avisos: v.avisos })
+      return
+    }
+    aplicarImportado(lido as WAGraph, v.avisos)
+  }
+
+  function aplicarImportado(g: WAGraph, avisos: string[]) {
     setNodes(g.nodes.map((n) => ({ id: n.id, type: n.type, position: n.position, data: n.data })))
     setEdges((g.edges ?? []).map((e) => ({
       id: e.id, source: e.source, target: e.target,
@@ -247,8 +267,8 @@ function FlowEditorInner({ flowId, canEdit }: { flowId: string; canEdit: boolean
     setDirty(true)
     toast({
       title: 'Fluxo importado para o rascunho',
-      description: v.avisos.length
-        ? `${v.avisos.length} aviso(s): ${v.avisos[0]}`
+      description: avisos.length
+        ? `${avisos.length} aviso(s): ${avisos[0]}`
         : 'Confira no simulador e salve quando estiver certo.',
     })
   }
@@ -415,6 +435,33 @@ function FlowEditorInner({ flowId, canEdit }: { flowId: string; canEdit: boolean
           {flow.name} · versão {flow.version}
         </span>
       </div>
+
+      <AlertDialog
+        open={importPendente !== null}
+        onOpenChange={(open) => {
+          if (!open) setImportPendente(null)
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Substituir as alterações não salvas?</AlertDialogTitle>
+            <AlertDialogDescription>
+              O que você mudou e não salvou será trocado pelo conteúdo do arquivo. O que está no ar não muda.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (importPendente) aplicarImportado(importPendente.graph, importPendente.avisos)
+                setImportPendente(null)
+              }}
+            >
+              Substituir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {simulando && currentGraph() && (
         <FlowSimulador
