@@ -140,3 +140,18 @@ test('(f) fonte legível e gerado concordam (exceto o PLATFORM_USER_MAP)', async
     .join('\n');
   assert.equal(gerNorm, legivel);
 });
+
+test('(g) perfil existe com id legado → user_id = id da plataforma, sem create/update', async () => {
+  const { ctx, calls } = mkCtx({
+    body: { email: 'legado@arara-tech.com', fullName: 'Legado' },
+    profiles: [{ id: 'sp-legacy-antigo', email: 'legado@arara-tech.com' }],
+    // resolvePlatformUserId cai no findByEmail e devolve o users.id correto.
+    findByEmail: async () => ({ id: 'u-plataforma-nova' }),
+  });
+  const res = await handler(ctx);
+  assert.equal(res.status, 409);
+  assert.equal(res.body.codigo, 'perfil_existe');
+  assert.equal(res.body.user_id, 'u-plataforma-nova'); // NÃO o id do perfil (sp-legacy-antigo)
+  assert.equal(calls.create, 0);
+  assert.equal(calls.update, 0);
+});

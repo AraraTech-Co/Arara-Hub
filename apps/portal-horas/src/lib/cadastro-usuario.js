@@ -200,10 +200,16 @@ export async function cadastrarUsuario(dados, onStep) {
   onStep?.('Liberando o acesso…');
   const roleApp = role === 'admin' ? 'admin' : 'user';
   const jaMembro = await jaEhMembro(userId); // pode lançar MSG_403
+  if (jaMembro === null) {
+    // Não deu para conferir (rede/5xx/status inesperado). NÃO envia o POST: ele
+    // é upsert e sobrescreveria o papel — um admin do app seria rebaixado por
+    // engano. Para com segurança; repetir é seguro.
+    throw new Error(
+      'Perfil gravado, mas não deu para conferir se a pessoa já tem acesso ao módulo. Clique de novo — repetir é seguro.',
+    );
+  }
   let acessoLiberado = false;
-  if (jaMembro !== true) {
-    // null (não deu para consultar) ou false → tenta liberar; o POST é upsert,
-    // mas só chega aqui quem não consta como membro.
+  if (jaMembro === false) {
     const r = await liberarAcesso(userId, roleApp);
     if (!r)
       throw new Error(

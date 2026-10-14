@@ -165,3 +165,18 @@ test('401 com renovação: renova a sessão uma vez e repete', async () => {
   assert.equal(chamadas.filter((c) => c.url.includes('/v1/auth/refresh')).length, 1);
   assert.equal(global.localStorage.getItem('token'), 'T2');
 });
+
+test('GET /members falhou (500): não faz POST e para com aviso de que não deu para conferir', async () => {
+  instalarLocalStorage({ token: 'JWT' });
+  const chamadas = instalarFetch((req) => {
+    if (req.url.includes('/v1/r/portal-horas/users')) return resposta(201, { user_id: 'u6' });
+    if (req.url.includes('/members') && req.method === 'GET') return resposta(500, { error: 'boom' });
+    if (req.url.includes('/members') && req.method === 'POST') throw new Error('não deveria postar /members');
+    throw new Error('rota inesperada');
+  });
+  await assert.rejects(
+    cadastrarUsuario({ ...base, email: 'conferir@arara-tech.com', senha: '' }),
+    /não deu para conferir/,
+  );
+  assert.equal(chamadas.filter((c) => c.url.includes('/members') && c.method === 'POST').length, 0);
+});

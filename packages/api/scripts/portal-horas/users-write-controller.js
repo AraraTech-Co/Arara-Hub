@@ -186,10 +186,19 @@ async function handler(ctx) {
     var all = await Profile.findMany({});
     for (var i = 0; i < (all || []).length; i++) {
       if (String(pick(all[i], 'email', 'email') || '').toLowerCase() === email) {
+        // Devolve o users.id da PLATAFORMA, nao o id do StaffProfile: perfis
+        // antigos podem ter id legado (sp_*) que nao existe na plataforma, e o
+        // passo 3 liberaria acesso para um id inexistente (404 User not found).
+        var perfilId = String(pick(all[i], 'id', 'id') || '');
+        var plataformaId = await resolvePlatformUserId(email, null);
+        if (!plataformaId) {
+          plataformaId = String(PLATFORM_USER_MAP['time-management:' + perfilId] || '');
+        }
+        if (!plataformaId) plataformaId = perfilId;
         return ctx.reply.status(409).send({
           error: 'Ja existe perfil no Gestao de Horas para este e-mail.',
           codigo: 'perfil_existe',
-          user_id: String(pick(all[i], 'id', 'id') || ''),
+          user_id: plataformaId,
         });
       }
     }
