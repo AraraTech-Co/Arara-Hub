@@ -52,7 +52,21 @@ export function InboxClient() {
   const [crmOpen, setCrmOpen] = useState(false)
   const [metrics, setMetrics] = useState<WAMetrics | null>(null)
 
-  const { conversations, loading: listLoading, status: streamStatus } = useInboxStream()
+  // ── Contas de WhatsApp (Fase 3c) ─────────────────────────────────────────
+  // Lista vazia é o caso de hoje: nenhuma aba de conta aparece.
+  const [contas, setContas] = useState<{ id: string; nome: string }[]>([])
+  const [contaAtiva, setContaAtiva] = useState<string | null>(null)
+  useEffect(() => {
+    let vivo = true
+    whatsappApi.listContas()
+      .then((r) => { if (vivo) setContas(r.data ?? []) })
+      // Sem contas cadastradas a rota devolve lista vazia; falhar aqui não
+      // pode tirar a inbox do ar, então o erro só significa "sem abas".
+      .catch(() => { if (vivo) setContas([]) })
+    return () => { vivo = false }
+  }, [])
+
+  const { conversations, loading: listLoading, status: streamStatus } = useInboxStream(contaAtiva)
   const { messages, loading: threadLoading, refresh: refreshThread, naoLidasAoAbrir, historico: historicoThread, falhou: threadFalhou } =
     useConversationStream(selectedId)
 
@@ -310,6 +324,17 @@ export function InboxClient() {
             value={metrics.slaAtRisk}
             tone={metrics.slaAtRisk > 0 ? 'warning' : 'neutral'}
           />
+          {/* O servidor diz quando truncou na janela de 500. Número truncado
+              SEM aviso é pior que número ausente, porque quem olha decide com
+              ele — e com várias contas isso deixa de ser raro. */}
+          {metrics.parcial && (
+            <span
+              title="A contagem bateu no limite de 500 registros por consulta: estes números são parciais."
+              className="rounded-full border border-sem-warning-bd bg-sem-warning px-2 py-0.5 text-[11px] font-medium text-sem-warning-fg"
+            >
+              parcial
+            </span>
+          )}
         </div>
       )}
 
@@ -343,6 +368,9 @@ export function InboxClient() {
             loading={listLoading}
             meId={meId}
             onNovaConversa={() => setNovaAberta(true)}
+            contas={contas}
+            contaAtiva={contaAtiva}
+            onContaAtiva={(id) => { setContaAtiva(id); setSelectedId(null) }}
             abaPedida={abaPedida}
             pedidoDeAba={pedidoDeAba}
           />

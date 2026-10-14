@@ -21,6 +21,17 @@ export type FeatureGrant =
   | 'code_review'
   | 'planejamento'
   | 'cadastro_empresa'
+  /**
+   * Acesso a uma conta de WhatsApp (Fase 3c): `wa_conta_<id>`.
+   *
+   * É o único grant com forma variável, porque as contas são CADASTRO, não
+   * código: uma conta nova não pode exigir deploy para alguém poder vê-la. Por
+   * isso o tipo é um template, e não uma linha por conta nesta união.
+   *
+   * A conta default NÃO tem grant — quem tem nível de atendimento vê o que
+   * sempre viu. Exigir grant nela tiraria a inbox de todo mundo no deploy.
+   */
+  | `wa_conta_${string}`
 
 /** Catálogo para a UI (tela de membros). A ordem é a de exibição. */
 export const FEATURE_GRANTS: {
@@ -68,9 +79,23 @@ export const FEATURE_GRANTS: {
 const KNOWN = new Set<string>(FEATURE_GRANTS.map((g) => g.key))
 
 /** Descarta chaves desconhecidas (defesa: a lista vem de um formulário). */
+/**
+ * Grant de conta tem forma, não lista: `wa_conta_<id>` com id de cadastro.
+ *
+ * O id é restrito a letras, números, `-` e `_` porque entra em nome de segredo
+ * e em comparação de string; aceitar qualquer coisa aqui deixaria um grant
+ * `wa_conta_` vazio (que casaria com a conta default por acidente) passar.
+ */
+const FORMA_DO_GRANT_DE_CONTA = /^wa_conta_[A-Za-z0-9_-]+$/
+
+export function ehGrantDeConta(g: unknown): g is `wa_conta_${string}` {
+  return typeof g === 'string' && FORMA_DO_GRANT_DE_CONTA.test(g)
+}
+
 export function sanitizeGrants(grants: unknown): FeatureGrant[] {
   if (!Array.isArray(grants)) return []
-  return grants.filter((g): g is FeatureGrant => typeof g === 'string' && KNOWN.has(g))
+  return grants.filter((g): g is FeatureGrant =>
+    typeof g === 'string' && (KNOWN.has(g) || ehGrantDeConta(g)))
 }
 
 interface GrantActor {
@@ -139,4 +164,24 @@ export function canRevisarCodigo(actor: GrantActor): boolean {
  */
 export function canCadastrarEmpresa(actor: GrantActor): boolean {
   return hasMinLevel(actor.role, 'admin') || hasGrant(actor, 'cadastro_empresa')
+}
+
+/**
+ * Pode ver as conversas desta conta de WhatsApp?
+ *
+ * Conta default: por NÍVEL, como sempre foi — é a inbox que todo o atendimento
+ * usa hoje, e exigir grant nela seria tirar o trabalho de todos no deploy.
+ *
+ * Conta nomeada: admin/master por nível, OU o grant `wa_conta_<id>`. Mesma
+ * régua dos outros grants — um setor pode ser liberado a uma pessoa sem
+ * promovê-la, e o admin não precisa de um grant por conta para administrar.
+ *
+ * O SERVIDOR é a verdade: isto existe para a tela não oferecer uma aba que a
+ * API vai recusar, e para não esconder de quem foi liberado.
+ */
+export function podeVerConta(actor: GrantActor, contaId: string | null | undefined): boolean {
+  const id = String(contaId ?? '').trim() || 'default'
+  if (id === 'default') return hasMinLevel(actor.role, 'support')
+  if (hasMinLevel(actor.role, 'admin')) return true
+  return (actor.featureGrants ?? []).includes(`wa_conta_${id}`)
 }

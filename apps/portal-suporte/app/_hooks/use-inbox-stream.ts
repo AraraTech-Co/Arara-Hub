@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   whatsappApi,
   type WAConversation,
@@ -97,7 +97,13 @@ function porLer(lista: WAInboxConversation[]): Map<string, number> {
   return m
 }
 
-export function useInboxStream(): UseInboxStreamResult {
+/**
+ * `conta` isola o polling por conta de WhatsApp (Fase 3c): trocar de aba troca
+ * a consulta, em vez de filtrar no cliente uma lista que trouxe tudo. É o que
+ * impede mensagem de uma conta de aparecer na aba de outra — e o servidor
+ * continua sendo a verdade, recusando conta sem grant.
+ */
+export function useInboxStream(conta?: string | null): UseInboxStreamResult {
   const [conversations, setConversations] = useState<WAInboxConversation[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -113,7 +119,7 @@ export function useInboxStream(): UseInboxStreamResult {
     // erro sobe para o polling marcar 'offline', mas a lista precisa sair do
     // estado de carregamento — senão fica um spinner eterno sem explicação.
     try {
-      const res = await whatsappApi.listConversations()
+      const res = await whatsappApi.listConversations(conta ?? null)
       const lista = (res.data ?? []).map(fromLegacy).sort(byUpdatedAtDesc)
 
       const agora = porLer(lista)
@@ -149,7 +155,21 @@ export function useInboxStream(): UseInboxStreamResult {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [conta])
+
+  // Trocar de conta LIMPA a lista antes do próximo ciclo. Sem isto, o `merge`
+  // manteria as conversas da aba anterior na tela por alguns segundos — que é
+  // exatamente o vazamento entre abas que a Fase 3 promete não ter. O
+  // `anterior` também é zerado, senão a primeira carga da aba nova pareceria
+  // ter mensagens novas e tocaria o aviso.
+  const contaAnterior = useRef<string | null | undefined>(conta)
+  useEffect(() => {
+    if (contaAnterior.current === conta) return
+    contaAnterior.current = conta
+    anterior.current = null
+    setConversations([])
+    setLoading(true)
+  }, [conta])
 
   const status = usePolling(carregar, { intervalMs: INTERVALO_MS })
 

@@ -34,6 +34,13 @@ interface ConversationListProps {
   /** Abre o diálogo de nova conversa (Fase 2) — botão na linha da busca. */
   onNovaConversa?: () => void
   /**
+   * Contas de WhatsApp que a pessoa pode ver (Fase 3c). Vazio é o caso de
+   * hoje: nenhuma aba de conta aparece e a lista fica exatamente como está.
+   */
+  contas?: { id: string; nome: string }[]
+  contaAtiva?: string | null
+  onContaAtiva?: (id: string | null) => void
+  /**
    * Pede para mostrar uma aba. É PAR (aba + contador) e não só a aba porque
    * pedir a mesma aba duas vezes tem de funcionar — com um valor só, o segundo
    * pedido não mudaria nada e o efeito não rodaria. Mesmo motivo do
@@ -75,6 +82,9 @@ export function ConversationList({
   onNovaConversa,
   abaPedida,
   pedidoDeAba = 0,
+  contas = [],
+  contaAtiva = null,
+  onContaAtiva,
 }: ConversationListProps) {
   const [query, setQuery] = useState('')
   const [tab, setTab] = useState<InboxTab>('fila')
@@ -117,6 +127,44 @@ export function ConversationList({
 
   return (
     <div className="flex h-full flex-col border-r border-border bg-card">
+      {/* Abas de CONTA (Fase 3c) — só aparecem quando há conta cadastrada.
+          Com uma conta só, mostrar uma aba sozinha seria ruído: a inbox fica
+          igual ao que era. */}
+      {contas.length > 0 && (
+        <div className="flex items-center gap-1 overflow-x-auto border-b border-border px-3 py-2" role="tablist" aria-label="Contas de WhatsApp">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={!contaAtiva}
+            onClick={() => onContaAtiva?.(null)}
+            className={cn(
+              'shrink-0 rounded-full border px-2.5 py-0.5 text-xs font-medium transition-colors',
+              !contaAtiva
+                ? 'border-primary bg-primary text-primary-foreground'
+                : 'border-border bg-muted text-muted-foreground hover:text-foreground',
+            )}
+          >
+            Todas
+          </button>
+          {contas.map((c) => (
+            <button
+              key={c.id}
+              type="button"
+              role="tab"
+              aria-selected={contaAtiva === c.id}
+              onClick={() => onContaAtiva?.(c.id)}
+              className={cn(
+                'shrink-0 rounded-full border px-2.5 py-0.5 text-xs font-medium transition-colors',
+                contaAtiva === c.id
+                  ? 'border-primary bg-primary text-primary-foreground'
+                  : 'border-border bg-muted text-muted-foreground hover:text-foreground',
+              )}
+            >
+              {c.nome}
+            </button>
+          ))}
+        </div>
+      )}
       <div className="flex items-center gap-1.5 border-b border-border p-3">
         <div className="relative flex-1">
           <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
