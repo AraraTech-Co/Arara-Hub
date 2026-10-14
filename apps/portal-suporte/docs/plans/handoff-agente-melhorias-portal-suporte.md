@@ -81,14 +81,14 @@ Riscos: conflito de atalhos com o navegador (por isso `Ctrl+Alt`); regex de form
 
 **Objetivo:** o atendente abre uma conversa com um número que ainda não escreveu.
 
-- Botão **Nova conversa** no topo da lista (`inbox-client.tsx`) → diálogo que reusa a busca por nome/telefone já existente em `conversation-list.tsx` e o cadastro em `cadastrar-contato-dialog.tsx`.
-- Envio pela rota de envio outbound já existente (`whatsapp.ts`). Se já há conversa com o número, abrir a existente em vez de criar outra.
+- Botão **Nova conversa** no topo da lista (`inbox-client.tsx`) → diálogo **novo** (`nova-conversa-dialog.tsx`): número + mensagem, busca entre as conversas existentes enquanto digita, confirmação com o número normalizado à vista antes de enviar. O cadastro de nome fica para depois de a conversa existir, com o `cadastrar-contato-dialog.tsx` atual (ele é acoplado a uma conversa que já existe; a busca de `conversation-list.tsx` filtra só o que está carregado, não serve para isto).
+- **Rota nova** `POST /whatsapp/conversa/nova` (a rota de envio `POST /whatsapp` exige `conversationId` e não manda a número sem conversa; não estendê-la). Guarda de sessão e nível mínimo support. Se já há conversa com o número, devolve a existente sem enviar nada. Busca **por filtro, uma consulta por variante do nono dígito**, nunca varredura: o teto de 500 do `findMany({})` faria "não existe" e criaria duplicata em silêncio. Recusa do provedor: conversa **não** é criada.
 - Erro claro quando o provedor recusa (número inválido, fora da janela de 24 h do WhatsApp): mostrar o texto do servidor, não "erro ao enviar".
 - Campo `conta_id` preparado no payload e no modelo, com default = conta única atual. Não expor na UI ainda.
 
 Critérios: criar conversa para número novo → aparece na aba "Minhas" atribuída a quem criou; número existente → abre a conversa existente; recusa do provedor → mensagem com o motivo.
 
-Riscos: duplicar conversa por formato de número (com/sem nono dígito): normalizar com a mesma função usada no inbound (`wa-contato.ts`).
+Riscos: duplicar conversa por formato de número (com/sem nono dígito). **Não existe** função de normalização no front (`wa-contato.ts` só formata para exibição); a regra vive no servidor em `_mandarPara`. Criar `normalizarTelefoneWhatsapp` no front e a gêmea no servidor, com teste que prova que as duas concordam sobre a mesma tabela de números.
 
 ### Fase 3 — Contas de WhatsApp por setor (2.2)
 

@@ -28,6 +28,8 @@ export interface AcoesDaInbox {
   atender: () => void
   /** Abre a busca dentro da conversa (Ctrl+F). */
   buscar: () => void
+  /** Abre o diálogo de nova conversa (Ctrl+Alt+N) — Fase 2. */
+  novaConversa: () => void
 }
 
 /** O mapa, também usado para desenhar a ajuda — uma fonte só. */
@@ -37,10 +39,10 @@ export const ATALHOS_DA_INBOX: { teclas: string; o_que_faz: string; disponivel: 
   { teclas: 'Ctrl+Alt+[', o_que_faz: 'Conversa anterior', disponivel: true },
   { teclas: 'Ctrl+Alt+M', o_que_faz: 'Atender (assume a conversa aberta)', disponivel: true },
   { teclas: 'Ctrl+F', o_que_faz: 'Buscar dentro da conversa', disponivel: true },
-  // Os dois abaixo aparecem na ajuda como "ainda não disponível", em vez de
-  // ficarem de fora: quem decora atalho precisa saber que eles existem no
-  // desenho e por que não funcionam ainda.
-  { teclas: 'Ctrl+Alt+N', o_que_faz: 'Nova conversa — ainda não disponível', disponivel: false },
+  { teclas: 'Ctrl+Alt+N', o_que_faz: 'Nova conversa com um número', disponivel: true },
+  // Continua na ajuda como "ainda não disponível", em vez de ficar de fora:
+  // quem decora atalho precisa saber que ele existe no desenho e por que não
+  // funciona. "Não lida" não existe no portal — depende de decisão do Leonardo.
   { teclas: 'Ctrl+Alt+U', o_que_faz: 'Marcar como não lida — ainda não disponível', disponivel: false },
 ]
 
@@ -84,7 +86,9 @@ export function useAtalhosInbox(acoes: AcoesDaInbox, ligado = true) {
           e.preventDefault(); acoes.anterior(); break
         case 'm': case 'M':
           e.preventDefault(); acoes.atender(); break
-        // N e U não têm ação: ver ATALHOS_DA_INBOX.
+        case 'n': case 'N':
+          e.preventDefault(); acoes.novaConversa(); break
+        // U não tem ação: ver ATALHOS_DA_INBOX.
         default:
           break
       }

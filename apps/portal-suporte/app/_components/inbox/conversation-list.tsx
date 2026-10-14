@@ -1,7 +1,7 @@
 'use client'
 
-import { useMemo, useState } from 'react'
-import { Inbox, Search, Users } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import { Inbox, MessageSquarePlus, Search, Users } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
@@ -31,6 +31,16 @@ interface ConversationListProps {
   loading: boolean
   /** Id do atendente logado (de /api/auth/me), para o filtro "Minhas". */
   meId: string | null
+  /** Abre o diálogo de nova conversa (Fase 2) — botão na linha da busca. */
+  onNovaConversa?: () => void
+  /**
+   * Pede para mostrar uma aba. É PAR (aba + contador) e não só a aba porque
+   * pedir a mesma aba duas vezes tem de funcionar — com um valor só, o segundo
+   * pedido não mudaria nada e o efeito não rodaria. Mesmo motivo do
+   * `pedidoDeBusca` da thread.
+   */
+  abaPedida?: InboxTab
+  pedidoDeAba?: number
 }
 
 // Rótulos curtos de propósito: as quatro abas precisam caber numa coluna de
@@ -62,6 +72,9 @@ export function ConversationList({
   onSelect,
   loading,
   meId,
+  onNovaConversa,
+  abaPedida,
+  pedidoDeAba = 0,
 }: ConversationListProps) {
   const [query, setQuery] = useState('')
   const [tab, setTab] = useState<InboxTab>('fila')
@@ -92,6 +105,14 @@ export function ConversationList({
     [conversations, query, tab, meId, filters],
   )
 
+  // Depois de criar conversa, o inbox-client pede a aba onde ela está.
+  useEffect(() => {
+    if (pedidoDeAba > 0 && abaPedida) {
+      setEmGrupos(false)
+      setTab(abaPedida)
+    }
+  }, [pedidoDeAba, abaPedida])
+
   const filtrosAtivos = countActive(filters)
 
   return (
@@ -111,6 +132,21 @@ export function ConversationList({
           onChange={setFilters}
           conversations={conversations}
         />
+        {onNovaConversa && (
+          <button
+            type="button"
+            onClick={onNovaConversa}
+            title="Nova conversa (Ctrl+Alt+N)"
+            className={cn(
+              'inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md transition-colors',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+              'text-muted-foreground hover:bg-muted/60 hover:text-foreground',
+            )}
+          >
+            <MessageSquarePlus className="h-4 w-4" aria-hidden />
+            <span className="sr-only">Nova conversa</span>
+          </button>
+        )}
         {/* Grupos: botão fixo, sempre visível, com a contagem de grupos com
             mensagem nova. Ligado, a lista abaixo mostra só grupos. */}
         <button
