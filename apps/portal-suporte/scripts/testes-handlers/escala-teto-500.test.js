@@ -68,6 +68,26 @@ function bancoComDiaForaDoCorte() {
   return linhas
 }
 
+/**
+ * Dois esquemas para o MESMO dia, como a tabela de verdade tem.
+ *
+ * O registro de maior precedência (`kind: "plantao"`) está gravado com HORA na
+ * data e aparece na parte lida da tabela; o de origem mais fraca tem a data só
+ * com o dia, e é o único que um filtro de igualdade exata encontra. Quem
+ * decide é a precedência — `plantao` ganha de `diario`.
+ */
+function bancoComDoisEsquemasNoMesmoDia() {
+  const linhas = [{ id: 'com_hora', kind: 'plantao', date: DIA + 'T00:00:00.000Z', agent_ids: ['u9'], backup_ids: [], notes: null }]
+  for (let i = 0; i < TETO - 1; i++) {
+    linhas.push({
+      id: 'antigo_' + i, kind: 'plantao', date: '2020-01-' + String((i % 28) + 1).padStart(2, '0'),
+      agent_ids: ['u_antigo'], backup_ids: [], notes: null,
+    })
+  }
+  linhas.push({ id: 'diario_1', date: DIA, type: 'night', agent_ids: ['u1'], backup_ids: [], notes: null })
+  return linhas
+}
+
 function ctxDe(model, { body = {}, query = {}, params = {} } = {}) {
   return {
     params, query, body, headers: {},
@@ -80,6 +100,7 @@ function ctxDe(model, { body = {}, query = {}, params = {} } = {}) {
           { id: 'u1', full_name: 'Plantonista Um', email: 'u1@arara-tech.com', phone: '5511999990001' },
           { id: 'u2', full_name: 'Backup Dois', email: 'u2@arara-tech.com', phone: '5511999990002' },
           { id: 'adm', full_name: 'Admin', email: 'adm@arara-tech.com', phone: '5511999990003' },
+          { id: 'u9', full_name: 'Plantonista Nove', email: 'u9@arara-tech.com', phone: '5511999990009' },
         ],
       },
       SystemSettings: { findMany: async () => [] },
@@ -120,6 +141,21 @@ const dados = (r) => (r.body && r.body.data) || null
     ok('  acha o plantão do dia', d && d.plantao_do_dia && d.plantao_do_dia.date === DIA, d && d.plantao_do_dia)
     ok('  e avisa a pessoa escalada', d && d.avisar.length === 1 && d.avisar[0].id === 'u1', d && d.avisar)
     ok('  com o backup do dia', d && d.backup_do_dia.length === 1 && d.backup_do_dia[0].id === 'u2', d && d.backup_do_dia)
+  }
+
+  // ── on-call: a precedência decide, mesmo com a consulta por data ─────────
+  // A consulta por data só acha o registro de origem mais fraca (o de maior
+  // precedência está gravado com hora na data). Se ela encerrasse a busca, o
+  // aviso iria para a pessoa errada — e é esta rota que acorda alguém.
+  {
+    const model = modeloComTeto(bancoComDoisEsquemasNoMesmoDia())
+    const r = await onCall(ctxDe(model, { query: { em: QUANDO } }))
+    const d = dados(r)
+    ok('on-call com dois esquemas no mesmo dia: responde 200', r.status === 200, { status: r.status, body: r.body })
+    ok('  avisa quem está no registro de maior precedência',
+      d && d.avisar.length === 1 && d.avisar[0].id === 'u9', d && d.avisar)
+    ok('  e a varredura foi consultada para decidir',
+      porNome(model, 'findMany').some((c) => c[1] === 'sem-filtro'), model.chamadas)
   }
 
   // ── listar: o dia fora do corte aparece no intervalo ─────────────────────
@@ -200,9 +236,10 @@ const dados = (r) => (r.body && r.body.data) || null
     ok('  e não escreve nada na escala',
       porNome(model, 'create').length === 0 && porNome(model, 'update').length === 0
       && porNome(model, 'delete').length === 0, model.chamadas)
+    const alvo = linhas.find((l) => l.id === 'alvo_1')
     ok('  o registro do dia fica intacto',
-      JSON.stringify(linhas[linhas.length - 1].agent_ids) === JSON.stringify(['u1']),
-      linhas[linhas.length - 1])
+      alvo && JSON.stringify(alvo.agent_ids) === JSON.stringify(['u1']), alvo)
+    ok('  e nenhum registro novo entra na tabela', linhas.length === TETO + 1, linhas.length)
   }
 
   // A guarda de sessão continua na frente: sem pessoa, nem 410 se alcança.
