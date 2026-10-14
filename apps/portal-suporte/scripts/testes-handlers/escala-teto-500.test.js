@@ -147,6 +147,33 @@ const dados = (r) => (r.body && r.body.data) || null
       porNome(model, 'findMany').length === 1 && porNome(model, 'findMany')[0][1] === 'sem-filtro', model.chamadas)
   }
 
+  // ── intervalo com data que não existe: responde, não estoura ────────────
+  // `_soData` é só um padrão de texto: mês 00 e dia 32 passam por ele. Andar
+  // por esses valores estourava o laço FORA do try, e a resposta virava erro
+  // de servidor em vez de uma lista.
+  // `semConsultas: true` é o valor que nem chega a ser um instante: aí não há
+  // intervalo para percorrer e a varredura é a única leitura. Já `2026-02-31` o
+  // próprio runtime normaliza para 03/03 — o intervalo existe, as consultas
+  // acontecem, e o que importa é que a resposta sai.
+  for (const [nome, query, semConsultas] of [
+    ['mês 00 no from', { from: '2026-00-10', to: '2026-10-31' }, true],
+    ['dia 32 no from', { from: '2026-10-32', to: '2026-11-30' }, true],
+    ['texto no lugar da data', { from: 'ontem', to: 'hoje' }, true],
+    ['dia 31 em fevereiro (o runtime normaliza)', { from: '2026-02-31', to: '2026-03-31' }, false],
+  ]) {
+    const model = modeloComTeto(bancoComDiaForaDoCorte())
+    let r = null
+    let estourou = null
+    try { r = await listar(ctxDe(model, { query })) } catch (e) { estourou = e }
+    ok(`listar com ${nome}: responde em vez de estourar`,
+      !estourou && r && r.status === 200, estourou ? String(estourou.message) : { status: r && r.status })
+    const lista = r ? dados(r) : null
+    ok('  e devolve uma lista', Array.isArray(lista), estourou ? 'estourou antes de responder' : lista)
+    const extras = porNome(model, 'findMany').filter((c) => c[1] !== 'sem-filtro').length
+    if (semConsultas) ok('  sem consulta por data nenhuma', extras === 0, extras)
+    else ok('  consultando as datas do intervalo normalizado', extras > 0 && extras <= 62, extras)
+  }
+
   // ── apagar por data: acha o dia fora do corte ───────────────────────────
   {
     const model = modeloComTeto(bancoComDiaForaDoCorte())
