@@ -22,6 +22,7 @@
 // =============================================================================
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { AtivarFuncoesCard } from '@/components/admin/ativar-funcoes-card'
 import {
   Bar,
   BarChart,
@@ -195,6 +196,10 @@ export function WhatsAppAnalyticsClient({
       )}
 
       <WAConnectionCard canManageToken={canManageToken} />
+
+      {/* ⚠️ TEMPORÁRIO: ligar as Fases 3, 4 e 5 sem terminal. Remover quando
+          tudo estiver ativo — ver o cabeçalho de ativar-funcoes-card.tsx. */}
+      {canManageToken && <AtivarFuncoesCard />}
 
       {/* Configuração da IA: mesma tela da conexão e dos interruptores, que é
           onde quem opera o WhatsApp já vai. Só admin — é cliente real do outro
