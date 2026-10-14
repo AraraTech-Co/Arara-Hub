@@ -255,5 +255,37 @@ const conta = (c) => c.estado.conversas[0]?.conta_id
   ok('conta sem segredo próprio: cai no de sempre (não fica muda)',
     e.lidos.includes('whatsapp_token_semsegredo') && e.lidos.includes('whatsapp_token'), e.lidos)
 
+  // ══ cadastro SEM o 55 (revisão do #36) ════════════════════════════════
+  // O payload da Avisa vem sempre com DDI. Cadastro com 10/11 dígitos gerava
+  // uma variante só, nunca casava, e a mensagem caía na default em silêncio —
+  // o mesmo sintoma que este PR corrigiu na outra ponta.
+  const SEM_DDI = [{ id: 'local', nome: 'Local', setor: 'x', ativa: true, numero: '19333330009' }]
+  c = cenario({ contas: SEM_DDI })
+  r = await inbound(ctxDe(c, { body: corpoCru({ meuNumero: '5519333330009' }) }))
+  ok('cadastro sem o 55 casa com o payload (que vem com DDI)', conta(c) === 'local', conta(c))
+
+  c = cenario({ contas: SEM_DDI })
+  r = await inbound(ctxDe(c, { body: corpoCru({ meuNumero: '551933330009' }) }))
+  ok('  e também pela variante do nono dígito', conta(c) === 'local', conta(c))
+
+  // ══ a ORDEM das guardas (revisão do #36) ══════════════════════════════
+  // O `?k` só é avaliado DEPOIS do segredo da rota, e as duas recusas têm a
+  // MESMA mensagem: diferentes contariam a quem não tem o segredo que o `?k`
+  // existe e que aquele valor não é de ninguém.
+  c = cenario()
+  const semSegredo = await inbound(ctxDe(c, { query: { token: 'errado', k: 'k-vendas-9f3a' } }))
+  ok('sem o segredo da rota, o ?k nem é avaliado: 403', semSegredo.status === 403, semSegredo.status)
+  c = cenario()
+  const kRuim = await inbound(ctxDe(c, { query: { k: 'nao-existe' } }))
+  ok('  e a recusa do k desconhecido tem a MESMA mensagem',
+    JSON.stringify(semSegredo.body) === JSON.stringify(kRuim.body),
+    { semSegredo: semSegredo.body, kRuim: kRuim.body })
+
+  // `?k` vazio é ausência, e cai na default — documentado no PR.
+  c = cenario()
+  r = await inbound(ctxDe(c, { query: { k: '' } }))
+  ok('?k vazio é tratado como ausência: conta default',
+    r.status !== 403 && conta(c) === 'default', { status: r.status, conta: conta(c) })
+
   fim()
 })()
