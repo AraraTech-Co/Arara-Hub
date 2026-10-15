@@ -157,6 +157,29 @@ const capturas = (c) => c.estado.eventos.filter((e) => e.kind === 'diag_eco')
     ok('com 29 registros, ainda grava o 30º', capturas(c).length === 30, capturas(c).length)
   }
 
+  // ══ O TETO VALE MESMO SE O FILTRO POR `kind` NÃO FUNCIONAR ═══════════
+  //
+  // A plataforma devolve ZERO para filtro em campo que ela não reconhece, e
+  // zero por filtro ignorado é indistinguível de zero por tabela vazia. Sem
+  // confirmar com uma varredura, a contagem ficaria em 0 para sempre e a sonda
+  // nunca pararia — viraria registro em toda mensagem nossa, o log permanente
+  // que ela não pode ser.
+  {
+    const cheios = []
+    for (let i = 0; i < 30; i++) {
+      cheios.push({ id: 'deco_' + i, kind: 'diag_eco', conversation_id: 'diagnostico', payload: '{}', created_at: new Date().toISOString() })
+    }
+    const c = cenario({ eventos: cheios })
+    // O filtro "funciona" devolvendo vazio, como a plataforma faz com campo
+    // que não reconhece. A varredura sem filtro continua verdadeira.
+    const todos = c.models.WaConversationEvents.findMany
+    c.models.WaConversationEvents.findMany = async (f) => (
+      Object.keys(f || {}).length ? [] : todos({})
+    )
+    await inbound(c.ctx(corpoCru({ id: 'WAID_F' })))
+    ok('filtro por kind ignorado: o teto ainda vale', capturas(c).length === 30, capturas(c).length)
+  }
+
   // ══ a sonda nunca atrapalha a entrada ════════════════════════════════
   {
     const c = cenario()
