@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { BuscaNaConversa } from './busca-na-conversa'
 import { ATALHOS_DA_INBOX } from '@/hooks/use-atalhos-inbox'
 import { rotuloDoContato } from '@/lib/wa-contato'
-import { Info, StickyNote } from 'lucide-react'
+import { Info, MailOpen, StickyNote } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   whatsappApi,
@@ -58,6 +58,11 @@ interface ThreadPaneProps {
    * reabrir — com booleano o segundo pedido não mudaria nada.
    */
   pedidoDeBusca?: number
+  /**
+   * Marca esta conversa como não lida e fecha o painel (o mesmo que Ctrl+Alt+U).
+   * Ausente quando não há conversa aberta — não há o que marcar.
+   */
+  onMarcarNaoLida?: () => void
 }
 
 /**
@@ -162,6 +167,19 @@ export function ThreadPane({
           </div>
           <div className="flex shrink-0 items-center gap-2">
             <AssignControls conversation={conversation} meId={meId} />
+            {onMarcarNaoLida && (
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={onMarcarNaoLida}
+                aria-label="Marcar como não lida e fechar a conversa"
+                title="Marcar como não lida (Ctrl+Alt+U) — fecha a conversa"
+                className="h-8 w-8"
+              >
+                <MailOpen className="h-4 w-4" />
+              </Button>
+            )}
             {/* Inline, não flutuante: sobreposto ao "Atender" ele cobria o botão. */}
             {onToggleCrm && (
               <Button

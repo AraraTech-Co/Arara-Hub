@@ -30,6 +30,14 @@ export interface AcoesDaInbox {
   buscar: () => void
   /** Abre o diálogo de nova conversa (Ctrl+Alt+N) — Fase 2. */
   novaConversa: () => void
+  /**
+   * Marca a conversa aberta como não lida e FECHA o painel (Ctrl+Alt+U).
+   *
+   * Fechar faz parte da ação, não é cortesia: a thread aberta reconsulta as
+   * mensagens em ciclo, e é essa consulta que zera o contador no servidor.
+   * Marcar sem fechar duraria até o próximo ciclo, alguns segundos.
+   */
+  naoLida: () => void
 }
 
 /** O mapa, também usado para desenhar a ajuda — uma fonte só. */
@@ -40,10 +48,7 @@ export const ATALHOS_DA_INBOX: { teclas: string; o_que_faz: string; disponivel: 
   { teclas: 'Ctrl+Alt+M', o_que_faz: 'Atender (assume a conversa aberta)', disponivel: true },
   { teclas: 'Ctrl+F', o_que_faz: 'Buscar dentro da conversa', disponivel: true },
   { teclas: 'Ctrl+Alt+N', o_que_faz: 'Nova conversa com um número', disponivel: true },
-  // Continua na ajuda como "ainda não disponível", em vez de ficar de fora:
-  // quem decora atalho precisa saber que ele existe no desenho e por que não
-  // funciona. "Não lida" não existe no portal — depende de decisão do Leonardo.
-  { teclas: 'Ctrl+Alt+U', o_que_faz: 'Marcar como não lida — ainda não disponível', disponivel: false },
+  { teclas: 'Ctrl+Alt+U', o_que_faz: 'Marcar como não lida (e fecha a conversa)', disponivel: true },
 ]
 
 /** O foco está num lugar onde a pessoa está ESCREVENDO? */
@@ -88,7 +93,8 @@ export function useAtalhosInbox(acoes: AcoesDaInbox, ligado = true) {
           e.preventDefault(); acoes.atender(); break
         case 'n': case 'N':
           e.preventDefault(); acoes.novaConversa(); break
-        // U não tem ação: ver ATALHOS_DA_INBOX.
+        case 'u': case 'U':
+          e.preventDefault(); acoes.naoLida(); break
         default:
           break
       }

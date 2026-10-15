@@ -431,6 +431,15 @@ export const whatsappApi = {
   reassignConversation: (id: string, agentId: string) =>
     api.post<{ data: { ok: true } }>(`/api/whatsapp/${id}/reassign`, { agentId }),
 
+  /**
+   * POST /api/whatsapp/[id]/nao-lida — marca a conversa como não lida.
+   *
+   * Marca do PORTAL. A leitura no celular do suporte já foi enviada ao
+   * provedor quando a conversa abriu, e a Avisa não tem a operação inversa.
+   */
+  marcarNaoLida: (id: string) =>
+    api.post<{ data: { ok: boolean; unread_count: number } }>(`/api/whatsapp/${id}/nao-lida`, {}),
+
   /** POST /api/whatsapp/[id]/unassign — remove a atribuição (volta à fila) */
   unassignConversation: (id: string) =>
     api.post<{ data: unknown }>(`/api/whatsapp/${id}/unassign`, {}),
