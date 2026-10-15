@@ -1,5 +1,6 @@
 import 'dotenv/config'
 import Fastify from 'fastify'
+import compress from '@fastify/compress'
 import cors from '@fastify/cors'
 import formbody from '@fastify/formbody'
 import multipart from '@fastify/multipart'
@@ -44,6 +45,32 @@ async function main() {
 
   // Capture raw bytes before JSON / form parsers (webhooks, signatures).
   await app.register(rawBodyPlugin)
+  // ── Compressão das respostas (15/10/2026) ─────────────────────────────────
+  //
+  // A API respondia sem compressão nenhuma, e o navegador fala DIRETO com ela
+  // (NEXT_PUBLIC_ARARA_API_URL), então o nginx dos fronts não entra neste
+  // caminho. A lista de conversas do portal são ~620 KiB a cada 10 s por
+  // atendente.
+  //
+  // `globalDecompression: false` NÃO é detalhe: o plugin liga descompressão de
+  // REQUISIÇÃO por padrão (`globalDecompression` cai em `global`, que cai em
+  // `true`), e `global: true` sozinho ligaria as duas metades. Aceitar corpo
+  // comprimido muda a superfície de entrada da plataforma — é decisão própria,
+  // não efeito colateral de ligar compressão de resposta.
+  //
+  // Só `gzip` e `deflate`: `br` comprime 15–20% melhor e custa mais
+  // processador por resposta numa API compartilhada por todos os apps. Vale
+  // medir depois, com número, em vez de entrar por suposição.
+  //
+  // Abaixo de 1 KiB o cabeçalho custa mais do que se economiza. Resposta que
+  // já chega codificada não é recomprimida — o plugin respeita
+  // `content-encoding` existente.
+  await app.register(compress, {
+    globalCompression: true,
+    globalDecompression: false,
+    threshold: 1024,
+    encodings: ['gzip', 'deflate'],
+  })
   // Browsers preflight PATCH/DELETE; default @fastify/cors methods are GET,HEAD,POST only.
   await app.register(cors, {
     origin: true,
