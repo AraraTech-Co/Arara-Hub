@@ -62,7 +62,11 @@ const NOVO_CARD: Record<WAGraphNodeType, { label: string; text: string; data: Pa
     data: { options: [{ id: 'op1', label: 'Primeira opção' }] },
   },
   content: { label: 'Mensagem', text: 'Escreva aqui a mensagem enviada ao cliente.', data: {} },
-  handoff: { label: 'Atendente', text: 'Vou te encaminhar para um atendente.', data: { area: 'suporte' } },
+  // Sem `area`: o campo saiu da tela porque ninguém o lê (ver
+  // flow-card-editor.tsx). Cartão novo nascendo com `area: 'suporte'`
+  // escreveria no fluxo salvo uma promessa de encaminhamento que não existe, e
+  // agora ninguém poderia nem ver nem mudar o valor.
+  handoff: { label: 'Atendente', text: 'Vou te encaminhar para um atendente.', data: {} },
   condition: { label: 'Condição', text: '', data: { check: 'businessHours' } },
   assistant: {
     label: 'Assistente',
