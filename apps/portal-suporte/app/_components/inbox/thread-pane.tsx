@@ -86,6 +86,7 @@ export function ThreadPane({
   rascunho = '',
   onRascunho,
   pedidoDeBusca = 0,
+  onMarcarNaoLida,
 }: ThreadPaneProps) {
   // ── Busca na conversa (Fase 1, A2) ─────────────────────────────────────
   const [ajudaAberta, setAjudaAberta] = useState(false)
