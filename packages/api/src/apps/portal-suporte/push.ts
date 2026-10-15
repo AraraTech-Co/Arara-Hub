@@ -10,6 +10,16 @@
 //
 // A fila é limpa no mesmo tick: enviada ou descartada, a linha sai. Fila que só
 // cresce seria a próxima tabela a bater no teto de 500 da plataforma.
+//
+// EXCEÇÃO, e é o motivo de ela existir (15/10/2026): falha TEMPORÁRIA não
+// apaga. Até aqui a linha saía da fila mesmo quando o push service respondia
+// 5xx ou a rede caía — o aviso do plantonista era perdido em silêncio, com um
+// `log.warn` que ninguém lê. Para o aviso de plantão isso é um chamado que
+// pode não chegar a ninguém. Agora a linha fica e o próximo tick tenta de novo.
+//
+// O freio é o limite de 24 h, que já existia: linha que falha por um dia
+// inteiro é descartada pela regra de validade. NÃO há contador de tentativas —
+// seria uma coluna nova, e o schema desta tabela não é meu para mudar.
 // =============================================================================
 
 import webpush from 'web-push'
@@ -63,8 +73,11 @@ export async function enviarPushPendente(
   segredos: { publica: string | null; privada: string | null },
   agoraMs: number = Date.now(),
   enviar: typeof webpush.sendNotification = webpush.sendNotification,
-): Promise<{ enviadas: number; descartadas: number; inscricoesApagadas: number }> {
-  const resultado = { enviadas: 0, descartadas: 0, inscricoesApagadas: 0 }
+): Promise<{ enviadas: number; descartadas: number; inscricoesApagadas: number; retidas: number }> {
+  // `retidas` existe para o tick poder registrar no log que a fila não esvaziou
+  // por falha de entrega, e não por estar vazia. Sem este número, retentativa
+  // em curso e fila parada são indistinguíveis de fora.
+  const resultado = { enviadas: 0, descartadas: 0, inscricoesApagadas: 0, retidas: 0 }
   const Fila = models.PushNaFila
   const Inscricoes = models.PushInscricao
   // Sem os models (schema não aplicado) ou sem chaves, o push está desligado e
@@ -129,6 +142,15 @@ export async function enviarPushPendente(
       tipo: linha.tipo || null,
     })
 
+    // Duas perguntas por linha, e a decisão de apagar depende das duas.
+    //
+    // NÃO há uma terceira ("alguma tentativa foi feita?"): ela seria lógica
+    // morta. `falhaTemporaria` só é escrita dentro do `catch` do envio, que só
+    // roda depois de uma tentativa — uma nunca é verdadeira sem a outra. A
+    // prova é uma mutação: tirar a variável não muda nenhum caso de teste.
+    let enviouAlguma = false
+    let falhaTemporaria = false
+
     for (const a of assinaturas) {
       if (!a.endpoint || !a.p256dh || !a.auth) continue
       try {
@@ -137,6 +159,7 @@ export async function enviarPushPendente(
           carga,
         )
         resultado.enviadas++
+        enviouAlguma = true
       } catch (err) {
         const status = Number((err as { statusCode?: number })?.statusCode || 0)
         // 410 Gone / 404: a inscrição morreu (navegador desinstalado, permissão
@@ -151,9 +174,27 @@ export async function enviarPushPendente(
             }
           } catch { /* tenta na próxima */ }
         } else {
+          // Tudo que não é 410/404 é tratado como passageiro: 5xx, 429, e o
+          // erro de rede, que chega SEM `statusCode` (daí o `status === 0`
+          // cair aqui, que é o caso do push service inalcançável).
+          falhaTemporaria = true
           app.log.warn({ status }, '[push] envio recusado pelo push service')
         }
       }
+    }
+
+    // A linha fica na fila APENAS quando nada saiu e a falha pode passar.
+    //
+    // Os outros caminhos apagam, e cada um por um motivo diferente:
+    //  - alguma inscrição recebeu: o aviso chegou, repetir viraria aviso dobrado;
+    //  - nada foi tentado (inscrição sem endpoint ou sem chaves): nenhum
+    //    `catch` rodou, `falhaTemporaria` ficou falsa e a linha sai — dado
+    //    malformado não melhora sozinho, retentar seria laço até as 24 h;
+    //  - só houve 410/404: essas inscrições acabaram de ser apagadas ali acima,
+    //    então não existe mais com quem tentar.
+    if (!enviouAlguma && falhaTemporaria) {
+      resultado.retidas++
+      continue
     }
     await sair(linha.id)
   }

@@ -175,7 +175,11 @@ export function iniciarAgendadorPortalSuporte(app: FastifyInstance): void {
           const r = await enviarPushPendente(app, models as never, segredos)
           // Aviso que vai para o CELULAR de alguém deixa rastro, como o
           // WhatsApp por tempo.
-          if (r.enviadas || r.inscricoesApagadas) {
+          // `retidas` entra na condição de propósito: tick em que NADA saiu
+          // porque o push service recusou tudo é exatamente o que precisa
+          // aparecer no log. Sem isto, a retentativa seria invisível e o
+          // silêncio continuaria significando duas coisas diferentes.
+          if (r.enviadas || r.inscricoesApagadas || r.retidas) {
             app.log.info(r, '[agendador] push enviado')
           }
         } catch (err) {
