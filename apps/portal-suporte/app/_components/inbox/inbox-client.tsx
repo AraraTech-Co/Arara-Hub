@@ -178,6 +178,28 @@ export function InboxClient() {
     }
   }, [selectedId, conversations, toast])
 
+  /**
+   * Marca a conversa aberta como não lida e fecha o painel.
+   *
+   * A ordem importa: grava primeiro, fecha depois. Fechando antes, o ciclo de
+   * consulta da thread ainda em tela poderia zerar o contador logo depois da
+   * gravação — e a marca duraria menos que o toast.
+   */
+  const marcarNaoLida = useCallback(async () => {
+    if (!selectedId) return
+    try {
+      await whatsappApi.marcarNaoLida(selectedId)
+      setSelectedId(null)
+      toast({ title: 'Conversa marcada como não lida' })
+    } catch (err) {
+      toast({
+        title: 'Não foi possível marcar como não lida',
+        description: err instanceof Error ? err.message : undefined,
+        variant: 'destructive',
+      })
+    }
+  }, [selectedId, toast])
+
   // A busca vive na thread; o atalho só levanta a bandeira.
   const [pedidoDeBusca, setPedidoDeBusca] = useState(0)
 
@@ -211,6 +233,7 @@ export function InboxClient() {
     atender: () => void atenderAtual(),
     buscar: () => setPedidoDeBusca((n) => n + 1),
     novaConversa: () => setNovaAberta(true),
+    naoLida: () => void marcarNaoLida(),
   })
 
   // Mudar fase exige developer+ no servidor (requireDeveloper). Sem espelhar a
@@ -400,6 +423,7 @@ export function InboxClient() {
             pedidoDeBusca={pedidoDeBusca}
             onToggleCrm={selectedId ? () => setCrmOpen((v) => !v) : undefined}
             crmOpen={crmOpen}
+            onMarcarNaoLida={() => void marcarNaoLida()}
           />
         </div>
 
