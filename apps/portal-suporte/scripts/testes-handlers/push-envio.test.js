@@ -158,6 +158,12 @@ const LOG = { log: { info: () => {}, warn: () => {}, error: () => {} } }
   await enviarPushPendente(LOG, c.models, c.chaves, AGORA)
   ok('503 NÃO apaga a inscrição (pode ser queda momentânea)',
     c.estado.inscricoesApagadas.length === 0, c.estado.inscricoesApagadas)
+  // E a LINHA DA FILA também não sai. Era aqui que o aviso do plantonista se
+  // perdia: a inscrição era poupada, a linha era apagada, e o chamado não
+  // chegava a ninguém — com um log.warn como único rastro.
+  ok('  e a LINHA DA FILA fica, para o próximo tick tentar',
+    c.estado.apagadasDaFila.length === 0 && c.estado.fila.length === 1,
+    { apagadas: c.estado.apagadasDaFila, fila: c.estado.fila.map((x) => x.id) })
 
   // ══ velha demais ═══════════════════════════════════════════════════════
   espiao.enviados.length = 0
@@ -198,6 +204,98 @@ const LOG = { log: { info: () => {}, warn: () => {}, error: () => {} } }
 
   r = await enviarPushPendente(LOG, {}, { publica: 'B', privada: 'p' }, AGORA)
   ok('sem os models (schema não aplicado): não faz nada', r.enviadas === 0, r)
+
+  // ══ falha temporária retém; o resto apaga ══════════════════════════════
+  //
+  // Os quatro caminhos de saída da linha, um a um. O que importa não é cada
+  // um isolado: é que SÓ o primeiro retém. Apagar nos outros três é o que
+  // impede a fila de virar laço até as 24 h.
+
+  // (1) erro de REDE — chega sem `statusCode`, o caso do serviço inalcançável.
+  espiao.enviados.length = 0
+  espiao.erroPara = () => new Error('getaddrinfo ENOTFOUND')
+  c = cenario({
+    fila: [{ id: 'f1', user_id: 'u1', titulo: 'plantão', status: 'pendente', created_at: hAtras(0.1) }],
+    inscricoes: [{ id: 'i1', user_id: 'u1', endpoint: 'https://push/1', p256dh: 'p', auth: 'a' }],
+  })
+  r = await enviarPushPendente(LOG, c.models, c.chaves, AGORA)
+  ok('erro de rede (sem statusCode): a linha fica na fila',
+    c.estado.apagadasDaFila.length === 0, c.estado.apagadasDaFila)
+  ok('  e o tick consegue dizer que retentou', r.retidas === 1 && r.enviadas === 0, r)
+
+  // (2) uma recebeu, a outra deu 503: o aviso CHEGOU, repetir seria aviso dobrado.
+  espiao.erroPara = (a) => (a.endpoint === 'https://push/2'
+    ? Object.assign(new Error('Service Unavailable'), { statusCode: 503 })
+    : null)
+  c = cenario({
+    fila: [{ id: 'f1', user_id: 'u1', titulo: 'plantão', status: 'pendente', created_at: hAtras(0.1) }],
+    inscricoes: [
+      { id: 'i1', user_id: 'u1', endpoint: 'https://push/1', p256dh: 'p', auth: 'a' },
+      { id: 'i2', user_id: 'u1', endpoint: 'https://push/2', p256dh: 'p', auth: 'a' },
+    ],
+  })
+  r = await enviarPushPendente(LOG, c.models, c.chaves, AGORA)
+  ok('alguma inscrição recebeu: a linha SAI, sem retentar',
+    c.estado.apagadasDaFila.join(',') === 'f1' && r.retidas === 0, { apagadas: c.estado.apagadasDaFila, r })
+
+  // (3) só 410: as inscrições acabaram de ser apagadas, não há com quem tentar.
+  espiao.erroPara = () => Object.assign(new Error('Gone'), { statusCode: 410 })
+  c = cenario({
+    fila: [{ id: 'f1', user_id: 'u1', titulo: 'plantão', status: 'pendente', created_at: hAtras(0.1) }],
+    inscricoes: [{ id: 'i1', user_id: 'u1', endpoint: 'https://push/1', p256dh: 'p', auth: 'a' }],
+  })
+  r = await enviarPushPendente(LOG, c.models, c.chaves, AGORA)
+  ok('só falha permanente (410): a linha SAI',
+    c.estado.apagadasDaFila.join(',') === 'f1' && r.retidas === 0, { apagadas: c.estado.apagadasDaFila, r })
+
+  // (4) inscrição sem chaves: nada foi tentado. Dado malformado não melhora.
+  espiao.erroPara = null
+  c = cenario({
+    fila: [{ id: 'f1', user_id: 'u1', titulo: 'plantão', status: 'pendente', created_at: hAtras(0.1) }],
+    inscricoes: [{ id: 'i1', user_id: 'u1', endpoint: 'https://push/1', p256dh: '', auth: '' }],
+  })
+  r = await enviarPushPendente(LOG, c.models, c.chaves, AGORA)
+  ok('inscrição sem chaves: a linha SAI em vez de ficar em laço',
+    c.estado.apagadasDaFila.join(',') === 'f1' && r.retidas === 0, { apagadas: c.estado.apagadasDaFila, r })
+
+  // (5) o freio: linha retida que envelheceu 24 h é descartada pela validade,
+  //     que é o ÚNICO limite — não existe contador de tentativas.
+  espiao.erroPara = () => Object.assign(new Error('Service Unavailable'), { statusCode: 503 })
+  c = cenario({
+    fila: [{ id: 'velha', user_id: 'u1', titulo: 'de ontem', status: 'pendente', created_at: hAtras(25) }],
+    inscricoes: [{ id: 'i1', user_id: 'u1', endpoint: 'https://push/1', p256dh: 'p', auth: 'a' }],
+  })
+  r = await enviarPushPendente(LOG, c.models, c.chaves, AGORA)
+  ok('retentativa não é eterna: 24 h descarta mesmo com o serviço fora',
+    c.estado.apagadasDaFila.join(',') === 'velha' && r.descartadas === 1 && r.retidas === 0,
+    { apagadas: c.estado.apagadasDaFila, r })
+
+  // (6) O QUE TUDO ISTO EXISTE PARA FAZER: o segundo tick entrega.
+  //
+  //     Os casos acima provam onde a linha fica; este prova que ficar serve
+  //     para algo. Mesmo cenário, dois ticks: no primeiro o serviço está fora,
+  //     no segundo voltou — e o aviso chega, em vez de ter sido perdido.
+  c = cenario({
+    fila: [{ id: 'f1', user_id: 'u1', titulo: 'plantão', status: 'pendente', created_at: hAtras(0.1) }],
+    inscricoes: [{ id: 'i1', user_id: 'u1', endpoint: 'https://push/1', p256dh: 'p', auth: 'a' }],
+  })
+  espiao.enviados.length = 0
+  espiao.erroPara = () => Object.assign(new Error('Service Unavailable'), { statusCode: 503 })
+  const tick1 = await enviarPushPendente(LOG, c.models, c.chaves, AGORA)
+  espiao.erroPara = null
+  const tick2 = await enviarPushPendente(LOG, c.models, c.chaves, AGORA)
+  ok('serviço fora no 1º tick, de volta no 2º: o aviso CHEGA',
+    tick1.enviadas === 0 && tick1.retidas === 1 && tick2.enviadas === 1,
+    { tick1, tick2 })
+  ok('  e só então a linha sai da fila',
+    c.estado.apagadasDaFila.join(',') === 'f1' && c.estado.fila.length === 0,
+    { apagadas: c.estado.apagadasDaFila, fila: c.estado.fila.map((x) => x.id) })
+  // O espião registra TENTATIVAS (guarda a entrada antes de lançar o erro),
+  // então duas aqui é o esperado: a que falhou e a que entregou. O que não
+  // pode acontecer é entregar duas vezes — e isso é `enviadas`, somando 1.
+  ok('  duas tentativas, UMA entrega',
+    espiao.enviados.length === 2 && tick1.enviadas + tick2.enviadas === 1,
+    { tentativas: espiao.enviados.length, entregas: tick1.enviadas + tick2.enviadas })
 
   fim()
 })()
