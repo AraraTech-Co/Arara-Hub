@@ -387,20 +387,20 @@ export function FlowCardEditor({
 
         {node.type === 'handoff' && (
           <div className="space-y-1">
-            <label htmlFor="card-area" className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-              Área que assume
-            </label>
-            <select
-              id="card-area"
-              value={d.area ?? 'suporte'}
-              disabled={!canEdit}
-              onChange={(e) => onChange({ area: e.target.value })}
-              className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
-            >
-              <option value="suporte">Suporte</option>
-              <option value="administrativo">Administrativo / Financeiro</option>
-              <option value="vendas">Vendas</option>
-            </select>
+            {/* "Área que assume" saiu daqui em 15/10/2026, pelo mesmo motivo
+                que Assistente, Randomizador e Integração saíram do editor: o
+                campo era gravado e NINGUÉM o lia. Quem escolhia "Vendas"
+                acreditava estar encaminhando a conversa para o setor, e ela ia
+                para o rodízio de sempre — a tela prometia um comportamento que
+                não existe.
+
+                O dado dos fluxos que já têm `area` fica gravado e intocado: o
+                editor espalha o `data` existente a cada alteração e salva o
+                objeto inteiro, então o valor sobrevive a abrir, editar e
+                salvar. O tipo segue aceitando `area?: string` por isso.
+
+                Encaminhar de verdade é entrega nova, com risco de mudar quem
+                atende, e foi deliberadamente deixada fora. */}
 
             {/* O tempo mora aqui, no card, e não numa configuração geral: é
                 este ponto do fluxo que sabe se a espera pode ou não esperar. */}
