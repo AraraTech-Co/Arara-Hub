@@ -7,6 +7,32 @@ server {
     # Docker embedded DNS
     resolver 127.0.0.11 valid=10s ipv6=off;
 
+    # ── Compressão (15/10/2026) ───────────────────────────────────────────────
+    #
+    # O padrão do nginx comprime só `text/html`. Medido em produção: a página
+    # vinha com `content-encoding: gzip` e os arquivos de programa vinham CRUS,
+    # sem compressão e sem instrução de cache.
+    #
+    # `text/html` NÃO entra na lista de propósito: já é comprimido sempre, e
+    # repeti-lo faz o nginx avisar de tipo duplicado.
+    gzip on;
+    gzip_vary on;
+    # Abaixo disto o cabeçalho de compressão custa mais que o que se economiza.
+    gzip_min_length 1024;
+    # Comprime também quando há proxy na frente, que é o caso em produção.
+    gzip_proxied any;
+    # 5 em vez de 6: quase a mesma taxa com menos processador por resposta.
+    gzip_comp_level 5;
+    gzip_types
+        application/javascript
+        text/javascript
+        application/json
+        application/manifest+json
+        text/css
+        image/svg+xml
+        text/plain
+        application/xml;
+
     location /v1/ {
         set $api "${API_UPSTREAM}";
         proxy_pass $api;
@@ -33,6 +59,27 @@ server {
 
     # Hashed Vite assets: never SPA-fallback (that returns HTML as JS → import errors)
     location /assets/ {
+        try_files $uri =404;
+        add_header Cache-Control "public, max-age=31536000, immutable";
+    }
+
+    # ── Arquivos de programa do Next export (15/10/2026) ──────────────────────
+    #
+    # Mesma regra do `/assets/` acima, que é a convenção do Vite. O portal é
+    # Next export e serve em `/_next/static/`, que não casava com nenhuma
+    # location e caía no `location /` — sem cabeçalho de cache nenhum, medido em
+    # produção.
+    #
+    # `immutable` com risco zero: todo arquivo aqui tem hash no nome ou vive
+    # sob o identificador da compilação, então o nome muda quando o conteúdo
+    # muda. O navegador nunca precisa revalidar.
+    #
+    # `try_files $uri =404` pelo mesmo motivo do `/assets/`: sem ele, arquivo
+    # que falte volta como a página inteira, e o navegador tenta interpretar
+    # HTML como programa.
+    #
+    # Para os fronts Vite esta location simplesmente nunca casa.
+    location /_next/static/ {
         try_files $uri =404;
         add_header Cache-Control "public, max-age=31536000, immutable";
     }
