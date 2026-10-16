@@ -177,10 +177,24 @@ export async function buildModelsApi(
           // O `CASE` é obrigatório porque `jsonb_set` CRIA a chave quando ela
           // não existe (`create_missing` é true por padrão): sem ele, mensagem
           // de texto passaria a dizer que tem anexo.
+          //
+          // A máscara PRESERVA A FALSIDADE. Quem consome o campo costuma testar
+          // `campo ? … : …`, e "1" é verdadeiro: mascarar um valor que o JS trata
+          // como falso faria um campo vazio parecer preenchido. Só é mascarado o
+          // que o JS considera verdadeiro; ficam como estão o JSON `null`, `false`,
+          // `0` e `""`. A comparação é em JSONB e NÃO em texto (`->>`) de propósito:
+          // em texto, a string "0" e a string "false" (verdadeiras em JS) seriam
+          // confundidas com o número 0 e o booleano false. A igualdade numérica do
+          // JSONB já cobre `0.0`, `-0` e `0e5` com a entrada `0`. `[]` e `{}` são
+          // verdadeiros em JS e por isso são mascarados. Chave ausente: `->` dá
+          // NULL, o `NOT IN` dá NULL e a cláusula não casa (o `jsonb_exists` já
+          // barrava antes). O teste amarra tudo na regra
+          // `!!mascarado === !!original`: as listas de casos são amostra.
           let expr = Prisma.sql`data`
           for (const campo of mascarar) {
             expr = Prisma.sql`CASE WHEN jsonb_exists(${expr}, ${campo})
-                AND ${expr}->>${campo} IS NOT NULL
+                AND (${expr}->${campo}) NOT IN
+                  ('null'::jsonb, 'false'::jsonb, '0'::jsonb, '""'::jsonb)
               THEN jsonb_set(${expr}, ARRAY[${campo}], '"1"'::jsonb)
               ELSE ${expr} END`
           }
