@@ -27,7 +27,10 @@ function ctxCom(todas, { filtraLado = true } = {}) {
     models: {
       WhatsAppMessage: {
         findMany: async (arg) => {
-          const chaves = Object.keys(arg || {})
+          // `mascararCampos` é opção da camada, não filtro de campo (está em
+          // `metaKeys` em lib/models.ts): o mock espelha isso, senão ele a
+          // trataria como um campo que nenhuma linha tem.
+          const chaves = Object.keys(arg || {}).filter((k) => k !== 'mascararCampos')
           if (!chaves.length) return todas.slice(0, TETO)
           // O filtro por lado pode não existir no banco: o fallback precisa
           // continuar funcionando.
