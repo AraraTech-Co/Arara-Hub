@@ -22,6 +22,14 @@ export interface WAConversation {
   status: string
   updated_at: string
   last_message: WAMessage | null
+  /**
+   * A conversa tem mensagens, mas elas ficaram fora do alcance da leitura.
+   * O servidor calcula (rota 432, comparando a data da conversa com a borda da
+   * janela lida); faltava aqui, e por isso o `fromLegacy` não tinha como
+   * copiar. Diferente de `last_message: null` numa conversa nova, que está
+   * mesmo vazia.
+   */
+  previa_indisponivel?: boolean
   // Estado de fila na carga inicial — opcionais porque este mesmo tipo serve à
   // tela antiga admin/whatsapp, que não os consome.
   phase?: WAPhase
