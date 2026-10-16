@@ -206,3 +206,81 @@ test('sem o model de perfil, nada quebra', async () => {
   assert.ok(ctx.models, 'ctx continua montado');
   assert.equal(ctx.models.Profile, undefined);
 });
+
+// ── As duas invariantes de invalidação ────────────────────────────────────
+// Acrescentadas depois da revisão do PR, que apontou os dois pontos.
+const { ESCRITAS_DO_MODELO } = await import('../../src/lib/build-handler-ctx.ts');
+
+/** Igual ao de cima, mas a escrita demora: dá para correr leitura junto. */
+function modelsLentos(estado, perfil, atrasoMs = 10) {
+  const atual = { ...perfil };
+  const espera = (ms) => new Promise((r) => setTimeout(r, ms));
+  const api = {
+    findById: async (id) => { estado.leiturasDePerfil++; return id === atual.id ? { ...atual } : null },
+    findMany: async () => [{ ...atual }],
+    create: async (d) => d,
+    update: async (id, p) => { await espera(atrasoMs); Object.assign(atual, p); return { ...atual } },
+    delete: async () => ({ ok: true }),
+  };
+  // Como o `buildModelsApi` faz: o MESMO objeto sob o nome curto e o completo.
+  return { Profile: api, 'portal-suporte.Profile': api, _cru: api };
+}
+
+test('leitura CONCORRENTE com escrita não deixa valor velho no memo', async () => {
+  // A limpeza cerca a escrita pelos dois lados; o `await` no `try` é o que
+  // garante que o `finally` só corre depois de a escrita ter terminado.
+  const estado = { leiturasDePerfil: 0 };
+  const ctx = await ctxDe(modelsLentos(estado, { id: 'u1', role: 'admin' }));
+  const escrita = ctx.models.Profile.update('u1', { role: 'user' });
+  const leitura = ctx.models.Profile.findById('u1');
+  await Promise.all([escrita, leitura]);
+  const depois = await ctx.models.Profile.findById('u1');
+  assert.equal(depois.role, 'user',
+    'o memo ficou com o valor de antes da escrita pelo resto da requisição');
+});
+
+test('escrita por um nome invalida a leitura pelo OUTRO nome', async () => {
+  // A ordem importa: LER pelo nome que tem memo, ESCREVER pelo outro, e ler de
+  // novo pelo primeiro. Ao contrário — ler por um nome sem memo — a leitura vai
+  // ao banco de qualquer forma e o caso não prova nada.
+  const estado = { leiturasDePerfil: 0 };
+  const ctx = await ctxDe(modelsLentos(estado, { id: 'u1', role: 'admin' }));
+  const curto = ctx.models.Profile;
+  const completo = ctx.models['portal-suporte.Profile'];
+  assert.equal((await curto.findById('u1')).role, 'admin');
+  await completo.update('u1', { role: 'user' });
+  assert.equal((await curto.findById('u1')).role, 'user',
+    'leu perfil velho pelo nome curto depois de escrever pelo nome completo');
+});
+
+test('todo nome do MESMO objeto recebe o embrulho', async () => {
+  const estado = { leiturasDePerfil: 0 };
+  const models = modelsLentos(estado, { id: 'u1', role: 'support' });
+  const ctx = await ctxDe(models);
+  for (const nome of ['Profile', 'portal-suporte.Profile', '_cru']) {
+    assert.notEqual(ctx.models[nome], models._cru, `a chave ${nome} ficou com o objeto cru`);
+  }
+  // E o memo é um só: três leituras por nomes diferentes, uma no banco.
+  await ctx.models.Profile.findById('u1');
+  await ctx.models['portal-suporte.Profile'].findById('u1');
+  await ctx.models._cru.findById('u1');
+  assert.equal(estado.leiturasDePerfil, 1, 'cada nome criou o seu próprio memo');
+});
+
+test('a lista de escritas cobre a superfície INTEIRA do ModelApi', async () => {
+  // Reprova no dia em que o tipo ganhar `upsert`, `createMany` ou qualquer
+  // outro método que escreva e não esteja na lista de invalidação.
+  const fonte = fs.readFileSync(
+    new URL('../../src/lib/models.ts', import.meta.url), 'utf8',
+  );
+  const bloco = fonte.match(/export type ModelApi = \{([\s\S]*?)\n\}/);
+  assert.ok(bloco, 'não achei a declaração do ModelApi');
+  const metodos = [...bloco[1].matchAll(/^\s{2}(\w+)\s*:/gm)].map((m) => m[1]);
+  assert.ok(metodos.length >= 5, `achei poucos métodos: ${metodos.join(',')}`);
+  const LEITURAS = ['findMany', 'findById'];
+  const fora = metodos.filter(
+    (n) => !LEITURAS.includes(n) && !ESCRITAS_DO_MODELO.includes(n),
+  );
+  assert.deepEqual(fora, [],
+    `método novo no ModelApi fora da lista de invalidação: ${fora.join(', ')}`);
+});
