@@ -199,6 +199,13 @@ function cenario(perfil, conta) {
     '/whatsapp/conversa/nova': 'a conversa ainda não existe; valida a conta pedida no corpo',
     '/whatsapp/manutencao/unir-duplicatas': 'manutenção, exige admin',
   }
+  // Exceções por VERBO + caminho, mais estreitas que as de cima (que valem para
+  // o caminho inteiro). Cada uma é VERIFICADA, não só declarada: ver abaixo.
+  const EXCECOES_POR_ROTA = {
+    'GET /whatsapp': 'a lista relê, em segundo plano, a conversa de uma LINHA DA PRÓPRIA LISTA ' +
+      '(nunca um id vindo de `params`) para não atropelar um nome digitado; nada que a releitura ' +
+      'traz volta ao chamador',
+  }
   // Exceção que não aparece mais no arquivo é lista apodrecendo: some daqui.
   const excecoesVistas = new Set()
 
@@ -221,6 +228,13 @@ function cenario(perfil, conta) {
     const ehDeMidia = path === '/whatsapp/midia/:id'
     if (!porCaminho && !buscaConversa && !porConversationId && !ehDeMidia) continue
     if (EXCECOES[path]) { excecoes++; excecoesVistas.add(path); continue }
+    const chaveRota = `${m[3]} ${path}`
+    if (EXCECOES_POR_ROTA[chaveRota]) {
+      // A exceção só vale enquanto a rota NÃO lê id de entrada. Se um dia a
+      // lista passar a usar `params.id`, ela volta a precisar da trava.
+      if (/\bparams\.id\b/.test(cod)) { semTrava.push(`${m[1]} ${chaveRota} (exceção não vale: lê params.id)`); continue }
+      excecoes++; excecoesVistas.add(chaveRota); continue
+    }
     if (/_barrarPorConta(?:PorId)?\(/.test(cod)) comTrava++
     else semTrava.push(`${m[1]} ${m[3]} ${path}`)
   }
@@ -232,8 +246,9 @@ function cenario(perfil, conta) {
   // documentação, não filtro — `excecoes` vem 0 e está certo. O filtro fica
   // para o caso de uma delas passar a casar: aí a decisão é consciente, com o
   // motivo escrito, em vez de a rota entrar calada na lista de sem-trava.
-  ok('  e nenhuma rota de sistema precisou ser excetuada hoje',
-    excecoes === 0 && excecoesVistas.size === 0, { excecoes, vistas: [...excecoesVistas] })
+  ok('  e a única exceção é a lista de conversas, com a releitura em segundo plano',
+    excecoes === 1 && excecoesVistas.size === 1 && excecoesVistas.has('GET /whatsapp'),
+    { excecoes, vistas: [...excecoesVistas] })
 
   // ══ A ORDEM: autorização antes da validação do corpo ══════════════════
   // O corpo do PR afirmava isso; agora há verificação. Em cada rota que tem
