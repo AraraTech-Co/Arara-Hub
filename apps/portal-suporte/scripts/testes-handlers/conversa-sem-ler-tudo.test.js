@@ -262,8 +262,10 @@ async function main() {
 {
   const A = montar(), B = montar()
   let todasIguais = true, primeiraDif = null, reais = 0, naoReal = null
+  const respostasNovas = []
   for (const id of [...A.convs, 'nao-existe']) {
     const novo = await (R433.novo(ctxDe(A.M, id)))
+    if (novo && novo.status === 200 && novo.body && novo.body.data) respostasNovas.push(novo.body.data)
     const antigo = await (R433.antigo(ctxDe(B.M, id)))
     if (json(novo) !== json(antigo)) { todasIguais = false; primeiraDif = primeiraDif || { id, novo, antigo } }
     // TRAVA CONTRA VERDE FALSO: duas negativas iguais (403, 500) também são
@@ -274,6 +276,37 @@ async function main() {
     } else if (!(novo && novo.status === 404)) naoReal = naoReal || { id, novo }
   }
   ok('as 20 respostas são conversas REAIS (200 com o id), e a inexistente é 404', reais === 20 && !naoReal, naoReal)
+
+  // ── TRAVA DE MASSA ────────────────────────────────────────────────────────
+  // "Idêntico" só prova algo se as conversas EXERCITAM cada ramo da montagem.
+  // Esta trava olha a MASSA (o que as respostas contêm), não o resultado da
+  // comparação: se alguém mexer na fixture e nenhuma conversa tiver etiqueta,
+  // chamado, empresa… a comparação continuaria verde e deixaria de provar. Para
+  // cada ramo, exige conversas COM o dado e conversas SEM ele.
+  {
+    const contagem = (rotulo, tem) => {
+      const com = respostasNovas.filter(tem).length
+      return { rotulo, com, sem: respostasNovas.length - com }
+    }
+    const RAMOS = [
+      contagem('etiqueta', (d) => (d.tags || []).length > 0),
+      contagem('duas ou mais etiquetas', (d) => (d.tags || []).length >= 2),
+      contagem('chamado', (d) => !!d.ticket),
+      contagem('empresa', (d) => !!d.company),
+      contagem('contato', (d) => !!d.contact),
+      contagem('departamento', (d) => !!d.department),
+      contagem('responsável', (d) => !!d.assigned_to),
+      contagem('motivo de fechamento', (d) => !!d.close_reason),
+      contagem('última mensagem', (d) => !!d.last_message),
+    ]
+    const furos = RAMOS.filter((r) => r.com < 1 || r.sem < 1).map((r) => `${r.rotulo}: com=${r.com} sem=${r.sem}`)
+    ok('TRAVA DE MASSA — cada ramo (etiqueta, chamado, empresa, contato, depto, responsável, motivo, última mensagem) tem conversas COM e SEM o dado',
+      respostasNovas.length === 20 && furos.length === 0, { total: respostasNovas.length, furos })
+    // Referência pendente é o caso que mais engana: o id existe na conversa, o
+    // registro não. A resposta tem de trazer a conversa sem o objeto.
+    const pendente = respostasNovas.filter((d) => d.assigned_to_id && !d.assigned_to).length
+    ok('TRAVA DE MASSA — há conversa com responsável PENDENTE (id sem registro): o ramo "não achou" é exercitado', pendente >= 1, pendente)
+  }
   ok('GET /whatsapp/:id — JSON idêntico, 20 conversas + 1 inexistente', todasIguais, primeiraDif)
 }
 
