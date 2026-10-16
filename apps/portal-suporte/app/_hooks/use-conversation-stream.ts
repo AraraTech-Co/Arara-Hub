@@ -153,6 +153,11 @@ export function useConversationStream(
   const status = usePolling(carregar, {
     intervalMs: INTERVALO_MS,
     enabled: Boolean(conversationId),
+    // Trocar de conversa consulta na hora. Sem esta chave, trocar entre duas
+    // conversas não mudava nem `enabled` nem `intervalMs`, o ciclo não
+    // reiniciava, e a tela ficava em "Carregando mensagens…" até o próximo
+    // tique — 0 a 5 s.
+    chave: conversationId,
   })
 
   return { messages, loading, status, refresh: carregar, naoLidasAoAbrir, historico, falhou }
