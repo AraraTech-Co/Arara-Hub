@@ -26,7 +26,7 @@
 // Roda com: node fusao-por-lid-sem-perder-mensagem.test.js
 const fs = require('fs')
 const vm = require('vm')
-const { reply, ok, fim, ARQ } = require('./_carregar.js')
+const { reply, ok, fim, ARQ, carregarContexto } = require('./_carregar.js')
 const { camadaFindMany } = require('./_camada.js')
 
 function codigoDe(marca) {
@@ -104,7 +104,7 @@ const LID = '123456789012345'
  * `dup` mensagens ANTIGAS na conversa "só LID" (cvB) e `ruido` mensagens MAIS NOVAS
  * de outras conversas, que as empurram para fora das 500 mais recentes da tabela.
  */
-function mundo({ dup = 6, ruido = 600, camel = 0, opcoes = {}, eventos = 0, etiquetas = 0, notas = 0, opEv = {}, opTag = {}, opNota = {} } = {}) {
+function mundo({ dup = 6, ruido = 600, camel = 0, opcoes = {}, eventos = 0, etiquetas = 0, notas = 0, opEv = {}, opTag = {}, opNota = {}, semModelo = null } = {}) {
   const msgs = []
   const add = (id, conv, extra) => msgs.push({ id, conversation_id: conv, from_me: false, body: 'm ' + id,
     timestamp: new Date(1700000000000 + msgs.length * 1000).toISOString(), ...extra })
@@ -153,6 +153,7 @@ function mundo({ dup = 6, ruido = 600, camel = 0, opcoes = {}, eventos = 0, etiq
     PushInscricao: vazio, PushNaFila: { create: async (x) => x },
     SupportSchedule: vazio, WaFlows: vazio, Company: vazio, CompanyContact: vazio, Contact: vazio, Ticket: vazio, Unit: vazio, ClientUser: vazio, WaConta: vazio, WaTags: vazio,
   }
+  if (semModelo) delete w.models[semModelo]   // o modelo NÃO existe nesta execução (nome errado, por exemplo)
   w.ctx = () => ({ params: {}, headers: {}, query: { token: SEGREDO },
     body: { phone: FONE, lid: LID, message: 'oi, sou eu', name: 'Cliente', message_id: 'WA_NOVA_1' },
     models: w.models, secrets: { get: async (n) => (n === 'avisa_webhook_secret' ? SEGREDO : 'tok') },
@@ -272,6 +273,29 @@ const convB = (w) => w.convs.find((c) => c.id === 'cvB')
     naoApagou(`a atualização de ${rotulo.toUpperCase()} falha (as mensagens foram todas movidas)`, w, () => {
       ok(`  as mensagens, essas, foram movidas; as de ${rotulo} continuam na duplicada, alcançáveis`, emA(w, 'dup_') === 6 && apontamParaB(w) === 0 && (orfasDe(w.ev) + orfasDe(w.tag) + orfasDe(w.nota)) === 3, { msgs: emA(w, 'dup_') })
     })
+  }
+
+  // ═══ 4c. MODELO AUSENTE NÃO É PROVA DE VAZIO ═══
+  // Se o nome de um modelo estiver errado, "não achei o modelo" não pode virar "não há
+  // nada a mover": a duplicada seria apagada com as linhas dentro. É o caso em que um
+  // erro de digitação reproduziria a perda. Cada uma das coleções é testada ausente.
+  for (const [modelo, opcao, rotulo] of [
+    ['WaConversationTags', { etiquetas: 2 }, 'etiquetas'], ['WaInternalNotes', { notas: 2 }, 'notas internas'], ['WaConversationEvents', { eventos: 2 }, 'eventos'],
+  ]) {
+    const w = mundo({ dup: 6, ruido: 20, ...opcao, semModelo: modelo })
+    const r = await NOVO(w.ctx()); await folga()
+    ok(`o modelo de ${rotulo} (${modelo}) NÃO EXISTE: o webhook ainda responde 200`, r.status === 200, r.status)
+    naoApagou(`modelo de ${rotulo} ausente`, w, () => {
+      ok('  as mensagens, essas, foram movidas', emA(w, 'dup_') === 6 && apontamParaB(w) === 0, { movidas: emA(w, 'dup_') })
+    })
+  }
+  {
+    // O auxiliar, direto: modelo ausente => SEM prova.
+    const aux = carregarContexto('485 whatsapp POST /whatsapp/inbound')._moverTudoEProvar
+    for (const ausente of [undefined, null]) {
+      const r = await aux(ausente, ['conversation_id', 'conversationId'], 'cvB', 'cvA')
+      ok(`o auxiliar com modelo ${String(ausente)} devolve completo: false (ausência não é prova)`, r && r.completo === false && r.movidas === 0, r)
+    }
   }
 
   // ═══ 5. sem duplicata, nada muda ═══

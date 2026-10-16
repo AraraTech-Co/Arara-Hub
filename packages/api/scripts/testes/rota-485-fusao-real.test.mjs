@@ -141,7 +141,7 @@ try {
           delete: async (id) => { apagadas.push(id); const i = convs.findIndex((x) => x.id === id); if (i >= 0) convs.splice(i, 1); return { ok: true } },
         },
         WhatsAppMessage: MsgInst,
-        WaConversationEvents: Ev,
+        WaConversationEvents: Ev, WaInternalNotes: opcoes.semNotas ? undefined : vazio,
         Profile: { findById: async () => ({ id: 'u9', role: 'support' }), findMany: async () => [] }, Sessao: { findById: async () => null },
         SystemSettings: { findMany: async () => [{ id: 's1', waMenuEnabled: false }], update: async () => ({}) },
         PushInscricao: vazio, PushNaFila: { create: async (x) => x },
@@ -198,6 +198,15 @@ try {
     const agora = await rodar(NOVO);
     ok('AGORA — os 650 eventos (acima de 500) vão para a conversa que fica, sem órfão, e só então apaga',
       (await contarSql('cvA', '^ev_', modelEv)) === 650 && (await contarSql('cvB', '.*', modelEv)) === 0 && agora.apagadas.join() === 'cvB', { movidos: await contarSql('cvA', '^ev_', modelEv), orfaos: await contarSql('cvB', '.*', modelEv) });
+  }
+
+  // ═══ 3c. MODELO AUSENTE NÃO É PROVA DE VAZIO, na camada real ═══
+  {
+    await plantar({ dup: 6, ruido: 600 });
+    const agora = await rodar(NOVO, { semNotas: true });
+    ok('o modelo de NOTAS INTERNAS não existe: as 6 mensagens são movidas, mas a duplicada NÃO é apagada — fica fechada e unida',
+      (await movidasParaA()) === 6 && (await apontamParaB()) === 0 && agora.apagadas.length === 0 && agora.convB && agora.convB.status === 'closed' && agora.convB.unida_em === 'cvA',
+      { movidas: await movidasParaA(), apagadas: agora.apagadas, convB: agora.convB });
   }
 
   // ═══ 4. sem a prova, NÃO apaga ═══

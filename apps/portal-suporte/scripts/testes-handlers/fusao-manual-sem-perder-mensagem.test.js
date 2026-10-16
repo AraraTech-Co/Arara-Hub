@@ -14,7 +14,7 @@
 // Roda com: node fusao-manual-sem-perder-mensagem.test.js
 const fs = require('fs')
 const vm = require('vm')
-const { reply, ok, fim, ARQ } = require('./_carregar.js')
+const { reply, ok, fim, ARQ, carregarContexto } = require('./_carregar.js')
 const { camadaFindMany } = require('./_camada.js')
 
 function codigoDe(marca) {
@@ -99,7 +99,7 @@ function loja(linhas, opc = {}) {
 }
 const doConv = (n, prefixo, conv, extra = {}) => Array.from({ length: n }, (_, i) => ({ id: `${prefixo}_${i}`, conversation_id: conv, body: 'x ' + i, ...extra }))
 
-function mundo({ msgs = 6, eventos = 0, etiquetas = 0, notas = 0, opMsg = {}, opEv = {} } = {}) {
+function mundo({ msgs = 6, eventos = 0, etiquetas = 0, notas = 0, opMsg = {}, opEv = {}, semModelo = null } = {}) {
   const convs = [
     { id: 'cvT', status: 'open', remote_jid: FONE, updated_at: '2026-02-01T00:00:00Z', created_at: '2026-01-01T00:00:00Z' },
     { id: 'cvS', status: 'open', remote_jid: FONE, updated_at: '2026-01-01T00:00:00Z', created_at: '2026-01-01T00:00:00Z' },
@@ -114,15 +114,15 @@ function mundo({ msgs = 6, eventos = 0, etiquetas = 0, notas = 0, opMsg = {}, op
     update: async (id, p) => { Object.assign(convs.find((c) => c.id === id), p); return {} },
     delete: async (id) => { w.apagadas.push(id); const i = convs.findIndex((c) => c.id === id); if (i >= 0) convs.splice(i, 1); return {} },
   }
-  w.ctx = (body) => ({
-    params: {}, query: {}, headers: {}, user: { id: 'u1' }, body: body || {},
-    models: {
+  w.ctx = (body) => {
+    const models = {
       Sessao: { findById: async () => null }, Profile: { findById: async () => ({ id: 'u1', role: 'admin' }), findMany: async () => [] },
       WhatsAppConversation: w.Conv, WhatsAppMessage: w.msg.api, WaConversationEvents: w.ev.api,
       WaConversationTags: w.tag.api, WaInternalNotes: w.nota.api,
-    },
-    reply: reply(),
-  })
+    }
+    if (semModelo) delete models[semModelo]   // o modelo NÃO existe nesta execução
+    return { params: {}, query: {}, headers: {}, user: { id: 'u1' }, body: body || {}, models, reply: reply() }
+  }
   return w
 }
 const orfas = (loja, conv = 'cvS') => loja.linhas.filter((x) => x.conversation_id === conv || x.conversationId === conv).length
@@ -191,6 +191,23 @@ const REAL = { simular: false }
     const r = await NOVO(w.ctx(REAL))
     naoApagou('atualização de EVENTO falha (as mensagens foram todas movidas)', w, r)
     ok('  as mensagens, essas, foram movidas', noAlvo(w.msg) === 3 && orfas(w.msg) === 0, noAlvo(w.msg))
+  }
+
+  // ═══ 3b. MODELO AUSENTE NÃO É PROVA DE VAZIO ═══
+  for (const [modelo, opcao, rotulo] of [
+    ['WaConversationTags', { etiquetas: 2 }, 'etiquetas'], ['WaInternalNotes', { notas: 2 }, 'notas internas'], ['WaConversationEvents', { eventos: 2 }, 'eventos'],
+  ]) {
+    const w = mundo({ msgs: 3, ...opcao, semModelo: modelo })
+    const r = await NOVO(w.ctx(REAL))
+    naoApagou(`o modelo de ${rotulo} (${modelo}) NÃO EXISTE`, w, r)
+    ok('  as mensagens, essas, foram movidas', noAlvo(w.msg) === 3 && orfas(w.msg) === 0, noAlvo(w.msg))
+  }
+  {
+    const aux = carregarContexto('490f whatsapp POST /whatsapp/manutencao/unir-duplicatas')._moverTudoEProvar
+    for (const ausente of [undefined, null]) {
+      const r = await aux(ausente, ['conversation_id', 'conversationId'], 'cvS', 'cvT')
+      ok(`o auxiliar com modelo ${String(ausente)} devolve completo: false (ausência não é prova)`, r && r.completo === false && r.movidas === 0, r)
+    }
   }
 
   // ═══ 4. o padrão é SIMULAR: nada é gravado ═══
