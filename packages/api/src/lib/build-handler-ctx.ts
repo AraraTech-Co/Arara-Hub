@@ -18,6 +18,59 @@ function randomBytesHex(n: number): string {
   return nodeRandomBytes(size).toString('hex')
 }
 
+/**
+ * Memo de IDENTIDADE, com vida de UMA requisição (16/10/2026).
+ *
+ * As guardas empilhadas dentro dos handlers leem o perfil de quem chamou mais
+ * de uma vez: 23 rotas o leem 3×, 108 o leem 2×. São ~500 handlers escritos à
+ * mão, em string — consertar um por um não é caminho. Aqui é um lugar só.
+ *
+ * POR QUE AQUI E NÃO NO `buildModelsApi`: hoje os dois têm vida de uma
+ * requisição, então daria no mesmo. Mas há entrega planejada para GUARDAR o
+ * `buildModelsApi` entre requisições; se o memo morasse lá, naquele dia a
+ * identidade passaria a ser cacheada entre requisições em silêncio, e mudança
+ * de nível de acesso deixaria de valer na hora. Seria regressão de autorização
+ * causada por um PR de desempenho. No `ctx` o memo morre com a requisição,
+ * faça aquela entrega o que fizer.
+ *
+ * SÓ `Profile`, e só `findById`. Nada de dado de negócio: cachear uma conversa
+ * ou um chamado por requisição é outra discussão, com outros riscos.
+ *
+ * ESCRITA INVALIDA: rota que rebaixa alguém e relê o perfil no MESMO pedido
+ * tem de ver o valor novo. Qualquer `create`, `update` ou `delete` em `Profile`
+ * limpa o memo.
+ */
+function comMemoDeIdentidade(
+  models: Record<string, ModelApi>,
+): Record<string, ModelApi> {
+  const Profile = models.Profile
+  if (!Profile || typeof Profile.findById !== 'function') return models
+
+  const memo = new Map<string, unknown>()
+  const original = Profile.findById.bind(Profile)
+  const envolvido: ModelApi = {
+    ...Profile,
+    findById: async (id: string) => {
+      const chave = String(id)
+      if (memo.has(chave)) return memo.get(chave)
+      const valor = await original(chave)
+      memo.set(chave, valor)
+      return valor
+    },
+  }
+  for (const escrita of ['create', 'update', 'delete'] as const) {
+    const antes = Profile[escrita]
+    if (typeof antes !== 'function') continue
+    const chamar = antes.bind(Profile) as (...args: unknown[]) => Promise<unknown>
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ;(envolvido as any)[escrita] = async (...args: unknown[]) => {
+      memo.clear()
+      return chamar(...args)
+    }
+  }
+  return { ...models, Profile: envolvido }
+}
+
 export async function buildHandlerCtx(input: {
   method: string
   params: Record<string, string>
@@ -129,7 +182,7 @@ export async function buildHandlerCtx(input: {
     headers: input.headers,
     user: input.user,
     app: input.app,
-    models: input.models,
+    models: comMemoDeIdentidade(input.models),
     secrets,
     users,
     fetch: fetchFn,

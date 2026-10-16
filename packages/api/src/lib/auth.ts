@@ -122,7 +122,22 @@ export async function requireActor(
   reply: FastifyReply,
   prisma: PrismaClient,
 ): Promise<Actor | null> {
-  const actor = await resolveActor(request, prisma)
+  // ── Resolve o ator UMA vez por requisição (16/10/2026) ─────────────────────
+  //
+  // O plugin de autenticação já resolve no `preHandler` e guarda em
+  // `request.actor` (plugins/auth.ts). Esta função resolvia DE NOVO, sem olhar,
+  // e são 37 pontos de chamada. Com chave de API cada resolução custa uma
+  // leitura (`apiKey.findFirst`) MAIS uma escrita (`apiKey.update` do
+  // `lastUsedAt`), então resolver duas vezes custava duas de cada.
+  //
+  // A GUARDA QUE IMPORTA: só reaproveita quando há ator. `request.actor` fica
+  // `undefined` nos DOIS casos em que a requisição não tem identidade — sem
+  // credencial e com credencial INVÁLIDA —, porque o preHandler faz
+  // `?? undefined` sobre um `resolveActor` que devolve `null`. Nos dois a
+  // função resolve do zero e nega, como sempre fez. Reaproveitar um valor
+  // ausente seria transformar "não identificado" em "siga".
+  const atorDaRequisicao = request.actor
+  const actor = atorDaRequisicao ?? (await resolveActor(request, prisma))
   if (!actor) {
     unauthorized(reply)
     return null
