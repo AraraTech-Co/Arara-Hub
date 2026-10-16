@@ -52,6 +52,28 @@ function compilar(codigo) {
   return c.module.exports.handler
 }
 
+// Uma coleção emulada (eventos, etiquetas, notas), com as falhas injetáveis.
+function loja(linhas, opc = {}) {
+  const l = { linhas, leituras: 0, atualizacoes: 0 }
+  l.api = {
+    findMany: async (a) => {
+      l.leituras++
+      if (opc.filtroIgnorado) return camadaFindMany(linhas, {})
+      return camadaFindMany(linhas, a)
+    },
+    findById: async (id) => linhas.find((x) => x.id === id) || null,
+    update: async (id, p) => {
+      l.atualizacoes++
+      if (opc.updateFalha) throw new Error('falha de gravação')
+      if (opc.updateIgnorado) return {}
+      Object.assign(linhas.find((x) => x.id === id), p); return {}
+    },
+    create: async (x) => { linhas.push(x); return x },
+  }
+  return l
+}
+const doConv = (n, prefixo, conv) => Array.from({ length: n }, (_, i) => ({ id: `${prefixo}_${i}`, conversation_id: conv, type: 'x' }))
+
 // ── o bloco de ANTES (varredura da tabela inteira + apagar sem verificar) ───
 const BLOCO_ANTIGO = `        try {
           if (Msg) {
@@ -82,7 +104,7 @@ const LID = '123456789012345'
  * `dup` mensagens ANTIGAS na conversa "só LID" (cvB) e `ruido` mensagens MAIS NOVAS
  * de outras conversas, que as empurram para fora das 500 mais recentes da tabela.
  */
-function mundo({ dup = 6, ruido = 600, camel = 0, opcoes = {} } = {}) {
+function mundo({ dup = 6, ruido = 600, camel = 0, opcoes = {}, eventos = 0, etiquetas = 0, notas = 0, opEv = {}, opTag = {}, opNota = {} } = {}) {
   const msgs = []
   const add = (id, conv, extra) => msgs.push({ id, conversation_id: conv, from_me: false, body: 'm ' + id,
     timestamp: new Date(1700000000000 + msgs.length * 1000).toISOString(), ...extra })
@@ -94,6 +116,9 @@ function mundo({ dup = 6, ruido = 600, camel = 0, opcoes = {} } = {}) {
     { id: 'cvB', status: 'open', remote_jid: LID + '@lid', remote_lid: LID, phase: 'novo', created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
   ]
   const w = { convs, msgs, apagadas: [], leiturasDeB: [], atualizacoes: 0 }
+  w.ev = loja(doConv(eventos, 'e', 'cvB'), opEv)
+  w.tag = loja(doConv(etiquetas, 't', 'cvB'), opTag)
+  w.nota = loja(doConv(notas, 'n', 'cvB'), opNota)
   const vazio = { findMany: async () => [], findById: async () => null }
   const ehDeB = (a) => a && (a.conversation_id === 'cvB' || a.conversationId === 'cvB')
   w.models = {
@@ -122,11 +147,11 @@ function mundo({ dup = 6, ruido = 600, camel = 0, opcoes = {} } = {}) {
         Object.assign(msgs.find((m) => m.id === id), p); return {}
       },
     },
-    WaConversationEvents: { findMany: async () => [], create: async (x) => x },
+    WaConversationEvents: w.ev.api, WaConversationTags: w.tag.api, WaInternalNotes: w.nota.api,
     Profile: { findById: async () => ({ id: 'u9', role: 'support' }), findMany: async () => [] }, Sessao: { findById: async () => null },
     SystemSettings: { findMany: async () => [{ id: 's1', waMenuEnabled: false }], update: async () => ({}) },
     PushInscricao: vazio, PushNaFila: { create: async (x) => x },
-    SupportSchedule: vazio, WaFlows: vazio, Company: vazio, CompanyContact: vazio, Contact: vazio, Ticket: vazio, Unit: vazio, ClientUser: vazio, WaConta: vazio, WaTags: vazio, WaConversationTags: vazio,
+    SupportSchedule: vazio, WaFlows: vazio, Company: vazio, CompanyContact: vazio, Contact: vazio, Ticket: vazio, Unit: vazio, ClientUser: vazio, WaConta: vazio, WaTags: vazio,
   }
   w.ctx = () => ({ params: {}, headers: {}, query: { token: SEGREDO },
     body: { phone: FONE, lid: LID, message: 'oi, sou eu', name: 'Cliente', message_id: 'WA_NOVA_1' },
@@ -224,6 +249,28 @@ const convB = (w) => w.convs.find((c) => c.id === 'cvB')
     await NOVO(w.ctx()); await folga()
     naoApagou('duplicada com 10001 mensagens (acima do teto de 20 rodadas de 500)', w, () => {
       ok('  moveu 10000 e deixou 1 (alcançável)', emA(w, 'dup_') === 10000 && apontamParaB(w) === 1, { movidas: emA(w, 'dup_'), restam: apontamParaB(w) })
+    })
+  }
+
+  // ═══ 4b. AS QUATRO COLEÇÕES: mensagens, eventos, etiquetas e notas internas ═══
+  const orfasDe = (l) => l.linhas.filter((x) => x.conversation_id === 'cvB' || x.conversationId === 'cvB').length
+  const noAlvo = (l) => l.linhas.filter((x) => x.conversation_id === 'cvA').length
+  {
+    const wa = mundo({ dup: 6, ruido: 20, eventos: 600, etiquetas: 4, notas: 2 }), wn = mundo({ dup: 6, ruido: 20, eventos: 600, etiquetas: 4, notas: 2 })
+    await ANTIGO(wa.ctx()); await folga()
+    await NOVO(wn.ctx()); await folga()
+    ok('CONTROLE — o código de ANTES só movia mensagens: eventos, etiquetas e notas ficavam apontando para a conversa apagada',
+      wa.apagadas.includes('cvB') && orfasDe(wa.ev) === 600 && orfasDe(wa.tag) === 4 && orfasDe(wa.nota) === 2, { ev: orfasDe(wa.ev), tag: orfasDe(wa.tag), nota: orfasDe(wa.nota) })
+    ok('AGORA — 600 eventos, 4 etiquetas e 2 notas internas vão para a conversa que fica',
+      noAlvo(wn.ev) >= 600 && noAlvo(wn.tag) === 4 && noAlvo(wn.nota) === 2, { ev: noAlvo(wn.ev), tag: noAlvo(wn.tag), nota: noAlvo(wn.nota) })
+    ok('  nada das quatro coleções aponta mais para a duplicada, e só então ela é apagada',
+      orfasDe(wn.ev) + orfasDe(wn.tag) + orfasDe(wn.nota) + apontamParaB(wn) === 0 && wn.apagadas.join() === 'cvB', { apagadas: wn.apagadas })
+  }
+  for (const [rotulo, opcao] of [['evento', { opEv: { updateFalha: true }, eventos: 3 }], ['etiqueta', { opTag: { updateFalha: true }, etiquetas: 3 }], ['nota interna', { opNota: { updateFalha: true }, notas: 3 }]]) {
+    const w = mundo({ dup: 6, ruido: 20, ...opcao })
+    await NOVO(w.ctx()); await folga()
+    naoApagou(`a atualização de ${rotulo.toUpperCase()} falha (as mensagens foram todas movidas)`, w, () => {
+      ok(`  as mensagens, essas, foram movidas; as de ${rotulo} continuam na duplicada, alcançáveis`, emA(w, 'dup_') === 6 && apontamParaB(w) === 0 && (orfasDe(w.ev) + orfasDe(w.tag) + orfasDe(w.nota)) === 3, { msgs: emA(w, 'dup_') })
     })
   }
 

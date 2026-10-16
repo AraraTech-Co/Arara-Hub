@@ -84,16 +84,23 @@ const app = await p.app.create({ data: { slug: SLUG, name: 'fusao', ownerId: don
 try {
   await p.$executeRawUnsafe('CREATE INDEX IF NOT EXISTS model_records_app_model_created_idx ON model_records (app_id, model_name, created_at DESC)');
   await p.modelDef.create({ data: { appId: app.id, name: `${SLUG}_Msg`, schema: { type: 'object' } } });
+  await p.modelDef.create({ data: { appId: app.id, name: `${SLUG}_Ev`, schema: { type: 'object' } } });
   const apis = await buildModelsApi(p, app.id, SLUG);
   const Msg = apis[`${SLUG}_Msg`];
+  const Ev = apis[`${SLUG}_Ev`];
   const T0 = Date.UTC(2026, 0, 1);
   const modelName = `${SLUG}_Msg`;
+  const modelEv = `${SLUG}_Ev`;
 
   /** Planta `dup` mensagens ANTIGAS em 'cvB' (snake) + `camel` (camelCase) e `ruido` MAIS NOVAS em 'cvZ'. */
-  async function plantar({ dup, camel = 0, ruido }) {
-    await p.modelRecord.deleteMany({ where: { appId: app.id, modelName } });
+  async function plantar({ dup, camel = 0, ruido, eventos = 0, ruidoEv = 0 }) {
+    await p.modelRecord.deleteMany({ where: { appId: app.id } });
     const linhas = [];
     let ms = 0;
+    // Eventos: os da duplicada são ANTIGOS e os de ruído, MAIS NOVOS (a janela de 500 da
+    // tabela de eventos não os enxerga).
+    for (let i = 0; i < eventos; i++) linhas.push({ appId: app.id, modelName: modelEv, createdAt: new Date(T0 + (ms++) * 1000), data: { id: 'ev_' + i, conversation_id: 'cvB', type: 'x' } });
+    for (let i = 0; i < ruidoEv; i++) linhas.push({ appId: app.id, modelName: modelEv, createdAt: new Date(T0 + (ms++) * 1000), data: { id: 'evz_' + i, conversation_id: 'cvZ', type: 'x' } });
     const add = (data) => linhas.push({ appId: app.id, modelName, createdAt: new Date(T0 + (ms++) * 1000), data: { from_me: false, body: 'm', timestamp: new Date(T0 + ms * 1000).toISOString(), ...data } });
     for (let i = 0; i < dup; i++) add({ id: 'dup_' + i, conversation_id: 'cvB' });
     for (let i = 0; i < camel; i++) add({ id: 'camel_' + i, conversationId: 'cvB' });
@@ -102,9 +109,9 @@ try {
   }
   // CONTAGENS EM SQL, nunca por `findMany`: a camada devolve no máximo 500 linhas, e uma
   // contagem capada em 500 mentiria justamente nas massas grandes que importam aqui.
-  const contarSql = async (conv, regexId) => Number((await p.$queryRaw`
+  const contarSql = async (conv, regexId, modelo = modelName) => Number((await p.$queryRaw`
     SELECT count(*)::int AS n FROM model_records
-     WHERE app_id = ${app.id} AND model_name = ${modelName}
+     WHERE app_id = ${app.id} AND model_name = ${modelo}
        AND (data->>'conversation_id' = ${conv} OR data->>'conversationId' = ${conv})
        AND data->>'id' ~ ${regexId}`)[0].n);
 
@@ -134,7 +141,7 @@ try {
           delete: async (id) => { apagadas.push(id); const i = convs.findIndex((x) => x.id === id); if (i >= 0) convs.splice(i, 1); return { ok: true } },
         },
         WhatsAppMessage: MsgInst,
-        WaConversationEvents: { findMany: async () => [], create: async (x) => x },
+        WaConversationEvents: Ev,
         Profile: { findById: async () => ({ id: 'u9', role: 'support' }), findMany: async () => [] }, Sessao: { findById: async () => null },
         SystemSettings: { findMany: async () => [{ id: 's1', waMenuEnabled: false }], update: async () => ({}) },
         PushInscricao: vazio, PushNaFila: { create: async (x) => x },
@@ -176,6 +183,21 @@ try {
     await plantar({ dup: 2, camel: 3, ruido: 600 });
     const agora = await rodar(NOVO);
     ok('mensagens em camelCase (`conversationId`) também são movidas, e nada aponta para a duplicada', (await movidasParaA()) === 5 && (await apontamParaB()) === 0 && agora.apagadas.join() === 'cvB', { movidas: await movidasParaA(), orfas: await apontamParaB() });
+  }
+
+  // ═══ 3b. os EVENTOS, na camada real: a janela de 500 da tabela de eventos não os vê ═══
+  {
+    await plantar({ dup: 6, ruido: 20, eventos: 650, ruidoEv: 600 });
+    const janelaEv = await Ev.findMany({});
+    ok('TRAVA DE MASSA — a janela das 500 mais recentes da tabela de EVENTOS não contém nenhum evento da duplicada',
+      janelaEv.length === 500 && janelaEv.filter((e) => e.conversation_id === 'cvB').length === 0 && (await contarSql('cvB', '^ev_', modelEv)) === 650, { janela: janelaEv.length });
+    const antes = await rodar(ANTIGO);
+    ok('CONTROLE (camada real) — o código de ANTES movia só mensagens: os 650 eventos ficavam apontando para a conversa apagada',
+      antes.apagadas.includes('cvB') && (await contarSql('cvB', '^ev_', modelEv)) === 650, { orfas: await contarSql('cvB', '^ev_', modelEv) });
+    await plantar({ dup: 6, ruido: 20, eventos: 650, ruidoEv: 600 });
+    const agora = await rodar(NOVO);
+    ok('AGORA — os 650 eventos (acima de 500) vão para a conversa que fica, sem órfão, e só então apaga',
+      (await contarSql('cvA', '^ev_', modelEv)) === 650 && (await contarSql('cvB', '.*', modelEv)) === 0 && agora.apagadas.join() === 'cvB', { movidos: await contarSql('cvA', '^ev_', modelEv), orfaos: await contarSql('cvB', '.*', modelEv) });
   }
 
   // ═══ 4. sem a prova, NÃO apaga ═══
