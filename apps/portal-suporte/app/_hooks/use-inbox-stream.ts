@@ -171,7 +171,10 @@ export function useInboxStream(conta?: string | null): UseInboxStreamResult {
     setLoading(true)
   }, [conta])
 
-  const status = usePolling(carregar, { intervalMs: INTERVALO_MS })
+  // `chave: conta` pelo mesmo motivo da conversa: o efeito acima esvazia a
+  // lista ao trocar de aba de conta, e sem a chave nada consultava até o
+  // próximo tique — até 10 s de lista vazia.
+  const status = usePolling(carregar, { intervalMs: INTERVALO_MS, chave: conta ?? null })
 
   return { conversations, loading, status, refresh: carregar }
 }

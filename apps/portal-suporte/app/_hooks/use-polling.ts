@@ -26,13 +26,27 @@ export interface PollingOptions {
   intervalMs?: number
   /** `false` desliga o ciclo (ex.: nenhuma conversa selecionada). */
   enabled?: boolean
+  /**
+   * O ALVO da consulta: a conversa aberta, a aba de conta.
+   *
+   * Existe porque trocar de alvo não mudava nem `enabled` nem `intervalMs`, e
+   * o ciclo só reiniciava quando um desses mudava. Trocar de conversa não
+   * disparava consulta nenhuma: a tela ficava em "Carregando mensagens…" até o
+   * próximo tique — 0 a 5 s, média 2,5 s. Na troca de aba de conta, até 10 s
+   * de lista vazia.
+   *
+   * Com a chave nas dependências, trocar de alvo reinicia o ciclo, e reiniciar
+   * consulta na hora (ver `iniciar`). O caso de nenhuma conversa para alguma
+   * já funcionava, porque ali `enabled` ia de `false` para `true`.
+   */
+  chave?: string | number | null
 }
 
 const PADRAO_MS = 10_000
 
 export function usePolling(
   fetcher: () => Promise<void>,
-  { intervalMs = PADRAO_MS, enabled = true }: PollingOptions = {},
+  { intervalMs = PADRAO_MS, enabled = true, chave = null }: PollingOptions = {},
 ): StreamStatus {
   const [status, setStatus] = useState<StreamStatus>('connecting')
 
@@ -99,7 +113,8 @@ export function usePolling(
       document.removeEventListener('visibilitychange', aoMudarVisibilidade)
       window.removeEventListener('focus', aoMudarVisibilidade)
     }
-  }, [enabled, intervalMs])
+    // `chave` entra aqui: é o que faz trocar de alvo consultar na hora.
+  }, [enabled, intervalMs, chave])
 
   return status
 }
