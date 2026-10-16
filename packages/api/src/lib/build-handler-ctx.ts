@@ -36,10 +36,29 @@ function randomBytesHex(n: number): string {
  * SÓ `Profile`, e só `findById`. Nada de dado de negócio: cachear uma conversa
  * ou um chamado por requisição é outra discussão, com outros riscos.
  *
- * ESCRITA INVALIDA: rota que rebaixa alguém e relê o perfil no MESMO pedido
- * tem de ver o valor novo. Qualquer `create`, `update` ou `delete` em `Profile`
- * limpa o memo.
+ * ── As duas invariantes de invalidação ────────────────────────────────────
+ *
+ * 1. A LIMPEZA CERCA A ESCRITA PELOS DOIS LADOS: antes de chamar e, num
+ *    `finally`, depois de ela terminar. O `await` dentro do `try` é parte da
+ *    garantia — sem ele o `finally` correria antes de a escrita concluir, e uma
+ *    leitura concorrente (um `Promise.all` de leitura com escrita) poderia
+ *    deixar no memo o valor de antes da escrita pelo resto da requisição.
+ *
+ * 2. O EMBRULHO VALE POR OBJETO, NÃO POR NOME: substitui toda chave que aponta
+ *    para o MESMO objeto de modelo. `buildModelsApi` registra o mesmo objeto
+ *    sob até três nomes (`apis[fullName]`, `apis[short]`, `apis[modelName]`, no
+ *    fim de `lib/models.ts`). Trocar um nome só deixaria os outros com o objeto
+ *    cru: sem memo, o que é inofensivo, e sem a invalidação, o que não é —
+ *    escrever por um nome e ler o perfil por outro. Hoje todo chamador usa o
+ *    nome curto (medido: o nome completo aparece 0 vezes nos seis apps), então
+ *    isto fecha a categoria antes de ela ter caso.
+ *
+ * A lista abaixo é a superfície de escrita INTEIRA do `ModelApi`.
+ * `identidade-uma-vez.test.mjs` reprova se o tipo ganhar um método de escrita
+ * que não esteja nela — é o único jeito de o dia do `upsert` não passar calado.
  */
+export const ESCRITAS_DO_MODELO = ['create', 'update', 'delete'] as const
+
 function comMemoDeIdentidade(
   models: Record<string, ModelApi>,
 ): Record<string, ModelApi> {
@@ -58,17 +77,26 @@ function comMemoDeIdentidade(
       return valor
     },
   }
-  for (const escrita of ['create', 'update', 'delete'] as const) {
+  for (const escrita of ESCRITAS_DO_MODELO) {
     const antes = Profile[escrita]
     if (typeof antes !== 'function') continue
     const chamar = antes.bind(Profile) as (...args: unknown[]) => Promise<unknown>
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ;(envolvido as any)[escrita] = async (...args: unknown[]) => {
       memo.clear()
-      return chamar(...args)
+      try {
+        return await chamar(...args)
+      } finally {
+        memo.clear()
+      }
     }
   }
-  return { ...models, Profile: envolvido }
+
+  const saida: Record<string, ModelApi> = { ...models }
+  for (const nome of Object.keys(models)) {
+    if (models[nome] === Profile) saida[nome] = envolvido
+  }
+  return saida
 }
 
 export async function buildHandlerCtx(input: {
