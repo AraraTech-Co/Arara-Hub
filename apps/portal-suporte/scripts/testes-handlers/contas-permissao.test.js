@@ -230,9 +230,12 @@ function cenario(perfil, conta) {
     if (EXCECOES[path]) { excecoes++; excecoesVistas.add(path); continue }
     const chaveRota = `${m[3]} ${path}`
     if (EXCECOES_POR_ROTA[chaveRota]) {
-      // A exceção só vale enquanto a rota NÃO lê id de entrada. Se um dia a
-      // lista passar a usar `params.id`, ela volta a precisar da trava.
-      if (/\bparams\.id\b/.test(cod)) { semTrava.push(`${m[1]} ${chaveRota} (exceção não vale: lê params.id)`); continue }
+      // A exceção só vale enquanto a rota NÃO lê id de entrada, venha de onde
+      // vier: `params`, `query` ou `body`. Listagem ganha filtro por id com
+      // naturalidade (`?id=`); no dia em que isso entrar, a lista volta a
+      // precisar da trava.
+      const idDeEntrada = cod.match(/\b(?:ctx\.)?(?:params|query|body)\s*(?:\.\s*id\b|\[\s*["']id["']\s*\])/)
+      if (idDeEntrada) { semTrava.push(`${m[1]} ${chaveRota} (exceção não vale: lê id de entrada — ${idDeEntrada[0]})`); continue }
       excecoes++; excecoesVistas.add(chaveRota); continue
     }
     if (/_barrarPorConta(?:PorId)?\(/.test(cod)) comTrava++
@@ -246,8 +249,14 @@ function cenario(perfil, conta) {
   // documentação, não filtro — `excecoes` vem 0 e está certo. O filtro fica
   // para o caso de uma delas passar a casar: aí a decisão é consciente, com o
   // motivo escrito, em vez de a rota entrar calada na lista de sem-trava.
-  ok('  e a única exceção é a lista de conversas, com a releitura em segundo plano',
-    excecoes === 1 && excecoesVistas.size === 1 && excecoesVistas.has('GET /whatsapp'),
+  // EXATAMENTE estas duas, e cada uma pela mesma razão: relê a conversa por um
+  // id que o PRÓPRIO handler já resolveu (a linha da lista; a conversa da
+  // mensagem), em segundo plano, para gravar o nome do grupo sem atropelar um
+  // nome digitado. O webhook já estava em `EXCECOES` por caminho, com o motivo
+  // escrito; a lista entra por verbo+caminho e se autoverifica.
+  ok('  e as únicas exceções são a lista de conversas e o webhook de entrada',
+    excecoes === 2 && excecoesVistas.size === 2 &&
+      excecoesVistas.has('GET /whatsapp') && excecoesVistas.has('/whatsapp/inbound'),
     { excecoes, vistas: [...excecoesVistas] })
 
   // ══ A ORDEM: autorização antes da validação do corpo ══════════════════
