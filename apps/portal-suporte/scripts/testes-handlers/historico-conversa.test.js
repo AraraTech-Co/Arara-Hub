@@ -73,13 +73,12 @@ const diags = (w) => w.eventos.filter((e) => e.kind === 'diag_historico')
   ok('acusa lacuna: a conversa é bem anterior à primeira mensagem', hist(r).lacuna === true, hist(r))
   ok('diz desde quando tem histórico', hist(r).desde === iso(AGORA - 3 * HORA), hist(r))
   ok('diz desde quando a conversa existe', hist(r).conversa_desde === iso(AGORA - 26 * HORA), hist(r))
-  ok('registra o diagnóstico técnico da lacuna', diags(w).length === 1, w.eventos)
-  ok('  sem texto de mensagem no registro',
-    !JSON.stringify(diags(w)[0]).includes('"x"'), diags(w)[0])
+  // A lacuna é informada na resposta; a rota não grava registro técnico dela.
+  ok('não grava registro técnico: a tabela de eventos fica como estava', w.eventos.length === 0, w.eventos)
 
-  // Reabrir a mesma conversa não enche a tabela de eventos.
+  // Reabrir a mesma conversa também não toca na tabela de eventos.
   await handler(ctxDe(w))
-  ok('abrir de novo não duplica o diagnóstico', diags(w).length === 1, w.eventos.length)
+  ok('abrir de novo continua sem gravar nada', w.eventos.length === 0, w.eventos.length)
 
   // Conversa normal: nasce da primeira mensagem, sem lacuna.
   w = mundo({
