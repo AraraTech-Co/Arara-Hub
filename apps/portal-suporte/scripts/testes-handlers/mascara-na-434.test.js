@@ -221,8 +221,11 @@ const mascarada = (a) => Array.isArray(a.mascararCampos) && a.mascararCampos.len
       const c = JSON.parse('"' + m[5] + '"')
       if (/mascararCampos/.test(c)) rotas.push(`${m[1]} ${m[3]} ${m[4]}`)
     }
-    ok('só a 434 usa mascararCampos (as rotas que leem o CONTEÚDO nunca)',
-      rotas.length === 1 && rotas[0].startsWith('434 '), rotas)
+    // EXATAMENTE estas duas: a 434 (que só pergunta se há anexo) e a 432 (que nem
+    // expõe o anexo). As rotas que leem o CONTEÚDO usam `findById` e a opção não
+    // as alcança; este teste reprova se qualquer outra passar a usá-la.
+    ok('só a 434 e a 432 usam mascararCampos (as rotas que leem o CONTEÚDO nunca)',
+      rotas.length === 2 && rotas.some((r) => r.startsWith('434 ')) && rotas.some((r) => r.startsWith('432 ')), rotas)
   }
 
   fim()

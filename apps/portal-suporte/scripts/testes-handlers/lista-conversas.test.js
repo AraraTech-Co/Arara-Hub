@@ -10,6 +10,10 @@ const handler = carregarHandler('432 whatsapp GET /whatsapp')
 const AGORA = Date.now()
 const iso = (horasAtras) => new Date(AGORA - horasAtras * 3600_000).toISOString()
 
+// Só as chaves que são FILTRO de campo: `mascararCampos` é opção da camada
+// (está em `metaKeys` em lib/models.ts), não campo.
+const chavesDeCampo = (arg) => Object.keys(arg || {}).filter((k) => k !== 'mascararCampos')
+
 function ctxDe({ conversas, mensagens, filtroStatusFunciona = true, varredura = null, consultas = [] }) {
   const TETO = 500
   const Conv = {
@@ -27,7 +31,9 @@ function ctxDe({ conversas, mensagens, filtroStatusFunciona = true, varredura = 
   }
   const Msg = {
     findMany: async (arg) => {
-      const chaves = Object.keys(arg || {})
+      // `mascararCampos` é opção da camada, não filtro de campo (está em
+      // `metaKeys` em lib/models.ts): o mock espelha isso.
+      const chaves = Object.keys(arg || {}).filter((k) => k !== 'mascararCampos')
       if (chaves.length === 0) return mensagens.slice(0, TETO)
       consultas.push(arg)
       return mensagens.filter((x) => x.conversation_id === arg.conversation_id)
@@ -109,7 +115,7 @@ function ctxDe({ conversas, mensagens, filtroStatusFunciona = true, varredura = 
   // a busca filtrada precisa achar a mensagem solta
   const ctx2 = ctxDe({ conversas, mensagens, consultas })
   ctx2.models.WhatsAppMessage.findMany = async (arg) => {
-    if (!Object.keys(arg || {}).length) return mensagens
+    if (!chavesDeCampo(arg).length) return mensagens
     return soltas.filter((x) => x.conversation_id === arg.conversation_id)
   }
   r = await handler(ctx2)
@@ -136,7 +142,7 @@ function ctxDe({ conversas, mensagens, filtroStatusFunciona = true, varredura = 
   const porConversa = []
   const ctx5 = ctxDe({ conversas: abertas, mensagens: [] })
   ctx5.models.WhatsAppMessage.findMany = async (arg) => {
-    if (Object.keys(arg || {}).length) { porConversa.push(arg); return [] }
+    if (chavesDeCampo(arg).length) { porConversa.push(arg); return [] }
     return []
   }
   await handler(ctx5)
