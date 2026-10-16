@@ -509,11 +509,22 @@ export function KanbanBoard({ tickets: initialTickets, agents, currentUser }: Ka
       const prevStatus = prevTicket?.status;
       const prevAssignee = prevTicket?.assignee ?? null;
       const prevAssignedTo = prevTicket?.assigned_to ?? null;
+      // ── O botão do card MANTÉM o responsável (15/10/2026) ─────────────────
+      //
+      // Antes daqui saía `clear_assignee: true` fixo, e o otimista já zerava
+      // `assignee`/`assigned_to`: o card ia para Resolvido sem dono, sempre.
+      // Arrastar o card nunca limpou, e o diálogo de resolver tem a escolha
+      // desmarcada por padrão — o próprio texto dele diz que o responsável
+      // continua no card. Duas das três portas preservavam; esta era a
+      // terceira, e a equipe a relatou como defeito.
+      //
+      // Quem quiser tirar da fila do agente continua tendo o caminho
+      // explícito: a caixa "Tirar da fila do agente" no diálogo.
       setTickets((prev) => prev.map((t) =>
-        t.id === id ? { ...t, status: 'resolvido', assignee: null, assigned_to: null } : t
+        t.id === id ? { ...t, status: 'resolvido' } : t
       ));
       try {
-        await ticketsApi.patchStatus(id, { status: 'resolvido', clear_assignee: true });
+        await ticketsApi.patchStatus(id, { status: 'resolvido' });
         toast({ title: 'Ticket marcado como resolvido' });
       } catch (e) {
         toast({ title: 'Erro ao resolver ticket', description: motivo(e), variant: 'destructive' });
