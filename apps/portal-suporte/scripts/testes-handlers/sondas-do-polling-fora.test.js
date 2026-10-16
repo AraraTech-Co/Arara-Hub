@@ -78,7 +78,7 @@ const BLOCO_432 = `
   } catch (e) {}
 `
 const ANCORA_434 = '  // Abrir a conversa é o ato de LER: zera o não lido.'
-const ANCORA_432 = '  return null;\n}\n// Só pergunta de novo depois de 30 min'
+const ANCORA_432 = '  return null;\n}\n// Roda SEM ser aguardada pela lista'
 
 const cod434 = codigoDe('434 whatsapp GET /whatsapp/:id/messages')
 const cod432 = codigoDe('432 whatsapp GET /whatsapp')
