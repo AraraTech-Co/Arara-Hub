@@ -27,6 +27,7 @@
 const fs = require('fs')
 const vm = require('vm')
 const { reply, ok, fim, ARQ } = require('./_carregar.js')
+const { camadaFindMany } = require('./_camada.js')
 
 function codigoDe(marca) {
   const s = fs.readFileSync(ARQ, 'utf8')
@@ -55,7 +56,7 @@ function compilar(codigo) {
 const cod = codigoDe('434 whatsapp GET /whatsapp/:id/messages')
 const PEDIDOS = [
   ['{ conversation_id: id, mascararCampos: _MASCARAR_MIDIA }', '{ conversation_id: id }'],
-  ['{ conversation_id: id, from_me: _lados[_l], mascararCampos: _MASCARAR_MIDIA }', '{ conversation_id: id, from_me: _lados[_l] }'],
+  ['{ conversation_id: id, limit: _TAM_PAGINA, offset: _pg * _TAM_PAGINA, mascararCampos: _MASCARAR_MIDIA }', '{ conversation_id: id, limit: _TAM_PAGINA, offset: _pg * _TAM_PAGINA }'],
   ['findMany({ mascararCampos: _MASCARAR_MIDIA })', 'findMany({})'],
 ]
 // A AUSÊNCIA de um pedido vira asserção (abaixo), e não exceção ao carregar:
@@ -126,15 +127,10 @@ function mundo({ mensagens, filtroFunciona = true }) {
         findMany: async (arg) => {
           const filtro = arg || {}
           w.chamadas.push(JSON.parse(JSON.stringify(filtro)))
-          const campos = Array.isArray(filtro.mascararCampos) ? filtro.mascararCampos : []
-          const chaves = Object.keys(filtro).filter((k) => k !== 'mascararCampos')
-          if (chaves.includes('conversation_id') && !filtroFunciona) return []
-          const achadas = mensagens
-            .filter((m) => chaves.every((k) => String(m[k] ?? '') === String(filtro[k])))
-            .slice().reverse().slice(0, 500) // as 500 mais recentes, como a camada
-            .map((m) => mascara(m, campos))
-          w.bytes += JSON.stringify(achadas).length
-          return achadas
+          if ('conversation_id' in filtro && !filtroFunciona) return []
+          const devolvidas = camadaFindMany(mensagens, filtro)
+          w.bytes += JSON.stringify(devolvidas).length
+          return devolvidas
         },
       },
     },
@@ -146,7 +142,7 @@ const folga = () => new Promise((r) => setTimeout(r, 25))
 const mascarada = (a) => Array.isArray(a.mascararCampos) && a.mascararCampos.length === 1 && a.mascararCampos[0] === 'media_data'
 
 ;(async () => {
-  ok('a 434 contém os três pedidos de mascaramento (conversa, metades por from_me e reserva)',
+  ok('a 434 contém os três pedidos de mascaramento (primeira página, páginas seguintes e reserva)',
     pedidosAusentes.length === 0, pedidosAusentes)
 
   // ═══ 1. resposta IDÊNTICA, e cada forma decide o clipe como antes ═══
@@ -182,9 +178,9 @@ const mascarada = (a) => Array.isArray(a.mascararCampos) && a.mascararCampos.len
     const ra = await ANTIGO(b.ctx())
     await folga()
     ok('conversa de 700: resposta IDÊNTICA e inteira', JSON.stringify(rn) === JSON.stringify(ra) && rn.body.data.length === 700, rn.body.data.length)
-    ok('  passou pelas duas metades (3 leituras: conversa, from_me true, from_me false)',
-      a.chamadas.length === 3 && a.chamadas.filter((c) => 'from_me' in c).length === 2, a.chamadas)
-    ok('  e TODAS as três pedem o mascaramento', a.chamadas.every((c) => mascarada(c)), a.chamadas)
+    ok('  passou pelas duas páginas (2 leituras: a primeira e a de offset 500)',
+      a.chamadas.length === 2 && a.chamadas.filter((c) => c.offset === 500).length === 1, a.chamadas)
+    ok('  e AMBAS pedem o mascaramento', a.chamadas.every((c) => mascarada(c)), a.chamadas)
   }
 
   // ═══ 3. reserva sem filtro: também pede ═══
