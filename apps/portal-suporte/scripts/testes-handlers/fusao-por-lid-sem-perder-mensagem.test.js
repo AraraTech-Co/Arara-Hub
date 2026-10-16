@@ -185,6 +185,7 @@ const convB = (w) => w.convs.find((c) => c.id === 'cvB')
   const naoApagou = (nome, w, extra) => {
     ok(`${nome}: a duplicada NÃO é apagada`, w.apagadas.length === 0 && !!convB(w), { apagadas: w.apagadas })
     ok(`  e fica FECHADA e marcada como unida (o registro é preservado)`, convB(w) && convB(w).status === 'closed' && convB(w).unida_em === 'cvA', convB(w))
+    ok(`  e a mensagem que chegou é gravada mesmo assim, na conversa que fica`, w.msgs.some((m) => m.conversation_id === 'cvA' && /oi, sou eu/.test(m.body || '')), w.msgs.slice(-1))
     if (extra) extra()
   }
   {
