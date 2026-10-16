@@ -1,4 +1,8 @@
-import type { Prisma, PrismaClient } from '@prisma/client'
+// `Prisma` entra como VALOR, não só como tipo: o caminho mascarado do
+// `findMany` usa `Prisma.sql` e `Prisma.join`, que existem em tempo de
+// execução. Com `import type` o código compilaria e quebraria ao rodar.
+import { Prisma } from '@prisma/client'
+import type { PrismaClient } from '@prisma/client'
 import { z } from 'zod'
 
 type JsonSchemaLike = {
@@ -96,6 +100,7 @@ export async function buildModelsApi(
       findMany: async (filter = {}) => {
         // Query-string pagination / search keys are not row fields
         const metaKeys = new Set([
+          'mascararCampos',
           'limit',
           'offset',
           'page',
@@ -126,6 +131,83 @@ export async function buildModelsApi(
             equals: fieldFilter[k] as Prisma.InputJsonValue,
           },
         }))
+
+        // ── Mascarar campo pesado dentro do `data` (16/10/2026) ──────────────
+        //
+        // DESLIGADO por padrão: sem `mascararCampos`, nada abaixo acontece e o
+        // comportamento é exatamente o de sempre, para todos os apps.
+        //
+        // Para que serve: há campo guardado dentro do `data` que a listagem
+        // NÃO usa e que pesa megabytes — o anexo do WhatsApp em base64. O
+        // `findMany` trazia a linha inteira do Postgres para o Node, que
+        // descartava o conteúdo na hora. A cada 5 segundos, por atendente.
+        //
+        // MASCARA, não omite, e a diferença é função: quem lista pergunta
+        // "tem anexo?" olhando se o campo existe. Removendo a chave, a
+        // resposta passaria a dizer que não há anexo. Então o conteúdo é
+        // trocado por um marcador curto, e a verdade sobre a existência
+        // sobrevive.
+        const mascarar = Array.isArray(filter.mascararCampos)
+          ? (filter.mascararCampos as unknown[]).filter(
+              (c): c is string => typeof c === 'string' && /^[A-Za-z0-9_]+$/.test(c),
+            )
+          : []
+        // Só valores escalares no filtro: o caminho mascarado reescreve a
+        // comparação à mão, e para qualquer coisa fora disso eu não consigo
+        // provar que ele concorda com o caminho do Prisma. Nesse caso cai no
+        // caminho de sempre, que é o certo a fazer quando não se pode provar.
+        const filtroEscalar = filterKeys.every((k) => {
+          const v = fieldFilter[k]
+          return v === null || ['string', 'number', 'boolean'].includes(typeof v)
+        })
+
+        if (mascarar.length && filtroEscalar) {
+          const onde: Prisma.Sql[] = [
+            Prisma.sql`app_id = ${appId}`,
+            Prisma.sql`model_name = ${modelName}`,
+          ]
+          for (const k of filterKeys) {
+            const v = fieldFilter[k]
+            if (v === null) onde.push(Prisma.sql`data->>${k} IS NULL`)
+            else onde.push(Prisma.sql`data->>${k} = ${String(v)}`)
+          }
+          // `jsonb_exists` em vez do operador `?`: mesmo resultado, sem a
+          // ambiguidade com marcador de parâmetro que morde em pooler e em log.
+          //
+          // O `CASE` é obrigatório porque `jsonb_set` CRIA a chave quando ela
+          // não existe (`create_missing` é true por padrão): sem ele, mensagem
+          // de texto passaria a dizer que tem anexo.
+          let expr = Prisma.sql`data`
+          for (const campo of mascarar) {
+            expr = Prisma.sql`CASE WHEN jsonb_exists(${expr}, ${campo})
+                AND ${expr}->>${campo} IS NOT NULL
+              THEN jsonb_set(${expr}, ARRAY[${campo}], '"1"'::jsonb)
+              ELSE ${expr} END`
+          }
+          const linhas = await prisma.$queryRaw<
+            { id: string; data: Record<string, unknown>; created_at: Date; updated_at: Date }[]
+          >(Prisma.sql`
+            SELECT id, ${expr} AS data, created_at, updated_at
+              FROM model_records
+             WHERE ${Prisma.join(onde, ' AND ')}
+             ORDER BY created_at DESC
+             LIMIT ${take} OFFSET ${offset}
+          `)
+          return linhas.map((r) => {
+            const data = r.data as Record<string, unknown>
+            return {
+              ...data,
+              id: (typeof data.id === 'string' && data.id) || r.id,
+              // Os dois caminhos têm de devolver o MESMO tipo, ou a comparação
+              // byte a byte quebraria por um motivo que não tem nada a ver com
+              // anexo. Medido no Postgres 16: o `$queryRaw` já devolve `Date`
+              // para `timestamp without time zone`, então o `new Date` é só
+              // uma cópia defensiva — nenhum teste consegue distingui-lo.
+              createdAt: new Date(r.created_at),
+              updatedAt: new Date(r.updated_at),
+            }
+          })
+        }
 
         const records = await prisma.modelRecord.findMany({
           where: {
