@@ -38,6 +38,15 @@ function fromLegacy(c: WAConversation): WAInboxConversation {
           timestamp: c.last_message.timestamp,
         }
       : null,
+    // Sem esta linha a tela nunca dizia "Prévia indisponível".
+    //
+    // O servidor calcula o campo (rota 432) e o tipo já o declarava; a
+    // apresentação já sabia desenhá-lo (`conversation-meta.tsx:46`). Só este
+    // `fromLegacy`, que copia campo por campo, o deixava cair no chão — e
+    // conversa com histórico fora do alcance da leitura aparecia como "Sem
+    // mensagens", que é outra coisa: uma diz "não consegui ler", a outra diz
+    // "não existe".
+    previa_indisponivel: c.previa_indisponivel ?? false,
     phase: c.phase ?? 'novo',
     priority: c.priority ?? 'medium',
     assigned_to: c.assigned_to ?? null,
