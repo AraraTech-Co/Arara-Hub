@@ -68,7 +68,7 @@ function cenario() {
     },
     WhatsAppMessage: {
       findMany: async (f) => {
-        const ch = Object.keys(f || {})
+        const ch = Object.keys(f || {}).filter((k) => k !== 'mascararCampos')
         if (!ch.length) {
           // A varredura de verdade: só as 500 mais NOVAS. A antiga não entra.
           estado.varreu++
