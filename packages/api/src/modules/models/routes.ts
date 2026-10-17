@@ -2,6 +2,7 @@ import type { FastifyPluginAsync } from 'fastify'
 import type { Prisma } from '@prisma/client'
 import { z } from 'zod'
 import { canAccessApp, forbidden, requireActor } from '../../lib/auth.js'
+import { invalidarModelsDoApp } from '../../lib/models-cache.js'
 import { namespacedModelName, shortModelName } from '../../lib/models.js'
 
 const modelSchema = z.object({
@@ -51,14 +52,20 @@ export const modelRoutes: FastifyPluginAsync = async (app) => {
     const shortName = shortModelName(found.slug, fullName)
 
     try {
-      const model = await app.prisma.modelDef.create({
-        data: {
-          appId: found.id,
-          name: fullName,
-          schema: parsed.data.schema as Prisma.InputJsonValue,
-          version: 1,
-        },
-      })
+      let model
+      try {
+        model = await app.prisma.modelDef.create({
+          data: {
+            appId: found.id,
+            name: fullName,
+            schema: parsed.data.schema as Prisma.InputJsonValue,
+            version: 1,
+          },
+        })
+      } finally {
+        // Os modelos guardados do app deixam de valer assim que a escrita termina.
+        invalidarModelsDoApp(found.id)
+      }
       return reply.status(201).send({
         model,
         alias: shortName,
@@ -111,13 +118,19 @@ export const modelRoutes: FastifyPluginAsync = async (app) => {
       return reply.status(404).send({ error: 'Model not found' })
     }
 
-    const model = await app.prisma.modelDef.update({
-      where: { id: existing.id },
-      data: {
-        schema: parsed.data.schema as Prisma.InputJsonValue,
-        version: existing.version + 1,
-      },
-    })
+    let model
+    try {
+      model = await app.prisma.modelDef.update({
+        where: { id: existing.id },
+        data: {
+          schema: parsed.data.schema as Prisma.InputJsonValue,
+          version: existing.version + 1,
+        },
+      })
+    } finally {
+      // Os modelos guardados do app deixam de valer assim que a escrita termina.
+      invalidarModelsDoApp(found.id)
+    }
     return {
       model,
       alias: shortModelName(found.slug, model.name),
