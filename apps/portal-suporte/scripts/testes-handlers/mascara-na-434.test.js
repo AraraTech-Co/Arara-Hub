@@ -217,11 +217,24 @@ const mascarada = (a) => Array.isArray(a.mascararCampos) && a.mascararCampos.len
       const c = JSON.parse('"' + m[5] + '"')
       if (/mascararCampos/.test(c)) rotas.push(`${m[1]} ${m[3]} ${m[4]}`)
     }
-    // EXATAMENTE estas duas: a 434 (que só pergunta se há anexo) e a 432 (que nem
-    // expõe o anexo). As rotas que leem o CONTEÚDO usam `findById` e a opção não
-    // as alcança; este teste reprova se qualquer outra passar a usá-la.
-    ok('só a 434 e a 432 usam mascararCampos (as rotas que leem o CONTEÚDO nunca)',
-      rotas.length === 2 && rotas.some((r) => r.startsWith('434 ')) && rotas.some((r) => r.startsWith('432 ')), rotas)
+    // EXATAMENTE estas três: a 434 (que só pergunta se há anexo), a 432 (que nem
+    // expõe o anexo) e a 485, só na leitura de reserva da REAÇÃO. As rotas que leem
+    // o CONTEÚDO usam `findById` e a opção não as alcança; este teste reprova se
+    // qualquer outra passar a usá-la.
+    ok('só a 434, a 432 e a 485 usam mascararCampos (as rotas que leem o CONTEÚDO nunca)',
+      rotas.length === 3 && ['432 ', '434 ', '485 '].every((p) => rotas.some((r) => r.startsWith(p))), rotas)
+    // Na 485 a máscara só é segura enquanto a gravação for campo a campo: o objeto
+    // lido nunca volta ao banco (o "1" da máscara seria persistido e o anexo morreria).
+    const c485 = (() => {
+      const re2 = /485 \w+ POST \/whatsapp\/inbound[\s\S]{0,400}?compileController\(\s*"((?:[^"\\]|\\.)*)"\s*\)/
+      return JSON.parse('"' + re2.exec(s)[1] + '"')
+    })()
+    ok('485: a máscara aparece duas vezes, nas leituras da reação (a filtrada e a reserva)',
+      (c485.match(/mascararCampos/g) || []).length === 2
+      && c485.split('findMany({ mascararCampos: ["media_data"] })').length - 1 === 1
+      && c485.split('findMany({ message_id: _alvoId, mascararCampos: ["media_data"] })').length - 1 === 1, (c485.match(/mascararCampos/g) || []).length)
+    ok('485: a reação grava SÓ `reacoes` (o objeto lido não volta ao banco)',
+      c485.split('update(_alvo.id, { reacoes: _reacs })').length - 1 === 1 && !/update\(_alvo\.id, (?!\{ reacoes)/.test(c485), 'gravação mudou')
   }
 
   fim()
