@@ -51,7 +51,9 @@ const compilar = (c) => {
 const PEDIDO = 'findMany({ mascararCampos: ["media_data"] })';
 ok('a 485 contém o pedido de máscara da reserva, uma vez', cod.split(PEDIDO).length - 1 === 1, cod.split(PEDIDO).length - 1);
 const NOVO = compilar(cod);
-const ANTIGO = compilar(cod.replace(PEDIDO, 'findMany({})'));
+const PEDIDO_FILTRO = 'findMany({ message_id: _alvoId, mascararCampos: ["media_data"] })';
+ok('a 485 contém o pedido de máscara da leitura filtrada, uma vez', cod.split(PEDIDO_FILTRO).length - 1 === 1, cod.split(PEDIDO_FILTRO).length - 1);
+const ANTIGO = compilar(cod.replace(PEDIDO, 'findMany({})').replace(PEDIDO_FILTRO, 'findMany({ message_id: _alvoId })'));
 
 const SLUG = 'real-485r';
 const EMAIL = `${SLUG}@teste.local`;
@@ -76,6 +78,10 @@ try {
       timestamp: new Date(Date.UTC(2026, 0, 1, 0, 0, i)).toISOString() };
     if (i % 2 === 0) { d.media_data = ANEXO; d.media_type = 'image'; }
     linhas.push({ appId: app.id, modelName: `${SLUG}_Msg`, data: d });
+  }
+  for (let i = 0; i < 20; i++) {
+    linhas.push({ appId: app.id, modelName: `${SLUG}_Msg`, data: { id: 'f' + i, conversation_id: 'c1', message_id: 'WF_' + i, from_me: false, body: 'filtravel ' + i,
+      sender_jid: JID, timestamp: new Date(Date.UTC(2026, 1, 1, 0, 0, i)).toISOString(), media_data: ANEXO, media_type: 'image' } });
   }
   await p.modelRecord.createMany({ data: linhas });
 
@@ -104,8 +110,8 @@ try {
 
   bytes = 0; chamadas = [];
   const rn = await NOVO(ctx('WA_20')); const bytesNovo = bytes; const chamadasNovo = chamadas;
-  ok('TRAVA: a reserva rodou sobre a camada real (por message_id veio vazio, depois 120 linhas mascaradas)',
-    chamadasNovo.length === 2 && chamadasNovo[0].linhas === 0 && chamadasNovo[1].linhas === 120, chamadasNovo);
+  ok('TRAVA: a reserva rodou sobre a camada real (por message_id veio vazio, depois 140 linhas mascaradas)',
+    chamadasNovo.length === 2 && chamadasNovo[0].linhas === 0 && chamadasNovo[1].linhas === 140, chamadasNovo);
   ok('a rota responde 200 com e sem a máscara', rn.status === 200 && ra.status === 200, [rn.status, ra.status]);
   const depois = await lerDoBanco('m20');
   ok('a reação foi gravada na mensagem alvo, com o emoji', Array.isArray(depois.reacoes) && depois.reacoes.some((x) => x.emoji === '👍'), depois.reacoes);
@@ -115,7 +121,22 @@ try {
   ok('os outros campos do alvo ficaram como estavam', depois.body === 'msg 20' && depois.messageId === 'WA_20' && depois.media_type === 'image', depois);
   ok('a reação gravada é a mesma com e sem a máscara', JSON.stringify(depois.reacoes.map((x) => x.emoji)) === JSON.stringify(depoisAntigo.reacoes.map((x) => x.emoji)), 'divergiu');
   ok('a máscara reduz o que sai do banco (o pedido chega à camada)', bytesNovo * 20 < bytesAntigo, { bytesNovo, bytesAntigo });
-  console.log(`INFO  bytes da reserva da reação, 120 mensagens: sem máscara ${(bytesAntigo / 1048576).toFixed(2)} MB | com máscara ${(bytesNovo / 1024).toFixed(1)} KB | -${(100 - 100 * bytesNovo / bytesAntigo).toFixed(2)}%`);
+  console.log(`INFO  bytes da reserva da reação, 140 mensagens: sem máscara ${(bytesAntigo / 1048576).toFixed(2)} MB | com máscara ${(bytesNovo / 1024).toFixed(1)} KB | -${(100 - 100 * bytesNovo / bytesAntigo).toFixed(2)}%`);
+
+  // ── leitura COMUM: o filtro por message_id ACHA a mensagem, que tem anexo de 200 KB ──
+  chamadas = []; bytes = 0;
+  const fa = await ANTIGO(ctx('WF_3')); const bytesFiltAntigo = bytes;
+  const f0 = await lerDoBanco('f3');
+  await p.modelRecord.updateMany({ where: { appId: app.id, modelName: `${SLUG}_Msg`, data: { path: ['id'], equals: 'f3' } }, data: { data: { ...f0, reacoes: undefined } } });
+  chamadas = []; bytes = 0;
+  const fn = await NOVO(ctx('WF_3')); const bytesFiltNovo = bytes; const chamadasFilt = chamadas;
+  ok('TRAVA: a leitura filtrada ACHOU a mensagem na camada real e a reserva não rodou (1 leitura, 1 linha)', chamadasFilt.length === 1 && chamadasFilt[0].linhas === 1, chamadasFilt);
+  ok('a rota responde 200 com e sem a máscara na leitura filtrada', fn.status === 200 && fa.status === 200, [fn.status, fa.status]);
+  const f3 = await lerDoBanco('f3');
+  ok('reação gravada na mensagem achada pelo filtro, com o emoji', Array.isArray(f3.reacoes) && f3.reacoes.some((x) => x.emoji === '👍'), f3.reacoes);
+  ok('O ANEXO CONTINUA INTACTO NO BANCO depois da reação achada pelo filtro', f3.media_data === ANEXO, String(f3.media_data).slice(0, 20));
+  ok('a leitura filtrada mascarada não traz o base64 (bytes < 5 KB) e a de antes trazia (>= 200 KB)', bytesFiltNovo < 5 * 1024 && bytesFiltAntigo >= 200 * 1024, { bytesFiltNovo, bytesFiltAntigo });
+  console.log(`INFO  bytes da leitura filtrada da reação, 1 mensagem com anexo: sem máscara ${(bytesFiltAntigo / 1024).toFixed(1)} KB | com máscara ${(bytesFiltNovo / 1024).toFixed(2)} KB`);
 } finally {
   await p.modelRecord.deleteMany({ where: { appId: app.id } });
   await p.modelDef.deleteMany({ where: { appId: app.id } });

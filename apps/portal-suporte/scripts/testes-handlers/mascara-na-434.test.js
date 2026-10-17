@@ -229,8 +229,10 @@ const mascarada = (a) => Array.isArray(a.mascararCampos) && a.mascararCampos.len
       const re2 = /485 \w+ POST \/whatsapp\/inbound[\s\S]{0,400}?compileController\(\s*"((?:[^"\\]|\\.)*)"\s*\)/
       return JSON.parse('"' + re2.exec(s)[1] + '"')
     })()
-    ok('485: a máscara aparece uma vez, na reserva da reação',
-      (c485.match(/mascararCampos/g) || []).length === 1 && c485.split('findMany({ mascararCampos: ["media_data"] })').length - 1 === 1, (c485.match(/mascararCampos/g) || []).length)
+    ok('485: a máscara aparece duas vezes, nas leituras da reação (a filtrada e a reserva)',
+      (c485.match(/mascararCampos/g) || []).length === 2
+      && c485.split('findMany({ mascararCampos: ["media_data"] })').length - 1 === 1
+      && c485.split('findMany({ message_id: _alvoId, mascararCampos: ["media_data"] })').length - 1 === 1, (c485.match(/mascararCampos/g) || []).length)
     ok('485: a reação grava SÓ `reacoes` (o objeto lido não volta ao banco)',
       c485.split('update(_alvo.id, { reacoes: _reacs })').length - 1 === 1 && !/update\(_alvo\.id, (?!\{ reacoes)/.test(c485), 'gravação mudou')
   }

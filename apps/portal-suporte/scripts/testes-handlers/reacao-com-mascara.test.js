@@ -1,9 +1,10 @@
 // A reação do cliente (rota 485) acha a mensagem alvo pelo id; quando o filtro por
 // `message_id` não acha (a mensagem foi gravada com o campo `messageId`), a rota
 // lê a tabela como reserva. Essa leitura traz até 500 mensagens e, com elas, o
-// `media_data` de cada uma, que a reação não usa.
+// `media_data` de cada uma, que a reação não usa. A leitura comum (o filtro por
+// `message_id` acha a mensagem) traz o anexo do alvo, de 200 a 400 KB por reação.
 //
-// O QUE SE GARANTE: a reserva pede `mascararCampos: ["media_data"]`; a reação cai
+// O QUE SE GARANTE: as DUAS leituras (a filtrada e a reserva) pedem `mascararCampos: ["media_data"]`; a reação cai
 // na mesma mensagem, com o mesmo emoji, e o que sai do banco nessa leitura encolhe.
 //
 // A REGRA QUE TORNA ISSO SEGURO: a gravação é `update(id, { reacoes })`, campo a
@@ -42,7 +43,8 @@ function compilar(codigo) {
 
 const NOVO = codigoDe(MARCA)
 const PEDIDO = 'findMany({ mascararCampos: ["media_data"] })'
-const SEM_MASCARA = NOVO.replace(PEDIDO, 'findMany({})')
+const PEDIDO_FILTRO = 'findMany({ message_id: _alvoId, mascararCampos: ["media_data"] })'
+const SEM_MASCARA = NOVO.replace(PEDIDO, 'findMany({})').replace(PEDIDO_FILTRO, 'findMany({ message_id: _alvoId })')
 
 const JID = '5519999990001@s.whatsapp.net'
 const SEGREDO = 'segredo-da-rota'
@@ -65,6 +67,8 @@ async function rodar(codigo, idAlvo, linhas = massa()) {
   const chamadas = []
   const patches = []
   let bytesReserva = 0
+  let bytesLidos = 0
+  let textoLido = ''
   const handler = compilar(codigo)
   const conversa = { id: 'c1', remote_jid: JID, conta_id: 'default', phase: 'em_atendimento', assigned_to_id: 'u1', status: 'open' }
   const models = {
@@ -73,6 +77,7 @@ async function rodar(codigo, idAlvo, linhas = massa()) {
       findMany: async (f) => {
         const r = camadaFindMany(linhas, f)
         chamadas.push({ filtro: f || {}, linhas: r.length })
+        const j = JSON.stringify(r); bytesLidos += j.length; textoLido += j.slice(0, 200000)
         if (f && f.mascararCampos) bytesReserva += JSON.stringify(r).length
         if (f && !f.mascararCampos && Object.keys(f).length === 0) bytesReserva += JSON.stringify(r).length
         return r
@@ -96,11 +101,24 @@ async function rodar(codigo, idAlvo, linhas = massa()) {
     models, secrets: { get: async (n) => (n === 'avisa_webhook_secret' ? SEGREDO : 'tok') },
     fetch: async () => ({ status: 200, body: '{}' }), reply: reply(),
   })
-  return { r, chamadas, patches, bytesReserva, linhas }
+  return { r, chamadas, patches, bytesReserva, bytesLidos, textoLido, linhas }
 }
 
 ;(async () => {
-  ok('o pedido de máscara aparece exatamente uma vez no código da rota', NOVO.split(PEDIDO).length - 1 === 1 && SEM_MASCARA !== NOVO, 'âncora')
+  ok('os dois pedidos de máscara (filtrada e reserva) aparecem exatamente uma vez cada', NOVO.split(PEDIDO).length - 1 === 1 && NOVO.split(PEDIDO_FILTRO).length - 1 === 1 && SEM_MASCARA !== NOVO && !SEM_MASCARA.includes('mascararCampos'), 'âncora')
+
+  // ── leitura COMUM: o filtro por message_id ACHA a mensagem (gravada como `message_id`) ──
+  const achaveis = () => massa().map((m, i) => ({ ...m, messageId: undefined, message_id: 'WA_' + i }))
+  const filtrada = await rodar(NOVO, 'WA_10', achaveis())
+  ok('TRAVA: a leitura filtrada ACHOU a mensagem e a reserva não rodou (1 leitura, 1 linha)', filtrada.chamadas.length === 1 && filtrada.chamadas[0].linhas === 1 && filtrada.chamadas[0].filtro.message_id === 'WA_10', filtrada.chamadas)
+  ok('a leitura filtrada pede o anexo mascarado', JSON.stringify(filtrada.chamadas[0].filtro.mascararCampos) === JSON.stringify(['media_data']), filtrada.chamadas[0].filtro)
+  ok('NENHUM base64 sai nessa leitura', filtrada.bytesLidos < 5 * 1024 && !filtrada.textoLido.includes('AAAAAAAAAA'), filtrada.bytesLidos)
+  ok('a reação cai na mensagem certa, grava SÓ `reacoes` e o anexo fica intacto no banco',
+    filtrada.patches.length === 1 && filtrada.patches[0].id === 'm10' && JSON.stringify(Object.keys(filtrada.patches[0]).sort()) === JSON.stringify(['id', 'reacoes'])
+    && filtrada.linhas.find((x) => x.id === 'm10').media_data === ANEXO, filtrada.patches)
+  const filtradaAntiga = await rodar(SEM_MASCARA, 'WA_10', achaveis())
+  ok('CONTROLE: o bloco de antes trazia o anexo do alvo nessa leitura (>= 200 KB)', filtradaAntiga.bytesLidos >= 200 * 1024 && filtradaAntiga.textoLido.includes('AAAAAAAAAA'), filtradaAntiga.bytesLidos)
+  ok('a gravação é a mesma com e sem a máscara', JSON.stringify(filtrada.patches.map((p) => p.reacoes.map((x) => x.emoji))) === JSON.stringify(filtradaAntiga.patches.map((p) => p.reacoes.map((x) => x.emoji))), 'divergiu')
 
   // alvo COM anexo (m10 tem media_data) e alvo SEM anexo (m11)
   const com = await rodar(NOVO, 'WA_10')
@@ -131,6 +149,7 @@ async function rodar(codigo, idAlvo, linhas = massa()) {
   // mutações
   const muts = [
     ['reserva sem a máscara', PEDIDO, 'findMany({})'],
+    ['leitura filtrada sem a máscara', PEDIDO_FILTRO, 'findMany({ message_id: _alvoId })'],
     ['reserva removida', PEDIDO, 'findMany({ message_id: "__nunca__" })'],
     ['regrava o objeto lido inteiro', 'update(_alvo.id, { reacoes: _reacs })', 'update(_alvo.id, Object.assign({}, _alvo, { reacoes: _reacs }))'],
   ]
@@ -141,6 +160,9 @@ async function rodar(codigo, idAlvo, linhas = massa()) {
     if (JSON.stringify(Object.keys(a.patches[0] || {}).sort()) !== JSON.stringify(['id', 'reacoes'])) f.push('so-reacoes')
     if (a.linhas.find((x) => x.id === 'm10').media_data !== ANEXO) f.push('anexo-intacto')
     if (!(a.bytesReserva * 20 < antigo.bytesReserva)) f.push('bytes')
+    const b = await rodar(codigo, 'WA_10', achaveis())
+    if (!(b.bytesLidos < 5 * 1024 && !b.textoLido.includes('AAAAAAAAAA'))) f.push('filtrada-com-anexo')
+    if (b.patches.length !== 1 || JSON.stringify(Object.keys(b.patches[0]).sort()) !== JSON.stringify(['id', 'reacoes']) || b.linhas.find((x) => x.id === 'm10').media_data !== ANEXO) f.push('filtrada-gravacao')
     return f
   }
   ok('a bateria passa limpa no código novo', (await bateria(NOVO)).length === 0, await bateria(NOVO))
