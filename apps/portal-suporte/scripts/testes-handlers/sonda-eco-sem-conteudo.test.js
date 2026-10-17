@@ -157,27 +157,41 @@ const capturas = (c) => c.estado.eventos.filter((e) => e.kind === 'diag_eco')
     ok('com 29 registros, ainda grava o 30º', capturas(c).length === 30, capturas(c).length)
   }
 
-  // ══ O TETO VALE MESMO SE O FILTRO POR `kind` NÃO FUNCIONAR ═══════════
+  // ══ SE A LEITURA DA CONTAGEM FALHA, A SONDA NÃO GRAVA ═════════════════
   //
-  // A plataforma devolve ZERO para filtro em campo que ela não reconhece, e
-  // zero por filtro ignorado é indistinguível de zero por tabela vazia. Sem
-  // confirmar com uma varredura, a contagem ficaria em 0 para sempre e a sonda
-  // nunca pararia — viraria registro em toda mensagem nossa, o log permanente
-  // que ela não pode ser.
+  // Sem contagem não há teto. Se a falha deixasse a contagem em 0, a sonda
+  // gravaria em toda mensagem nossa, e justamente quando o banco está pior: o
+  // instrumento viraria carga na hora em que a carga é o problema. Sonda
+  // silenciosa é aceitável; sonda que grava sem limite não é.
+  {
+    const c = cenario({ eventos: [] })
+    const lerOriginal = c.models.WaConversationEvents.findMany
+    c.models.WaConversationEvents.findMany = async (f) => {
+      if (f && f.kind === 'diag_eco') throw new Error('banco indisponível')
+      return lerOriginal(f)
+    }
+    await inbound(c.ctx(corpoCru({ id: 'WAID_F' })))
+    ok('leitura da contagem falhou: a sonda não grava', capturas(c).length === 0, capturas(c).length)
+
+    const normal = cenario({ eventos: [] })
+    await inbound(normal.ctx(corpoCru({ id: 'WAID_G' })))
+    ok('controle: com a leitura funcionando, a mesma entrada grava', capturas(normal).length === 1, capturas(normal).length)
+  }
+
+  // ══ O FILTRO NÃO É MAIS CONFERIDO POR VARREDURA ══════════════════════
+  //
+  // A reserva por varredura existia por desconfiança do filtro por campo, que
+  // foi provado contra Postgres real. Se o filtro devolver vazio, a contagem é
+  // zero e a sonda grava; sem varredura de reserva, a tabela não é lida inteira.
   {
     const cheios = []
-    for (let i = 0; i < 30; i++) {
-      cheios.push({ id: 'deco_' + i, kind: 'diag_eco', conversation_id: 'diagnostico', payload: '{}', created_at: new Date().toISOString() })
-    }
+    for (let i = 0; i < 30; i++) cheios.push({ id: 'deco_' + i, kind: 'diag_eco', conversation_id: 'diagnostico', payload: '{}', created_at: new Date().toISOString() })
     const c = cenario({ eventos: cheios })
-    // O filtro "funciona" devolvendo vazio, como a plataforma faz com campo
-    // que não reconhece. A varredura sem filtro continua verdadeira.
-    const todos = c.models.WaConversationEvents.findMany
-    c.models.WaConversationEvents.findMany = async (f) => (
-      Object.keys(f || {}).length ? [] : todos({})
-    )
-    await inbound(c.ctx(corpoCru({ id: 'WAID_F' })))
-    ok('filtro por kind ignorado: o teto ainda vale', capturas(c).length === 30, capturas(c).length)
+    const lerOriginal = c.models.WaConversationEvents.findMany
+    const leituras = []
+    c.models.WaConversationEvents.findMany = async (f) => { leituras.push(Object.keys(f || {}).length); return lerOriginal(f) }
+    await inbound(c.ctx(corpoCru({ id: 'WAID_H' })))
+    ok('teto cheio: não grava e não lê a tabela inteira (só leituras com filtro)', capturas(c).length === 30 && leituras.length >= 1 && leituras.every((n) => n > 0), { capturas: capturas(c).length, leituras })
   }
 
   // ══ a sonda nunca atrapalha a entrada ════════════════════════════════
