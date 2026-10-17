@@ -4,6 +4,7 @@
 // consulta só isso era impossível: a consulta filtrada também tem teto de 500.
 // Roda com: node conversa-acima-de-500.test.js
 const { carregarHandler, reply, ok, fim } = require('./_carregar.js')
+const { camadaFindMany } = require('./_camada.js')
 
 const handler = carregarHandler('434 whatsapp GET /whatsapp/:id/messages')
 const TETO = 500
@@ -19,26 +20,18 @@ function conversaCom(n) {
   }))
 }
 
-function ctxCom(todas, { filtraLado = true } = {}) {
+function ctxCom(todas, { ignoraOffset = false } = {}) {
   const conversa = { id: 'c1', remote_jid: '5519999990000@s.whatsapp.net', created_at: '2026-01-01T00:00:00Z' }
   return {
     params: { id: 'c1' }, query: {}, body: {}, headers: {},
     user: { id: 'u1' },
     models: {
       WhatsAppMessage: {
-        findMany: async (arg) => {
-          // `mascararCampos` é opção da camada, não filtro de campo (está em
-          // `metaKeys` em lib/models.ts): o mock espelha isso, senão ele a
-          // trataria como um campo que nenhuma linha tem.
-          const chaves = Object.keys(arg || {}).filter((k) => k !== 'mascararCampos')
-          if (!chaves.length) return todas.slice(0, TETO)
-          // O filtro por lado pode não existir no banco: o fallback precisa
-          // continuar funcionando.
-          if ('from_me' in arg && !filtraLado) return []
-          return todas
-            .filter((m) => chaves.every((k) => String(m[k] ?? '') === String(arg[k])))
-            .slice(0, TETO)
-        },
+        // A camada de verdade, emulada em _camada.js (mais recentes primeiro,
+        // filtro antes do teto, `offset`/`limit`). `ignoraOffset` simula uma
+        // plataforma que não honrasse o `offset`: a rota não pode inventar
+        // mensagens nem dizer que está completa.
+        findMany: async (arg) => camadaFindMany(todas, ignoraOffset ? { ...arg, offset: 0 } : arg),
       },
       WhatsAppConversation: { findById: async () => conversa, findMany: async () => [conversa] },
       Profile: { findMany: async () => [], findById: async () => ({ id: 'u1', role: 'admin' }) },
@@ -74,7 +67,7 @@ const hist = (r) => {
   // ── o caso do critério de aceite: 600 mensagens ─────────────────────────
   r = await handler(ctxCom(conversaCom(600)))
   ok('conversa de 600 mensagens vem INTEIRA (era 500)', quantas(r) === 600, quantas(r))
-  ok('  e a via diz que precisou partir', hist(r) && hist(r).via === 'filtro+lados', hist(r))
+  ok('  e a via diz que precisou de mais de uma página', hist(r) && hist(r).via === 'filtro+paginas', hist(r))
   ok('  sem acusar truncamento, porque coube', hist(r) && hist(r).truncado === false, hist(r))
 
   // ── 900: ainda cabe nas duas metades ────────────────────────────────────
@@ -86,9 +79,15 @@ const hist = (r) => {
   ok('conversa de 1400 traz as 1000 que cabem', quantas(r) === 1000, quantas(r))
   ok('  e ACUSA que truncou', hist(r) && hist(r).truncado === true, hist(r))
 
-  // ── o filtro por lado não existir não pode piorar nada ──────────────────
-  r = await handler(ctxCom(conversaCom(600), { filtraLado: false }))
-  ok('sem o filtro por lado, volta ao comportamento anterior (500)', quantas(r) === 500, quantas(r))
+  // ── exatamente 1000: cabe, mas não dá para saber se há mais ─────────────
+  r = await handler(ctxCom(conversaCom(1000)))
+  ok('conversa de exatamente 1000 vem inteira', quantas(r) === 1000, quantas(r))
+  ok('  e ACUSA que pode faltar (a última página veio cheia)', hist(r) && hist(r).truncado === true, hist(r))
+
+  // ── a plataforma ignorar o offset não pode piorar nada nem mentir ───────
+  r = await handler(ctxCom(conversaCom(600), { ignoraOffset: true }))
+  ok('sem honrar o offset, volta a 500 (sem inventar nem duplicar)', quantas(r) === 500, quantas(r))
+  ok('  e ACUSA que pode faltar, em vez de dizer que está completa', hist(r) && hist(r).truncado === true, hist(r))
 
   // ── sem duplicar: a união é por id ──────────────────────────────────────
   const r600 = await handler(ctxCom(conversaCom(600)))

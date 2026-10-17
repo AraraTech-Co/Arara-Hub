@@ -53,7 +53,7 @@ const compilar = (c) => {
 };
 const PEDIDOS = [
   ['{ conversation_id: id, mascararCampos: _MASCARAR_MIDIA }', '{ conversation_id: id }'],
-  ['{ conversation_id: id, from_me: _lados[_l], mascararCampos: _MASCARAR_MIDIA }', '{ conversation_id: id, from_me: _lados[_l] }'],
+  ['{ conversation_id: id, limit: _TAM_PAGINA, offset: _pg * _TAM_PAGINA, mascararCampos: _MASCARAR_MIDIA }', '{ conversation_id: id, limit: _TAM_PAGINA, offset: _pg * _TAM_PAGINA }'],
   ['findMany({ mascararCampos: _MASCARAR_MIDIA })', 'findMany({})'],
 ];
 const ausentes = [];
