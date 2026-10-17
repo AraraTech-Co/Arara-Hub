@@ -194,9 +194,10 @@ const cheioDeOutros = () => Array.from({ length: 600 }, (_, i) => ({ id: 'o' + i
     const c485 = codigoDe('485 whatsapp POST /whatsapp/inbound')
     const c448 = codigoDe('448 whatsapp GET /whatsapp/diagnostico/midia')
     ok('485 mantém diag_eco', dentro(c485, 'diag_eco') === 3, dentro(c485, 'diag_eco'))
-    ok('485 mantém diag_midia', dentro(c485, 'diag_midia') === 4, dentro(c485, 'diag_midia'))
-    ok('485 mantém diag_shape', dentro(c485, 'diag_shape') === 1, dentro(c485, 'diag_shape'))
-    ok('485 mantém a sonda do nome de grupo (a da entrada)', dentro(c485, 'diag_grupo_nome') === 4, dentro(c485, 'diag_grupo_nome'))
+    // pelo ponto de GRAVAÇÃO de cada sonda (`kind: "…",`), que não depende de quantas vezes o nome é lido
+    ok('485 mantém diag_midia', dentro(c485, 'kind: "diag_midia",') === 1, dentro(c485, 'kind: "diag_midia",'))
+    ok('485 mantém diag_shape', dentro(c485, 'kind: "diag_shape",') === 1, dentro(c485, 'kind: "diag_shape",'))
+    ok('485 mantém a sonda do nome de grupo (a da entrada)', dentro(c485, 'kind: "diag_grupo_nome",') === 1, dentro(c485, 'kind: "diag_grupo_nome",'))
     ok('448 mantém a leitura de diag_eco e diag_midia', dentro(c448, 'diag_eco') === 3 && dentro(c448, 'diag_midia') === 1, [dentro(c448, 'diag_eco'), dentro(c448, 'diag_midia')])
     ok('as duas sondas removidas não existem mais em nenhuma rota',
       !cod434.includes('diag_historico') && !cod432.includes('diag_grupo_nome'), 0)
