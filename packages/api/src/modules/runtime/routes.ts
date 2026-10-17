@@ -1,5 +1,4 @@
 import type { FastifyPluginAsync } from 'fastify'
-import { match } from 'path-to-regexp'
 import {
   canAccessApp,
   forbidden,
@@ -12,15 +11,9 @@ import { requestHeadersForSandbox } from '../../plugins/raw-body.js'
 import { extractWebhookToken, verifyWebhookSecret } from '../../lib/webhook-auth.js'
 import { isMultipartRequest, parseRuntimeMultipart } from '../../lib/multipart-runtime.js'
 import { getAppRoutes } from '../../lib/static-registry.js'
+import { matchStaticRoute, type MatchedStatic } from '../../lib/route-matcher.js'
 import { buildHandlerCtx } from '../../lib/build-handler-ctx.js'
-import type { StaticRoute } from '../../lib/handler-ctx.js'
 import { resolveStorageSlug } from '../../lib/app-slugs.js'
-
-type MatchedStatic = {
-  route: StaticRoute
-  params: Record<string, string>
-  score: number
-}
 
 /**
  * Code-first runtime: handlers live in packages/api/src/apps/<slug>.
@@ -38,7 +31,6 @@ export const runtimeRoutes: FastifyPluginAsync = async (app) => {
     }
 
     const method = request.method.toUpperCase()
-    let matched: MatchedStatic | null = null
 
     // Match static handlers registered under the public request slug (e.g. portal-horas)
     // and also under the storage slug for backwards compatibility.
@@ -46,19 +38,7 @@ export const runtimeRoutes: FastifyPluginAsync = async (app) => {
       ...getAppRoutes(requestSlug),
       ...(requestSlug !== storageSlug ? getAppRoutes(storageSlug) : []),
     ]
-    for (const route of routePool) {
-      if (route.method !== method) continue
-      const matcher = match(route.path, { decode: decodeURIComponent })
-      const result = matcher(restPath)
-      if (!result) continue
-      const score = (route.path.match(/:/g) || []).length
-      const candidate: MatchedStatic = {
-        route,
-        params: result.params as Record<string, string>,
-        score,
-      }
-      if (!matched || candidate.score < matched.score) matched = candidate
-    }
+    const matched: MatchedStatic | null = matchStaticRoute(routePool, method, restPath)
 
     if (!matched) {
       return reply.status(404).send({
