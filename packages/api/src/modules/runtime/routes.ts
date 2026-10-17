@@ -6,7 +6,7 @@ import {
   unauthorized,
   userHasPermission,
 } from '../../lib/auth.js'
-import { buildModelsApi } from '../../lib/models.js'
+import { modelsDoApp } from '../../lib/models-cache.js'
 import { requestHeadersForSandbox } from '../../plugins/raw-body.js'
 import { extractWebhookToken, verifyWebhookSecret } from '../../lib/webhook-auth.js'
 import { isMultipartRequest, parseRuntimeMultipart } from '../../lib/multipart-runtime.js'
@@ -112,7 +112,7 @@ export const runtimeRoutes: FastifyPluginAsync = async (app) => {
     }
 
     // Model storage still uses the DB/storage slug (time-management-*), not the public alias.
-    const models = await buildModelsApi(app.prisma, found.id, storageSlug)
+    const models = await modelsDoApp(app.prisma, found.id, storageSlug)
     const headers = requestHeadersForSandbox(request)
     const ctx = await buildHandlerCtx({
       method,

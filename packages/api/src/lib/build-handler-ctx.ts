@@ -25,13 +25,14 @@ function randomBytesHex(n: number): string {
  * de uma vez: 23 rotas o leem 3×, 108 o leem 2×. São ~500 handlers escritos à
  * mão, em string — consertar um por um não é caminho. Aqui é um lugar só.
  *
- * POR QUE AQUI E NÃO NO `buildModelsApi`: hoje os dois têm vida de uma
- * requisição, então daria no mesmo. Mas há entrega planejada para GUARDAR o
- * `buildModelsApi` entre requisições; se o memo morasse lá, naquele dia a
- * identidade passaria a ser cacheada entre requisições em silêncio, e mudança
+ * POR QUE AQUI E NÃO NO `buildModelsApi`: os modelos do app são guardados
+ * entre requisições (`models-cache.ts`). Se o memo morasse na construção dos
+ * modelos, a identidade seria cacheada entre requisições em silêncio, e mudança
  * de nível de acesso deixaria de valer na hora. Seria regressão de autorização
- * causada por um PR de desempenho. No `ctx` o memo morre com a requisição,
- * faça aquela entrega o que fizer.
+ * causada por um PR de desempenho. No `ctx` o memo morre com a requisição: o
+ * cache guarda o modelo CRU e este embrulho é refeito a cada requisição.
+ * `models-cache.test.mjs` prova que dois contextos sobre os mesmos objetos de
+ * modelo não compartilham o memo.
  *
  * SÓ `Profile`, e só `findById`. Nada de dado de negócio: cachear uma conversa
  * ou um chamado por requisição é outra discussão, com outros riscos.
