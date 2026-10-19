@@ -2,6 +2,7 @@ import { randomBytes as nodeRandomBytes, randomUUID as nodeRandomUUID } from 'no
 import type { PrismaClient } from '@prisma/client'
 import { decryptSecret } from './app-secrets.js'
 import { hashPassword } from './crypto.js'
+import { changeOwnPassword } from './change-password.js'
 import type { ModelApi } from './models.js'
 import { createNotification, serializeNotification } from './notifications.js'
 import { sandboxFetch, type SandboxFetchInit } from './sandbox-fetch.js'
@@ -170,6 +171,19 @@ export async function buildHandlerCtx(input: {
         data: { passwordHash: await hashPassword(password) },
       })
       return { success: true as const }
+    },
+    async changeOwnPassword(args: {
+      userId: string
+      current: string
+      next: string
+      keepRefreshToken?: string
+    }) {
+      return changeOwnPassword(input.prisma, {
+        userId: args.userId,
+        current: args.current,
+        next: args.next,
+        manterRefreshToken: args.keepRefreshToken,
+      })
     },
   }
 
