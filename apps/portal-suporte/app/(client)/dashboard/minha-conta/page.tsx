@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AlertCircle, CheckCircle, KeyRound } from 'lucide-react'
 import Link from 'next/link'
 import { araraApiFetch } from '@/lib/arara/arara-api-fetch'
+import { getRefreshToken } from '@/lib/arara/auth-storage'
 
 export default function MinhaContaPage() {
   const [currentPassword, setCurrentPassword] = useState('')
@@ -27,8 +28,8 @@ export default function MinhaContaPage() {
       setError('Nova senha e confirmação não coincidem')
       return
     }
-    if (newPassword.length < 6) {
-      setError('Nova senha deve ter no mínimo 6 caracteres')
+    if (newPassword.length < 8) {
+      setError('Nova senha deve ter no mínimo 8 caracteres')
       return
     }
 
@@ -41,7 +42,7 @@ export default function MinhaContaPage() {
       const res = await araraApiFetch('/api/auth/change-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
+        body: JSON.stringify({ current_password: currentPassword, new_password: newPassword, refresh_token: getRefreshToken() ?? undefined }),
       })
       const json = await res.json()
       if (!res.ok) throw new Error(json.error)
@@ -96,7 +97,7 @@ export default function MinhaContaPage() {
                 <Input
                   id="new"
                   type="password"
-                  placeholder="Mínimo 6 caracteres"
+                  placeholder="Mínimo 8 caracteres"
                   required
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}

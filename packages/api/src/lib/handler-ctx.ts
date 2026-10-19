@@ -1,4 +1,5 @@
 import type { ModelApi } from './models.js'
+import type { ResultadoTroca } from './change-password.js'
 
 export type HandlerFilePart = {
   field: string
@@ -31,6 +32,13 @@ export type HandlerCtx = {
       status: string
     } | null>
     setPassword: (userId: string, password: string) => Promise<{ success: true }>
+    /** Troca a senha do PRÓPRIO usuário: confere a atual, limita tentativas, grava e encerra os tokens de renovação. */
+    changeOwnPassword: (input: {
+      userId: string
+      current: string
+      next: string
+      keepRefreshToken?: string
+    }) => Promise<ResultadoTroca>
   }
   fetch: (url: string, init?: Record<string, unknown>) => Promise<unknown>
   notify: (payload: {

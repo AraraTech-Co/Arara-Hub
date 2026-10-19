@@ -17,6 +17,7 @@ import { AlertCircle, BellRing, CheckCircle, Clock, Copy, KeyRound, Plus, Shield
 import { useToast } from '@/hooks/use-toast'
 import { formatDateShort } from '@/lib/utils'
 import { araraApiFetch } from '@/lib/arara/arara-api-fetch'
+import { getRefreshToken } from '@/lib/arara/auth-storage'
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -120,14 +121,14 @@ export default function MinhaContaPage() {
     e.preventDefault()
     setPwMsg(null)
     if (newPw !== confirmPw) { setPwMsg({ type: 'err', text: 'Senhas não coincidem' }); return }
-    if (newPw.length < 6)    { setPwMsg({ type: 'err', text: 'Mínimo 6 caracteres' }); return }
+    if (newPw.length < 8)    { setPwMsg({ type: 'err', text: 'Mínimo 8 caracteres' }); return }
 
     setSavingPw(true)
     try {
       const res = await araraApiFetch('/api/auth/change-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ current_password: currentPw, new_password: newPw }),
+        body: JSON.stringify({ current_password: currentPw, new_password: newPw, refresh_token: getRefreshToken() ?? undefined }),
       })
       const json = await res.json()
       if (!res.ok) throw new Error(json.error)
@@ -310,7 +311,7 @@ export default function MinhaContaPage() {
                   </div>
                   <div className="space-y-1.5">
                     <Label>Nova senha</Label>
-                    <Input type="password" placeholder="Mínimo 6 caracteres" value={newPw} onChange={e => setNewPw(e.target.value)} required />
+                    <Input type="password" placeholder="Mínimo 8 caracteres" value={newPw} onChange={e => setNewPw(e.target.value)} required />
                   </div>
                   <div className="space-y-1.5">
                     <Label>Confirmar nova senha</Label>
