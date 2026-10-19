@@ -1631,17 +1631,6 @@ export const PortalSuporteRoutes: StaticRoute[] = [
     source: "cms3uj3x200dto64ipu6uwfdw",
     handler: compileController("async function handler(ctx) {\n  // Stub gerado na integração escrevia no model errado; ver\n  // scripts/portal-suporte/fix-mismatched-stubs.mjs\n  return ctx.reply.status(501).send({\n    success: false,\n    error: \"Rota não implementada no Portal de Suporte\",\n    route: \"POST /ai/feedback\",\n    detail: \"Stub gerado criava registro em Ticket, sem relação com o recurso da rota.\",\n  });\n}\n\n// ── Guarda de sessão (scripts/guarda-sessao.py) ──\n// Nada responde sem pessoa identificada. A identidade vem do JWT (`ctx.user`)\n// ou da sessão do portal (`x-portal-sessao`); sem nenhuma das duas, 401.\n//\n// O desenho anterior tratava \"sem pessoa\" como chamada de serviço e liberava\n// tudo. Como a chave de API de app não carrega pessoa, qualquer credencial\n// aceita pelo app — inclusive a de um cliente — passava por cima do nível.\nasync function _gsSessao(ctx) {\n  try {\n    var h = (ctx.headers && (ctx.headers[\"x-portal-sessao\"] || ctx.headers[\"X-Portal-Sessao\"])) || \"\";\n    var partes = String(h).split(\".\");\n    if (partes.length !== 2 || !partes[0] || !partes[1]) return null;\n    var S = ctx.models && ctx.models.Sessao;\n    if (!S) return null;\n    var linha = await S.findById(\"ses_\" + partes[0]);\n    if (!linha || linha.revogada === true) return null;\n    if (String(linha.verificador || \"\") !== partes[1]) return null;\n    if (linha.expira_em && new Date(linha.expira_em).getTime() < Date.now()) return null;\n    return linha.user_id || null;\n  } catch (e) { return null; }\n}\nvar _gsRANK = { user: 10, support: 20, developer: 30, admin: 40 };\nvar _gsAPELIDOS = { master: \"admin\", gerente: \"admin\", member: \"support\", agent: \"support\", vendedor: \"user\" };\nfunction _gsCanonico(cru) {\n  var v = String(cru || \"\").trim().toLowerCase();\n  return _gsRANK[v] !== undefined ? v : (_gsAPELIDOS[v] || \"\");\n}\nasync function _gsEuSou(ctx) {\n  var u = ctx.user || {};\n  var quem = u.id || u.userId || (await _gsSessao(ctx));\n  if (!quem) return null;\n  var p = null;\n  if (ctx.models && ctx.models.Profile) {\n    p = await ctx.models.Profile.findById(quem).catch(function () { return null; });\n  }\n  return { id: quem, nivel: _gsRANK[_gsCanonico(p ? p.role : \"\")] || 0 };\n}\nvar _gsOriginal = handler;\nasync function _gsComSessao(ctx) {\n  var eu = await _gsEuSou(ctx);\n  if (!eu) {\n    return ctx.reply.status(401).send({ success: false, error: \"Requer sessão do portal\" });\n  }\n  if (eu.nivel < _gsRANK[\"admin\"]) {\n    return ctx.reply.status(403).send({ success: false, error: \"Sem permissão para esta operação\" });\n  }\n  return _gsOriginal(ctx);\n}\nmodule.exports = { handler: _gsComSessao };\n"),
   },
-  // 148 api GET /api/dashboard (a8da2623)
-  {
-    module: "api",
-    method: "GET",
-    path: "/api/dashboard",
-    authMode: "actor",
-    webhookSecretName: null,
-    requiredPermissions: [],
-    source: "cms3uj3x400dxo64i4fr5bd9t",
-    handler: compileController("async function handler(ctx) {\n  const model = ctx.models.Ticket;\n  if (!model) return ctx.reply.status(500).send({ error: \"Model Ticket missing\" });\n  const filter = Object.assign({}, ctx.query || {});\n  const rows = await model.findMany(filter);\n  return ctx.reply.send({ data: rows, count: rows.length });\n}\nmodule.exports = { handler };"),
-  },
   // 149 api_keys DELETE /api-keys/:id (e89f5340)
   {
     module: "api_keys",
@@ -1718,17 +1707,6 @@ export const PortalSuporteRoutes: StaticRoute[] = [
     requiredPermissions: [],
     source: "cmsnrym4t001dmu01km9jq5x3",
     handler: compileController("\n// ── Identidade por sessão do portal (scripts/sessao-portal.py) ──\n// O JWT da plataforma expira e não há renovação; quando isso acontece o\n// cliente usa a chave de app, que NÃO carrega pessoa. Sem isto, a guarda\n// abaixo seria pulada e um JWT vencido viraria acesso de serviço.\nasync function _sessaoDoPortal(ctx) {\n  try {\n    var h = (ctx.headers && (ctx.headers[\"x-portal-sessao\"] || ctx.headers[\"X-Portal-Sessao\"])) || \"\";\n    var partes = String(h).split(\".\");\n    if (partes.length !== 2 || !partes[0] || !partes[1]) return null;\n    var S = ctx.models.Sessao;\n    if (!S) return null;\n    var linha = await S.findById(\"ses_\" + partes[0]);\n    if (!linha || linha.revogada === true) return null;\n    if (String(linha.verificador || \"\") !== partes[1]) return null;\n    if (linha.expira_em && new Date(linha.expira_em).getTime() < Date.now()) return null;\n    return linha.user_id || null;\n  } catch (e) { return null; }\n}\n\n\nasync function handler(ctx) {\n  const Att = ctx.models.Attachment;\n  if (!Att) return ctx.reply.status(500).send({ error: \"Model Attachment missing\" });\n\n  // Chave de API não carrega pessoa: chamada de serviço passa. Com JWT, exige\n  // admin — repor conteúdo de evidência não é operação de atendimento.\n  var u = ctx.user || {};\n  var quem = u.id || u.userId || (await _sessaoDoPortal(ctx));\n  if (quem && ctx.models.Profile) {\n    var perfil = await ctx.models.Profile.findById(quem);\n    var papel = String((perfil && perfil.role) || \"\").toLowerCase();\n    if (papel !== \"admin\" && papel !== \"master\") {\n      return ctx.reply.status(403).send({ success: false, error: \"Sem permissão\" });\n    }\n  }\n\n  const id = ctx.params.id;\n  const atual = await Att.findById(id);\n  if (!atual) return ctx.reply.status(404).send({ error: \"Anexo não encontrado\" });\n\n  const urlAtual = String(atual.file_url || atual.fileUrl || \"\");\n  const body = ctx.body || {};\n  const parte = body.append_base64 ? String(body.append_base64) : \"\";\n  const novo = String(body.file_url || body.fileUrl || \"\");\n\n  // Arquivo grande vem em pedaços: o primeiro traz `file_url` com o cabeçalho\n  // data:, os seguintes só concatenam. Sem isso, um anexo de 860 KB estoura o\n  // limite de corpo da requisição e nunca subiria.\n  if (parte) {\n    if (urlAtual.indexOf(\"data:\") !== 0) {\n      return ctx.reply.status(409).send({ error: \"Comece enviando file_url\" });\n    }\n    const juntado = urlAtual + parte;\n    await Att.update(id, { file_url: juntado });\n    return ctx.reply.send({ success: true, tamanho: juntado.length });\n  }\n\n  // Sem escape: anexo íntegro não é sobrescrito por esta rota, nem com flag.\n  // Trocar a evidência de um chamado tem que doer mais do que um PATCH.\n  if (urlAtual.indexOf(\"data:\") === 0) {\n    return ctx.reply.status(409).send({ error: \"Anexo já tem conteúdo embutido\" });\n  }\n  if (novo.indexOf(\"data:\") !== 0) {\n    return ctx.reply.status(400).send({ error: \"file_url deve ser um data: URL\" });\n  }\n\n  await Att.update(id, { file_url: novo });\n  return ctx.reply.send({ success: true, id: id, tamanho: novo.length });\n}\n\n// ── Guarda de sessão (scripts/guarda-sessao.py) ──\n// Nada responde sem pessoa identificada. A identidade vem do JWT (`ctx.user`)\n// ou da sessão do portal (`x-portal-sessao`); sem nenhuma das duas, 401.\n//\n// O desenho anterior tratava \"sem pessoa\" como chamada de serviço e liberava\n// tudo. Como a chave de API de app não carrega pessoa, qualquer credencial\n// aceita pelo app — inclusive a de um cliente — passava por cima do nível.\nasync function _gsSessao(ctx) {\n  try {\n    var h = (ctx.headers && (ctx.headers[\"x-portal-sessao\"] || ctx.headers[\"X-Portal-Sessao\"])) || \"\";\n    var partes = String(h).split(\".\");\n    if (partes.length !== 2 || !partes[0] || !partes[1]) return null;\n    var S = ctx.models && ctx.models.Sessao;\n    if (!S) return null;\n    var linha = await S.findById(\"ses_\" + partes[0]);\n    if (!linha || linha.revogada === true) return null;\n    if (String(linha.verificador || \"\") !== partes[1]) return null;\n    if (linha.expira_em && new Date(linha.expira_em).getTime() < Date.now()) return null;\n    return linha.user_id || null;\n  } catch (e) { return null; }\n}\nvar _gsRANK = { user: 10, support: 20, developer: 30, admin: 40 };\nvar _gsAPELIDOS = { master: \"admin\", gerente: \"admin\", member: \"support\", agent: \"support\", vendedor: \"user\" };\nfunction _gsCanonico(cru) {\n  var v = String(cru || \"\").trim().toLowerCase();\n  return _gsRANK[v] !== undefined ? v : (_gsAPELIDOS[v] || \"\");\n}\nasync function _gsEuSou(ctx) {\n  var u = ctx.user || {};\n  var quem = u.id || u.userId || (await _gsSessao(ctx));\n  if (!quem) return null;\n  var p = null;\n  if (ctx.models && ctx.models.Profile) {\n    p = await ctx.models.Profile.findById(quem).catch(function () { return null; });\n  }\n  return { id: quem, nivel: _gsRANK[_gsCanonico(p ? p.role : \"\")] || 0 };\n}\nvar _gsOriginal = handler;\nasync function _gsComSessao(ctx) {\n  var eu = await _gsEuSou(ctx);\n  if (!eu) {\n    return ctx.reply.status(401).send({ success: false, error: \"Requer sessão do portal\" });\n  }\n  if (eu.nivel < _gsRANK[\"user\"]) {\n    return ctx.reply.status(403).send({ success: false, error: \"Sem permissão para esta operação\" });\n  }\n  return _gsOriginal(ctx);\n}\nmodule.exports = { handler: _gsComSessao };\n\n"),
-  },
-  // 156 auth GET /auth/magic-link (f9014c4a)
-  {
-    module: "auth",
-    method: "GET",
-    path: "/auth/magic-link",
-    authMode: "actor",
-    webhookSecretName: null,
-    requiredPermissions: [],
-    source: "cms3uj3xe00eno64i1illiexk",
-    handler: compileController("async function handler(ctx) {\n  const model = ctx.models.Ticket;\n  if (!model) return ctx.reply.status(500).send({ error: \"Model Ticket missing\" });\n  const filter = Object.assign({}, ctx.query || {});\n  const rows = await model.findMany(filter);\n  return ctx.reply.send({ data: rows, count: rows.length });\n}\nmodule.exports = { handler };"),
   },
   // 157 auth GET /auth/me (fe286726)
   {
@@ -1807,17 +1785,6 @@ export const PortalSuporteRoutes: StaticRoute[] = [
     source: "cmssba3ot0015pg01ljv8yyf3",
     handler: compileController("\n// ── Identidade por sessão do portal (scripts/sessao-portal.py) ──\n// O JWT da plataforma expira e não há renovação; quando isso acontece o\n// cliente usa a chave de app, que NÃO carrega pessoa. Sem isto, a guarda\n// abaixo seria pulada e um JWT vencido viraria acesso de serviço.\nasync function _sessaoDoPortal(ctx) {\n  try {\n    var h = (ctx.headers && (ctx.headers[\"x-portal-sessao\"] || ctx.headers[\"X-Portal-Sessao\"])) || \"\";\n    var partes = String(h).split(\".\");\n    if (partes.length !== 2 || !partes[0] || !partes[1]) return null;\n    var S = ctx.models.Sessao;\n    if (!S) return null;\n    var linha = await S.findById(\"ses_\" + partes[0]);\n    if (!linha || linha.revogada === true) return null;\n    if (String(linha.verificador || \"\") !== partes[1]) return null;\n    if (linha.expira_em && new Date(linha.expira_em).getTime() < Date.now()) return null;\n    return linha.user_id || null;\n  } catch (e) { return null; }\n}\n\n\nvar RANK = { user: 10, support: 20, developer: 30, admin: 40 };\nvar APELIDOS = { master: \"admin\", gerente: \"admin\", member: \"support\", agent: \"support\", vendedor: \"user\" };\nfunction canonico(cru) {\n  var v = String(cru || \"\").trim().toLowerCase();\n  return RANK[v] !== undefined ? v : (APELIDOS[v] || \"\");\n}\nasync function exigirNivel(ctx, minimo) {\n  var u = ctx.user || {};\n  var quem = u.id || u.userId || (await _sessaoDoPortal(ctx));\n  // Aqui a chave de serviço NÃO passa: emitir convite e conceder papel são\n  // atos de uma pessoa, e precisam ficar no nome de alguém.\n  if (!quem) return { erro: [403, \"Requer sessão de usuário\"] };\n  var perfil = ctx.models.Profile ? await ctx.models.Profile.findById(quem) : null;\n  if ((RANK[canonico(perfil ? perfil.role : \"\")] || 0) < RANK[minimo]) {\n    return { erro: [403, \"Sem permissão\"] };\n  }\n  return { quem: quem, perfil: perfil };\n}\nfunction so(digitos) {\n  return String(digitos || \"\").replace(/\\D/g, \"\");\n}\n/** CNPJ só com dígitos. O cadastro tem as duas grafias: \"30.589.594/0001-89\"\n    e \"50859985000183\". Comparar texto cru não casaria uma com a outra. */\nfunction soCnpj(v) {\n  return String(v || \"\").replace(/\\D/g, \"\");\n}\n/** Dígitos verificadores — pega erro de digitação antes de dizer\n    \"não encontrado\", que mandaria a pessoa procurar problema onde não há. */\nfunction cnpjValido(c) {\n  if (c.length !== 14) return false;\n  if (/^(\\d)\\1{13}$/.test(c)) return false;\n  var calc = function (base, pesos) {\n    var soma = 0;\n    for (var i = 0; i < pesos.length; i++) soma += Number(base[i]) * pesos[i];\n    var r = soma % 11;\n    return r < 2 ? 0 : 11 - r;\n  };\n  var d1 = calc(c, [5,4,3,2,9,8,7,6,5,4,3,2]);\n  var d2 = calc(c, [6,5,4,3,2,9,8,7,6,5,4,3,2]);\n  return Number(c[12]) === d1 && Number(c[13]) === d2;\n}\n/** Compara telefone ignorando DDI, nono dígito e formatação. */\nfunction mesmoNumero(a, b) {\n  var x = so(a), y = so(b);\n  if (!x || !y) return false;\n  x = x.slice(-8); y = y.slice(-8);\n  return x.length === 8 && x === y;\n}\n\nasync function handler(ctx) {\n  var u = ctx.user || {};\n  var quem = u.id || u.userId || (await _sessaoDoPortal(ctx));\n  // Exige JWT: o papel é concedido a QUEM está logado, e não a um id que o\n  // cliente mandaria no corpo.\n  if (!quem) return ctx.reply.status(403).send({ success: false, error: \"Entre na sua conta para resgatar o convite\" });\n\n  var Code = ctx.models.InviteCode;\n  var Perfil = ctx.models.Profile;\n  if (!Code || !Perfil) return ctx.reply.status(500).send({ error: \"Model ausente\" });\n\n  var jaTem = await Perfil.findById(quem);\n  if (jaTem && jaTem.role) {\n    return ctx.reply.status(409).send({ success: false, error: \"Esta conta já tem acesso ao portal\" });\n  }\n\n  var codigo = String((ctx.body || {}).code || \"\").trim().toUpperCase();\n  if (codigo.length !== 6) {\n    return ctx.reply.status(400).send({ success: false, error: \"O código tem 6 caracteres\" });\n  }\n\n  var achados = (await Code.findMany({ code: codigo })) || [];\n  var conv = achados.filter(function (c) { return String(c.code).toUpperCase() === codigo; })[0];\n  // Mensagem única para inexistente, usado e expirado: distinguir os três\n  // ensinaria um atacante a separar código válido de inválido.\n  var recusa = { success: false, error: \"Código inválido, já utilizado ou expirado\" };\n  if (!conv) return ctx.reply.status(400).send(recusa);\n  if (conv.used_at) return ctx.reply.status(400).send(recusa);\n  if (conv.expires_at && new Date(conv.expires_at).getTime() < Date.now()) {\n    return ctx.reply.status(400).send(recusa);\n  }\n\n  // Telefone do operador. Aqui não há conferência por código — quem chega\n  // até este ponto já provou identidade com o convite —, mas o número é o\n  // caminho da recuperação de senha depois. Ver scripts/perfil-telefone-e-guarda.py.\n  //\n  // VALIDADO ANTES de gastar o convite (conserto de 07/10/2026). Antes, o\n  // convite era marcado como usado primeiro: quem digitasse o número sem DDD\n  // levava \"Informe o WhatsApp com DDD\" com o código JÁ queimado, e na\n  // segunda tentativa recebia \"Código inválido, já utilizado ou expirado\" —\n  // um erro de digitação dela virava um convite perdido e a impressão de que\n  // o código nunca prestou. Tudo que pode recusar agora recusa antes de\n  // escrever qualquer coisa.\n  var telefone = String((ctx.body || {}).phone || \"\").replace(/\\D/g, \"\");\n  if (telefone && (telefone.length < 10 || telefone.length > 13)) {\n    return ctx.reply.status(400).send({ success: false, error: \"Informe o WhatsApp com DDD\" });\n  }\n\n  var agora = new Date().toISOString();\n  // Marca o convite ANTES de gravar o perfil: entre os dois, o risco aceito é\n  // sobrar um convite queimado (recuperável emitindo outro) em vez de um\n  // convite vivo que dois pedidos simultâneos gastariam duas vezes.\n  await Code.update(conv.id, { used_at: agora, used_by_id: quem });\n\n  // Perfil já existente SEM papel (identidade criada por outro app da Arara,\n  // ou tentativa anterior interrompida) não pode ir para `create`: o id é o\n  // mesmo da plataforma e a gravação estouraria por chave repetida, depois de\n  // o convite já ter sido gasto. Nesse caso completa o que falta.\n  var campos = {\n    email: u.email || null,\n    full_name: u.name || u.email || null,\n    role: conv.role,\n    phone: telefone || null,\n    updated_at: agora,\n  };\n  if (jaTem) {\n    if (jaTem.full_name) campos.full_name = jaTem.full_name;\n    if (!telefone && jaTem.phone) campos.phone = jaTem.phone;\n    await Perfil.update(quem, campos);\n  } else {\n    campos.id = quem;\n    campos.created_at = agora;\n    await Perfil.create(campos);\n  }\n\n  return ctx.reply.status(201).send({ success: true, data: { role: conv.role } });\n}\nmodule.exports = { handler };\n"),
   },
-  // 164 auth POST /auth/forgot-password (2d657b6d)
-  {
-    module: "auth",
-    method: "POST",
-    path: "/auth/forgot-password",
-    authMode: "actor",
-    webhookSecretName: null,
-    requiredPermissions: [],
-    source: "cms3uj3xd00ejo64izyc87zs8",
-    handler: compileController("async function handler(ctx) {\n  // Stub gerado na integração escrevia no model errado; ver\n  // scripts/portal-suporte/fix-mismatched-stubs.mjs\n  return ctx.reply.status(501).send({\n    success: false,\n    error: \"Rota não implementada no Portal de Suporte\",\n    route: \"POST /auth/forgot-password\",\n    detail: \"Stub gerado criava registro em Ticket, sem relação com o recurso da rota.\",\n  });\n}\nmodule.exports = { handler };"),
-  },
   // 165 auth POST /auth/login (a639fd67)
   {
     module: "auth",
@@ -1829,17 +1796,6 @@ export const PortalSuporteRoutes: StaticRoute[] = [
     source: "cms3uj3xd00elo64id0biv3ps",
     handler: compileController("async function handler(ctx) {\n  // Stub gerado na integração escrevia no model errado; ver\n  // scripts/portal-suporte/fix-mismatched-stubs.mjs\n  return ctx.reply.status(501).send({\n    success: false,\n    error: \"Rota não implementada no Portal de Suporte\",\n    route: \"POST /auth/login\",\n    detail: \"Stub gerado criava registro em Ticket, sem relação com o recurso da rota.\",\n  });\n}\nmodule.exports = { handler };"),
   },
-  // 166 auth POST /auth/magic-link (72ebb9e6)
-  {
-    module: "auth",
-    method: "POST",
-    path: "/auth/magic-link",
-    authMode: "actor",
-    webhookSecretName: null,
-    requiredPermissions: [],
-    source: "cms3uj3xf00epo64ib61xvr51",
-    handler: compileController("async function handler(ctx) {\n  // Stub gerado na integração escrevia no model errado; ver\n  // scripts/portal-suporte/fix-mismatched-stubs.mjs\n  return ctx.reply.status(501).send({\n    success: false,\n    error: \"Rota não implementada no Portal de Suporte\",\n    route: \"POST /auth/magic-link\",\n    detail: \"Stub gerado criava registro em Ticket, sem relação com o recurso da rota.\",\n  });\n}\nmodule.exports = { handler };"),
-  },
   // 167 auth POST /auth/register (a44b47af)
   {
     module: "auth",
@@ -1850,28 +1806,6 @@ export const PortalSuporteRoutes: StaticRoute[] = [
     requiredPermissions: [],
     source: "cms3uj3xh00eto64i19g97fey",
     handler: compileController("async function handler(ctx) {\n  // Stub gerado na integração escrevia no model errado; ver\n  // scripts/portal-suporte/fix-mismatched-stubs.mjs\n  return ctx.reply.status(501).send({\n    success: false,\n    error: \"Rota não implementada no Portal de Suporte\",\n    route: \"POST /auth/register\",\n    detail: \"Stub gerado criava registro em Ticket, sem relação com o recurso da rota.\",\n  });\n}\nmodule.exports = { handler };"),
-  },
-  // 168 auth POST /auth/reset-password (eedccd79)
-  {
-    module: "auth",
-    method: "POST",
-    path: "/auth/reset-password",
-    authMode: "actor",
-    webhookSecretName: null,
-    requiredPermissions: [],
-    source: "cms3uj3xi00evo64i75tyjwel",
-    handler: compileController("async function handler(ctx) {\n  // Stub gerado na integração escrevia no model errado; ver\n  // scripts/portal-suporte/fix-mismatched-stubs.mjs\n  return ctx.reply.status(501).send({\n    success: false,\n    error: \"Rota não implementada no Portal de Suporte\",\n    route: \"POST /auth/reset-password\",\n    detail: \"Stub gerado criava registro em Ticket, sem relação com o recurso da rota.\",\n  });\n}\nmodule.exports = { handler };"),
-  },
-  // 169 auth POST /auth/reset-with-code (5a9f719a)
-  {
-    module: "auth",
-    method: "POST",
-    path: "/auth/reset-with-code",
-    authMode: "actor",
-    webhookSecretName: null,
-    requiredPermissions: [],
-    source: "cms3uj3xj00exo64ikvbdlt3g",
-    handler: compileController("async function handler(ctx) {\n  // Stub gerado na integração escrevia no model errado; ver\n  // scripts/portal-suporte/fix-mismatched-stubs.mjs\n  return ctx.reply.status(501).send({\n    success: false,\n    error: \"Rota não implementada no Portal de Suporte\",\n    route: \"POST /auth/reset-with-code\",\n    detail: \"Stub gerado criava registro em Ticket, sem relação com o recurso da rota.\",\n  });\n}\nmodule.exports = { handler };"),
   },
   // 170 auth POST /auth/senha/redefinir (3c0bca2b)
   {
@@ -2125,39 +2059,6 @@ export const PortalSuporteRoutes: StaticRoute[] = [
     requiredPermissions: [],
     source: "cms3uj3xu00fno64iaqrvwcsg",
     handler: compileController("async function handler(ctx) {\n  const model = ctx.models.ChangeRequest;\n  if (!model) return ctx.reply.status(500).send({ error: \"Model ChangeRequest missing\" });\n  const id = ctx.params.id || ctx.params.id;\n  if (!id) return ctx.reply.status(400).send({ error: \"Missing id\" });\n  try {\n    const row = await model.update(id, ctx.body || {});\n    return ctx.reply.send(row);\n  } catch (e) {\n    return ctx.reply.status(404).send({ error: String(e.message || e) });\n  }\n}\n\n// ── Guarda de sessão (scripts/guarda-sessao.py) ──\n// Nada responde sem pessoa identificada. A identidade vem do JWT (`ctx.user`)\n// ou da sessão do portal (`x-portal-sessao`); sem nenhuma das duas, 401.\n//\n// O desenho anterior tratava \"sem pessoa\" como chamada de serviço e liberava\n// tudo. Como a chave de API de app não carrega pessoa, qualquer credencial\n// aceita pelo app — inclusive a de um cliente — passava por cima do nível.\nasync function _gsSessao(ctx) {\n  try {\n    var h = (ctx.headers && (ctx.headers[\"x-portal-sessao\"] || ctx.headers[\"X-Portal-Sessao\"])) || \"\";\n    var partes = String(h).split(\".\");\n    if (partes.length !== 2 || !partes[0] || !partes[1]) return null;\n    var S = ctx.models && ctx.models.Sessao;\n    if (!S) return null;\n    var linha = await S.findById(\"ses_\" + partes[0]);\n    if (!linha || linha.revogada === true) return null;\n    if (String(linha.verificador || \"\") !== partes[1]) return null;\n    if (linha.expira_em && new Date(linha.expira_em).getTime() < Date.now()) return null;\n    return linha.user_id || null;\n  } catch (e) { return null; }\n}\nvar _gsRANK = { user: 10, support: 20, developer: 30, admin: 40 };\nvar _gsAPELIDOS = { master: \"admin\", gerente: \"admin\", member: \"support\", agent: \"support\", vendedor: \"user\" };\nfunction _gsCanonico(cru) {\n  var v = String(cru || \"\").trim().toLowerCase();\n  return _gsRANK[v] !== undefined ? v : (_gsAPELIDOS[v] || \"\");\n}\nasync function _gsEuSou(ctx) {\n  var u = ctx.user || {};\n  var quem = u.id || u.userId || (await _gsSessao(ctx));\n  if (!quem) return null;\n  var p = null;\n  if (ctx.models && ctx.models.Profile) {\n    p = await ctx.models.Profile.findById(quem).catch(function () { return null; });\n  }\n  return { id: quem, nivel: _gsRANK[_gsCanonico(p ? p.role : \"\")] || 0 };\n}\nvar _gsOriginal = handler;\nasync function _gsComSessao(ctx) {\n  var eu = await _gsEuSou(ctx);\n  if (!eu) {\n    return ctx.reply.status(401).send({ success: false, error: \"Requer sessão do portal\" });\n  }\n  if (eu.nivel < _gsRANK[\"developer\"]) {\n    return ctx.reply.status(403).send({ success: false, error: \"Sem permissão para esta operação\" });\n  }\n  return _gsOriginal(ctx);\n}\nmodule.exports = { handler: _gsComSessao };\n"),
-  },
-  // 193 cron GET /cron/sla-check (44482bac)
-  {
-    module: "cron",
-    method: "GET",
-    path: "/cron/sla-check",
-    authMode: "actor",
-    webhookSecretName: null,
-    requiredPermissions: [],
-    source: "cms3uj3y700g5o64iijqdc4xn",
-    handler: compileController("async function handler(ctx) {\n  const model = ctx.models.Ticket;\n  if (!model) return ctx.reply.status(500).send({ error: \"Model Ticket missing\" });\n  const filter = Object.assign({}, ctx.query || {});\n  const rows = await model.findMany(filter);\n  return ctx.reply.send({ data: rows, count: rows.length });\n}\nmodule.exports = { handler };"),
-  },
-  // 194 cron POST /cron/sla-check (874b1d2e)
-  {
-    module: "cron",
-    method: "POST",
-    path: "/cron/sla-check",
-    authMode: "actor",
-    webhookSecretName: null,
-    requiredPermissions: [],
-    source: "cms3uj3y800g7o64ieevno90x",
-    handler: compileController("async function handler(ctx) {\n  // Stub gerado na integração escrevia no model errado; ver\n  // scripts/portal-suporte/fix-mismatched-stubs.mjs\n  return ctx.reply.status(501).send({\n    success: false,\n    error: \"Rota não implementada no Portal de Suporte\",\n    route: \"POST /cron/sla-check\",\n    detail: \"Stub gerado criava registro em Ticket, sem relação com o recurso da rota.\",\n  });\n}\nmodule.exports = { handler };"),
-  },
-  // 195 cron POST /cron/worker (dc4c5962)
-  {
-    module: "cron",
-    method: "POST",
-    path: "/cron/worker",
-    authMode: "actor",
-    webhookSecretName: null,
-    requiredPermissions: [],
-    source: "cms3uj3y900g9o64i5lppn24h",
-    handler: compileController("async function handler(ctx) {\n  // Stub gerado na integração escrevia no model errado; ver\n  // scripts/portal-suporte/fix-mismatched-stubs.mjs\n  return ctx.reply.status(501).send({\n    success: false,\n    error: \"Rota não implementada no Portal de Suporte\",\n    route: \"POST /cron/worker\",\n    detail: \"Stub gerado criava registro em Ticket, sem relação com o recurso da rota.\",\n  });\n}\nmodule.exports = { handler };"),
   },
   // 196 devops DELETE /devops/:serverId/containers/:ref (fc8c8ef7)
   {
@@ -2729,7 +2630,7 @@ export const PortalSuporteRoutes: StaticRoute[] = [
     webhookSecretName: null,
     requiredPermissions: [],
     source: "cms3uj40200jbo64i6t0cqngf",
-    handler: compileController("async function handler(ctx) {\n  const model = ctx.models.Ticket;\n  if (!model) return ctx.reply.status(500).send({ error: \"Model Ticket missing\" });\n  const filter = Object.assign({}, ctx.query || {});\n  const rows = await model.findMany(filter);\n  return ctx.reply.send({ data: rows, count: rows.length });\n}\nmodule.exports = { handler };"),
+    handler: compileController("async function handler(ctx) {\n  // Liveness: só diz que o runtime respondeu. Não lê nenhuma tabela.\n  return ctx.reply.send({ ok: true, service: \"portal-suporte\" });\n}\nmodule.exports = { handler };"),
   },
   // 248 integrations GET /integrations (df3e9369)
   {
@@ -4633,17 +4534,6 @@ export const PortalSuporteRoutes: StaticRoute[] = [
     requiredPermissions: [],
     source: "cms3uj45p00rro64idtvy7t4u",
     handler: compileController("async function handler(ctx) {\n  // Stub gerado na integração escrevia no model errado; ver\n  // scripts/portal-suporte/fix-mismatched-stubs.mjs\n  return ctx.reply.status(501).send({\n    success: false,\n    error: \"Rota não implementada no Portal de Suporte\",\n    route: \"POST /upload\",\n    detail: \"Stub gerado criava registro em Ticket, sem relação com o recurso da rota.\",\n  });\n}\n\n// ── Guarda de sessão (scripts/guarda-sessao.py) ──\n// Nada responde sem pessoa identificada. A identidade vem do JWT (`ctx.user`)\n// ou da sessão do portal (`x-portal-sessao`); sem nenhuma das duas, 401.\n//\n// O desenho anterior tratava \"sem pessoa\" como chamada de serviço e liberava\n// tudo. Como a chave de API de app não carrega pessoa, qualquer credencial\n// aceita pelo app — inclusive a de um cliente — passava por cima do nível.\nasync function _gsSessao(ctx) {\n  try {\n    var h = (ctx.headers && (ctx.headers[\"x-portal-sessao\"] || ctx.headers[\"X-Portal-Sessao\"])) || \"\";\n    var partes = String(h).split(\".\");\n    if (partes.length !== 2 || !partes[0] || !partes[1]) return null;\n    var S = ctx.models && ctx.models.Sessao;\n    if (!S) return null;\n    var linha = await S.findById(\"ses_\" + partes[0]);\n    if (!linha || linha.revogada === true) return null;\n    if (String(linha.verificador || \"\") !== partes[1]) return null;\n    if (linha.expira_em && new Date(linha.expira_em).getTime() < Date.now()) return null;\n    return linha.user_id || null;\n  } catch (e) { return null; }\n}\nvar _gsRANK = { user: 10, support: 20, developer: 30, admin: 40 };\nvar _gsAPELIDOS = { master: \"admin\", gerente: \"admin\", member: \"support\", agent: \"support\", vendedor: \"user\" };\nfunction _gsCanonico(cru) {\n  var v = String(cru || \"\").trim().toLowerCase();\n  return _gsRANK[v] !== undefined ? v : (_gsAPELIDOS[v] || \"\");\n}\nasync function _gsEuSou(ctx) {\n  var u = ctx.user || {};\n  var quem = u.id || u.userId || (await _gsSessao(ctx));\n  if (!quem) return null;\n  var p = null;\n  if (ctx.models && ctx.models.Profile) {\n    p = await ctx.models.Profile.findById(quem).catch(function () { return null; });\n  }\n  return { id: quem, nivel: _gsRANK[_gsCanonico(p ? p.role : \"\")] || 0 };\n}\nvar _gsOriginal = handler;\nasync function _gsComSessao(ctx) {\n  var eu = await _gsEuSou(ctx);\n  if (!eu) {\n    return ctx.reply.status(401).send({ success: false, error: \"Requer sessão do portal\" });\n  }\n  if (eu.nivel < _gsRANK[\"user\"]) {\n    return ctx.reply.status(403).send({ success: false, error: \"Sem permissão para esta operação\" });\n  }\n  return _gsOriginal(ctx);\n}\nmodule.exports = { handler: _gsComSessao };\n"),
-  },
-  // 420 uptime GET /uptime (f2f3e456)
-  {
-    module: "uptime",
-    method: "GET",
-    path: "/uptime",
-    authMode: "actor",
-    webhookSecretName: null,
-    requiredPermissions: [],
-    source: "cms3uj45r00rvo64ics6gis22",
-    handler: compileController("async function handler(ctx) {\n  const model = ctx.models.Ticket;\n  if (!model) return ctx.reply.status(500).send({ error: \"Model Ticket missing\" });\n  const filter = Object.assign({}, ctx.query || {});\n  const rows = await model.findMany(filter);\n  return ctx.reply.send({ data: rows, count: rows.length });\n}\nmodule.exports = { handler };"),
   },
   // 421 webhooks DELETE /webhooks/:id (387896a4)
   {
