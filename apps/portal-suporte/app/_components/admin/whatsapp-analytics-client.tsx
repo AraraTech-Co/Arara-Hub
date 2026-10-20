@@ -54,6 +54,7 @@ import { derivarAnalytics, type WADerivado, type WAAgenteLinha } from '@/lib/wa-
 import { WACloseReasonsCard } from './wa-close-reasons-card'
 import { WAConnectionCard } from './wa-connection-card'
 import { WAIaCard } from './wa-ia-card'
+import { WAAvisosCard } from './wa-avisos-card'
 
 // ─── Formatação ───────────────────────────────────────────────────────────────
 
@@ -200,6 +201,9 @@ export function WhatsAppAnalyticsClient({
           onde quem opera o WhatsApp já vai. Só admin — é cliente real do outro
           lado. Ver docs/plans/plano-painel-ia-humanizada-whatsapp.md. */}
       {canManageToken && <WAIaCard />}
+
+      {/* Prazo e textos dos avisos ao plantão e ao backup. Só admin: o texto chega ao celular de uma pessoa. */}
+      {canManageToken && <WAAvisosCard />}
 
       {loading && !d ? (
         <p className="py-12 text-center text-sm text-muted-foreground">Carregando métricas…</p>
