@@ -60,7 +60,7 @@ async function checar(texto) {
   const f = []
   const rotas = rotasDe(texto)
   const conj = new Set(rotas)
-  if (rotas.length !== 505) f.push('total:' + rotas.length)
+  if (rotas.length !== 508) f.push('total:' + rotas.length)
   for (const [m, p] of REMOVIDAS) if (conj.has(m + ' ' + p)) f.push('presente:' + m + ' ' + p)
   for (const [m, p] of MANTIDAS) if (!conj.has(m + ' ' + p)) f.push('ausente:' + m + ' ' + p)
   const cod = codigoHealth(texto)
@@ -77,7 +77,7 @@ async function checar(texto) {
 ;(async () => {
   const texto = fs.readFileSync(ARQ, 'utf8')
   const rotas = rotasDe(texto)
-  ok('TRAVA: o leitor de rotas enxerga o registro (505 rotas)', rotas.length === 505, rotas.length)
+  ok('TRAVA: o leitor de rotas enxerga o registro (508 rotas)', rotas.length === 508, rotas.length)
   ok('as 10 rotas sem uso não existem mais', REMOVIDAS.every(([m, p]) => !rotas.includes(m + ' ' + p)), REMOVIDAS.filter(([m, p]) => rotas.includes(m + ' ' + p)))
   ok('as rotas vizinhas que seguem valendo continuam', MANTIDAS.every(([m, p]) => rotas.includes(m + ' ' + p)), MANTIDAS.filter(([m, p]) => !rotas.includes(m + ' ' + p)))
   const h = await checar(texto)
