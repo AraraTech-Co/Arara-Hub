@@ -6,6 +6,7 @@ import { useToast } from '@/hooks/use-toast'
 import { TextoFormatado } from '@/components/inbox/texto-formatado'
 import { Citacao, MessageActions, Reacoes } from './message-actions'
 import { whatsappApi, type WAThreadMessage } from '@/lib/api/whatsapp'
+import { acharMensagemCitada } from '@/lib/inbox/citacao'
 import { cn } from '@/lib/utils'
 
 // Duas formas de "quem falou" vêm embutidas no texto e precisam sair dele:
@@ -75,6 +76,25 @@ export function MessageList({
   useEffect(() => {
     if (destacada) refDestacada.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
   }, [destacada])
+  // Clicar na citação de uma bolha leva até a mensagem citada, como no WhatsApp:
+  // rola até ela e a destaca por um instante. Se a citada é mais antiga que o
+  // histórico carregado, avisa em vez de não fazer nada.
+  const { toast } = useToast()
+  const [realce, setRealce] = useState<string | null>(null)
+  function irParaCitada(idCitado: string) {
+    const alvo = acharMensagemCitada(messages, idCitado)
+    const el = alvo ? document.getElementById(`msg-${alvo.id}`) : null
+    if (!alvo || !el) {
+      toast({
+        title: 'A mensagem citada não está na tela',
+        description: 'Ela é mais antiga que o histórico carregado.',
+      })
+      return
+    }
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    setRealce(alvo.id)
+    window.setTimeout(() => setRealce((atual) => (atual === alvo.id ? null : atual)), 1800)
+  }
   // Onde entra o divisor: antes da N-ésima mensagem RECEBIDA contando do fim.
   // Só mensagem do cliente conta como "por ler" — o que nós mandamos já foi
   // lido por quem escreveu.
@@ -146,8 +166,9 @@ export function MessageList({
           return (
             <div
               key={m.id}
+              id={`msg-${m.id}`}
               ref={m.id === destacada ? refDestacada : undefined}
-              className={m.id === destacada ? 'rounded-lg ring-2 ring-primary/60' : undefined}
+              className={m.id === destacada || m.id === realce ? 'rounded-lg ring-2 ring-primary/60' : undefined}
             >
               {avisoLacuna}
               {i === iDivisor && (
@@ -166,6 +187,7 @@ export function MessageList({
                 meId={meId}
                 onResponder={onResponder}
                 onMudou={onMudou}
+                onIrParaCitada={irParaCitada}
               />
             </div>
           )
@@ -291,6 +313,7 @@ function MessageBubble({
   meId = null,
   onResponder,
   onMudou,
+  onIrParaCitada,
 }: {
   message: WAThreadMessage
   continuacao?: boolean
@@ -298,6 +321,8 @@ function MessageBubble({
   meId?: string | null
   onResponder?: (m: WAThreadMessage) => void
   onMudou?: () => void
+  /** Leva até a mensagem que a citação desta bolha aponta. */
+  onIrParaCitada?: (messageId: string) => void
 }) {
   const { toast } = useToast()
   const { text } = splitAuthor(m.body ?? '')
@@ -398,7 +423,16 @@ function MessageBubble({
         )}
 
         {m.citacao && (
-          <Citacao autor={m.citacao.autor} corpo={m.citacao.corpo} className="mb-1.5" />
+          <Citacao
+            autor={m.citacao.autor}
+            corpo={m.citacao.corpo}
+            className="mb-1.5"
+            onIr={
+              onIrParaCitada && m.citacao.message_id
+                ? () => onIrParaCitada(m.citacao!.message_id!)
+                : undefined
+            }
+          />
         )}
 
         {editando ? (
