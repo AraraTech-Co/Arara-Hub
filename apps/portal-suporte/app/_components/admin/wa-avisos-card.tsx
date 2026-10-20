@@ -183,7 +183,7 @@ export function WAAvisosCard() {
   }
 
   const resumoPrazo =
-    dados.config.prazo_min === null ? 'prazo: o do card' : dados.config.prazo_min === 0 ? 'prazo: na hora' : `prazo: ${dados.config.prazo_min} min`
+    dados.config.prazo_min === null || dados.config.prazo_min === 0 ? 'prazo: na hora' : `prazo: ${dados.config.prazo_min} min`
 
   return (
     <Card>
@@ -222,9 +222,8 @@ export function WAAvisosCard() {
               onChange={(e) => setPrazo(e.target.value)}
             />
             <p className="text-xs text-muted-foreground">
-              <strong>0</strong> avisa na hora. <strong>Vazio</strong> deixa valer o prazo configurado no card do fluxo.
-              De 1 a {dados.maximo_prazo}: espera esse tempo, contado da abertura da janela de plantão para quem chegou na madrugada.
-              O aviso só sai dentro da janela de plantão.
+              <strong>Vazio ou 0</strong> avisa na hora. De 1 a {dados.maximo_prazo}: espera esse tempo, contado da abertura da janela de plantão
+              para quem chegou na madrugada. Depois do primeiro aviso, até 3 lembretes de 5 em 5 minutos. O aviso só sai dentro da janela de plantão.
             </p>
           </div>
 

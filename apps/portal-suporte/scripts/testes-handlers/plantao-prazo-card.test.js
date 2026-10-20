@@ -35,7 +35,12 @@ const ESCALA = [{ id: 'p1', kind: 'plantao', date: '2026-10-12', agent_ids: ['an
 const H = (hhmm) => new Date(`2026-10-12T${hhmm}:00-03:00`).getTime()
 const ABERTURA = H('18:00')
 
-function cenario({ conversas = [], fluxo } = {}) {
+// 21/10/2026: o prazo saiu do card e virou configuração única do painel. Este arquivo continua
+// descrevendo o prazo por conversa (`aviso_plantao_apos_min`), e o `cenario` o traduz: o maior prazo
+// das conversas vira o `prazo_min` do painel, e o campo sai da conversa (ele não existe mais).
+function cenario({ conversas = [], fluxo, prazo } = {}) {
+  const doPainel = prazo !== undefined ? prazo : conversas.map((c) => Number(c.aviso_plantao_apos_min || 0)).find((n) => n > 0)
+  conversas = conversas.map((c) => { const { aviso_plantao_apos_min, ...resto } = c; return resto })
   const estado = { conversas: conversas.map((c) => ({ ...c })), eventos: [], enviadas: [] }
   const publicado = fluxo || {
     root: 'at',
@@ -55,7 +60,7 @@ function cenario({ conversas = [], fluxo } = {}) {
         update: async (id, p) => { const c = estado.conversas.find((x) => x.id === id); if (c) Object.assign(c, p) },
       },
       WhatsAppMessage: { findMany: async () => [], create: async () => ({}) },
-      SystemSettings: { findMany: async () => [{ waMenuEnabled: true, waHorario: JSON.stringify(HORARIO) }] },
+      SystemSettings: { findMany: async () => [{ waMenuEnabled: true, waHorario: JSON.stringify(HORARIO), ...(doPainel ? { wa_avisos: { prazo_min: doPainel } } : {}) }] },
       SupportSchedule: { findMany: async () => ESCALA },
       Profile: { findMany: async () => PERFIS, findById: async (id) => PERFIS.find((p) => p.id === id) || null },
       WaConversationEvents: { findMany: async () => estado.eventos, create: async (e) => { estado.eventos.push(e); return e } },
@@ -105,7 +110,7 @@ const comToken = (c, extra = {}) => ctxDe(c, Object.assign({ agendadorInterno: T
   c.estado.conversas.push(naFila('c1', null, { aguardando_desde: null }))
   await comRelogio(H('19:00'), () => _triagem(ctxInbound(c), c.estado.conversas[0], 'oi'))
   ok('card sem o campo: o inbound avisa na hora', avisos(c).length === 1, avisos(c))
-  ok('  e grava prazo 0 na conversa', c.estado.conversas[0].aviso_plantao_apos_min === 0,
+  ok('  e não grava prazo na conversa (o campo não existe mais)', c.estado.conversas[0].aviso_plantao_apos_min === undefined,
     c.estado.conversas[0].aviso_plantao_apos_min)
 
   c = cenario({
@@ -123,11 +128,12 @@ const comToken = (c, extra = {}) => ctxDe(c, Object.assign({ agendadorInterno: T
   }
   c = cenario({ conversas: [naFila('c1', null, { aguardando_desde: null })], fluxo: COM_PRAZO })
   await comRelogio(H('19:00'), () => _triagem(ctxInbound(c), c.estado.conversas[0], 'oi'))
-  ok('card com prazo: o inbound não avisa na hora', avisos(c).length === 0, avisos(c))
+  ok('prazo no CARD é ignorado: o inbound avisa na hora', avisos(c).length === 1, avisos(c))
+  c = cenario({ conversas: [naFila('c1', null, { aguardando_desde: null })], prazo: 10 })
+  await comRelogio(H('19:00'), () => _triagem(ctxInbound(c), c.estado.conversas[0], 'oi'))
+  ok('prazo do painel (10): o inbound não avisa na hora', avisos(c).length === 0, avisos(c))
   ok('  mas o cliente recebe a mensagem do card na hora',
     c.estado.enviadas.some((e) => String(e.message).includes('Já avisamos a equipe')), c.estado.enviadas)
-  ok('  e o prazo fica gravado na conversa', c.estado.conversas[0].aviso_plantao_apos_min === 10,
-    c.estado.conversas[0].aviso_plantao_apos_min)
   ok('  com a espera carimbada', !!c.estado.conversas[0].aguardando_desde, c.estado.conversas[0])
 
   // ══ o relógio respeita o prazo ═════════════════════════════════════════
@@ -181,17 +187,16 @@ const comToken = (c, extra = {}) => ctxDe(c, Object.assign({ agendadorInterno: T
     fluxo: { root: 'at', nodes: [{ id: 'at', type: 'handoff', data: { text: 'ok', avisarApos: 9999 } }], edges: [] },
   })
   await comRelogio(H('19:00'), () => _triagem(ctxInbound(c), c.estado.conversas[0], 'oi'))
-  ok('prazo absurdo é cortado em 240', c.estado.conversas[0].aviso_plantao_apos_min === 240,
-    c.estado.conversas[0].aviso_plantao_apos_min)
+  ok('prazo absurdo no card (legado) é ignorado: avisa na hora', avisos(c).length === 1 && c.estado.conversas[0].aviso_plantao_apos_min === undefined,
+    avisos(c).length)
 
   c = cenario({
     conversas: [naFila('c1', null, { aguardando_desde: null })],
     fluxo: { root: 'at', nodes: [{ id: 'at', type: 'handoff', data: { text: 'ok', avisarApos: 'dez' } }], edges: [] },
   })
   await comRelogio(H('19:00'), () => _triagem(ctxInbound(c), c.estado.conversas[0], 'oi'))
-  ok('prazo que não é número vira 0 (avisa na hora)',
-    c.estado.conversas[0].aviso_plantao_apos_min === 0 && avisos(c).length === 1,
-    { prazo: c.estado.conversas[0].aviso_plantao_apos_min, avisos: avisos(c).length })
+  ok('prazo que não é número no card (legado) é ignorado: avisa na hora',
+    avisos(c).length === 1, { avisos: avisos(c).length })
 
   // ══ os dois caminhos concordam sobre o prazo ═══════════════════════════
   // A função do prazo é copiada entre os blocos 485 e 490m (strings compiladas
@@ -223,10 +228,10 @@ const comToken = (c, extra = {}) => ctxDe(c, Object.assign({ agendadorInterno: T
   // O editor mentir sobre o teto do card Atraso foi o defeito que eu mesmo
   // descrevi errado no PR #22. Aqui o simulador diz o prazo e avisa que nada
   // é enviado.
-  async function simuladoCom(avisarApos) {
+  async function simuladoCom(avisarApos) {   // o argumento é o prazo do PAINEL; o card não o carrega mais
     const grafo = {
       root: 'at',
-      nodes: [{ id: 'at', type: 'handoff', data: { label: 'Atendente', text: 'Chamando alguém.', avisarApos } }],
+      nodes: [{ id: 'at', type: 'handoff', data: { label: 'Atendente', text: 'Chamando alguém.' } }],
       edges: [],
     }
     const r = await simular({
@@ -238,7 +243,7 @@ const comToken = (c, extra = {}) => ctxDe(c, Object.assign({ agendadorInterno: T
         Profile: { findById: async () => ({ id: 'u1', role: 'support' }) },
         Sessao: { findById: async () => null },
         WaFlows: { findById: async () => ({ id: 'f1', draft: grafo }) },
-        SystemSettings: { findMany: async () => [] },
+        SystemSettings: { findMany: async () => (avisarApos > 0 ? [{ wa_avisos: { prazo_min: avisarApos } }] : []) },
       },
       reply: reply(),
     })

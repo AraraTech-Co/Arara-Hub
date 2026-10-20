@@ -147,12 +147,13 @@ const problemas = (r) => (r.body && r.body.problemas) || []
   r = await publish(ctxDe({ fluxo: { id: 'f1', version: 2, draft: JSON.stringify(BOM) } }))
   ok('rascunho em string JSON é aceito', r.status !== 400, r.body)
 
-  // ── prazo do card Atendente (PR A) ──────────────────────────────────────
-  // O campo é 0–240 inteiro nos TRÊS lugares que validam: editor, PATCH e
-  // publish. Aqui só dá para alcançar os dois do servidor.
+  // ── prazo do card Atendente (LEGADO, 21/10/2026) ────────────────────────
+  // O prazo do aviso é uma configuração única (painel "Configuração de avisos"). O card não o
+  // oferece nem o valida: um `avisarApos` antigo, mesmo absurdo, não pode impedir o salvamento
+  // de um fluxo sem que a tela tenha onde corrigi-lo.
   for (const [prazo, deveRecusar] of [
     [0, false], [1, false], [240, false],
-    [-1, true], [241, true], [10.5, true], ['dez', true],
+    [-1, false], [241, false], [10.5, false], ['dez', false],
   ]) {
     const g = {
       root: 'a',
@@ -161,11 +162,8 @@ const problemas = (r) => (r.body && r.body.problemas) || []
     }
     const r = await patch(ctxDe({ body: { graph: g } }))
     const recusou = r.status === 400
-    ok(`prazo ${JSON.stringify(prazo)}: ${deveRecusar ? 'recusado' : 'aceito'}`,
+    ok(`avisarApos legado ${JSON.stringify(prazo)} não impede salvar`,
       recusou === deveRecusar, { status: r.status, problemas: problemas(r) })
-    if (deveRecusar) {
-      ok('  e o erro diz a faixa', JSON.stringify(problemas(r)).includes('0 a 240'), problemas(r))
-    }
   }
 
   // ── o exemplo do documento do formato JSON ───────────────────────────────
