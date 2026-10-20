@@ -133,13 +133,15 @@ const esperando = (id, desde, extra = {}) => Object.assign({
   ok('  e nada é enviado', c.estado.enviadas.length === 0, c.estado.enviadas)
 
   // ══ O PONTO PEDIDO: não re-avisa o que o inbound acabou de avisar ═════
+  // Ritmo (21/10/2026): o 1º aviso conta como 1; o lembrete só vem 5 min depois dele.
+  const JANELA = String(new Date('2026-10-12T21:00:00Z').getTime())   // 18:00 em São Paulo
   c = cenario({
     conversas: [esperando('c1', '2026-10-12T22:00:00Z', {
-      aviso_plantao_em: new Date(DENTRO - 5 * 60000).toISOString(),
+      aviso_plantao_em: new Date(DENTRO - 2 * 60000).toISOString(), aviso_plantao_n: 1, aviso_plantao_janela: JANELA,
     })],
   })
   r = await comRelogio(DENTRO, () => varrer(ctxDe(c, { agendadorInterno: TOKEN })))
-  ok('conversa avisada há 5 min pelo inbound NÃO é re-avisada',
+  ok('conversa avisada há 2 min pelo inbound NÃO é re-avisada',
     r.body?.data?.avisou !== true && c.estado.enviadas.length === 0, { r: r.body, enviadas: c.estado.enviadas })
 
   c = cenario({
@@ -203,10 +205,13 @@ const esperando = (id, desde, extra = {}) => Object.assign({
   ok('plantonista sem telefone: não envia e diz o motivo',
     c.estado.enviadas.length === 0 && String(r.body?.data?.motivo).includes('telefone'), r.body)
 
-  // conversa COM dono não entra na fila
+  // conversa COM dono que já respondeu não entra; com dono que NÃO respondeu continua esperando (21/10/2026)
+  c = cenario({ conversas: [esperando('c1', '2026-10-12T22:00:00Z', { assigned_to_id: 'ana', first_response_at: '2026-10-12T22:30:00Z' })] })
+  r = await comRelogio(DENTRO, () => varrer(ctxDe(c, { agendadorInterno: TOKEN })))
+  ok('conversa com atendente que já respondeu não entra na varredura', r.body?.data?.avisou !== true, r.body)
   c = cenario({ conversas: [esperando('c1', '2026-10-12T22:00:00Z', { assigned_to_id: 'ana' })] })
   r = await comRelogio(DENTRO, () => varrer(ctxDe(c, { agendadorInterno: TOKEN })))
-  ok('conversa com atendente não entra na varredura', r.body?.data?.avisou !== true, r.body)
+  ok('conversa assumida SEM resposta continua entrando (o cliente segue esperando)', r.body?.data?.avisou === true, r.body)
 
   fim()
 })().catch((e) => { console.error('ERRO NO TESTE:', e); process.exit(1) })
