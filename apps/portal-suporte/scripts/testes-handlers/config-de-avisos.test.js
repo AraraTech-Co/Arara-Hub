@@ -162,9 +162,9 @@ const soAvisos = (l) => l.filter((e) => String(e.number).startsWith('55199999900
   // prazo: espera desde 22:00Z = 19h SP; agora 20h SP = 60 min
   const cardTrinta = () => [esperando('c1', '2026-10-12T22:50:00Z', { aviso_plantao_apos_min: 30 })]
   x = await ambos({ prazo_min: 0 }, cardTrinta())
-  ok('prazo 0 no painel vence o do card (30): avisa na hora, nos dois', x.rota.length === 1 && x.entrada.length === 1, x)
+  ok('prazo 0 no painel: avisa na hora, nos dois', x.rota.length === 1 && x.entrada.length === 1, x)
   x = await ambos(null, cardTrinta())
-  ok('prazo vazio: vale o do card (30), e 10 min de espera NÃO avisa, nos dois', x.rota.length === 0 && x.entrada.length === 0, x)
+  ok('prazo vazio: avisa na hora, nos dois (o campo legado da conversa não conta mais)', x.rota.length === 1 && x.entrada.length === 1, x)
   x = await ambos({ prazo_min: 15 }, [esperando('c1', '2026-10-12T22:50:00Z')])
   ok('prazo 15 no painel: 10 min de espera não avisa, nos dois', x.rota.length === 0 && x.entrada.length === 0, x)
   x = await ambos({ prazo_min: 15 }, [esperando('c1', '2026-10-12T22:40:00Z')])
@@ -191,8 +191,8 @@ const soAvisos = (l) => l.filter((e) => String(e.number).startsWith('55199999900
   }
   ok('entrega ao atendente: sem prazo nenhum, avisa na hora (como hoje)', (await entrega(null, 0)) === 1)
   ok('  prazo do painel 15: não avisa na hora (quem avisa é o relógio)', (await entrega({ prazo_min: 15 }, 0)) === 0)
-  ok('  prazo do painel 0 vence o do card (30): avisa na hora', (await entrega({ prazo_min: 0 }, 30)) === 1)
-  ok('  prazo vazio: vale o do card (30), não avisa na hora', (await entrega(null, 30)) === 0)
+  ok('  prazo do painel 0, mesmo com card em 30: avisa na hora', (await entrega({ prazo_min: 0 }, 30)) === 1)
+  ok('  card com prazo (30) é ignorado: sem prazo no painel, avisa na hora', (await entrega(null, 30)) === 1)
 
   fim()
 })().catch((e) => { console.error('ERRO NO TESTE:', e); process.exit(1) })
