@@ -54,7 +54,7 @@ function compilar(codigo) {
 const cod = codigoDe('432 whatsapp GET /whatsapp')
 const PEDIDOS = [
   ['findMany({ mascararCampos: _MASCARAR_MIDIA })', 'findMany({})'],
-  ['findMany({ conversation_id: _faltam[_q], mascararCampos: _MASCARAR_MIDIA })', 'findMany({ conversation_id: _faltam[_q] })'],
+  ['findMany({ conversation_id: _faltam[_q], limit: 1, mascararCampos: _MASCARAR_MIDIA })', 'findMany({ conversation_id: _faltam[_q] })'],
 ]
 const pedidosAusentes = []
 let codAntigo = cod
@@ -115,11 +115,11 @@ function mundo({ conversas, mensagens }) {
       const filtro = arg || {}
       w.chamadas.push(JSON.parse(JSON.stringify(filtro)))
       const campos = Array.isArray(filtro.mascararCampos) ? filtro.mascararCampos : []
-      const chaves = Object.keys(filtro).filter((k) => k !== 'mascararCampos')
+      const chaves = Object.keys(filtro).filter((k) => k !== 'mascararCampos' && k !== 'limit')
       const originais = mensagens
         .filter((m) => chaves.every((k) => String(m[k] ?? '') === String(filtro[k])))
         .slice().sort((a, b) => String(b.timestamp).localeCompare(String(a.timestamp))) // as mais novas primeiro
-        .slice(0, 500)
+        .slice(0, Math.min(500, Math.max(1, Number(filtro.limit) || 500)))
       const devolvidas = originais.map((m) => mascara(m, campos))
       w.lidas.push({
         tipo: chaves.length ? 'por-conversa' : 'sem-filtro',
