@@ -95,8 +95,11 @@ function envelhecer(slug, ms) {
       ok(`  ${n}: lida de novo na 2ª chamada, como hoje`,
         c.lidas[n] === depoisDa1a[n] * 2, { depois1: depoisDa1a[n], depois2: c.lidas[n] })
     }
-    ok('  e CompanyContact segue com as 2 leituras por chamada que já tinha',
-      depoisDa1a.CompanyContact === 2, depoisDa1a.CompanyContact)
+    // Uma das duas leituras era a do mapa de nomes por JID, que só serve às menções
+    // `@número` do corpo. Sem menção ela não acontece mais (nomes-so-quando-ha-mencao.test.js);
+    // sobra a do `loadDeps`.
+    ok('  e CompanyContact fica com 1 leitura por chamada (a do mapa de nomes só vem com menção)',
+      depoisDa1a.CompanyContact === 1, depoisDa1a.CompanyContact)
   }
 
   // ══ passados 60 s, relê ════════════════════════════════════════════════
