@@ -136,9 +136,9 @@ const aoCliente = (c) => c.enviadas.filter((e) => String(e.numero).startsWith('5
   c = await roda({
     agoraISO: agora,
     escalas: [PLANTAO_HOJE('2026-10-12', ['ana'])],
-    conv: { aviso_plantao_em: '2026-10-12T22:45:00Z' },   // 15 min atrás
+    conv: { aviso_plantao_em: '2026-10-12T22:58:00Z', aviso_plantao_n: 1, aviso_plantao_janela: String(new Date('2026-10-12T21:00:00Z').getTime()) },   // 2 min atrás
   })
-  ok('avisado há 15 min não avisa de novo', avisos(c).length === 0, avisos(c))
+  ok('avisado há 2 min não avisa de novo (o lembrete é de 5 em 5 min)', avisos(c).length === 0, avisos(c))
 
   c = await roda({
     agoraISO: agora,
@@ -200,17 +200,17 @@ const aoCliente = (c) => c.enviadas.filter((e) => String(e.numero).startsWith('5
   c = await roda({
     agoraISO: agora,
     escalas: [PLANTAO_HOJE('2026-10-12', ['ana'])],
-    outras: [{ id: 'c9', remote_jid: '5544444444444@s.whatsapp.net', status: 'open', phase: 'em_atendimento', assigned_to_id: 'carla', aguardando_desde: '2026-10-11T02:00:00Z' }],
+    outras: [{ id: 'c9', remote_jid: '5544444444444@s.whatsapp.net', status: 'open', phase: 'em_atendimento', assigned_to_id: 'carla', first_response_at: '2026-10-12T22:00:00Z', aguardando_desde: '2026-10-11T02:00:00Z' }],
   })
-  ok('conversa já atribuída não entra na varredura', !avisos(c)[0].texto.includes('2 conversas'), avisos(c)[0].texto)
+  ok('conversa atribuída que já respondeu não entra na varredura', !avisos(c)[0].texto.includes('2 conversas'), avisos(c)[0].texto)
 
   // Conversa avisada há pouco não volta na varredura.
   c = await roda({
     agoraISO: agora,
     escalas: [PLANTAO_HOJE('2026-10-12', ['ana'])],
-    outras: [{ id: 'c8', remote_jid: '5555555555555@s.whatsapp.net', status: 'open', phase: 'novo', aguardando_desde: '2026-10-11T02:00:00Z', aviso_plantao_em: '2026-10-12T22:50:00Z' }],
+    outras: [{ id: 'c8', remote_jid: '5555555555555@s.whatsapp.net', status: 'open', phase: 'novo', aguardando_desde: '2026-10-11T02:00:00Z', aviso_plantao_em: '2026-10-12T22:58:00Z', aviso_plantao_n: 1, aviso_plantao_janela: String(new Date('2026-10-12T21:00:00Z').getTime()) }],
   })
-  ok('conversa avisada há 10 min não volta na varredura',
+  ok('conversa avisada há 2 min não volta na varredura',
     !avisos(c)[0].texto.includes('2 conversas'), avisos(c)[0].texto)
 
   // ── o texto ao cliente ───────────────────────────────────────────────────

@@ -149,9 +149,9 @@ const comToken = (c, extra = {}) => ctxDe(c, Object.assign({ agendadorInterno: T
   ok('bem depois do prazo: avisa', avisos(c).length === 1, avisos(c))
 
   // ══ alguém assumiu antes: nada sai, nunca ══════════════════════════════
-  c = cenario({ conversas: [emEspera(10, '2026-10-12T22:00:00Z', { assigned_to_id: 'ana' })] })
+  c = cenario({ conversas: [emEspera(10, '2026-10-12T22:00:00Z', { assigned_to_id: 'ana', first_response_at: '2026-10-12T22:30:00Z' })] })
   await comRelogio(H('19:40'), () => varrer(comToken(c)))
-  ok('assumida antes do prazo: nada é enviado', avisos(c).length === 0, avisos(c))
+  ok('assumida e respondida antes do prazo: nada é enviado', avisos(c).length === 0, avisos(c))
 
   // ══ a madrugada: o prazo conta da ABERTURA ═════════════════════════════
   // Esperando desde 02:00; a janela abre às 18:00. Com prazo de 10 min, o
@@ -169,10 +169,10 @@ const comToken = (c, extra = {}) => ctxDe(c, Object.assign({ agendadorInterno: T
   await comRelogio(H('18:01'), () => varrer(comToken(c)))
   ok('  sem prazo, a abertura avisa (o diferido continua)', avisos(c).length === 1, avisos(c))
 
-  // ══ anti-spam de 30 min continua acima do prazo ════════════════════════
-  c = cenario({ conversas: [emEspera(10, '2026-10-12T22:00:00Z', { aviso_plantao_em: '2026-10-12T22:15:00Z' })] })
+  // ══ o ritmo (5 min entre lembretes) continua acima do prazo ═══════════
+  c = cenario({ conversas: [emEspera(10, '2026-10-12T22:00:00Z', { aviso_plantao_em: '2026-10-12T22:28:00Z', aviso_plantao_n: 1, aviso_plantao_janela: String(new Date('2026-10-12T21:00:00Z').getTime()) })] })
   await comRelogio(H('19:30'), () => varrer(comToken(c)))
-  ok('prazo vencido mas avisado há 15 min: não repete', avisos(c).length === 0, avisos(c))
+  ok('prazo vencido mas avisado há 2 min: não repete', avisos(c).length === 0, avisos(c))
 
   // ══ prazo fora de faixa não quebra o motor ═════════════════════════════
   // O editor valida 1–240, mas o fluxo pode vir de importação de JSON.
