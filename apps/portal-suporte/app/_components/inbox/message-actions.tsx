@@ -183,17 +183,34 @@ export function Citacao({
   autor,
   corpo,
   className,
+  onIr,
 }: {
   autor: string | null
   corpo: string
   className?: string
+  /** Quando dado, a citação vira um botão que leva até a mensagem citada. */
+  onIr?: () => void
 }) {
+  // Filete de 1px: o sistema visual reserva borda colorida acima disso só
+  // para o trilho de prioridade do Kanban.
+  const base = cn('rounded-md border-l border-primary/60 bg-primary/5 px-2 py-1', className)
+  // `span` em bloco, e não `p`: dentro de um `button` só cabe conteúdo de texto.
+  const conteudo = (
+    <>
+      {autor && <span className="block text-[11px] font-semibold text-foreground/80">{autor}</span>}
+      <span className="line-clamp-2 block text-[11px] text-foreground/70">{corpo}</span>
+    </>
+  )
+  if (!onIr) return <div className={base}>{conteudo}</div>
   return (
-    // Filete de 1px: o sistema visual reserva borda colorida acima disso só
-    // para o trilho de prioridade do Kanban.
-    <div className={cn('rounded-md border-l border-primary/60 bg-primary/5 px-2 py-1', className)}>
-      {autor && <p className="text-[11px] font-semibold text-foreground/80">{autor}</p>}
-      <p className="line-clamp-2 text-[11px] text-foreground/70">{corpo}</p>
-    </div>
+    <button
+      type="button"
+      onClick={onIr}
+      title="Ir para a mensagem citada"
+      aria-label="Ir para a mensagem citada"
+      className={cn(base, 'block w-full cursor-pointer text-left hover:bg-primary/10')}
+    >
+      {conteudo}
+    </button>
   )
 }
