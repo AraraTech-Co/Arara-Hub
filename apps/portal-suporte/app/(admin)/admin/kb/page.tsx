@@ -9,8 +9,8 @@
 //     (a tela nem oferece), é da equipe;
 //   - apagar: quem enviou, ou admin (o servidor confere; aqui o botão só aparece para eles);
 //   - até 10 MB por arquivo, medidos pelo servidor; tipos: os do acervo.
-// A busca é por NOME, no navegador, sobre o que já foi carregado — documento é arquivo, não há busca
-// por conteúdo —, e a tela DIZ quando há mais.
+// A pasta é carregada INTEIRA (até 1000 documentos); a busca é por NOME, no navegador — documento é
+// arquivo, não há busca por conteúdo —, e a tela DIZ quando ficou algo por carregar.
 //
 // Outras pastas e restrições de acesso vivem em "Arquivos de apoio".
 // =============================================================================
@@ -30,6 +30,9 @@ import {
 import { ANEXO_ACCEPT, lerDataUri, motivoRecusaAnexo } from '@/lib/anexos'
 import { formatDateShort } from '@/lib/utils'
 
+/** Páginas de 50 por pedido: 20 páginas = 1000 documentos antes de a tela pedir "Carregar mais". */
+const PAGINAS_MAX = 20
+
 export default function BaseDeConhecimentoPage() {
   const { toast } = useToast()
   const { user, appRole } = useAuth()
@@ -45,15 +48,28 @@ export default function BaseDeConhecimentoPage() {
 
   const ehAdmin = ['admin', 'master'].includes(String(appRole || ''))
 
+  // Carrega a pasta INTEIRA (página por página), e não só a primeira: a busca é por nome, no navegador, e
+  // procurar um documento que está na segunda página sem achá-lo faria a pessoa concluir que ele não
+  // existe. Metadado é leve (o conteúdo fica em outro modelo). O teto de páginas protege contra uma
+  // pasta absurda; passando dele, a tela diz e oferece "Carregar mais".
   const carregar = useCallback(async (cur: string | null, acumular: boolean) => {
     setCarregando(true)
     setErro(null)
     try {
-      const r = await arquivosApi.listar(PASTA_BASE_DE_CONHECIMENTO, cur)
-      const d = r.data
-      setDocumentos((antes) => (acumular ? [...antes, ...(d?.arquivos ?? [])] : (d?.arquivos ?? [])))
-      setCursor(d?.cursor ?? null)
-      setTruncado(!!d?.truncado)
+      let acumulados: ArquivoDeApoio[] = []
+      let proximo: string | null = cur
+      let vistoTruncado = false
+      for (let pagina = 0; pagina < PAGINAS_MAX; pagina++) {
+        const r = await arquivosApi.listar(PASTA_BASE_DE_CONHECIMENTO, proximo)
+        const d = r.data
+        acumulados = acumulados.concat(d?.arquivos ?? [])
+        vistoTruncado = vistoTruncado || !!d?.truncado
+        proximo = d?.cursor ?? null
+        if (!proximo) break
+      }
+      setDocumentos((antes) => (acumular ? [...antes, ...acumulados] : acumulados))
+      setCursor(proximo)
+      setTruncado(vistoTruncado)
     } catch (err) {
       // Erro aparece; lista vazia silenciosa pareceria "não há documentos".
       setErro(err instanceof Error ? err.message : 'Não deu para listar os documentos.')
@@ -254,7 +270,7 @@ export default function BaseDeConhecimentoPage() {
               <div className="flex flex-wrap items-center gap-2 border-t border-border pt-3">
                 <span className="text-[11px] text-muted-foreground">
                   mostrando {documentos.length} {truncado ? 'de muitos' : 'até agora'}
-                  {busca ? ' · a busca olha só o que já foi carregado' : ''}
+                  {busca ? ' · a busca olha só o que já foi carregado; use "Carregar mais" para ampliar' : ''}
                 </span>
                 {cursor && (
                   <Button type="button" variant="outline" size="sm" disabled={carregando} onClick={() => void carregar(cursor, true)}>

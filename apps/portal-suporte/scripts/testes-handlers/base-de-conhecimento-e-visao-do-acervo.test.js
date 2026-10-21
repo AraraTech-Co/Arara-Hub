@@ -10,7 +10,9 @@
 //   3. a tela não chama `kbApi` (nem o cliente tem mais list/getById/create/update/delete);
 //   4. tipo e tamanho são conferidos ANTES de ler o arquivo (`motivoRecusaAnexo` antes de `lerDataUri`);
 //   5. apagar só aparece para quem enviou ou para admin (o servidor confere de novo);
-//   6. erro de listagem aparece (não vira lista vazia silenciosa);
+//   6. erro de listagem aparece (não vira lista vazia silenciosa); e a PASTA É CARREGADA INTEIRA (página
+//      por página, com teto de 20), porque a busca é no navegador: achar o documento só se ele estiver na
+//      primeira página faria a pessoa concluir que ele não existe;
 //   7. `lib/api/kb.ts` só expõe `suggest`, e o assistente de chamado não usa mais a listagem de reserva.
 // MUTAÇÕES: cada uma aplicada uma vez e reprovada por asserção.
 //
@@ -39,6 +41,8 @@ function bateria(pagina, arquivos, kb, sugestoes) {
   if (iRecusa < 0 || iLer < 0 || iRecusa > iLer) f.push('confere-depois-de-ler')
   if (!/ehAdmin\s*\|\|\s*\(!!user\?\.id\s*&&\s*d\.dono_id\s*===\s*user\.id\)/.test(pagina) || !/\{posso\s*&&/.test(pagina)) f.push('apagar-aberto-a-todos')
   if (!/catch\s*\(err\)\s*\{[\s\S]*?setErro\(/.test(pagina)) f.push('erro-silencioso')
+  if (!/for \(let pagina = 0; pagina < PAGINAS_MAX; pagina\+\+\)/.test(pagina) || !/if \(!proximo\) break/.test(pagina)) f.push('nao-carrega-a-pasta-inteira')
+  if (!/const PAGINAS_MAX = (\d+)/.test(pagina) || Number((/const PAGINAS_MAX = (\d+)/.exec(pagina) || [0, 0])[1]) < 10) f.push('teto-de-paginas-pequeno-demais')
   if (/\blist\b|getById|\bcreate\b|\bupdate\b|\bdelete\b/.test(kb)) f.push('kb-ainda-tem-metodo-de-artigo')
   if (!/suggest/.test(kb)) f.push('kb-sem-suggest')
   if (/kbApi\.list/.test(sugestoes)) f.push('sugestoes-usam-a-listagem-removida')
@@ -57,6 +61,8 @@ const muts = [
   ['o tamanho é conferido depois de ler', [PAGINA.replace('const recusa = motivoRecusaAnexo(file)', 'const lido0 = await lerDataUri(file)\n const recusa = motivoRecusaAnexo(file)'), ARQUIVOS, KB, SUGESTOES]],
   ['apagar aparece para todos', [PAGINA.replace('const posso = ehAdmin || (!!user?.id && d.dono_id === user.id)', 'const posso = true'), ARQUIVOS, KB, SUGESTOES]],
   ['o erro da listagem some', [PAGINA.replace('setErro(err instanceof Error ? err.message : \'Não deu para listar os documentos.\')', ''), ARQUIVOS, KB, SUGESTOES]],
+  ['a tela carrega só a primeira página', [PAGINA.replace('if (!proximo) break', ''), ARQUIVOS, KB, SUGESTOES]],
+  ['o teto de páginas fica pequeno', [PAGINA.replace('const PAGINAS_MAX = 20', 'const PAGINAS_MAX = 1'), ARQUIVOS, KB, SUGESTOES]],
   ['o cliente kb ganha list de volta', [PAGINA, ARQUIVOS, KB + '\n  list: () => 0', SUGESTOES]],
   ['as sugestões usam a listagem removida', [PAGINA, ARQUIVOS, KB, SUGESTOES + '\nkbApi.list({})']],
 ]
