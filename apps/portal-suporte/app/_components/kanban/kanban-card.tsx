@@ -8,7 +8,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Paperclip, MessageSquare, Building2, User, Copy, ChevronDown, Star, UserCheck, Flag, CheckCircle, GitPullRequest, ExternalLink, MapPin, ArrowDownLeft } from 'lucide-react';
+import { Paperclip, MessageSquare, Building2, User, Copy, ChevronDown, Star, UserCheck, Flag, CheckCircle, GitPullRequest, ExternalLink, MapPin, ArrowDownLeft, Code2 } from 'lucide-react';
+import { prazoDoDev } from '@/lib/dev-do-chamado';
 import { SlaIndicator } from '@/components/ui/sla-indicator';
 import { memo, useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -647,6 +648,20 @@ export const KanbanCard = memo(function KanbanCard({ ticket, isDragging = false,
                     <span className="text-muted-foreground/50">
                       {' '}+{ticket.co_assignees!.length}
                     </span>
+                  )}
+                </span>
+              </div>
+            )}
+
+            {/* Dev responsável e o prazo DELE (interno): só chega para o suporte, quando o chamado foi
+                escalado e um dev assumiu o card. O prazo prometido ao cliente é o SLA, acima. */}
+            {ticket.dev && (
+              <div className="flex items-center gap-1 text-[11px] text-muted-foreground/70" title={`Card Dev ${ticket.dev.numero ?? ''}`.trim()}>
+                <Code2 className="h-3 w-3 shrink-0 text-muted-foreground/50" />
+                <span className="truncate">
+                  Dev: {ticket.dev.responsavel.nome || 'sem nome'}
+                  {prazoDoDev(ticket.dev.previsao_entrega) && (
+                    <span className="text-muted-foreground/50"> · até {prazoDoDev(ticket.dev.previsao_entrega)}</span>
                   )}
                 </span>
               </div>

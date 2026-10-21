@@ -692,6 +692,10 @@ function DialogoMover({ card, para, cards, devs, euId, onFechar, onFeito }: {
   const [versoes, setVersoes] = useState<Versao[]>([])
   const [novaVersao, setNovaVersao] = useState('')
   const [esforco, setEsforco] = useState<EsforcoEntrega | ''>('')
+  // ASAP é urgência, mas o suporte precisa saber quando esperar: a data é obrigatória (o servidor recusa sem ela).
+  const [dataAsap, setDataAsap] = useState('')
+  const hojeIso = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` })()
+  const asapSemData = esforco === 'asap' && !(dataAsap && dataAsap >= hojeIso)
   const [salvando, setSalvando] = useState(false)
   const [erro, setErro] = useState('')
 
@@ -721,7 +725,7 @@ function DialogoMover({ card, para, cards, devs, euId, onFechar, onFeito }: {
       }
       if (exige.esforco && esforcoValido(esforco)) {
         extras.esforco_entrega = esforco
-        extras.previsao_entrega = previsaoDeEsforco(esforco)
+        extras.previsao_entrega = esforco === 'asap' ? dataAsap : previsaoDeEsforco(esforco)
       }
       await kanbanDevApi.mover(card.id, para, extras)
       // Evidências sobem DEPOIS do mover, no próprio card. Se uma falhar, a
@@ -754,7 +758,7 @@ function DialogoMover({ card, para, cards, devs, euId, onFechar, onFeito }: {
     (!exige.motivo || motivo.trim() || card.migrado) &&
     (!exige.versao || versao || novaVersao.trim() || card.migrado) &&
     (!exige.servidorHml || ehServidorHml(servidorHml) || card.migrado) &&
-    (!exige.esforco || esforcoValido(esforco) || card.migrado) &&
+    (!exige.esforco || (esforcoValido(esforco) && !asapSemData) || card.migrado) &&
     (!exige.reprovacao || card.migrado ||
       (reprovacao.motivo.trim() && reprovacao.encontrado.trim() && reprovacao.esperado.trim()))
 
@@ -790,7 +794,20 @@ function DialogoMover({ card, para, cards, devs, euId, onFechar, onFeito }: {
               ))}
             </div>
             {esforco === 'asap' && (
-              <p className="mt-2 text-xs font-medium text-red-600 dark:text-red-400">Sem data — o card fica destacado como urgente.</p>
+              <div className="mt-2">
+                <label htmlFor="asap-data" className="text-xs font-medium text-foreground">Entrega até (obrigatório) *</label>
+                <input
+                  id="asap-data"
+                  type="date"
+                  min={hojeIso}
+                  value={dataAsap}
+                  onChange={(e) => setDataAsap(e.target.value)}
+                  className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm"
+                />
+                <p className="mt-1 text-xs font-medium text-red-600 dark:text-red-400">
+                  O card fica destacado como urgente, e o suporte vê esta data como o prazo do dev.
+                </p>
+              </div>
             )}
             {previsaoPreview && (
               <p className="mt-2 text-xs text-muted-foreground">
