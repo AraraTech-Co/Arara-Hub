@@ -256,18 +256,30 @@ function ctxDe(M, id, body) {
 }
 
 const json = (x) => JSON.stringify(x)
+// 21/10/2026: a última mensagem do detalhe passou a ser a mais recente por ORDEM DE GRAVAÇÃO (uma leitura
+// com `limit: 1`, como a lista), e a leitura em camelCase só acontece quando a principal não acha nada.
+// Onde a fixture mistura carimbos fora de ordem e a grafia antiga, a escolha da versão de antes (maior
+// `timestamp`, as duas grafias) diverge de propósito. A resposta é comparada SEM `last_message`, e a
+// última mensagem é conferida à parte contra a regra nova.
+const semUlt = (r) => json(r && r.body && r.body.data ? { ...r, body: { ...r.body, data: { ...r.body.data, last_message: undefined } } } : r)
 
 async function main() {
 // ═══ 1. GET: resposta IDÊNTICA para as 20 conversas (e uma que não existe) ═══
 {
   const A = montar(), B = montar()
   let todasIguais = true, primeiraDif = null, reais = 0, naoReal = null
-  const respostasNovas = []
+  const respostasNovas = [], ultimaErrada = []
   for (const id of [...A.convs, 'nao-existe']) {
     const novo = await (R433.novo(ctxDe(A.M, id)))
     if (novo && novo.status === 200 && novo.body && novo.body.data) respostasNovas.push(novo.body.data)
     const antigo = await (R433.antigo(ctxDe(B.M, id)))
-    if (json(novo) !== json(antigo)) { todasIguais = false; primeiraDif = primeiraDif || { id, novo, antigo } }
+    if (semUlt(novo) !== semUlt(antigo)) { todasIguais = false; primeiraDif = primeiraDif || { id, novo, antigo } }
+    if (id !== 'nao-existe') {
+      const gravadas = A.M.WhatsAppMessage.linhas.filter((l) => l.data.conversation_id === id).sort((x, y) => y.createdAt - x.createdAt || y.ordem - x.ordem)
+      const esperada = gravadas[0] ? gravadas[0].data.id : null
+      const veio = novo && novo.body && novo.body.data && novo.body.data.last_message ? novo.body.data.last_message.id : null
+      if (esperada !== veio) ultimaErrada.push({ id, esperada, veio })
+    }
     // TRAVA CONTRA VERDE FALSO: duas negativas iguais (403, 500) também são
     // "idênticas". Só conta como conversa real a resposta 200 com o id pedido.
     if (id !== 'nao-existe') {
@@ -307,7 +319,8 @@ async function main() {
     const pendente = respostasNovas.filter((d) => d.assigned_to_id && !d.assigned_to).length
     ok('TRAVA DE MASSA — há conversa com responsável PENDENTE (id sem registro): o ramo "não achou" é exercitado', pendente >= 1, pendente)
   }
-  ok('GET /whatsapp/:id — JSON idêntico, 20 conversas + 1 inexistente', todasIguais, primeiraDif)
+  ok('GET /whatsapp/:id — JSON idêntico (fora a última mensagem), 20 conversas + 1 inexistente', todasIguais, primeiraDif)
+  ok('GET /whatsapp/:id — a última mensagem é a gravada por último pela grafia de sempre, nas 20 conversas', ultimaErrada.length === 0, ultimaErrada)
 }
 
 // ═══ 2. PATCH: idêntico (resposta E conversa gravada) ═══════════════════════
@@ -320,7 +333,7 @@ async function main() {
     const antigo = await (R459.antigo(ctxDe(B.M, id, corpo)))
     const gravadoN = json(A.M.WhatsAppConversation.linhas.find((l) => l.data.id === id).data)
     const gravadoA = json(B.M.WhatsAppConversation.linhas.find((l) => l.data.id === id).data)
-    if (json(novo) !== json(antigo) || gravadoN !== gravadoA) { iguais = false; dif = dif || { id, novo, antigo } }
+    if (semUlt(novo) !== semUlt(antigo) || gravadoN !== gravadoA) { iguais = false; dif = dif || { id, novo, antigo } }
     if (!(novo && novo.status === 200 && novo.body && novo.body.data && novo.body.data.priority === 'high')) { reais = false; naoReal = naoReal || { id, novo } }
   }
   ok('as 20 edições foram APLICADAS (200 e prioridade nova na resposta)', reais && !naoReal, naoReal)
@@ -361,7 +374,7 @@ async function main() {
   const dn = novo.body && novo.body.data, da = antigo.body && antigo.body.data
   ok('chamado fora das 500 mais recentes: a antiga devolvia null', da && da.ticket === null, da && da.ticket)
   ok('chamado fora das 500 mais recentes: a nova devolve o chamado', dn && dn.ticket && dn.ticket.id === 't1', dn && dn.ticket)
-  const semTicket = (d) => json({ ...d, ticket: undefined })
+  const semTicket = (d) => json({ ...d, ticket: undefined, last_message: undefined })
   ok('e tudo o MAIS é idêntico (a diferença é só o campo `ticket`)', semTicket(dn) === semTicket(da), { dn, da })
 }
 {
