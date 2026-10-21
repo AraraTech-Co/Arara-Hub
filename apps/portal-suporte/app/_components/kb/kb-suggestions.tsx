@@ -38,8 +38,8 @@ export function KbSuggestions({ query, className = '' }: KbSuggestionsProps) {
           setArticles(articles)
           setSemantic(true)
         } else {
-          return kbApi.list({ q: query, limit: '5' })
-            .then(d => { if (!cancelled) setArticles(((d as any).data ?? d).articles ?? []) })
+          // Sem artigo que case: nada a sugerir. A listagem de reserva (`GET /kb`) saiu do servidor.
+          setArticles([])
         }
       })
       .catch(() => { if (!cancelled) setArticles([]) })
