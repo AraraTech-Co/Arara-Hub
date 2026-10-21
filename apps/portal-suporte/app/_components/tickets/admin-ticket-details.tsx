@@ -1,5 +1,6 @@
 "use client";
 
+import type { DevDoChamado } from "@/lib/dev-do-chamado";
 import { useState, useRef, useEffect } from "react";
 import { KbSuggestions } from "@/components/kb/kb-suggestions";
 import { Badge } from "@/components/ui/badge";
@@ -72,6 +73,8 @@ interface AdminTicketDetailsProps {
     tags?: string[] | null;
     recurring?: boolean | null;
     pull_request_url?: string | null;
+    /** Dev responsável e prazo do card Dev aberto deste chamado (só o suporte recebe). */
+    dev?: DevDoChamado | null;
     created_at: string;
     is_public: boolean;
     company_name: string | null;

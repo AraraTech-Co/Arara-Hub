@@ -31,6 +31,7 @@ import { TicketTimeline } from '@/components/tickets/ticket-timeline'
 import { TicketInternalComments } from '@/components/tickets/ticket-internal-comments'
 import { companiesApi } from '@/lib/api/companies'
 import { ehAgenteAtivo } from '@/lib/arara/auth-storage'
+import type { DevDoChamado } from '@/lib/dev-do-chamado'
 
 type Row = Record<string, unknown>
 
@@ -144,7 +145,8 @@ export default function AdminTicketViewPage() {
           full_name: (c.full_name as string) ?? null,
           email: String(c.email || ''),
           role: String(c.role || ''),
-        })),
+        })),        // Dev responsável e prazo do card Dev (só o suporte recebe a chave).
+        dev: (ticket as { dev?: DevDoChamado | null }).dev ?? null,
       }
     : null
 

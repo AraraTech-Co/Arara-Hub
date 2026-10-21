@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { PendenciaSubTypeDialog, type PendencySubSelection } from '@/components/kanban/pendencia-subtype-dialog';
 import { PendencyDialog } from "@/components/kanban/pendency-dialog";
+import { prazoDoDev, type DevDoChamado } from "@/lib/dev-do-chamado";
 import {
   getStatusLabel,
   getStatusColor,
@@ -59,6 +60,8 @@ interface TicketActionsCardTicket {
   ai_justification?: string | null;
   assigned_to: { id: string; full_name: string | null; email: string } | null;
   co_assignees?: CoAssignee[];
+  /** Dev responsável e prazo do card Dev aberto deste chamado (só o suporte recebe). */
+  dev?: DevDoChamado | null;
 }
 
 interface TicketActionsCardProps {
@@ -380,7 +383,21 @@ export function TicketActionsCard({ ticket, agents, userRole = "developer", onRe
               <ArrowUpCircle className="h-3.5 w-3.5" />
               Já escalado — aguardando o Dev
             </div>
-          ) : (
+          ) : null}
+          {ticket.status === "pendencia_dev" && ticket.dev && (
+            // Quem assumiu o card Dev e até quando ele prevê entregar. É o prazo do DEV, interno: o prazo
+            // prometido ao cliente continua sendo o SLA do chamado.
+            <div className="mt-1.5 rounded-md border border-status-pending-dev-bd bg-background px-2 py-1.5 text-xs text-foreground">
+              <p>
+                Dev: <strong>{ticket.dev.responsavel.nome || "sem nome"}</strong>
+                {prazoDoDev(ticket.dev.previsao_entrega) ? <> · prazo do dev: <strong>{prazoDoDev(ticket.dev.previsao_entrega)}</strong></> : null}
+              </p>
+              <a href="/admin/kanban-dev" className="text-[11px] text-muted-foreground underline underline-offset-2">
+                Abrir no Kanban Dev{ticket.dev.numero ? ` (${ticket.dev.numero})` : ""}
+              </a>
+            </div>
+          )}
+          {ticket.status === "pendencia_dev" ? null : (
             <button
               type="button"
               onClick={async () => {

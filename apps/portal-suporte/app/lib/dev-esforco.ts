@@ -17,7 +17,7 @@ export const ESFORCO_OPCOES: {
   label: string
   ajuda: string
 }[] = [
-  { value: 'asap', label: 'ASAP', ajuda: 'O mais cedo possível — sem data; tratado como urgente.' },
+  { value: 'asap', label: 'ASAP', ajuda: 'O mais cedo possível — exige uma data de entrega; tratado como urgente.' },
   { value: 'meio_sprint', label: '1/2 Sprint', ajuda: 'Sexta desta semana, até o meio-dia.' },
   { value: 'um_sprint', label: '1 Sprint', ajuda: 'Sexta da próxima semana, até o meio-dia.' },
   { value: 'dois_sprints', label: '2 Sprints', ajuda: 'Sexta daqui a 4 semanas, até o meio-dia.' },

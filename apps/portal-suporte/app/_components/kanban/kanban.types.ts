@@ -72,6 +72,8 @@ export interface KanbanCurrentUser {
 }
 
 /** Shape solto recebido de qualquer uma das duas origens — ver comentário acima. */
+import type { DevDoChamado } from '@/lib/dev-do-chamado'
+
 export interface RawKanbanTicket {
   id: string
   title: string
@@ -108,6 +110,8 @@ export interface RawKanbanTicket {
   /** Resolvidos pelo controller do kanban — antes vinha só o id. */
   co_assignees?: KanbanPerson[]
   escalated_to_user?: KanbanPerson | null
+  /** Dev responsável e prazo do card Dev aberto deste chamado (só o suporte recebe). */
+  dev?: DevDoChamado | null
   /** Responsável + escalado + co-responsáveis. É o que o filtro por pessoa usa. */
   envolvidos?: string[]
   message_count?: number
@@ -169,6 +173,8 @@ export interface KanbanTicket {
   assignee: KanbanPerson | null
   co_assignees?: KanbanPerson[]
   escalated_to_user?: KanbanPerson | null
+  /** Dev responsável e prazo do card Dev aberto deste chamado (só o suporte recebe). */
+  dev?: DevDoChamado | null
   envolvidos?: string[]
   message_count: number
   attachment_count: number

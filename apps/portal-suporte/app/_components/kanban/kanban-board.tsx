@@ -152,6 +152,7 @@ function normalizeTicket(t: RawKanbanTicket): KanbanTicket {
     assignee: t.assignee ?? null,
     co_assignees: t.co_assignees ?? [],
     escalated_to_user: t.escalated_to_user ?? null,
+    dev: t.dev ?? null,
     // Responsável + escalado + co-responsáveis, calculado no servidor.
     envolvidos: t.envolvidos ?? [],
     message_count: t.message_count ?? t._count?.messages ?? 0,
