@@ -114,6 +114,26 @@ async function bateria(codigo) {
   if (!igual(g.ids, seq(0, 79)) || 'incremental' in g.c || !g.c.historico || g.c.historico.total !== 80 || g.leituras.length !== 1 || 'limit' in g.leituras[0]) f.push('legado')
   const g2 = await rodar(codigo, {}, massa(600))
   if (g2.ids.length !== 600) f.push('legado-paginas')
+  // ORDEM DE CHEGADA: a mensagem que chega DEPOIS (gravada por último) com carimbo ANTIGO
+  const atrasada = { ...msg(10), id: 'mATRASADA', body: 'chegou tarde', timestamp: new Date(BASE + 2 * 60000 + 30000).toISOString() }
+  const comAtraso = massa(10).concat([atrasada])
+  const t1 = await rodar(codigo, { depois: 'm9' }, comAtraso)
+  if (!igual(t1.ids, ['mATRASADA'])) f.push('depois-nao-perde-a-atrasada')
+  const t2 = await rodar(codigo, { depois: 'mATRASADA' }, comAtraso.concat([{ ...msg(11), id: 'm11' }]))
+  if (!igual(t2.ids, ['m11'])) f.push('depois-da-atrasada')
+  const t3 = await rodar(codigo, { limite: '3' }, comAtraso)
+  if (!igual(t3.ids, ['mATRASADA', 'm8', 'm9']) || t3.c.incremental.tem_mais !== true) f.push('ultimas-pela-chegada-exibe-por-carimbo')
+  const t4 = await rodar(codigo, { antes: 'm5', limite: '3' }, comAtraso)
+  if (!igual(t4.ids, seq(2, 4)) || t4.c.incremental.tem_mais !== true) f.push('antes-pela-chegada')
+  const t5 = await rodar(codigo, { antes: 'mATRASADA', limite: '2' }, comAtraso)
+  if (!igual(t5.ids, ['m8', 'm9'])) f.push('antes-da-atrasada')
+  const t6 = await rodar(codigo, {}, comAtraso)
+  if (t6.ids.indexOf('mATRASADA') !== 3) f.push('exibicao-por-carimbo')
+  // conversa sem mensagem: UMA leitura, com filtro, em todos os modos (sem reserva sem filtro)
+  for (const q of [{}, { limite: '5' }, { antes: 'x' }, { depois: 'x' }]) {
+    const v = await rodar(codigo, q, [])
+    if (v.ids.length || v.leituras.length !== 1 || !v.leituras.every((l) => 'conversation_id' in l)) f.push('vazia-sem-reserva:' + Object.keys(q).join(''))
+  }
   return f
 }
 
@@ -139,6 +159,18 @@ async function bateria(codigo) {
   ok('`depois` com cursor fora das 100 mais recentes: `lacuna: true` (a tela refaz a abertura)', longe.ids.length === 0 && longe.c.incremental.lacuna === true, longe.c.incremental)
   const vazia = await rodar(NOVO, { depois: 'm1' }, [])
   ok('`depois` numa conversa vazia: vazio e sem varredura de reserva (uma leitura só)', vazia.ids.length === 0 && vazia.leituras.length === 1, vazia.leituras)
+  const semNada = [await rodar(NOVO, {}, []), await rodar(NOVO, { limite: '5' }, []), await rodar(NOVO, { antes: 'x' }, [])]
+  ok('conversa sem mensagem, em TODOS os modos: uma leitura, com filtro, nenhuma sem filtro', semNada.every((v) => v.ids.length === 0 && v.leituras.length === 1 && 'conversation_id' in v.leituras[0]), semNada.map((v) => v.leituras))
+  const atr = { ...msg(10), id: 'mATRASADA', body: 'chegou tarde', timestamp: new Date(BASE + 2 * 60000 + 30000).toISOString() }
+  const comAtraso = massa(10).concat([atr])
+  const ta = await rodar(NOVO, { depois: 'm9' }, comAtraso)
+  ok('`depois`: a mensagem que chega tarde (gravada depois do cursor, carimbo antigo) NÃO se perde', igual(ta.ids, ['mATRASADA']), ta.ids)
+  const tb = await rodar(NOVO, { limite: '3' }, comAtraso)
+  ok('`limite`: a janela é a das 3 últimas que CHEGARAM, exibidas por carimbo', igual(tb.ids, ['mATRASADA', 'm8', 'm9']) && tb.c.incremental.tem_mais === true, tb.ids)
+  const tc = await rodar(NOVO, { antes: 'm5', limite: '3' }, comAtraso)
+  ok('`antes`: o cursor e a janela seguem a ordem de chegada (a atrasada, que chegou depois, não entra)', igual(tc.ids, seq(2, 4)), tc.ids)
+  const td = await rodar(NOVO, {}, comAtraso)
+  ok('a resposta inteira continua exibida por carimbo (a atrasada entre m2 e m3)', td.ids.indexOf('mATRASADA') === 3, td.ids)
   const u = await rodar(NOVO, { depois: 'm79' }, L, { unread: 2 })
   ok('o não lido é zerado também no ciclo `depois`', u.updates.some((p) => p.unread_count === 0), u.updates)
   ok('todas as leituras mascaram o anexo (`media_data`)', [await rodar(NOVO, { limite: '30' }, L), await rodar(NOVO, { depois: 'm10' }, L)].every((r) => r.leituras.every((l) => Array.isArray(l.mascararCampos) && l.mascararCampos.includes('media_data'))), 'sem máscara')
@@ -155,17 +187,18 @@ async function bateria(codigo) {
   ok('a bateria passa limpa no código novo', (await bateria(NOVO)).length === 0, await bateria(NOVO))
 
   const muts = [
-    
     ['limite lê N em vez de N+1', '_argLeitura.limit = _limite + 1;', '_argLeitura.limit = _limite;'],
     ['depois lê a conversa inteira', 'if (_modo === "depois") _argLeitura.limit = 100;', 'if (false) _argLeitura.limit = 100;'],
     ['limite lê a conversa inteira (de fato)', 'else if (_modo === "ultimas") _argLeitura.limit = _limite + 1;', ''],
-    ['sem tem_mais', '_inc.tem_mais = true; rows = rows.slice(rows.length - _limite);', 'rows = rows.slice(rows.length - _limite);'],
+    ['sem tem_mais', '_inc.tem_mais = true; rows = _exibir(_chegada.slice(0, _limite));', 'rows = _exibir(_chegada.slice(0, _limite));'],
     ['historico parcial com lacuna falsa', '_hist.parcial = true; _hist.lacuna = false; _hist.total = null;', '_hist.parcial = true;'],
-    ['depois devolve a partir do cursor (repete a dele)', 'if (_ix >= 0) rows = rows.slice(_ix + 1);', 'if (_ix >= 0) rows = rows.slice(_ix);'],
-    ['depois com cursor fora da janela devolve tudo', 'else if (rows.length) { _inc.lacuna = true; rows = []; }', ''],
-    ['antes devolve a janela errada (inclui o cursor)', 'var _anteriores = rows.slice(Math.max(0, _ia - _tam), _ia);', 'var _anteriores = rows.slice(Math.max(0, _ia - _tam), _ia + 1);'],
-    ['antes sem tem_mais', '_inc.tem_mais = (_ia - _anteriores.length) > 0 || _ultimaPaginaCheia;', '_inc.tem_mais = false;'],
-    ['depois mantém a varredura de reserva', 'if (!all.length && _modo !== "depois") {', 'if (!all.length) {'],
+    ['depois devolve a partir do cursor (repete a dele)', 'if (_ix >= 0) rows = _exibir(_chegada.slice(0, _ix));', 'if (_ix >= 0) rows = _exibir(_chegada.slice(0, _ix + 1));'],
+    ['depois com cursor fora da janela devolve tudo', 'else if (_chegada.length) { _inc.lacuna = true; rows = []; }', ''],
+    ['antes devolve a janela errada (inclui o cursor)', 'var _anteriores = _chegada.slice(_ia + 1, _ia + 1 + _tam);', 'var _anteriores = _chegada.slice(_ia, _ia + _tam);'],
+    ['antes sem tem_mais', '_inc.tem_mais = (_chegada.length - (_ia + 1 + _anteriores.length)) > 0 || _ultimaPaginaCheia;', '_inc.tem_mais = false;'],
+    ['a reserva sem filtro volta', '  var _lidas = all.length;', '  if (!all.length && _modo !== "depois") { try { all = (await m.Msg.findMany({ mascararCampos: _MASCARAR_MIDIA })) || []; } catch (e) { all = []; } }\n  var _lidas = all.length;'],
+    ['cursor na ordem do carimbo (o defeito corrigido)', '  var _inc = { modo: _modo, tem_mais: false, lacuna: false };', '  _chegada.sort(function (a, b) { return _porTimestamp(b, a); });\n  var _inc = { modo: _modo, tem_mais: false, lacuna: false };'],
+    ['exibição pela chegada em vez do carimbo', 'return lista.slice().sort(_porTimestamp).map(serializeMsg);', 'return lista.slice().reverse().map(serializeMsg);'],
     ['teto de 200 some', 'else if (_limite > 200) _limite = 200;', ''],
     ['depois não vence antes', 'var _modo = _depois ? "depois" : (_antes ? "antes" : (_limite ? "ultimas" : ""));', 'var _modo = _antes ? "antes" : (_depois ? "depois" : (_limite ? "ultimas" : ""));'],
     ['depois devolve historico', '(_modo === "depois" || _modo === "antes") ? undefined : _hist', '_hist'],

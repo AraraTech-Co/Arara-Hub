@@ -57,7 +57,6 @@ const cod = codigoDe('434 whatsapp GET /whatsapp/:id/messages')
 const PEDIDOS = [
   ['{ conversation_id: id, mascararCampos: _MASCARAR_MIDIA }', '{ conversation_id: id }'],
   ['{ conversation_id: id, limit: _TAM_PAGINA, offset: _pg * _TAM_PAGINA, mascararCampos: _MASCARAR_MIDIA }', '{ conversation_id: id, limit: _TAM_PAGINA, offset: _pg * _TAM_PAGINA }'],
-  ['findMany({ mascararCampos: _MASCARAR_MIDIA })', 'findMany({})'],
 ]
 // A AUSÊNCIA de um pedido vira asserção (abaixo), e não exceção ao carregar:
 // uma exceção derrubaria o arquivo antes de qualquer afirmação rodar e esconderia
@@ -142,7 +141,7 @@ const folga = () => new Promise((r) => setTimeout(r, 25))
 const mascarada = (a) => Array.isArray(a.mascararCampos) && a.mascararCampos.length === 1 && a.mascararCampos[0] === 'media_data'
 
 ;(async () => {
-  ok('a 434 contém os três pedidos de mascaramento (primeira página, páginas seguintes e reserva)',
+  ok('a 434 contém os dois pedidos de mascaramento (primeira página e páginas seguintes; a reserva sem filtro saiu em 21/10/2026)',
     pedidosAusentes.length === 0, pedidosAusentes)
 
   // ═══ 1. resposta IDÊNTICA, e cada forma decide o clipe como antes ═══
@@ -183,16 +182,13 @@ const mascarada = (a) => Array.isArray(a.mascararCampos) && a.mascararCampos.len
     ok('  e AMBAS pedem o mascaramento', a.chamadas.every((c) => mascarada(c)), a.chamadas)
   }
 
-  // ═══ 3. reserva sem filtro: também pede ═══
+  // ═══ 3. sem reserva sem filtro: conversa sem mensagem não varre outras conversas ═══
   {
-    const a = mundo({ mensagens: conversaMista(), filtroFunciona: false }), b = mundo({ mensagens: conversaMista(), filtroFunciona: false })
+    const a = mundo({ mensagens: conversaMista(), filtroFunciona: false })
     const rn = await NOVO(a.ctx())
-    const ra = await ANTIGO(b.ctx())
     await folga()
-    ok('filtro por conversa não aceito: cai na reserva e a resposta é IDÊNTICA',
-      JSON.stringify(rn) === JSON.stringify(ra) && rn.body.data.length === FORMAS.length && rn.body.historico.via === 'varredura', rn.body && rn.body.historico)
-    const reserva = a.chamadas.filter((c) => !('conversation_id' in c))
-    ok('  a leitura de reserva (sem filtro) PEDE o mascaramento', reserva.length === 1 && mascarada(reserva[0]), a.chamadas)
+    ok('filtro por conversa que não acha nada: resposta vazia e NENHUMA leitura sem filtro',
+      rn.status === 200 && rn.body.data.length === 0 && a.chamadas.length === 1 && a.chamadas.every((c) => 'conversation_id' in c), { n: rn.body && rn.body.data && rn.body.data.length, ch: a.chamadas })
   }
 
   // ═══ 4. o conteúdo do anexo continua saindo INTEIRO pela rota de mídia ═══
