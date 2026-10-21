@@ -85,9 +85,4 @@ for (const [m, p] of REMOVIDAS) {
   ok(`mutação "POST /kb/suggest some" é pega (${f.join(',')})`, f.some((x) => x === 'ausente:POST /kb/suggest'), f)
 }
 
-// A tela: sem a listagem, diz que está em reconstrução (e não mostra a mensagem crua da API)
-const pagina = fs.readFileSync(require('path').resolve(__dirname, '../../app/(admin)/admin/kb/page.tsx'), 'utf8')
-const catchLista = pagina.slice(pagina.indexOf("const data = await kbApi.list(params)"), pagina.indexOf("} finally {", pagina.indexOf("const data = await kbApi.list(params)")))
-ok('a tela: falha da listagem diz "em reconstrução", sem repassar a mensagem da API', /em reconstrução/.test(catchLista) && !/e instanceof Error \? e\.message/.test(catchLista), catchLista.slice(-260))
-ok('a tela: continua tratando a falha como estado (articles vazio), sem estourar', /setArticles\(\[\]\)/.test(catchLista))
 fim()

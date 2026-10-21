@@ -17,6 +17,14 @@ import { ANEXO_MAX_MB } from '../anexos'
 /** O mesmo teto dos anexos de chamado — uma fonte, não duas. */
 export const ARQUIVO_MAX_MB = ANEXO_MAX_MB
 
+/**
+ * A Base de Conhecimento é uma VISÃO deste acervo, presa a esta pasta (a tela `/admin/kb`). Não há
+ * rota própria: envio, lista, download e exclusão são os de `/api/arquivos`, com as mesmas regras de
+ * acesso. A pasta é fixa de propósito: configurável, "qual é a base" passaria a ser uma escolha de
+ * quem usa a tela.
+ */
+export const PASTA_BASE_DE_CONHECIMENTO = 'base-de-conhecimento'
+
 export interface ArquivoDeApoio {
   id: string
   nome: string
