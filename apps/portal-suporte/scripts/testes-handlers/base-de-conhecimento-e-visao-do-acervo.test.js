@@ -11,7 +11,7 @@
 //   4. tipo e tamanho são conferidos ANTES de ler o arquivo (`motivoRecusaAnexo` antes de `lerDataUri`);
 //   5. apagar só aparece para quem enviou ou para admin (o servidor confere de novo);
 //   6. erro de listagem aparece (não vira lista vazia silenciosa); e a PASTA É CARREGADA INTEIRA (página
-//      por página, com teto de 20), porque a busca é no navegador: achar o documento só se ele estiver na
+//      por página; o servidor entrega no máximo 500 por pasta, 10 páginas, e 20 é folga), porque a busca é no navegador: achar o documento só se ele estiver na
 //      primeira página faria a pessoa concluir que ele não existe;
 //   7. `lib/api/kb.ts` só expõe `suggest`, e o assistente de chamado não usa mais a listagem de reserva.
 // MUTAÇÕES: cada uma aplicada uma vez e reprovada por asserção.

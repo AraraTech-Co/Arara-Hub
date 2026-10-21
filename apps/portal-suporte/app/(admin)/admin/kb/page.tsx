@@ -9,8 +9,9 @@
 //     (a tela nem oferece), é da equipe;
 //   - apagar: quem enviou, ou admin (o servidor confere; aqui o botão só aparece para eles);
 //   - até 10 MB por arquivo, medidos pelo servidor; tipos: os do acervo.
-// A pasta é carregada INTEIRA (até 1000 documentos); a busca é por NOME, no navegador — documento é
-// arquivo, não há busca por conteúdo —, e a tela DIZ quando ficou algo por carregar.
+// A pasta é carregada INTEIRA; a busca é por NOME, no navegador — documento é arquivo, não há busca por
+// conteúdo —, e a tela DIZ quando ficou algo por carregar. O servidor lê a pasta pela janela de 500 da
+// plataforma e pagina em memória (50 por página): o teto real de documentos distintos por pasta é 500.
 //
 // Outras pastas e restrições de acesso vivem em "Arquivos de apoio".
 // =============================================================================
@@ -30,7 +31,10 @@ import {
 import { ANEXO_ACCEPT, lerDataUri, motivoRecusaAnexo } from '@/lib/anexos'
 import { formatDateShort } from '@/lib/utils'
 
-/** Páginas de 50 por pedido: 20 páginas = 1000 documentos antes de a tela pedir "Carregar mais". */
+/**
+ * Páginas de 50 por pedido. O servidor nunca entrega mais de 500 documentos de uma pasta (10 páginas), então
+ * 20 é folga, e não um teto de 1000 documentos.
+ */
 const PAGINAS_MAX = 20
 
 export default function BaseDeConhecimentoPage() {
@@ -50,8 +54,9 @@ export default function BaseDeConhecimentoPage() {
 
   // Carrega a pasta INTEIRA (página por página), e não só a primeira: a busca é por nome, no navegador, e
   // procurar um documento que está na segunda página sem achá-lo faria a pessoa concluir que ele não
-  // existe. Metadado é leve (o conteúdo fica em outro modelo). O teto de páginas protege contra uma
-  // pasta absurda; passando dele, a tela diz e oferece "Carregar mais".
+  // existe. Metadado é leve (o conteúdo fica em outro modelo). O servidor entrega no máximo 500 documentos
+  // por pasta (10 páginas); o teto de páginas é folga contra um cursor que nunca acabe, e passando dele a
+  // tela diz e oferece "Carregar mais".
   const carregar = useCallback(async (cur: string | null, acumular: boolean) => {
     setCarregando(true)
     setErro(null)
@@ -236,7 +241,7 @@ export default function BaseDeConhecimentoPage() {
               </p>
             ) : visiveis.length === 0 && !erro ? (
               <p className="py-4 text-sm text-muted-foreground">
-                {busca ? 'Nenhum documento com esse nome nesta página.' : 'Nenhum documento ainda. Envie o primeiro acima.'}
+                {busca ? 'Nenhum documento com esse nome nesta pasta.' : 'Nenhum documento ainda. Envie o primeiro acima.'}
               </p>
             ) : (
               <ul className="divide-y divide-border">
