@@ -82,7 +82,7 @@ function variantes(marca, chamadaNova, chamadaAntiga) {
 
 const R433 = variantes(
   '433 whatsapp GET /whatsapp/:id',
-  'await loadDepsDaConversa(m, conv)', 'await loadDeps(m)',
+  'await loadDepsDaConversa(m, conv, _tp)', 'await loadDeps(m)',
 )
 const R459 = variantes(
   '459 whatsapp PATCH /whatsapp/:id',
