@@ -83,7 +83,9 @@ async function bateria(cod = { kanban: KANBAN, detalhe: DETALHE, mover: MOVER })
     card('D1', 'T1'),
     card('D2', 'T2', { assigned_to: null, status: 'no_status' }),
     card('D3', 'T3', { status: 'aplicado_no_cliente' }),
-    card('D4', null),                      // demanda INTERNA
+    card('D4', null),                      // demanda INTERNA (origem nula)
+    card('D10', undefined),                // demanda INTERNA (sem o campo)
+    t('undefined'), t('null'),             // chamados cujo id COINCIDE com a chave de uma origem ausente
     card('D5', 'T4', { assigned_to: 'p-ana', updated_at: '2026-10-11T10:00:00Z', previsao_entrega: '2026-11-05T12:00:00' }),
     card('D7', 'T6', { assigned_to: 'p-ana', updated_at: '2026-10-10T10:00:00Z' }),
     card('D8', 'T6', { assigned_to: null, status: 'no_status', updated_at: '2026-10-14T10:00:00Z' }),
@@ -100,7 +102,7 @@ async function bateria(cod = { kanban: KANBAN, detalhe: DETALHE, mover: MOVER })
   x('kanban: card criado SEM dev → nada muda (dev nulo)', k.T2.dev === null, k.T2.dev)
   x('kanban: card já encerrado → nada muda', k.T3.dev === null, k.T3.dev)
   x('kanban: chamado sem card Dev → nulo', k.T5.dev === null, k.T5.dev)
-  x('kanban: demanda INTERNA não aparece em chamado nenhum', Object.values(k).every((tt) => !tt.dev || tt.dev.ticket_id !== 'D4'), 'D4 vazou')
+  x('kanban: demanda INTERNA é excluída pela guarda (e não por a chave lixo nunca casar): chamados com id "undefined" e "null" não ganham dev', k.undefined && k.null && k.undefined.dev === null && k.null.dev === null && Object.values(k).every((tt) => !tt.dev || (tt.dev.ticket_id !== 'D4' && tt.dev.ticket_id !== 'D10')), { u: k.undefined && k.undefined.dev, n: k.null && k.null.dev })
   x('kanban: dois cards abertos no mesmo chamado → vale o atualizado por último', k.T4.dev && k.T4.dev.ticket_id === 'D6' && k.T4.dev.responsavel.nome === 'Bia Dev', k.T4.dev)
   x('kanban: card mais novo SEM dev não esconde o card com dev', k.T6.dev && k.T6.dev.ticket_id === 'D7', k.T6.dev)
   x('kanban: chamado de suporte com origem_ticket_id não vira dev de ninguém', k.T1.dev && k.T1.dev.ticket_id === 'D1', k.T1.dev)
@@ -160,7 +162,8 @@ async function bateria(cod = { kanban: KANBAN, detalhe: DETALHE, mover: MOVER })
   const muts = [
     ['kanban: encerrado também mostra', 'kanban', '    var _encerrado = { aplicado_no_cliente: 1, descartado: 1 };\n    for (var _d = 0;', '    var _encerrado = {};\n    for (var _d = 0;'],
     ['kanban: card sem responsável também mostra', 'kanban', '      if (!_dr) continue;\n', ''],
-    ['kanban: card de outro quadro entra', 'kanban', 'if (String(dc.quadro || "suporte") !== "dev") continue;', ''],
+    ['kanban: card de outro quadro entra', 'kanban', 'if (String(dc.quadro || "suporte") !== "dev" || !dc.origem_ticket_id) continue;', ''],
+    ['kanban: demanda interna entra (sem a guarda da origem)', 'kanban', 'if (String(dc.quadro || "suporte") !== "dev" || !dc.origem_ticket_id) continue;', 'if (String(dc.quadro || "suporte") !== "dev") continue;'],
     ['kanban: vale o mais antigo', 'kanban', '_devAtualizado[_chave] >= _quando', '_devAtualizado[_chave] <= _quando'],
     ['kanban: nível não filtra', 'kanban', '_veDev = !!(_euDev && _euDev.nivel >= _gsRANK.support);', '_veDev = true;'],
     ['kanban: responsável com e-mail', 'kanban', 'responsavel: { id: _dr.id, nome: _dr.full_name || _dr.email || null },', 'responsavel: { id: _dr.id, nome: _dr.full_name || _dr.email || null, email: _dr.email },'],
