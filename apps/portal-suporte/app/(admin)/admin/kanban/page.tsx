@@ -82,6 +82,9 @@ export default function KanbanPage() {
           // prazo e o botão Escalado nunca casavam com nada, porque o campo
           // era apagado aqui mesmo depois de o servidor mandá-lo.
           sla: row.sla ?? null,
+          // Dev responsável e prazo do dev (só o suporte recebe). Fora desta lista o campo se perdia
+          // aqui mesmo, e o card nunca o mostrava.
+          dev: row.dev ?? null,
         }))
         setTickets(serialized)
 

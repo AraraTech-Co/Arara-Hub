@@ -414,7 +414,18 @@ export function KanbanBoard({ tickets: initialTickets, agents, currentUser }: Ka
         const newOnes = allTickets
           .filter((t) => !prevIds.has(t.id) && !ehLixoDeBulkAction(t))
           .map(normalizeTicket);
-        return newOnes.length === 0 ? prev : [...prev, ...newOnes];
+        // O dev responsável e o prazo dele mudam sem mexer no chamado (outro dev reassume, o dev
+        // reestima): os cards que já estão no quadro recebem o valor novo no ciclo de 30 s.
+        const devAtual = new Map(allTickets.map((t) => [t.id, t.dev ?? null] as const));
+        let mudou = false;
+        const atualizados = prev.map((t) => {
+          if (!devAtual.has(t.id)) return t;
+          const novo = devAtual.get(t.id) ?? null;
+          if (JSON.stringify(novo) === JSON.stringify(t.dev ?? null)) return t;
+          mudou = true;
+          return { ...t, dev: novo };
+        });
+        return newOnes.length === 0 && !mudou ? prev : [...atualizados, ...newOnes];
       });
     } catch { /* silent */ }
   }, []);
