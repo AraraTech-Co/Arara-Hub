@@ -60,7 +60,10 @@ export default function KBPage() {
       // trocava por "Algo deu errado", sem dizer o que aconteceu. Falha de
       // carga é estado da tela, não colapso dela.
       setArticles([])
-      setErro(e instanceof Error ? e.message : 'Não foi possível carregar os artigos.')
+      // As rotas genéricas de listagem saíram (operavam em chamados, não em artigos): enquanto a tela de
+      // documentos não volta, o estado é dito, em vez de a mensagem crua da API.
+      void e
+      setErro('A Base de Conhecimento está em reconstrução. A listagem de artigos volta em breve.')
     } finally {
       setLoading(false)
     }
