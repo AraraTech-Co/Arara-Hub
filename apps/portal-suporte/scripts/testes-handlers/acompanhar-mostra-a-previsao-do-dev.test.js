@@ -134,6 +134,19 @@ async function bateria(cod = ROTA) {
   return f
 }
 
+// TRAVA DA LISTA DE STATUS DEV. Esta rota publica a data do cliente para todo card Dev que NÃO esteja em
+// `aplicado_no_cliente` ou `descartado` (os únicos terminais, os dois sem transição de saída). Um status novo
+// entraria como "aberto" sozinho, sem ninguém decidir se ele publica data ao cliente: por isso este teste falha
+// quando a união `DevStatus` deixa de ter exatamente estes 10 membros.
+const MEMBROS_DEV_STATUS = ['no_status', 'backlog', 'em_desenvolvimento', 'desenvolvimento_finalizado', 'pronto_para_teste', 'em_testes', 'teste_reprovado', 'teste_aprovado', 'aplicado_no_cliente', 'descartado']
+function membrosDevStatus(texto) {
+  const sem = texto.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
+  const m = sem.match(/export type DevStatus =((?:\s*\|\s*'[a-z_]+')+)/)
+  return m ? [...m[1].matchAll(/'([a-z_]+)'/g)].map((x) => x[1]) : null
+}
+const KANBAN_DEV = fs.readFileSync(path.resolve(__dirname, '../../app/lib/kanban-dev.ts'), 'utf8')
+const MENSAGEM_STATUS = 'A união DevStatus mudou. A página do cliente (POST /tickets/acompanhar) mostra a data de todo card Dev que não esteja em aplicado_no_cliente ou descartado; um status novo entraria como "aberto" sem ninguém decidir. Decida se o novo status publica data ao cliente, ajuste a rota 412 e só então atualize MEMBROS_DEV_STATUS neste teste.'
+
 // A tela: lê `previsao_entrega` com a legenda "previsão de entrega" e só mostra quando vier. Teste de TEXTO, e dito assim.
 const PAGINA = fs.readFileSync(path.resolve(__dirname, '../../app/(public)/acompanhar/page.tsx'), 'utf8')
 const paginaSemComentarios = PAGINA.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
@@ -148,6 +161,11 @@ function tela(txt) {
 ;(async () => {
   const f0 = await bateria()
   ok('a bateria passa limpa', f0.length === 0, f0)
+  const membros = membrosDevStatus(KANBAN_DEV)
+  ok('TRAVA: a união DevStatus tem exatamente os 10 membros conhecidos (' + MENSAGEM_STATUS + ')', !!membros && membros.length === 10 && MEMBROS_DEV_STATUS.every((x) => membros.includes(x)) && membros.every((x) => MEMBROS_DEV_STATUS.includes(x)), membros)
+  ok('mutação "um 11º status entra na união" é pega', (() => { const m = membrosDevStatus(KANBAN_DEV.replace("  | 'descartado'", "  | 'descartado'\n  | 'em_homologacao_cliente'")); return !(m && m.length === 10) })())
+  ok('mutação "um status some da união" é pega', (() => { const m = membrosDevStatus(KANBAN_DEV.replace("  | 'em_testes'\n", '')); return !(m && m.length === 10) })())
+  ok('os dois terminais da rota são membros da união', ['aplicado_no_cliente', 'descartado'].every((x) => (membros || []).includes(x)))
   ok('a tela lê `previsao_entrega` com a legenda "previsão de entrega"', tela(paginaSemComentarios).length === 0, tela(paginaSemComentarios))
   ok('mutação "a tela perde a condição" é pega', tela(paginaSemComentarios.replace('dados.previsao_entrega ?', 'true ?')).includes('legenda-ou-condicao'))
   ok('mutação "a tela volta ao prazo de atendimento" é pega', tela(paginaSemComentarios + '\nconst x = "prazo de atendimento"').includes('ainda-fala-de-sla'))
@@ -156,9 +174,9 @@ function tela(txt) {
     ['devolve o card inteiro', 'if (/^\\d{4}-\\d{2}-\\d{2}/.test(prev) && !isNaN(new Date(prev).getTime())) previsaoEntrega = prev;', 'if (atual) previsaoEntrega = atual;'],
     ['mostra depois de encerrado', 'if (!terminou) {', 'if (true) {'],
     ['o encerrado só olha o resolved_at', 'TERMINAIS.indexOf(String(t.status || "")) >= 0 || !!t.resolved_at;', '!!t.resolved_at;'],
-    ['card encerrado também mostra', 'var _cardEncerrado = { aplicado_no_cliente: 1, descartado: 1 };', 'var _cardEncerrado = {};'],
+    ['card encerrado também mostra', '["aplicado_no_cliente", "descartado"].indexOf(String(c.status || "")) < 0', 'true'],
     ['ignora a conferência do chamado de origem', 'return c && String(c.origem_ticket_id || "") === String(t.id) && String(c.quadro || "") === "dev"', 'return c && String(c.quadro || "") === "dev"'],
-    ['aceita card de outro quadro', 'String(c.quadro || "") === "dev" && !_cardEncerrado', 'true && !_cardEncerrado'],
+    ['aceita card de outro quadro', 'String(c.quadro || "") === "dev" && [', 'true && ['],
     ['vale o card mais antigo', 'String(cards[q].updated_at || "") > String(atual.updated_at || "")', 'String(cards[q].updated_at || "") < String(atual.updated_at || "")'],
     ['data ilegível passa direto', 'if (/^\\d{4}-\\d{2}-\\d{2}/.test(prev) && !isNaN(new Date(prev).getTime())) previsaoEntrega = prev;', 'previsaoEntrega = prev || null;'],
     ['leitura que falha vira erro para o cliente', '} catch (e) { previsaoEntrega = null; }', '} catch (e) { throw e; }'],
