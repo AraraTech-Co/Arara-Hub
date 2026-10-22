@@ -134,7 +134,7 @@ const ctxDe = (c, extra = {}) => Object.assign({
   ok('/acompanhar com código certo: 200', r.status === 200 && r.body?.success === true, r.status)
   const d = r.body?.data || {}
   ok('  devolve os campos que a tela usa',
-    ['numero', 'titulo', 'etapa', 'aberto_em', 'resolvido_em', 'prazo_atendimento', 'encerrado', 'linha_do_tempo']
+    ['numero', 'titulo', 'etapa', 'aberto_em', 'resolvido_em', 'previsao_entrega', 'encerrado', 'linha_do_tempo']
       .every((k) => k in d), Object.keys(d))
   ok('  e NADA além deles', Object.keys(d).length === 8, Object.keys(d))
   ok('  sem o e-mail do contato', !JSON.stringify(d).includes('cliente@empresa.com'), Object.keys(d))

@@ -50,8 +50,8 @@ type Acompanhamento = {
   etapa: string
   aberto_em: string
   resolvido_em: string | null
-  /** Prazo prometido (o SLA do chamado). Nulo = nada a mostrar: sem SLA ou chamado já resolvido. */
-  prazo_atendimento: string | null
+  /** Data que o desenvolvimento informou. Nulo = nada a mostrar: sem card aberto, sem data ou chamado já resolvido. */
+  previsao_entrega: string | null
   encerrado: boolean
   linha_do_tempo: Evento[]
 }
@@ -241,7 +241,7 @@ export default function AcompanharPage() {
             <h2 className="mb-1 text-base font-semibold text-foreground">{dados.titulo}</h2>
             <p className="mb-6 text-xs text-muted-foreground">
               Aberto em {quando(dados.aberto_em)}
-              {dados.prazo_atendimento ? ` · prazo de atendimento: ${quando(dados.prazo_atendimento)}` : ''}
+              {dados.previsao_entrega ? ` · previsão de entrega: ${quando(dados.previsao_entrega)}` : ''}
               {dados.resolvido_em ? ` · resolvido em ${quando(dados.resolvido_em)}` : ''}
             </p>
 
