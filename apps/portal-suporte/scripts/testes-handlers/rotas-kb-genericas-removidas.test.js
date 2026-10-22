@@ -1,6 +1,7 @@
-// As quatro rotas genéricas de `/kb` saíram do registro.
+// As rotas de ESCRITA e de leitura genéricas de `/kb` saíram do registro.
 //
-//   GET /kb, GET /kb/:id, PUT /kb/:id, DELETE /kb/:id
+//   GET /kb, GET /kb/:id, PUT /kb/:id, DELETE /kb/:id   (operavam no modelo de chamados)
+//   POST /kb                                            (criava artigo; a tela deixou de chamá-la)
 //
 // Eram o CRUD que o gerador produz, apontado para o modelo ERRADO: operavam em chamados
 // (`ctx.models.Ticket`), não em artigos. As duas últimas escreviam: `PUT /kb/:id` alterava qualquer campo
@@ -10,8 +11,9 @@
 //
 // O QUE SE GARANTE:
 //   - as quatro rotas não existem mais no registro, e NENHUMA rota com `/kb/:id` existe;
-//   - `POST /kb` (grava artigo em `KbArticle`) e `POST /kb/suggest` (lê `KbArticle`) seguem valendo,
-//     e nenhuma rota do módulo `kb` toca o modelo de chamados;
+//   - `POST /kb/suggest` (lê `KbArticle`, alimenta as sugestões do assistente de novo chamado) segue valendo,
+//     é a ÚNICA rota do módulo `kb`, e nenhuma rota sob `/kb` toca o modelo de chamados;
+//   - nenhuma rota sob `/kb` GRAVA: a base de documentos é o acervo de arquivos;
 //   - o artigo já gravado não é tocado: as rotas removidas não liam nem escreviam `KbArticle`.
 // MUTAÇÕES: reinserir cada rota removida reprova; uma rota nova do módulo `kb` que toque chamados reprova.
 //
@@ -19,8 +21,8 @@
 const fs = require('fs')
 const { ok, fim, ARQ } = require('./_carregar.js')
 
-const REMOVIDAS = [['GET', '/kb'], ['GET', '/kb/:id'], ['PUT', '/kb/:id'], ['DELETE', '/kb/:id']]
-const MANTIDAS = [['POST', '/kb'], ['POST', '/kb/suggest']]
+const REMOVIDAS = [['GET', '/kb'], ['GET', '/kb/:id'], ['PUT', '/kb/:id'], ['DELETE', '/kb/:id'], ['POST', '/kb']]
+const MANTIDAS = [['POST', '/kb/suggest']]
 
 function entradas(texto) {
   // cada entrada do registro começa em "\n  {\n" e termina no "\n  }" seguinte
@@ -45,6 +47,9 @@ function checar(texto) {
   for (const x of e.filter((y) => /^\/kb(\/|$)/.test(y.caminho))) {
     if (/models\.Ticket\b/.test(x.texto.replace(/\\"/g, '"'))) f.push('kb-toca-chamado:' + x.metodo + ' ' + x.caminho)
   }
+  for (const x of e.filter((y) => /^\/kb(\/|$)/.test(y.caminho))) {
+    if (/\.(create|update|delete)\(/.test(x.texto.replace(/\\"/g, '"'))) f.push('kb-grava:' + x.metodo + ' ' + x.caminho)
+  }
   for (const x of e.filter((y) => y.modulo === 'kb')) {
     if (!/KbArticle/.test(x.texto)) f.push('kb-sem-KbArticle:' + x.metodo + ' ' + x.caminho)
   }
@@ -53,13 +58,14 @@ function checar(texto) {
 
 const texto = fs.readFileSync(ARQ, 'utf8')
 const e0 = entradas(texto)
-ok('TRAVA: o leitor enxerga o registro (504 rotas)', e0.length === 504, e0.length)
-ok('TRAVA: o leitor enxerga as rotas do módulo kb (as duas que ficam)', e0.filter((x) => x.modulo === 'kb').length === 2, e0.filter((x) => x.modulo === 'kb').map((x) => x.metodo + ' ' + x.caminho))
+ok('TRAVA: o leitor enxerga o registro (503 rotas)', e0.length === 503, e0.length)
+ok('TRAVA: o leitor enxerga as rotas do módulo kb (a que fica)', e0.filter((x) => x.modulo === 'kb').length === 1, e0.filter((x) => x.modulo === 'kb').map((x) => x.metodo + ' ' + x.caminho))
 const f0 = checar(texto)
 ok('a bateria passa limpa no registro atual', f0.length === 0, f0)
 ok('as quatro rotas não existem mais', REMOVIDAS.every(([m, p]) => !e0.some((x) => x.metodo === m && x.caminho === p)), REMOVIDAS.filter(([m, p]) => e0.some((x) => x.metodo === m && x.caminho === p)))
 ok('nenhuma rota `/kb/:…` existe', !e0.some((x) => /^\/kb\/:/.test(x.caminho)))
-ok('POST /kb e POST /kb/suggest seguem, lendo e gravando KbArticle', MANTIDAS.every(([m, p]) => e0.some((x) => x.metodo === m && x.caminho === p && /KbArticle/.test(x.texto))), MANTIDAS)
+ok('POST /kb/suggest segue, lendo KbArticle', MANTIDAS.every(([m, p]) => e0.some((x) => x.metodo === m && x.caminho === p && /KbArticle/.test(x.texto))), MANTIDAS)
+ok('a rota que fica só LÊ: nenhuma rota sob /kb cria, altera ou apaga', e0.filter((x) => /^\/kb(\/|$)/.test(x.caminho)).every((x) => !/\.(create|update|delete)\(/.test(x.texto.replace(/\\"/g, '"'))))
 ok('nenhuma rota sob /kb, de qualquer módulo, toca o modelo de chamados', e0.filter((x) => /^\/kb(\/|$)/.test(x.caminho)).every((x) => !/models\.Ticket\b/.test(x.texto.replace(/\\"/g, '"'))))
 
 const ANCORA = '\n  {\n    module: "kb",\n    method: "POST",\n    path: "/kb/suggest",'
@@ -78,6 +84,11 @@ for (const [m, p] of REMOVIDAS) {
   const mut = texto.replace(ANCORA, `\n  {\n    module: "outro",\n    method: "GET",\n    path: "/kb/qualquer",\n    authMode: "actor",\n    handler: compileController("async function handler(ctx) { return ctx.models.Ticket.findMany({}) }"),\n  },` + ANCORA)
   const f = checar(mut)
   ok(`mutação "rota sob /kb de OUTRO módulo que toca chamados" é pega (${f.join(',')})`, f.some((x) => x.startsWith('kb-toca-chamado')), f)
+}
+{
+  const mut = texto.replace(ANCORA, `\n  {\n    module: "kb",\n    method: "POST",\n    path: "/kb/importar",\n    authMode: "actor",\n    handler: compileController("async function handler(ctx) { return ctx.models.KbArticle.create(ctx.body) }"),\n  },` + ANCORA)
+  const f = checar(mut)
+  ok(`mutação "rota nova sob /kb que GRAVA artigo" é pega (${f.join(',')})`, f.some((x) => x.startsWith('kb-grava')), f)
 }
 {
   const mut = texto.replace('\n    method: "POST",\n    path: "/kb/suggest",', '\n    method: "POST",\n    path: "/kb/sugerir",')
