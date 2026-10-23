@@ -51,7 +51,9 @@ function compilar(codigo) {
 }
 
 // ── o bloco de ANTES (metades por from_me), reconstituído como controle ──────
-const BLOCO_ANTIGO = `  var all = [];
+// O código seguinte à leitura (recorte incremental) lê `_modo`; no controle o modo é vazio (sem parâmetro).
+const BLOCO_ANTIGO = `  var _modo = "", _limite = 0, _antes = "", _depois = "";
+  var all = [];
   var _via = "filtro";
   var _ultimaPaginaCheia = false;
   try { all = (await m.Msg.findMany({ conversation_id: id, mascararCampos: _MASCARAR_MIDIA })) || []; } catch (e) { all = []; }
@@ -75,14 +77,21 @@ const TRUNCADO_ANTIGO = `truncado: (_via === "varredura" && _lidas >= 500) || (_
 
 const cod = codigoDe('434 whatsapp GET /whatsapp/:id/messages')
 const INI = '  // Quantas páginas de 500 a rota lê por conversa'
-const FIM = '  if (!all.length) {\n    // O campo pode ter outro nome no banco'
+// O controle é a rota de ANTES: a leitura em duas metades e a reserva sem filtro (varredura), que
+// esta entrega tirou. O bloco novo vai de INI até esta linha; a reserva antiga é devolvida no controle.
+const FIM = '  var _lidas = all.length;'
+const RESERVA_ANTIGA = `  if (!all.length && _modo !== "depois") {
+    _via = "varredura";
+    try { all = (await m.Msg.findMany({ mascararCampos: _MASCARAR_MIDIA })) || []; } catch (e) { all = []; }
+  }
+`
 const a = cod.indexOf(INI), b = cod.indexOf(FIM)
 const blocoNovoOk = a >= 0 && b > a
 let codAntigo = null
 let truncadoAntigoSubstituido = false
 if (blocoNovoOk) {
-  codAntigo = cod.slice(0, a) + BLOCO_ANTIGO + cod.slice(b)
-  const t = codAntigo.match(/truncado: \(_via === "varredura" && _lidas >= 500\) \|\| _ultimaPaginaCheia,/)
+  codAntigo = cod.slice(0, a) + BLOCO_ANTIGO + RESERVA_ANTIGA + cod.slice(b)
+  const t = codAntigo.match(/truncado: _ultimaPaginaCheia,/)
   if (t) codAntigo = codAntigo.replace(t[0], () => TRUNCADO_ANTIGO)
   truncadoAntigoSubstituido = !!t
 }
