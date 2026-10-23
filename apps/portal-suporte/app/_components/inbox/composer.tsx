@@ -9,6 +9,7 @@ import { ANEXO_ACCEPT, ANEXO_MAX_MB, lerDataUri, motivoRecusaAnexo } from '@/lib
 import { Citacao } from './message-actions'
 import { TrechoFormatado } from '@/components/inbox/texto-formatado'
 import { formatarWhatsApp, textoPuro } from '@/lib/wa-formato'
+import { avisoDeCitacao } from '@/lib/inbox/aviso-de-citacao'
 
 interface ComposerProps {
   conversationId: string
@@ -37,6 +38,10 @@ export function Composer({
   const [draft, setDraft] = useState(rascunho ?? '')
   const [sending, setSending] = useState(false)
   const [erro, setErro] = useState('')
+  // Aviso (não é erro): a mensagem saiu, mas SEM a citação. Persiste até o próximo envio, até dispensar ou
+  // até trocar de conversa; não é gravado, então não sobrevive a recarregar.
+  const [aviso, setAviso] = useState<string | null>(null)
+  useEffect(() => { setAviso(null) }, [conversationId])
   const [quickReplies, setQuickReplies] = useState<WAQuickReply[] | null>(null)
   const [pickerOpen, setPickerOpen] = useState(false)
   const wrapRef = useRef<HTMLDivElement>(null)
@@ -118,6 +123,7 @@ export function Composer({
     const message = draft.trim()
     if ((!message && !arquivo) || sending) return
     setSending(true)
+    setAviso(null)
     try {
       // O arquivo é lido aqui, não ao escolher: escolher e desistir não deve
       // custar a leitura de 10 MB.
@@ -134,9 +140,9 @@ export function Composer({
         anexo,
         respondendoA?.message_id ? { message_id: respondendoA.message_id } : undefined,
       )) as
-        | { data?: { entregue?: boolean; erro_entrega?: string } }
+        | { data?: { entregue?: boolean; erro_entrega?: string; citacao_nao_enviada?: boolean } }
         | undefined
-      const dados = r?.data ?? (r as { entregue?: boolean; erro_entrega?: string } | undefined)
+      const dados = r?.data ?? (r as { entregue?: boolean; erro_entrega?: string; citacao_nao_enviada?: boolean } | undefined)
       setDraft('')
       onRascunho?.('')
       setArquivo(null)
@@ -151,6 +157,7 @@ export function Composer({
       } else {
         setErro('')
       }
+      setAviso(avisoDeCitacao(dados))
       onSent?.()
     } catch (err) {
       setErro((err instanceof Error ? err.message : 'Não foi possível enviar') + ' — a mensagem não foi enviada nem registrada.')
@@ -214,6 +221,14 @@ export function Composer({
         <p className="mb-2 rounded-lg border border-sem-error-bd bg-sem-error px-3 py-2 text-xs text-sem-error-fg">
           {erro}
         </p>
+      )}
+      {aviso && (
+        <div role="status" className="mb-2 flex items-start gap-2 rounded-lg border border-sem-warning-bd bg-sem-warning px-3 py-2 text-xs text-sem-warning-fg">
+          <span className="flex-1">{aviso}</span>
+          <button type="button" onClick={() => setAviso(null)} className="shrink-0 font-medium underline underline-offset-2">
+            Entendi
+          </button>
+        </div>
       )}
 
       <p className="mb-2 text-xs text-muted-foreground">
