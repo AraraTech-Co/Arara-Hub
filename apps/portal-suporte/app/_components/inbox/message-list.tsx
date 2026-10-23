@@ -7,6 +7,7 @@ import { TextoFormatado } from '@/components/inbox/texto-formatado'
 import { Citacao, MessageActions, Reacoes } from './message-actions'
 import { whatsappApi, type WAThreadMessage } from '@/lib/api/whatsapp'
 import { acharMensagemCitada } from '@/lib/inbox/citacao'
+import { abreDiaNovo, dataCompleta, rotuloDoDia } from '@/lib/inbox/faixa-de-dia'
 import { cn } from '@/lib/utils'
 
 // Duas formas de "quem falou" vêm embutidas no texto e precisam sair dele:
@@ -163,6 +164,8 @@ export function MessageList({
             !!anterior &&
             anterior.from_me === m.from_me &&
             autorDe(anterior) === autorDe(m)
+          const faixaAntes = abreDiaNovo(m.timestamp, anterior ? anterior.timestamp : null)
+          const continua = mesmoBloco && i !== iDivisor && !faixaAntes
           return (
             <div
               key={m.id}
@@ -171,6 +174,15 @@ export function MessageList({
               className={m.id === destacada || m.id === realce ? 'rounded-lg ring-2 ring-primary/60' : undefined}
             >
               {avisoLacuna}
+              {faixaAntes && (
+                <div className="my-4 flex items-center gap-3 first:mt-0" role="separator">
+                  <span className="h-px flex-1 bg-border" />
+                  <span className="shrink-0 text-[11px] font-medium text-muted-foreground">
+                    {rotuloDoDia(m.timestamp)}
+                  </span>
+                  <span className="h-px flex-1 bg-border" />
+                </div>
+              )}
               {i === iDivisor && (
                 <div className="my-4 flex items-center gap-3" role="separator">
                   <span className="h-px flex-1 bg-primary/35" />
@@ -182,8 +194,8 @@ export function MessageList({
               )}
               <MessageBubble
                 message={m}
-                continuacao={mesmoBloco && i !== iDivisor}
-                className={mesmoBloco && i !== iDivisor ? 'mt-1' : 'mt-4 first:mt-0'}
+                continuacao={continua}
+                className={continua ? 'mt-1' : 'mt-4 first:mt-0'}
                 meId={meId}
                 onResponder={onResponder}
                 onMudou={onMudou}
@@ -492,7 +504,7 @@ function MessageBubble({
             bolha própria e recebida, tema escuro e claro (5,19:1 no pior caso). */}
         <p className="mt-1 text-right text-[11px] text-foreground/65">
           {m.editada && <span className="mr-1 italic">editada</span>}
-          <span className="tabular-nums">{messageTime(m.timestamp)}</span>
+          <span className="tabular-nums" title={dataCompleta(m.timestamp)}>{messageTime(m.timestamp)}</span>
         </p>
 
         <Reacoes
