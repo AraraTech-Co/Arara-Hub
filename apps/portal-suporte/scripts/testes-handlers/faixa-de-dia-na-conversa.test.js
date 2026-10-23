@@ -12,6 +12,8 @@
 // MUTAÇÕES: aplicadas uma vez cada, reprovadas por asserção.
 //
 // Roda com: node faixa-de-dia-na-conversa.test.js   (Node 22.18+/24+ carrega .ts sem build)
+// Fuso fixo e longe de UTC (-03): é aqui que a chave em UTC erra, nas últimas horas da noite.
+process.env.TZ = 'America/Sao_Paulo'
 const fs = require('fs')
 const path = require('path')
 const { ok, fim } = require('./_carregar.js')
@@ -56,6 +58,12 @@ function bateriaHelper(m) {
   if (m.abreDiaNovo(iso(2027, 10, 23), iso(2026, 10, 23)) !== true) f.push('mesmo-dia-do-ano-seguinte-abre')
   if (m.abreDiaNovo('lixo', iso(2026, 10, 23)) !== false) f.push('ilegivel-nao-abre')
   if (m.abreDiaNovo(iso(2026, 10, 23), 'lixo') !== true) f.push('anterior-ilegivel-abre')
+  // fuso: o dia é o do navegador, não o de UTC (23:30 locais já são o dia seguinte em UTC)
+  if (m.abreDiaNovo(iso(2026, 10, 23, 0, 30), iso(2026, 10, 22, 23, 30)) !== true) f.push('fuso-virada-meia-noite')
+  if (m.abreDiaNovo(iso(2026, 10, 22, 23, 0), iso(2026, 10, 22, 22, 0)) !== false) f.push('fuso-mesmo-dia-noite')
+  if (m.abreDiaNovo(iso(2026, 10, 22, 21, 30), iso(2026, 10, 22, 20, 30)) !== false) f.push('fuso-mesmo-dia-21h')
+  if (m.chaveDoDia(iso(2026, 10, 22, 23, 30)) === m.chaveDoDia(iso(2026, 10, 23, 0, 30))) f.push('fuso-chaves-iguais')
+  if (m.rotuloDoDia(iso(2026, 10, 22, 23, 30), AGORA) !== 'Ontem' || m.rotuloDoDia(iso(2026, 10, 23, 0, 30), AGORA) !== 'Hoje') f.push('fuso-rotulos')
   // title
   const dc = m.dataCompleta(iso(2026, 10, 12, 14, 5))
   if (!/^12 de outubro de 2026, /.test(dc) || !/14.05/.test(dc)) f.push('data-completa')
@@ -94,6 +102,8 @@ const mutsHelper = [
   ['chave só com mês e dia', 'return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`', 'return `${d.getMonth()}-${d.getDate()}`'],
   ['chave só com dia', 'return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`', 'return `${d.getDate()}`'],
   ['ontem = hoje - 1 sem normalizar mês', 'agora.getDate() - 1)', 'agora.getDate() - 2)'],
+  ['chave em UTC', 'return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`', 'return d.toISOString().slice(0, 10)'],
+  ['rótulo ilegível sai como texto', "if (!d) return ''\n  if (chaveDe(d) === chaveDe(agora))", "if (!d) return 'Invalid Date'\n  if (chaveDe(d) === chaveDe(agora))"],
   ['sem Hoje', "if (chaveDe(d) === chaveDe(agora)) return 'Hoje'", ''],
   ['primeira não abre faixa', 'return anteriorIso === null || chaveDoDia(anteriorIso) !== c', 'return anteriorIso !== null && chaveDoDia(anteriorIso) !== c'],
   ['sempre abre', 'return anteriorIso === null || chaveDoDia(anteriorIso) !== c', 'return true'],

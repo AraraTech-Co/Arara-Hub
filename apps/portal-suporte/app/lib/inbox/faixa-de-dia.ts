@@ -18,6 +18,11 @@ export function chaveDoDia(iso: string): string {
   return d ? chaveDe(d) : ''
 }
 
+/**
+ * Data ilegível não vira texto: devolve '' e `abreDiaNovo` dá false, então a mensagem fica sem faixa e segue o
+ * agrupamento normal. "Hoje" é calculado no render: com a tela aberta atravessando a meia-noite ele fica velho até o
+ * próximo render (conhecido e aceito).
+ */
 /** "Hoje", "Ontem", "12 de outubro" ou, de outro ano, "12 de outubro de 2025". */
 export function rotuloDoDia(iso: string, agora: Date = new Date()): string {
   const d = dataValida(iso)
