@@ -52,8 +52,8 @@ const ANTIGO = (() => {
 
 const JID = '5512992446758@s.whatsapp.net'
 const TEXTO = 'Você poderia me dizer por favor por onde foi feito o cadastro desses itens?'
-const nossaImagemLocal = { id: 'wam_1', conversation_id: 'c1', message_id: 'local_1760000000000', from_me: true, sender_name: 'Alexandre Ferreira', body: '[imagem enviada]', media_type: 'image', timestamp: '2026-10-16T13:56:00.000Z' }
-const nossaTextoReal = { id: 'wam_2', conversation_id: 'c1', message_id: '3EB0NOSSAREAL', from_me: true, sender_name: 'Alexandre Ferreira', body: 'oi', timestamp: '2026-10-16T13:50:00.000Z' }
+const nossaImagemLocal = { id: 'wam_1', conversation_id: 'c1', message_id: 'local_1760000000000', from_me: true, sender_jid: '5511988887777', sender_name: 'Alexandre Ferreira', body: '[imagem enviada]', media_type: 'image', timestamp: '2026-10-16T13:56:00.000Z' }
+const nossaTextoReal = { id: 'wam_2', conversation_id: 'c1', message_id: '3EB0NOSSAREAL', from_me: true, sender_jid: '5511988887777', sender_name: 'Alexandre Ferreira', body: 'oi', timestamp: '2026-10-16T13:50:00.000Z' }
 const doCliente = { id: 'wam_0', conversation_id: 'c1', message_id: '3EB0REALDOCLIENTE', from_me: false, sender_jid: JID, body: 'bom dia', timestamp: '2026-10-16T13:40:00.000Z' }
 
 async function rodar(codigo, linhaCitada, idCitado) {
