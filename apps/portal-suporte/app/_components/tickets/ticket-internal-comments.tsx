@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { MessageSquare, Send, Loader2, Pencil, Check, X } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { araraApiFetch } from '@/lib/arara/arara-api-fetch'
+import { textoDoComentario } from '@/lib/tickets/texto-do-comentario'
 
 // =============================================================================
 // TicketInternalComments — comentários da equipe (mensagens internas).
@@ -59,12 +60,6 @@ interface Props {
 }
 
 
-// Comentário com HTML (colado de e-mail, editor rico) mostrava as tags cruas
-// ("<p>…</p>") — aqui o formato é texto; as tags saem na exibição.
-function semTags(texto: string): string {
-  return texto.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
-}
-
 function initials(name: string | null, email: string): string {
   const src = name?.trim() || email.split("@")[0];
   return src
@@ -96,13 +91,13 @@ export function TicketInternalComments({ ticketId, comments, currentUserId, onCh
 
   const abrirEdicao = (c: InternalComment) => {
     setEditandoId(c.id);
-    setTextoEdicao(semTags(c.message));
+    setTextoEdicao(c.message);
     setErroEdicao(null);
   };
 
   const salvarEdicao = async (c: InternalComment) => {
     const message = textoEdicao.trim();
-    if (!message || message === semTags(c.message)) {
+    if (!message || message === c.message.trim()) {
       setEditandoId(null);
       return;
     }
@@ -283,7 +278,7 @@ export function TicketInternalComments({ ticketId, comments, currentUserId, onCh
                   ) : (
                     <>
                       <p className="text-sm text-foreground/80 leading-relaxed whitespace-pre-wrap mt-1">
-                        {semTags(c.message)}
+                        {textoDoComentario(c.message)}
                       </p>
                       {/* O original fica acessível, não exposto: o que vale é o
                           texto atual; o anterior é para quem precisa conferir. */}
@@ -300,7 +295,7 @@ export function TicketInternalComments({ ticketId, comments, currentUserId, onCh
                           </button>
                           {verOriginal[c.id] && (
                             <p className="mt-1 border-l-2 border-sem-warning-bd pl-2 text-sm italic text-muted-foreground whitespace-pre-wrap">
-                              {semTags(c.texto_original)}
+                              {textoDoComentario(c.texto_original)}
                             </p>
                           )}
                         </div>
