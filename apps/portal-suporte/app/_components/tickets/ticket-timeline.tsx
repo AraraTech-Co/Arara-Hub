@@ -9,6 +9,7 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import { Clock, Loader2, History } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 import { araraApiFetch } from '@/lib/arara/arara-api-fetch'
+import { textoDoDesfecho, type DesfechoDoAviso } from '@/lib/tickets/desfecho-do-aviso'
 
 const BATCH = 3
 
@@ -225,22 +226,10 @@ function buildDetailText(evt: TimelineEvent): string | null {
   }
 
   // Desfecho do aviso por WhatsApp. O servidor grava isto justamente para a
-  // falha não ficar invisível — mas até aqui a tela não sabia lê-lo, e o
-  // registro existia sem ninguém conseguir ver. Agora diz onde parou.
+  // falha não ficar invisível. A tradução vive num lugar só (a mesma do botão
+  // de reenviar): "aceito" não é "entregue", e recusado não aparece como aceito.
   if (evt.action === 'acompanhamento_aviso') {
-    const dz = (d.desfecho ?? {}) as Record<string, unknown>
-    const destino = typeof d.destino === 'string' ? ` · ${d.destino}` : ''
-    const etapa = String(dz.etapa ?? '')
-    if (etapa === 'sem_numero') return `Não enviado: chamado sem número de WhatsApp${destino}`
-    if (etapa === 'sem_token')  return 'Não enviado: whatsapp_token não configurado no cofre do app'
-    if (etapa === 'falhou')     return `Falhou: ${String(dz.erro ?? 'erro desconhecido')}${destino}`
-    if (etapa === 'enviado') {
-      const st = dz.status == null ? '?' : String(dz.status)
-      // O provedor responder 200 NÃO é prova de entrega — já nos custou
-      // semanas de diagnóstico. Por isso "aceito", e não "entregue".
-      return `Aceito pelo provedor (HTTP ${st})${destino}`
-    }
-    return `Sem desfecho registrado${destino}`
+    return textoDoDesfecho(d.desfecho as DesfechoDoAviso, typeof d.destino === 'string' ? d.destino : null)
   }
 
   if (typeof d.message === 'string') return d.message

@@ -76,6 +76,13 @@ const acoes = (w) => w.logs.map((l) => l.action)
     ((w.logs.find((l) => l.action === 'acompanhamento_aviso') || {}).details || {}).desfecho.etapa
       === 'aceito_pelo_provedor',
     w.logs.find((l) => l.action === 'acompanhamento_aviso'))
+  {
+    const av = (w.logs.find((l) => l.action === 'acompanhamento_aviso') || {}).details || {}
+    const jid = String((w.conversas && w.conversas[0] && w.conversas[0].remote_jid) || '')
+    const dig = jid.replace(/\D/g, '')
+    ok('o aviso grava o destino MASCARADO no histórico do chamado (a tela mostra para onde foi)',
+      /^\d{4}…\d{2}$/.test(String(av.destino || '')) && (!dig || String(av.destino).indexOf(dig) < 0), av)
+  }
   ok('nenhum evento é duplicado',
     acoes(w).filter((a) => a === 'ticket_created').length === 1
     && acoes(w).filter((a) => a === 'acompanhamento_aviso').length === 1, acoes(w))

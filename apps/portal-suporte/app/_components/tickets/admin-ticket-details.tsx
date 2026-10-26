@@ -55,6 +55,7 @@ import { MiniaturaAnexo } from "./attachment-media";
 import { verify } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 import { ticketsApi } from "@/lib/api/tickets";
+import { textoDoDesfecho } from "@/lib/tickets/desfecho-do-aviso";
 import { useTicketEditForm } from "@/hooks/use-ticket-edit-form";
 
 interface AdminTicketDetailsProps {
@@ -189,13 +190,8 @@ export function AdminTicketDetails({ ticket, agents, companies = [], userRole = 
       const r = await araraApiFetch(`/api/tickets/${ticket.id}/reenviar-acompanhamento`, { method: 'POST' });
       const j = await r.json().catch(() => ({}));
       if (!r.ok) { setReenvio(String(j.error || 'Falhou ao reenviar.')); return; }
-      const etapa = String(j?.data?.desfecho?.etapa || '');
-      const st = j?.data?.desfecho?.status;
       // "Aceito", não "entregue": 200 do provedor não é prova de entrega.
-      setReenvio(etapa === 'enviado' ? `Aceito pelo provedor (HTTP ${st ?? '?'})`
-        : etapa === 'sem_token' ? 'whatsapp_token não configurado no cofre do app'
-        : etapa === 'falhou' ? `Falhou: ${j?.data?.desfecho?.erro || 'erro desconhecido'}`
-        : 'Sem desfecho registrado');
+      setReenvio(textoDoDesfecho(j?.data?.desfecho))
     } catch (e) {
       setReenvio(e instanceof Error ? e.message : 'Falhou ao reenviar.');
     } finally { setReenviando(false); }
