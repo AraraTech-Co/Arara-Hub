@@ -91,13 +91,13 @@ export function TicketInternalComments({ ticketId, comments, currentUserId, onCh
 
   const abrirEdicao = (c: InternalComment) => {
     setEditandoId(c.id);
-    setTextoEdicao(textoDoComentario(c.message));
+    setTextoEdicao(c.message);
     setErroEdicao(null);
   };
 
   const salvarEdicao = async (c: InternalComment) => {
     const message = textoEdicao.trim();
-    if (!message || message === textoDoComentario(c.message)) {
+    if (!message || message === c.message.trim()) {
       setEditandoId(null);
       return;
     }

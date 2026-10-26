@@ -4,9 +4,9 @@
 //   - O HELPER (`lib/tickets/texto-do-comentario.ts`, executado de verdade): \n e \n\n ficam; CRLF vira \n;
 //     três ou mais quebras viram duas; espaços e tabs se colapsam; fim de bloco e <br> viram quebra; as demais
 //     tags saem; texto sem quebra e sem tag passa igual; vazio continua vazio;
-//   - A TELA (texto, sem comentários): corpo, original e abertura da edição usam o helper; o salvar só
-//     descarta a edição quando o texto é igual ao normalizado (editar sem mudar nada não regrava);
-//     nenhuma cópia local que achata `\s+`.
+//   - A TELA (texto, sem comentários): corpo e original usam o helper; a EDIÇÃO não: a caixa carrega o texto como está
+//     guardado e o salvar compara cru com cru, então abrir e salvar sem mexer é no-op e editar uma palavra não
+//     reescreve o espaçamento do resto; nenhuma cópia local que achata `\s+`.
 // MUTAÇÕES: aplicadas uma vez cada, reprovadas por asserção.
 //
 // Roda com: node quebras-no-comentario.test.js   (Node 22.18+/24+ carrega .ts sem build)
@@ -57,8 +57,10 @@ function bateriaTela(c) {
   if (!/import \{ textoDoComentario \} from '@\/lib\/tickets\/texto-do-comentario'/.test(c)) f.push('sem-import')
   if (/function semTags|replace\(\/\\s\+\//.test(c)) f.push('copia-local-que-achata')
   if (/semTags/.test(c)) f.push('semTags-sobrou')
-  if (!/setTextoEdicao\(textoDoComentario\(c\.message\)\)/.test(c)) f.push('edicao-abre-sem-helper')
-  if (!/message === textoDoComentario\(c\.message\)/.test(c)) f.push('salvar-compara-sem-helper')
+  // edição: a caixa carrega o texto COMO ESTÁ GUARDADO e o salvar compara cru com cru; normalizar é coisa de exibição
+  if (!/setTextoEdicao\(c\.message\)/.test(c)) f.push('edicao-abre-diferente-do-guardado')
+  if (!/message === c\.message\.trim\(\)/.test(c)) f.push('salvar-compara-diferente-do-guardado')
+  if (/setTextoEdicao\(textoDoComentario/.test(c)) f.push('edicao-normaliza')
   if (!/body: JSON\.stringify\(\{ message \}\)/.test(c)) f.push('patch-nao-manda-o-texto-editado')
   if (!/whitespace-pre-wrap mt-1">\s*\{textoDoComentario\(c\.message\)\}/.test(c)) f.push('corpo-sem-helper')
   if (!/whitespace-pre-wrap">\s*\{textoDoComentario\(c\.texto_original\)\}/.test(c)) f.push('original-sem-helper')
@@ -68,7 +70,7 @@ function bateriaTela(c) {
 const hf = bateriaHelper(carregar(HELPER_SRC, 'helper'))
 ok('o helper preserva as quebras, tira as tags e colapsa só espaço', hf.length === 0, hf)
 const tf = bateriaTela(TELA)
-ok('corpo, original e edição usam o helper; o salvar compara com o texto normalizado', tf.length === 0, tf)
+ok('corpo e original usam o helper; a edição carrega e compara o texto cru, sem normalizar', tf.length === 0, tf)
 
 const mutsHelper = [
   ['achata tudo em espaço', ".replace(/[^\\S\\n]+/g, ' ')", ".replace(/\\s+/g, ' ')"],
@@ -88,8 +90,9 @@ for (const [nome, de, para] of mutsHelper) {
   ok(`mutação "${nome}" é pega (${fm.slice(0, 1).join('')})`, fm.length > 0 && !fm[0].startsWith('erro'), 'sobreviveu ou quebrou por exceção')
 }
 const mutsTela = [
-  ['edição abre achatada', TELA.replace('setTextoEdicao(textoDoComentario(c.message))', "setTextoEdicao(c.message.replace(/\\s+/g, ' '))")],
-  ['salvar compara com o cru', TELA.replace('message === textoDoComentario(c.message)', 'message === c.message')],
+  ['edição abre achatada', TELA.replace('setTextoEdicao(c.message)', "setTextoEdicao(c.message.replace(/\\s+/g, ' '))")],
+  ['edição abre normalizada', TELA.replace('setTextoEdicao(c.message)', 'setTextoEdicao(textoDoComentario(c.message))')],
+  ['salvar compara com o normalizado', TELA.replace('message === c.message.trim()', 'message === textoDoComentario(c.message)')],
   ['corpo cru', TELA.replace('{textoDoComentario(c.message)}', '{c.message}')],
   ['original cru', TELA.replace('{textoDoComentario(c.texto_original)}', '{c.texto_original}')],
   ['patch manda o texto original', TELA.replace('JSON.stringify({ message })', 'JSON.stringify({ message: c.message })')],
