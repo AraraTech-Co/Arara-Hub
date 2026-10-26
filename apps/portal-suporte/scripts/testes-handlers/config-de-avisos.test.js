@@ -152,11 +152,28 @@ const soAvisos = (l) => l.filter((e) => String(e.number).startsWith('55199999900
   const tres = () => [esperando('c1', '2026-10-12T21:00:00Z'), esperando('c2', '2026-10-12T21:30:00Z'), esperando('c3', '2026-10-12T22:00:00Z')]
   const um = () => [esperando('c1', '2026-10-12T21:00:00Z')]
   let x = await ambos({ texto_varias: 'ALERTA: {{quantas}} esperando\n{{lista}}' }, tres())
-  ok('várias: texto próprio, igual nos dois caminhos', x.rota.length === 1 && x.rota[0] === x.entrada[0] && x.rota[0].startsWith('ALERTA: 3 esperando\n• Cliente c1 (desde 21:00)') && x.rota[0].endsWith('\n\nhttps://suporte.arara-tech.com/inbox'), x)
+  ok('várias: texto próprio, igual nos dois caminhos', x.rota.length === 1 && x.rota[0] === x.entrada[0] && x.rota[0].startsWith('ALERTA: 3 esperando\n• Cliente c1 (desde 18:00)') && x.rota[0].endsWith('\n\nhttps://suporte.arara-tech.com/inbox'), x)
   x = await ambos({ texto_uma: 'Fila: {{nome}} às {{desde}}' }, um())
-  ok('uma: texto próprio, igual nos dois caminhos, com link da conversa', x.rota.length === 1 && x.rota[0] === x.entrada[0] && x.rota[0] === 'Fila: Cliente c1 às 21:00\n\nhttps://suporte.arara-tech.com/inbox?c=c1', x)
+  ok('uma: texto próprio, igual nos dois caminhos, com link da conversa', x.rota.length === 1 && x.rota[0] === x.entrada[0] && x.rota[0] === 'Fila: Cliente c1 às 18:00\n\nhttps://suporte.arara-tech.com/inbox?c=c1', x)
   x = await ambos(null, tres())
-  ok('sem configuração: mensagem de hoje, igual nos dois', x.rota[0] === x.entrada[0] && x.rota[0].startsWith('Plantão Arara Tech: 3 conversas aguardam atendimento.\n\n• Cliente c1 (desde 21:00)'), x)
+  ok('sem configuração: mensagem de hoje, igual nos dois', x.rota[0] === x.entrada[0] && x.rota[0].startsWith('Plantão Arara Tech: 3 conversas aguardam atendimento.\n\n• Cliente c1 (desde 18:00)'), x)
+  // A hora do "(desde …)" é a do RELÓGIO DA EMPRESA, não a do ISO em UTC: 21:00Z = 18:00 em Brasília.
+  // O fuso vem da configuração (`waHorario`), o mesmo do horário comercial: com Manaus (-04) a mesma
+  // espera é 17:00, nos dois caminhos.
+  x = await ambos({ texto_uma: 'Fila: {{nome}} às {{desde}}' }, [esperando('c1', '2026-10-12T11:00:00Z')])
+  ok('hora do relato: 11:00Z aparece como 08:00 (não 11:00), nos dois caminhos', x.rota[0] === x.entrada[0] && x.rota[0].startsWith('Fila: Cliente c1 às 08:00'), x)
+  {
+    const em = (fuso) => async (conversas) => {
+      const a = mundo({ conversas }), b = mundo({ conversas })
+      for (const w of [a, b]) w.estado.linha.waHorario = JSON.stringify({ ...HORARIO, fuso })
+      await comRelogio(DENTRO, () => varrer(ctxDe(a, { agendadorInterno: TOKEN, user: { type: 'agendador' } })))
+      await comRelogio(DENTRO, async () => { await _triagem({ models: b.models, secrets: { get: async () => 'tok' }, fetch: b.fetch }, b.estado.conversas[0], 'oi') })
+      return { rota: soAvisos(a.estado.enviadas), entrada: soAvisos(b.estado.enviadas) }
+    }
+    const manaus = await em('America/Manaus')([esperando('c1', '2026-10-12T21:00:00Z')])
+    ok('fuso da configuração manda: com America/Manaus a espera de 21:00Z é 17:00, nos dois caminhos',
+      manaus.rota.length === 1 && manaus.rota[0] === manaus.entrada[0] && /\(desde 17:00\)/.test(manaus.rota[0]), manaus)
+  }
   x = await ambos({ texto_uma: '{{foo}}' }, um())
   ok('texto quebrado: reserva nos dois, sem chave literal', x.rota.length === 1 && !/\{\{/.test(x.rota[0]) && x.rota[0] === x.entrada[0], x)
   // prazo: espera desde 22:00Z = 19h SP; agora 20h SP = 60 min
