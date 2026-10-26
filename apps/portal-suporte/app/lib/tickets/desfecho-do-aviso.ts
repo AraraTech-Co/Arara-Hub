@@ -26,10 +26,10 @@ export function textoDoDesfecho(desfecho: DesfechoDoAviso, destino?: string | nu
   if (etapa === 'enviado') {
     // Etapa antiga: gravada mesmo quando o provedor recusou ou nem respondeu. Só o status numérico decide;
     // sem ele o registro não afirma aceitação nem recusa.
-    if (st == null || Number.isNaN(st)) return `Registrado como enviado, sem resposta do provedor no registro${fim}`
-    return st >= 300
-      ? `Recusado pelo provedor (HTTP ${http})${fim}`
-      : `Aceito pelo provedor (HTTP ${http})${fim}`
+    if (st != null && st >= 200 && st < 300) return `Aceito pelo provedor (HTTP ${http})${fim}`
+    if (st != null && st >= 300) return `Recusado pelo provedor (HTTP ${http})${fim}`
+    // sem status, 0, 1xx, negativo ou não numérico: nem aceito nem recusado
+    return `Registrado como enviado, sem resposta do provedor no registro${fim}`
   }
   return `Sem desfecho registrado${fim}`
 }

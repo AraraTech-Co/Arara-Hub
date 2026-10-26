@@ -76,7 +76,13 @@ function bateriaHelper(m) {
     if (/^Aceito|^Recusado|Sem desfecho registrado/.test(x) || !/sem resposta do provedor/.test(x)) f.push('legado-status-' + nome)
   }
   if (!has(t({ etapa: 'enviado', status: '200' }), /^Aceito pelo provedor \(HTTP 200\)$/)) f.push('legado-status-texto-numerico')
-  if (!has(t({ etapa: 'enviado', status: 0 }), /^Aceito/)) f.push('legado-status-zero')
+  // só 200–299 é aceito; 0, 1xx e negativo não são sucesso nem recusa
+  for (const st of [0, 100, 101, 199, -1]) {
+    const x = t({ etapa: 'enviado', status: st })
+    if (/^Aceito|^Recusado/.test(x) || !/sem resposta do provedor/.test(x)) f.push('legado-status-' + st)
+  }
+  for (const st of [200, 204, 299]) if (!has(t({ etapa: 'enviado', status: st }), /^Aceito pelo provedor/)) f.push('legado-aceito-' + st)
+  for (const st of [300, 301, 400, 422, 500, 599]) if (!has(t({ etapa: 'enviado', status: st }), /^Recusado pelo provedor/)) f.push('legado-recusado-' + st)
   // "Sem desfecho" só para o que não se sabe ler
   for (const [nome, d] of [['nulo', null], ['vazio', {}], ['inicio', { etapa: 'inicio' }], ['estranho', { etapa: 'xyz' }]]) {
     if (t(d) !== 'Sem desfecho registrado') f.push('sem-desfecho-' + nome)
@@ -139,6 +145,11 @@ async function bateriaServidor(rodar, nome) {
     const sem = await rodar([null])
     if (!sem.d || sem.d.etapa !== 'falhou' || /recusado|aceito/.test(String(sem.d.etapa))) f.push(nome + '-sem-resposta')
   }
+  for (const st of [0, 100]) {
+    // status que não é sucesso nem recusa: não pode virar "aceito"
+    const x = await rodar([st])
+    if (!x.d || x.d.etapa !== 'falhou' || !/resposta inesperada/.test(String(x.d.erro || ''))) f.push(nome + '-status-' + st)
+  }
   const c = await rodar([422, 200])
   if (!c.d || c.d.etapa !== 'aceito_pelo_provedor' || c.d.status !== 200 || c.d.tentativas.length !== 2) f.push(nome + '-2a-grafia')
   if (nome === 'reenvio') {
@@ -168,8 +179,11 @@ async function bateriaServidor(rodar, nome) {
 
   const mutsHelper = [
     ['recusado lido como aceito', "if (etapa === 'recusado') return `Recusado pelo provedor (HTTP ${http})${fim}`", ''],
-    ['legado 422 lido como aceito', 'return st >= 300\n      ?', 'return false\n      ?'],
-    ['legado sem status lido como aceito', 'if (st == null || Number.isNaN(st)) return', 'if (false) return'],
+    ['legado 422 lido como aceito', 'st != null && st >= 300) return', 'false) return'],
+    ['legado: tudo abaixo de 300 é aceito (inclui 0 e 1xx)', 'st != null && st >= 200 && st < 300', 'st != null && st < 300'],
+    ['legado: 1xx é aceito', 'st >= 200 && st < 300', 'st >= 100 && st < 300'],
+    ['legado: 300 não é recusado', 'st != null && st >= 300', 'st != null && st > 300'],
+    ['legado sem status lido como aceito', "return `Registrado como enviado, sem resposta do provedor no registro${fim}`", "return `Aceito pelo provedor (HTTP ${http})${fim}`"],
     ['legado sem status lido como recusado', "return `Registrado como enviado, sem resposta do provedor no registro${fim}`", "return `Recusado pelo provedor (HTTP ${http})${fim}`"],
     ['grupo cai em sem desfecho', "if (etapa === 'grupo') return `Não enviado: conversa de grupo${fim}`", ''],
     ['aceito cai em sem desfecho', "if (etapa === 'aceito_pelo_provedor') return `Aceito pelo provedor (HTTP ${http})${fim}`", ''],
@@ -183,13 +197,16 @@ async function bateriaServidor(rodar, nome) {
     ok(`mutação "${nome}" é pega (${fm.slice(0, 1).join('')})`, fm.length > 0, 'sobreviveu')
   }
   const mutsServidor = [
-    ['manual: volta a gravar enviado sempre', 'site', 'desfecho.etapa = (r ? (r.status < 300 ? "aceito_pelo_provedor" : "recusado") : "falhou");', 'desfecho.etapa = "enviado";'],
-    ['manual: tudo vira recusado', 'site', '(r ? (r.status < 300 ? "aceito_pelo_provedor" : "recusado") : "falhou")', '"recusado"'],
-    ['manual: limite errado (>= 200)', 'site', 'r.status < 300 ? "aceito_pelo_provedor"', 'r.status < 200 ? "aceito_pelo_provedor"'],
-    ['manual: sem resposta vira recusado', 'site', ': "falhou")', ': "recusado")'],
-    ['reenvio: sem resposta vira recusado', 'reenvio', ': "falhou")', ': "recusado")'],
-    ['reenvio: volta a gravar enviado sempre', 'reenvio', 'desfecho.etapa = (r ? (r.status < 300 ? "aceito_pelo_provedor" : "recusado") : "falhou");', 'desfecho.etapa = "enviado";'],
-    ['reenvio: tudo vira aceito', 'reenvio', '(r ? (r.status < 300 ? "aceito_pelo_provedor" : "recusado") : "falhou")', '"aceito_pelo_provedor"'],
+    ['manual: volta a gravar enviado sempre', 'site', 'if (_st !== null && _st >= 200 && _st < 300) desfecho.etapa = "aceito_pelo_provedor";', 'desfecho.etapa = "enviado"; if (false) 1;'],
+    ['manual: tudo vira recusado', 'site', 'if (_st !== null && _st >= 200 && _st < 300) desfecho.etapa = "aceito_pelo_provedor";', 'if (false) desfecho.etapa = "aceito_pelo_provedor";'],
+    ['manual: limite errado (>= 200)', 'site', '_st >= 200 && _st < 300', '_st >= 200 && _st < 200'],
+    ['manual: 0 e 1xx viram aceito', 'site', '_st >= 200 && _st < 300', '_st < 300'],
+    ['reenvio: 0 e 1xx viram aceito', 'reenvio', '_st >= 200 && _st < 300', '_st < 300'],
+    ['manual: 0 e 1xx viram recusado', 'site', 'else if (_st !== null && _st >= 300)', 'else if (_st !== null && _st >= 0)'],
+    ['manual: sem resposta vira recusado', 'site', 'else if (_st !== null && _st >= 300) desfecho.etapa = "recusado";', 'else if (true) desfecho.etapa = "recusado";'],
+    ['reenvio: sem resposta vira recusado', 'reenvio', 'else if (_st !== null && _st >= 300) desfecho.etapa = "recusado";', 'else if (true) desfecho.etapa = "recusado";'],
+    ['reenvio: volta a gravar enviado sempre', 'reenvio', 'if (_st !== null && _st >= 200 && _st < 300) desfecho.etapa = "aceito_pelo_provedor";', 'desfecho.etapa = "enviado"; if (false) 1;'],
+    ['reenvio: tudo vira aceito', 'reenvio', 'else if (_st !== null && _st >= 300) desfecho.etapa = "recusado";', 'else if (_st !== null && _st >= 300) desfecho.etapa = "aceito_pelo_provedor";'],
   ]
   for (const [nome, qual, de, para] of mutsServidor) {
     const base = qual === 'site' ? SITE : REENVIO
