@@ -471,6 +471,13 @@ export const whatsappApi = {
   resolveConversation: (id: string, closeReasonId: string) =>
     api.post<{ data: unknown }>(`/api/whatsapp/${id}/resolve`, { closeReasonId }),
 
+  /**
+   * POST /api/whatsapp/[id]/reopen — reabre a conversa concluída, com o chamado
+   * que ela já tinha. O servidor recusa se o contato já tiver outra aberta.
+   */
+  reopenConversation: (id: string) =>
+    api.post<{ data: unknown }>(`/api/whatsapp/${id}/reopen`, {}),
+
   /** GET /api/whatsapp/close-reasons — motivos ativos para o diálogo de concluir */
   listCloseReasons: () => api.get<{ data: WAInboxRef[] }>('/api/whatsapp/close-reasons'),
 

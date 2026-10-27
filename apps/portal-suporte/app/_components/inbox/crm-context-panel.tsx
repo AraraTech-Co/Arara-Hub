@@ -10,6 +10,7 @@ import {
   Loader2,
   Mail,
   Phone,
+  RotateCcw,
   Tag as TagIcon,
   Ticket as TicketIcon,
   UserPlus,
@@ -266,6 +267,30 @@ export function CrmContextPanel({ conversationId }: CrmContextPanelProps) {
               {isResolved ? 'Atendimento concluído' : 'Atendimento aberto'}
             </span>
           </div>
+          {/* Conversa concluída com chamado pendente: reabrir devolve o assunto
+              com o ticket que já estava vinculado, em vez de começar do zero. */}
+          {isResolved && (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="mt-2.5 w-full"
+              disabled={busy}
+              onClick={() =>
+                void runAction(
+                  () => whatsappApi.reopenConversation(detail.id),
+                  'Erro ao reabrir',
+                )
+              }
+            >
+              {busy ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <RotateCcw className="h-4 w-4" />
+              )}
+              <span className="ml-1.5">Reabrir conversa</span>
+            </Button>
+          )}
           {!isResolved && (
             <Button
               type="button"
