@@ -211,13 +211,23 @@ async function bateriaListagem(h) {
     f.push('ordem:' + d3.map((t) => t.id).join(','))
   }
 
-  // Teto de 20 na resposta.
+  // SEM teto de quantidade: a busca da janela filtra o que já veio, então
+  // cortar aqui esconderia um chamado que existe.
   const muitos = []
-  for (let i = 0; i < 40; i++) {
-    muitos.push(chamado({ id: 'm' + i, created_at: '2026-10-' + String(10 + (i % 20)).padStart(2, '0') + 'T12:00:00Z' }))
+  for (let i = 0; i < 30; i++) {
+    muitos.push(chamado({ id: 'm' + i, created_at: '2026-10-' + String(1 + i).padStart(2, '0') + 'T12:00:00Z' }))
   }
-  const d4 = await lista('teto-de-20', mundo({ chamados: muitos }), 200)
-  if (d4 && d4.length !== 20) f.push('teto-de-20:' + d4.length)
+  const d4 = await lista('sem-teto-de-quantidade', mundo({ chamados: muitos }), 200)
+  if (d4 && d4.length !== 30) f.push('sem-teto-de-quantidade:' + d4.length)
+
+  // Um caso por status encerrado: nenhum aparece na lista.
+  for (const st of ['resolvido', 'resolvido_com_manual', 'resolvido_sem_manual', 'post_mortem', 'cancelado', 'fechado']) {
+    const we = mundo({ chamados: [chamado({ id: 'tEnc', status: st }), chamado({ id: 'tBom' })] })
+    const de = await lista('encerrado-' + st, we, 200)
+    if (de && de.map((t) => t.id).join(',') !== 'tBom') {
+      f.push('encerrado-' + st + ':devolveu=' + de.map((t) => t.id).join(','))
+    }
+  }
 
   // Conversa sem empresa cai no cliente; chamado de outro cliente não entra.
   const w5 = mundo({
@@ -341,6 +351,25 @@ async function bateriaVinculo(h) {
     409,
   )
 
+  // JWT expirado: quem vem só pela sessão do portal é autor nos dois históricos.
+  const ws = mundo({
+    user: null,
+    sessao: 'abc.xyz',
+    perfil: { id: 'u9', role: 'support' },
+    chamados: [chamado({ id: 't1' })],
+    body: { ticketId: 't1' },
+  })
+  const rs = await h(ctxDe(ws))
+  if ((rs.status || 200) !== 200) f.push('sessao:status=' + rs.status)
+  else {
+    if (!ws.eventos[0] || ws.eventos[0].actor_id !== 'u9') {
+      f.push('sessao:evento-sem-autor:' + (ws.eventos[0] && ws.eventos[0].actor_id))
+    }
+    if (!ws.logs[0] || ws.logs[0].user_id !== 'u9') {
+      f.push('sessao:log-sem-autor:' + (ws.logs[0] && ws.logs[0].user_id))
+    }
+  }
+
   // Sem empresa, o vínculo sai pelo cliente.
   const wc = mundo({
     conv: { company_id: null },
@@ -358,10 +387,38 @@ async function bateriaVinculo(h) {
   await recusa('sem-ticketId', mundo({ chamados: [chamado({ id: 't1' })], body: {} }), 400)
   await recusa('chamado-inexistente', mundo({ chamados: [], body: { ticketId: 't1' } }), 404)
   // A lista da janela não protege nada: quem chama a rota escolhe o id.
+  for (const st of ['resolvido', 'resolvido_com_manual', 'resolvido_sem_manual', 'post_mortem', 'cancelado', 'fechado']) {
+    await recusa(
+      'encerrado-' + st,
+      mundo({ chamados: [chamado({ id: 't1', status: st })], body: { ticketId: 't1' } }),
+      409,
+    )
+  }
+  // O escopo vem ANTES: chamado de outra empresa não revela a própria situação.
   await recusa(
-    'chamado-encerrado',
-    mundo({ chamados: [chamado({ id: 't1', status: 'resolvido' })], body: { ticketId: 't1' } }),
-    409,
+    'outra-empresa-e-resolvido',
+    mundo({
+      chamados: [chamado({ id: 't1', company_id: 'empB', client_user_id: 'cliB', status: 'resolvido' })],
+      body: { ticketId: 't1' },
+    }),
+    403,
+  )
+  await recusa(
+    'outra-empresa-e-dev',
+    mundo({
+      chamados: [chamado({ id: 't1', company_id: 'empB', client_user_id: 'cliB', quadro: 'dev' })],
+      body: { ticketId: 't1' },
+    }),
+    403,
+  )
+  await recusa(
+    'outra-empresa-e-o-mesmo-ja-vinculado',
+    mundo({
+      conv: { ticket_id: 't1' },
+      chamados: [chamado({ id: 't1', company_id: 'empB', client_user_id: 'cliB' })],
+      body: { ticketId: 't1' },
+    }),
+    403,
   )
   await recusa(
     'chamado-arquivado',
@@ -439,6 +496,25 @@ async function bateriaDesvincular(h) {
   if (!log || log.action !== 'ticket_unlinked') f.push('feliz:log=' + (log && log.action))
   else if (String(log.ticket_id) !== 't1') f.push('feliz:log-de-outro-chamado')
 
+  // JWT expirado: o autor sai da sessão do portal.
+  const ws = mundo({
+    conv: { ticket_id: 't1' },
+    chamados: [chamado({ id: 't1' })],
+    user: null,
+    sessao: 'abc.xyz',
+    perfil: { id: 'u9', role: 'support' },
+  })
+  const rs = await h(ctxDe(ws))
+  if ((rs.status || 200) !== 200) f.push('sessao:status=' + rs.status)
+  else {
+    if (!ws.eventos[0] || ws.eventos[0].actor_id !== 'u9') {
+      f.push('sessao:evento-sem-autor:' + (ws.eventos[0] && ws.eventos[0].actor_id))
+    }
+    if (!ws.logs[0] || ws.logs[0].user_id !== 'u9') {
+      f.push('sessao:log-sem-autor:' + (ws.logs[0] && ws.logs[0].user_id))
+    }
+  }
+
   // Chamado JÁ RESOLVIDO se desvincula: é justamente o caso em que o atendente
   // quer soltar a conversa. Conferir a situação aqui travaria a saída.
   const wr = mundo({
@@ -505,11 +581,15 @@ const MUT_LISTA = [
   // Conversa sem cliente passa a varrer e devolver o que achar.
   ['sem escopo devolve o que achar', [['if (!_empresa && !_cliente) return ok(ctx, []);', 'if (false) return ok(ctx, []);']]],
   ['inclui encerrados', [['    if (_encerrado(_t)) continue;\n', '']]],
+  // Lista de encerrados mais curta: sem um caso por status, este mutante vivia.
+  ['encerrados sem post_mortem, cancelado e fechado',
+    [['    post_mortem: 1,\n    cancelado: 1,\n    fechado: 1,\n', '']]],
   ['inclui arquivados', [['    if (t.is_archived || t.isArchived) return true;\n', '']]],
   ['inclui cards do quadro de Dev', [['    if (_ehDoDev(_t)) continue;\n', '']]],
   ['inclui a própria conversa', [['if (_meu && String(_t.id) === _meu) continue;\n', '']]],
   ['ordem invertida', [['return ta < tb ? 1 : -1;', 'return ta < tb ? -1 : 1;']]],
-  ['teto de 20 ignorado', [['_s < _cands.length && _s < 20', '_s < _cands.length']]],
+  // Teto de quantidade de volta: chamado além do 20º não poderia ser vinculado.
+  ['corta a lista em 20', [['_s < _cands.length;', '_s < _cands.length && _s < 20;']]],
   // Devolve a linha inteira: descrição do chamado passa a sair na listagem.
   ['devolve o chamado inteiro', [['    _saida.push({\n      id: _c.id,', '    _saida.push(_c);\n    if (false) _saida.push({\n      id: _c.id,']]],
   ['lê só a primeira página', [['if (_pag.length < _PAGINA) break;', 'break;']]],
@@ -531,6 +611,11 @@ const MUT_VINC = [
   // troca que não houve.
   ['aceita o mesmo chamado de novo',
     [['  if (_antes && String(_t.id) === _antes) {', '  if (false) {']]],
+  ['autor só pelo JWT', [['  var me = userId(ctx) || (await _sessaoDoPortal(ctx));', '  var me = userId(ctx);']]],
+  // Escopo depois das outras recusas: a rota conta a situação de chamado alheio.
+  ['escopo depois do encerrado',
+    [['  if (!_mesmo) return fail(ctx, 403, "Este chamado é de outro cliente");\n',
+      '  if (!_mesmo) { if (_encerrado(_t)) return fail(ctx, 409, "Este chamado já está encerrado"); return fail(ctx, 403, "Este chamado é de outro cliente"); }\n']]],
   ['aceita pedido sem ticketId', [['if (!_tid) return fail(ctx, 400, "ticketId obrigatório");', '']]],
   // A tela deixar de oferecer não é guarda: quem chama a rota escolhe o id.
   ['aceita chamado encerrado',
@@ -539,6 +624,8 @@ const MUT_VINC = [
     [['if (_ehDoDev(_t)) return fail(ctx, 409, "Este chamado é do quadro de Dev");', '']]],
   ['encerrado só pelo status, sem o arquivado',
     [['    if (t.is_archived || t.isArchived) return true;\n', '']]],
+  ['encerrados sem post_mortem, cancelado e fechado',
+    [['    post_mortem: 1,\n    cancelado: 1,\n    fechado: 1,\n', '']]],
   ['grava mais que o vínculo',
     [['await m.Conv.update(id, { ticket_id: _t.id, updated_at: ts });',
       'await m.Conv.update(id, { ticket_id: _t.id, updated_at: ts, status: "open" });']]],
@@ -574,6 +661,7 @@ const MUT_DESV = [
   ['não grava o evento da conversa', [['      type: "ticket_unlinked",', '      type: "outro",']]],
   ['evento sem o chamado anterior', [['      from_value: _antes,\n      to_value: null,', '      from_value: null,\n      to_value: null,']]],
   ['não registra no histórico do chamado', [['        action: "ticket_unlinked",', '        action: "outro",']]],
+  ['autor só pelo JWT', [['  var me = userId(ctx) || (await _sessaoDoPortal(ctx));', '  var me = userId(ctx);']]],
 ]
 
 // ─── A tela: o botão novo ao lado do de criar, e a janela chama as rotas ────

@@ -119,8 +119,13 @@ LISTAR = r"""async function handler(ctx) {
 
   // Só o que a janela desenha. Descrição, anexo e histórico do chamado não
   // saem por aqui: esta rota é para ESCOLHER um chamado, não para ler um.
+  //
+  // Sem teto de quantidade: a busca da janela filtra o que JÁ veio
+  // (wa-link-ticket-dialog.tsx), então cortar aqui esconderia um chamado que
+  // existe — a tela diria "nenhum chamado casa com a busca" para quem digitou
+  // o número certo. O que limita esta resposta é a empresa e o teto de páginas.
   var _saida = [];
-  for (var _s = 0; _s < _cands.length && _s < 20; _s++) {
+  for (var _s = 0; _s < _cands.length; _s++) {
     var _c = _cands[_s];
     _saida.push({
       id: _c.id,
@@ -155,18 +160,15 @@ VINCULAR = r"""async function handler(ctx) {
   if (!_tid) return fail(ctx, 400, "ticketId obrigatório");
   var _t = await m.Ticket.findById(_tid);
   if (!_t) return fail(ctx, 404, "Chamado não encontrado");
-  if (_antes && String(_t.id) === _antes) {
-    return fail(ctx, 409, "Esta conversa já está vinculada a este chamado");
-  }
-  // A lista da janela não protege nada: quem chama a rota escolhe o `ticketId`.
-  // Então as duas exclusões da listagem são conferidas AQUI também.
-  if (_ehDoDev(_t)) return fail(ctx, 409, "Este chamado é do quadro de Dev");
-  if (_encerrado(_t)) return fail(ctx, 409, "Este chamado já está encerrado");
 
   // ── A guarda que importa: o chamado tem de ser do cliente DESTA conversa ──
   // Sem ela, um id de chamado qualquer vinculava, e o painel do contato passava
   // a mostrar número, título e status de chamado de outro cliente, com link
   // para abrir. O escopo sai da conversa, nunca do corpo do pedido.
+  //
+  // E vem ANTES de qualquer outra recusa sobre o chamado: responder "este
+  // chamado está encerrado" ou "é do quadro de Dev" para um chamado que não é
+  // do cliente desta conversa já conta a situação de um chamado alheio.
   var _empresa = conv.company_id || conv.companyId || null;
   var _cliente = conv.client_user_id || conv.clientUserId || null;
   if (!_empresa && !_cliente) {
@@ -179,8 +181,19 @@ VINCULAR = r"""async function handler(ctx) {
     : String(_tCliente || "") === String(_cliente);
   if (!_mesmo) return fail(ctx, 403, "Este chamado é de outro cliente");
 
+  if (_antes && String(_t.id) === _antes) {
+    return fail(ctx, 409, "Esta conversa já está vinculada a este chamado");
+  }
+  // A lista da janela não protege nada: quem chama a rota escolhe o `ticketId`.
+  // Então as duas exclusões da listagem são conferidas AQUI também.
+  if (_ehDoDev(_t)) return fail(ctx, 409, "Este chamado é do quadro de Dev");
+  if (_encerrado(_t)) return fail(ctx, 409, "Este chamado já está encerrado");
+
   var ts = nowIso();
-  var me = userId(ctx);
+  // Quem chamou pode vir só pela sessão do portal (JWT expirado): `userId`
+  // sozinho devolveria null, e o histórico da conversa e o do chamado
+  // registrariam a mudança sem autor.
+  var me = userId(ctx) || (await _sessaoDoPortal(ctx));
   // Só o vínculo. Status, fase e dono da conversa não mudam, e o chamado não é
   // tocado: encerrar a conversa continua não resolvendo o chamado, e vincular
   // não reabre nem reclassifica nada.
@@ -250,7 +263,8 @@ DESVINCULAR = r"""async function handler(ctx) {
   if (!_antes) return fail(ctx, 409, "Esta conversa não tem chamado vinculado");
 
   var ts = nowIso();
-  var me = userId(ctx);
+  // Como no vincular: quem vem só pela sessão do portal também é autor.
+  var me = userId(ctx) || (await _sessaoDoPortal(ctx));
   // Só o vínculo sai. O chamado não é tocado: desvincular não resolve, não
   // reabre e não reclassifica nada.
   await m.Conv.update(id, { ticket_id: null, updated_at: ts });
