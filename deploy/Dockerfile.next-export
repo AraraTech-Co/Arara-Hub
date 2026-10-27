@@ -35,6 +35,7 @@ RUN if [ -f next.config.export.mjs ]; then \
 FROM nginx:1.27-alpine
 RUN apk add --no-cache gettext
 COPY deploy/nginx/spa.conf.template /etc/nginx/templates/spa.conf.template
+COPY deploy/nginx/security-headers.conf /etc/nginx/templates/security-headers.conf
 COPY deploy/nginx/docker-entrypoint.sh /docker-entrypoint-spa.sh
 RUN chmod +x /docker-entrypoint-spa.sh
 COPY --from=builder /src/out /usr/share/nginx/html
