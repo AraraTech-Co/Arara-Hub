@@ -15,7 +15,7 @@ const path = require('path')
 const { ok, fim } = require('./_carregar.js')
 
 const DIR = path.resolve(__dirname, '../../app/_components/inbox')
-const semComentarios = (s) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '').replace(/\{\s*\}/g, '')
+const semComentarios = (s) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
 const ACOES = semComentarios(fs.readFileSync(path.join(DIR, 'message-actions.tsx'), 'utf8'))
 const CLIENT = semComentarios(fs.readFileSync(path.join(DIR, 'inbox-client.tsx'), 'utf8'))
 
@@ -60,17 +60,27 @@ for (const [nome, de] of mutsAcoes) {
   const fm = bateriaAcoes(ACOES.replace(de, () => para))
   ok(`mutação "${nome}" é pega (${fm.slice(0, 1).join('')})`, fm.length > 0, 'sobreviveu')
 }
+// Cada mutação é uma lista de pares [de, para]; cada `de` tem de ocorrer EXATAMENTE uma vez no texto
+// em que é aplicado, senão a mutação não foi executada (âncora errada não é mutante morto).
+const PAINEL = '<div className="min-h-0 flex-1 overflow-hidden">\n              <CrmContextPanel conversationId={selectedId} />\n            </div>'
+const BARRA = '<div className="flex shrink-0 items-center border-b'
 const mutsClient = [
-  ['barra aparece no desktop', CLIENT.replace('border-b border-border bg-card px-2 py-1.5 xl:hidden', 'border-b border-border bg-card px-2 py-1.5')],
-  ['barra não fecha o painel', CLIENT.replace('onClick={() => setCrmOpen(false)}\n                aria-label="Voltar à conversa"', 'onClick={() => {}}\n                aria-label="Voltar à conversa"')],
-  ['bloco nunca visível abaixo de xl', CLIENT.replace("crmOpen ? 'flex xl:flex' : 'hidden xl:flex'", "'hidden xl:flex'")],
-  ['bloco sempre visível', CLIENT.replace("crmOpen ? 'flex xl:flex' : 'hidden xl:flex'", "'flex'")],
-  ['sem a barra', CLIENT.replace('Voltar à conversa"\n                className', 'Voltar"\n                className').replace('                Voltar à conversa\n', '')],
-  ['painel antes da barra', CLIENT.replace('<div className="min-h-0 flex-1">\n              <CrmContextPanel conversationId={selectedId} />\n            </div>', '').replace('{selectedId && (', '{selectedId && (<CrmContextPanel conversationId={selectedId} />) && (')],
-  ['thread não esconde com o painel aberto', CLIENT.replace("crmOpen && 'hidden xl:block'", '')],
+  ['barra aparece no desktop', [['border-b border-border bg-card px-2 py-1.5 xl:hidden', 'border-b border-border bg-card px-2 py-1.5']]],
+  ['barra não fecha o painel', [['onClick={() => setCrmOpen(false)}\n                aria-label="Voltar à conversa"', 'onClick={() => {}}\n                aria-label="Voltar à conversa"']]],
+  ['bloco nunca visível abaixo de xl', [["crmOpen ? 'flex xl:flex' : 'hidden xl:flex'", "'hidden xl:flex'"]]],
+  ['bloco sempre visível', [["crmOpen ? 'flex xl:flex' : 'hidden xl:flex'", "'flex'"]]],
+  ['sem a barra', [['aria-label="Voltar à conversa"\n                className', 'aria-label="Voltar"\n                className'], ['                Voltar à conversa\n', '']]],
+  ['painel antes da barra', [[PAINEL, ''], [BARRA, PAINEL + '\n            ' + BARRA]]],
+  ['thread não esconde com o painel aberto', [["crmOpen && 'hidden xl:block'", '']]],
 ]
-for (const [nome, mut] of mutsClient) {
-  if (mut === CLIENT) { ok(`mutação "${nome}" aplicou`, false, 'não mudou'); continue }
+for (const [nome, pares] of mutsClient) {
+  let mut = CLIENT
+  let aplicou = true
+  for (const [de, para] of pares) {
+    if (mut.split(de).length - 1 !== 1) { aplicou = false; break }
+    mut = mut.replace(de, () => para)
+  }
+  if (!aplicou || mut === CLIENT) { ok(`mutação "${nome}" aplica cada âncora exatamente uma vez`, false, 'âncora'); continue }
   const fm = bateriaClient(mut)
   ok(`mutação "${nome}" é pega (${fm.slice(0, 1).join('')})`, fm.length > 0, 'sobreviveu')
 }
