@@ -71,11 +71,12 @@ export function MessageActions({
         aria-expanded={aberto}
         aria-label="Ações da mensagem"
         className={cn(
-          'flex h-7 w-7 items-center justify-center rounded-full text-muted-foreground transition-opacity',
+          'flex h-7 w-7 pointer-coarse:h-9 pointer-coarse:w-9 items-center justify-center rounded-full text-muted-foreground transition-opacity',
           'hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
           // Aparece no hover da bolha (ou quando aberto/focado): menu sempre
-          // visível em toda mensagem vira ruído numa conversa longa.
-          aberto ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 focus-visible:opacity-100',
+          // visível em toda mensagem vira ruído numa conversa longa. Em toque
+          // não há hover, então lá fica sempre visível.
+          aberto ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 focus-visible:opacity-100 pointer-coarse:opacity-100',
         )}
       >
         <MoreHorizontal className="h-4 w-4" aria-hidden />

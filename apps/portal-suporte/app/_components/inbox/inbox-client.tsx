@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Columns3, List, Loader2, WifiOff } from 'lucide-react'
+import { ArrowLeft, Columns3, List, Loader2, WifiOff } from 'lucide-react'
 import { useInboxStream } from '@/hooks/use-inbox-stream'
 import { useConversationStream } from '@/hooks/use-conversation-stream'
 import { useMeuAcesso } from '@/hooks/use-meu-acesso'
@@ -432,11 +432,26 @@ export function InboxClient() {
         {selectedId && (
           <div
             className={cn(
-              'min-h-0 border-l border-border',
-              crmOpen ? 'block' : 'hidden xl:block',
+              'h-full min-h-0 flex-col border-l border-border',
+              crmOpen ? 'flex xl:flex' : 'hidden xl:flex',
             )}
           >
-            <CrmContextPanel conversationId={selectedId} />
+            {/* Abaixo de xl o painel ocupa o lugar da conversa, e o botão que o
+                fecha mora na conversa: sem este, não há como voltar. */}
+            <div className="flex shrink-0 items-center border-b border-border bg-card px-2 py-1.5 xl:hidden">
+              <button
+                type="button"
+                onClick={() => setCrmOpen(false)}
+                aria-label="Voltar à conversa"
+                className="inline-flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <ArrowLeft className="h-4 w-4" aria-hidden />
+                Voltar à conversa
+              </button>
+            </div>
+            <div className="min-h-0 flex-1 overflow-hidden">
+              <CrmContextPanel conversationId={selectedId} />
+            </div>
           </div>
         )}
       </div>
