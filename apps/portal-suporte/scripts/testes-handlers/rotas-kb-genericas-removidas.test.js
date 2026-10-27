@@ -58,7 +58,7 @@ function checar(texto) {
 
 const texto = fs.readFileSync(ARQ, 'utf8')
 const e0 = entradas(texto)
-ok('TRAVA: o leitor enxerga o registro (504 rotas)', e0.length === 504, e0.length)
+ok('TRAVA: o leitor enxerga o registro (507 rotas)', e0.length === 507, e0.length)
 ok('TRAVA: o leitor enxerga as rotas do módulo kb (a que fica)', e0.filter((x) => x.modulo === 'kb').length === 1, e0.filter((x) => x.modulo === 'kb').map((x) => x.metodo + ' ' + x.caminho))
 const f0 = checar(texto)
 ok('a bateria passa limpa no registro atual', f0.length === 0, f0)

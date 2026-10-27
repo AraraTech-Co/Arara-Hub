@@ -329,6 +329,20 @@ export interface WAConversationDetail {
   tags: WAConversationTag[]
 }
 
+/**
+ * Chamado que a conversa atual pode vincular (PRD 06).
+ *
+ * O servidor resolve o escopo pela conversa e manda só o que a janela desenha —
+ * número, título, situação e data. Não há descrição nem anexo aqui.
+ */
+export interface WALinkableTicket {
+  id: string
+  ticket_number: string | null
+  title: string | null
+  status: string | null
+  created_at: string | null
+}
+
 /** Contadores do dashboard da inbox — GET /api/whatsapp/metrics. */
 export interface WAMetrics {
   open: number
@@ -586,6 +600,37 @@ export const whatsappApi = {
     api.post<{ data: { ticketId: string; created: boolean } }>(
       `/api/whatsapp/${id}/ticket`,
       body,
+    ),
+
+  /**
+   * GET /api/whatsapp/[id]/chamados-vinculaveis — chamados que esta conversa
+   * pode vincular. O escopo (empresa, ou cliente quando não há empresa) sai da
+   * conversa no servidor; esta chamada não escolhe de quem são os chamados.
+   */
+  listLinkableTickets: (id: string) =>
+    api.get<{ data: WALinkableTicket[] }>(
+      `/api/whatsapp/${id}/chamados-vinculaveis`,
+    ),
+
+  /**
+   * POST /api/whatsapp/[id]/ticket/vincular — liga a conversa a um chamado que
+   * já existe, sem criar outro. Conversa que já tem chamado TROCA de chamado.
+   * Não altera o chamado.
+   */
+  linkTicket: (id: string, ticketId: string) =>
+    api.post<{ data: { id: string; ticket_number: string | null } }>(
+      `/api/whatsapp/${id}/ticket/vincular`,
+      { ticketId },
+    ),
+
+  /**
+   * POST /api/whatsapp/[id]/ticket/desvincular — solta a conversa do chamado.
+   * Funciona com chamado já resolvido, e não altera o chamado.
+   */
+  unlinkTicket: (id: string) =>
+    api.post<{ data: { ok: boolean; de: string | null } }>(
+      `/api/whatsapp/${id}/ticket/desvincular`,
+      {},
     ),
 
   /** GET /api/whatsapp/metrics — contadores do dashboard da inbox */

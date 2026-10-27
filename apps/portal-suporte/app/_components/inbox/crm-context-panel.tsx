@@ -7,6 +7,7 @@ import {
   Check,
   CheckCircle2,
   ExternalLink,
+  Link2,
   Loader2,
   Mail,
   Phone,
@@ -17,6 +18,16 @@ import {
   X,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { whatsappApi, type WAConversationDetail } from '@/lib/api/whatsapp'
 import { schedulesApi, type QuemAvisarAgora } from '@/lib/api/schedules'
 import { formatDate, mascaraTelefone } from '@/lib/utils'
@@ -28,6 +39,7 @@ import { useToast } from '@/hooks/use-toast'
 import { useAssignment } from '@/hooks/use-assignment'
 import { AssignMenu } from './assign-menu'
 import { WACreateTicketDialog } from './wa-create-ticket-dialog'
+import { WALinkTicketDialog } from './wa-link-ticket-dialog'
 import { TagPicker } from './tag-picker'
 import { CloseReasonDialog } from './close-reason-dialog'
 
@@ -57,6 +69,8 @@ export function CrmContextPanel({ conversationId }: CrmContextPanelProps) {
   const [backupAvisadoEm, setBackupAvisadoEm] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [ticketDialogOpen, setTicketDialogOpen] = useState(false)
+  const [vincularDialogOpen, setVincularDialogOpen] = useState(false)
+  const [desvincularAberto, setDesvincularAberto] = useState(false)
   const [busy, setBusy] = useState(false)
   const [closeOpen, setCloseOpen] = useState(false)
 
@@ -518,18 +532,58 @@ export function CrmContextPanel({ conversationId }: CrmContextPanelProps) {
                       Abrir ticket
                       <ExternalLink className="h-3 w-3" />
                     </Link>
+                    {/* Vínculo errado se desfaz ou se troca aqui; desvincular
+                        pede confirmação porque a conversa deixa de aparecer no
+                        chamado e o fluxo com condição `hasTicket` muda de ramo
+                        nas mensagens seguintes. */}
+                    <span className="flex items-center gap-1.5">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="h-6 px-2 text-xs"
+                        onClick={() => setVincularDialogOpen(true)}
+                      >
+                        Trocar
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="h-6 px-2 text-xs"
+                        onClick={() => setDesvincularAberto(true)}
+                      >
+                        Desvincular
+                      </Button>
+                    </span>
                   </div>
                 ) : (
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    className="h-7 text-xs"
-                    onClick={() => setTicketDialogOpen(true)}
-                  >
-                    <TicketIcon className="h-3.5 w-3.5" />
-                    <span className="ml-1">Criar ticket</span>
-                  </Button>
+                  // Duas saídas para a conversa sem chamado: abrir um, ou
+                  // ligar ao que já existe. Sem a segunda, o cliente que volta
+                  // dois dias depois sobre o mesmo assunto ganhava um chamado
+                  // duplicado (PRD 06).
+                  <div className="flex flex-wrap items-center justify-end gap-1.5">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-xs"
+                      onClick={() => setTicketDialogOpen(true)}
+                    >
+                      <TicketIcon className="h-3.5 w-3.5" />
+                      <span className="ml-1">Criar ticket</span>
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-xs"
+                      onClick={() => setVincularDialogOpen(true)}
+                    >
+                      <Link2 className="h-3.5 w-3.5" />
+                      <span className="ml-1">Vincular ticket</span>
+                    </Button>
+                  </div>
                 )}
               </dd>
             </div>
@@ -543,6 +597,43 @@ export function CrmContextPanel({ conversationId }: CrmContextPanelProps) {
         conversation={detail}
         onCreated={() => void load(detail.id)}
       />
+
+      <WALinkTicketDialog
+        open={vincularDialogOpen}
+        onOpenChange={setVincularDialogOpen}
+        conversationId={detail.id}
+        trocando={!!detail.ticket}
+        onLinked={() => void load(detail.id)}
+      />
+
+      <AlertDialog
+        open={desvincularAberto}
+        onOpenChange={(aberto) => !aberto && setDesvincularAberto(false)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Desvincular o chamado desta conversa?</AlertDialogTitle>
+            <AlertDialogDescription>
+              A conversa deixa de aparecer no chamado. O chamado em si não é
+              alterado, e você pode vincular outro depois.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setDesvincularAberto(false)
+                void runAction(
+                  () => whatsappApi.unlinkTicket(detail.id),
+                  'Erro ao desvincular o chamado',
+                )
+              }}
+            >
+              Desvincular
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
