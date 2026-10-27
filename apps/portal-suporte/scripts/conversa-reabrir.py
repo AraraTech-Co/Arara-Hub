@@ -80,13 +80,22 @@ HANDLER = r"""async function handler(ctx) {
     return _ehLidSalvo(rj) && _phoneDigits(rj) === _lid;
   }
 
-  var _abertas = (await m.Conv.findMany({ status: "open" })) || [];
+  // A leitura é SEM filtro e a decisão é em memória, igual à da entrada
+  // (POST /whatsapp/inbound: `findMany({})` e depois
+  // `String(c.status || "open") !== "closed"`). Filtrar por `status: "open"` na
+  // plataforma seria igualdade estrita: linha sem o campo `status` não voltaria,
+  // e é justamente ela que a entrada conta como aberta — a guarda liberaria a
+  // conversa que a entrada vai confundir. Quem barra tem de ler como quem casa.
+  var _todas = (await m.Conv.findMany({})) || [];
   // Teto da plataforma: 500 por leitura, sem paginar. Cheio, esta lista pode
   // estar cortada, e a duplicata pode ser justamente a que ficou de fora —
   // leitura que não prova nada não autoriza gravar.
-  if (_abertas.length >= 500) {
+  if (_todas.length >= 500) {
     return fail(ctx, 503, "Não foi possível conferir se há outra conversa aberta deste contato. Tente de novo.");
   }
+  var _abertas = _todas.filter(function (c) {
+    return String(c.status || "open") !== "closed";
+  });
   var _outra = null;
   for (var _i = 0; _i < _abertas.length && !_outra; _i++) {
     var _c = _abertas[_i];
@@ -201,6 +210,7 @@ def sync_routes():
         '    authMode: "actor",\n'
         '    webhookSecretName: null,\n'
         '    requiredPermissions: [],\n'
+        '    source: "local-scripts/conversa-reabrir.py",\n'
         '    handler: compileController(' + esc + '),\n'
         '  },\n'
     )

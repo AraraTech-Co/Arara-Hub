@@ -57,10 +57,13 @@ function ctxDe(w) {
     models: {
       WhatsAppConversation: {
         findById: async (id) => (String(id) === String(w.conv.id) ? w.conv : null),
-        // A camada filtra por igualdade; o resto é peneirado em memória.
+        // Igualdade ESTRITA, como a plataforma: linha sem o campo não volta no
+        // filtro. O handler lê sem filtro de propósito (igual à entrada), e é
+        // esta severidade que prova: se a leitura voltar a filtrar por
+        // `status: "open"`, o caso `sem-campo-status` quebra aqui.
         findMany: async (f) => {
           const todas = [w.conv].concat(w.outras)
-          if (f && f.status !== undefined) return todas.filter((c) => String(c.status || 'open') === f.status)
+          if (f && f.status !== undefined) return todas.filter((c) => c.status === f.status)
           return todas
         },
         update: async (id, patch) => { w.updates.push({ id, patch }); return Object.assign(w.conv, patch) },
@@ -170,6 +173,9 @@ async function bateriaDuplicata(h) {
 
   // Não bloqueia: outro contato, conversa fechada, e a PRÓPRIA conversa.
   await caso('outro-contato', [outra({ remote_jid: '5531988887777@s.whatsapp.net' })], 200)
+  // Linha sem o campo `status`: a entrada a considera aberta (`!== "closed"`), então a guarda
+  // tem de enxergá-la também — o filtro por igualdade sozinho não a traz.
+  await caso('sem-campo-status', [{ id: 'c2', remote_jid: '5519999998888@s.whatsapp.net', remote_lid: null }], 409)
   await caso('fechada-nao-conta', [outra({ remote_jid: '5519999998888@s.whatsapp.net', status: 'closed' })], 200)
   await caso('ela-mesma', [], 200)
 
@@ -265,7 +271,12 @@ const MUTACOES = [
       'return rj === _phone;']]],
   ['LID salvo passa a casar por telefone', [['if (_ehLidSalvo(rj)) return false;\n', '']]],
   ['a própria conversa conta como duplicata', [['if (String(_c.id) === String(id)) continue;\n', '']]],
-  ['teto de 500 ignorado', [['if (_abertas.length >= 500) {', 'if (false) {']]],
+  ['teto de 500 ignorado', [['if (_todas.length >= 500) {', 'if (false) {']]],
+  // Volta a filtrar na plataforma, como estava antes: a linha sem o campo
+  // `status` deixa de voltar na leitura e a guarda a libera. A entrada conta
+  // essa linha como aberta, então o mutante tem de morrer.
+  ['leitura filtrada na plataforma',
+    [['var _todas = (await m.Conv.findMany({})) || [];', 'var _todas = (await m.Conv.findMany({ status: "open" })) || [];']]],
   ['grupo ganha dono', [['var _eu = _ehGrupo ? null : (_quem || null);', 'var _eu = _quem || null;']]],
   ['dono só pelo JWT', [['var _quem = userId(ctx) || (await _sessaoDoPortal(ctx));', 'var _quem = userId(ctx);']]],
   ['não grava o evento', [['      type: "reopened",', '      type: "outro",']]],
