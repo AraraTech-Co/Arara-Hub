@@ -208,7 +208,7 @@ export function WALinkTicketDialog({
             disabled={salvando || !escolhido}
           >
             {salvando && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />}
-            Vincular chamado
+            {trocando ? 'Trocar chamado' : 'Vincular chamado'}
           </Button>
         </DialogFooter>
       </DialogContent>
