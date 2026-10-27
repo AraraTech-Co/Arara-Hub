@@ -86,12 +86,32 @@ HANDLER = r"""async function handler(ctx) {
   // plataforma seria igualdade estrita: linha sem o campo `status` não voltaria,
   // e é justamente ela que a entrada conta como aberta — a guarda liberaria a
   // conversa que a entrada vai confundir. Quem barra tem de ler como quem casa.
-  var _todas = (await m.Conv.findMany({})) || [];
-  // Teto da plataforma: 500 por leitura, sem paginar. Cheio, esta lista pode
-  // estar cortada, e a duplicata pode ser justamente a que ficou de fora —
-  // leitura que não prova nada não autoriza gravar.
-  if (_todas.length >= 500) {
-    return fail(ctx, 503, "Não foi possível conferir se há outra conversa aberta deste contato. Tente de novo.");
+  // A leitura é PAGINADA: a camada aceita `limit`/`offset` e devolve no máximo
+  // 500 por chamada, da mais nova para a mais velha
+  // (packages/api/src/lib/models.ts, `ORDER BY created_at DESC LIMIT/OFFSET`).
+  // Uma chamada só traria as 500 conversas mais novas de TODAS as conversas, e
+  // a duplicata deste contato pode ser mais antiga do que isso. `take`/`skip`
+  // não servem: a camada os trata como filtro de campo.
+  var _PAGINA = 500;
+  var _MAX_PAGINAS = 20;
+  var _todas = [];
+  for (var _k = 0; _k < _MAX_PAGINAS; _k++) {
+    var _pag;
+    try {
+      _pag = (await m.Conv.findMany({ limit: _PAGINA, offset: _k * _PAGINA })) || [];
+    } catch (_e) {
+      // Página que falha deixa a varredura incompleta, e a duplicata pode ser
+      // justamente a que ficou de fora — leitura que não prova nada não
+      // autoriza gravar.
+      return fail(ctx, 503, "Não foi possível conferir se há outra conversa aberta deste contato. Tente de novo.");
+    }
+    for (var _j = 0; _j < _pag.length; _j++) _todas.push(_pag[_j]);
+    if (_pag.length < _PAGINA) break;
+    // Página cheia na última volta: ainda pode haver conversa além dela, e aí
+    // a varredura é incompleta pelo mesmo motivo acima.
+    if (_k === _MAX_PAGINAS - 1) {
+      return fail(ctx, 503, "Não foi possível conferir se há outra conversa aberta deste contato. Tente de novo.");
+    }
   }
   var _abertas = _todas.filter(function (c) {
     return String(c.status || "open") !== "closed";

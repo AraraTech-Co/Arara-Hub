@@ -8,7 +8,8 @@
 //   - `ticket_id` NÃO é tocado — é o pedido do PRD;
 //   - evento `reopened` com o autor;
 //   - recusa sem gravar: conversa aberta (409), inexistente (404), outra conta (403), outra conversa
-//     aberta do mesmo contato (409, pelo MESMO predicado da entrada) e lista de abertas no teto (503);
+//     aberta do mesmo contato (409, pelo MESMO predicado da entrada) e varredura incompleta (503);
+//   - a varredura pagina com `limit`/`offset`: duplicata mais velha que a 500ª conversa também barra;
 //   - identidade só pela sessão do portal ainda vira dono;
 //   - grupo não ganha dono.
 // MUTAÇÕES: aplicadas uma vez cada, reprovadas por asserção.
@@ -41,6 +42,10 @@ function mundo(over = {}) {
     perfil: over.perfil !== undefined ? over.perfil : { id: 'u1', role: 'support' },
     sessao: over.sessao || null,
     user: over.user !== undefined ? over.user : { id: 'u1' },
+    // Índice da página (0, 1, 2…) em que a leitura falha, para o caso em que a
+    // varredura fica incompleta no meio.
+    falhaNaPagina: over.falhaNaPagina,
+    leituras: [],
     updates: [],
     eventos: [],
   }
@@ -57,14 +62,28 @@ function ctxDe(w) {
     models: {
       WhatsAppConversation: {
         findById: async (id) => (String(id) === String(w.conv.id) ? w.conv : null),
-        // Igualdade ESTRITA, como a plataforma: linha sem o campo não volta no
-        // filtro. O handler lê sem filtro de propósito (igual à entrada), e é
-        // esta severidade que prova: se a leitura voltar a filtrar por
-        // `status: "open"`, o caso `sem-campo-status` quebra aqui.
+        // Responde como a camada (packages/api/src/lib/models.ts): no máximo
+        // 500 por chamada, `limit`/`offset` respeitados, da mais nova para a
+        // mais velha, e igualdade ESTRITA nos campos — linha sem o campo não
+        // volta no filtro. `take`/`skip` NÃO paginam lá (viram filtro de
+        // campo), então também não paginam aqui.
+        //
+        // As duas severidades é que provam o desenho: filtrar por
+        // `status: "open"` quebra o caso `sem-campo-status`, e ler só a
+        // primeira página quebra o caso da duplicata na posição 510.
         findMany: async (f) => {
-          const todas = [w.conv].concat(w.outras)
-          if (f && f.status !== undefined) return todas.filter((c) => c.status === f.status)
-          return todas
+          const filtro = Object.assign({}, f || {})
+          const limite = Math.min(500, Math.max(1, Number(filtro.limit) || 500))
+          const desvio = Math.max(0, Number(filtro.offset) || 0)
+          if (w.falhaNaPagina !== undefined && Math.floor(desvio / limite) === w.falhaNaPagina) {
+            throw new Error('leitura falhou')
+          }
+          delete filtro.limit
+          delete filtro.offset
+          let linhas = [w.conv].concat(w.outras)
+          for (const k of Object.keys(filtro)) linhas = linhas.filter((c) => c[k] === filtro[k])
+          w.leituras.push({ limite, desvio })
+          return linhas.slice(desvio, desvio + limite)
         },
         update: async (id, patch) => { w.updates.push({ id, patch }); return Object.assign(w.conv, patch) },
       },
@@ -154,8 +173,8 @@ async function bateriaRecusas(h) {
 // ─── Duplicata: o MESMO predicado da entrada (POST /whatsapp/inbound) ───────
 async function bateriaDuplicata(h) {
   const f = []
-  async function caso(nome, outras, esperado, convOver) {
-    const w = mundo({ outras, conv: convOver })
+  async function caso(nome, outras, esperado, convOver, mais) {
+    const w = mundo(Object.assign({ outras, conv: convOver }, mais || {}))
     const r = await h(ctxDe(w))
     const st = r.status || 200
     if (st !== esperado) f.push(nome + ':status=' + st)
@@ -183,10 +202,30 @@ async function bateriaDuplicata(h) {
   // MESMOS do telefone: sem a guarda do LID, esta conversa casaria e bloquearia a reabertura.
   await caso('lid-salvo-nao-bloqueia', [outra({ remote_jid: '5519999998888@lid' })], 200)
 
-  // Teto de 500 por leitura: a duplicata pode ser a que ficou de fora.
-  const cheio = []
-  for (let i = 0; i < 500; i++) cheio.push(outra({ id: 'x' + i, remote_jid: '553100000' + i + '@s.whatsapp.net' }))
-  await caso('teto-500', cheio, 503)
+  // ── Além da primeira página ───────────────────────────────────────────────
+  // A camada devolve no máximo 500 por chamada, das mais novas para as mais
+  // velhas. Acima disso, ler uma vez só enxergaria as 500 mais novas.
+  const enche = (n, over) => {
+    const l = []
+    for (let i = 0; i < n; i++) l.push(outra(Object.assign({ id: 'x' + i, remote_jid: '553100000' + i + '@s.whatsapp.net' }, over)))
+    return l
+  }
+  // 520 no total e nenhuma duplicata: reabre. Antes de paginar, a leitura vinha
+  // cheia e a rota recusava — o botão não funcionaria em produção.
+  await caso('mais-de-uma-pagina-sem-duplicata', enche(519), 200)
+
+  // A duplicata está na posição 510 da lista, fora da primeira página: só a
+  // segunda leitura a encontra.
+  const comDuplicataLonge = enche(519)
+  comDuplicataLonge[509] = outra({ id: 'dup', remote_jid: '5519999998888@s.whatsapp.net' })
+  await caso('duplicata-na-segunda-pagina', comDuplicataLonge, 409)
+
+  // Teto de páginas (20 × 500 = 10 mil): página cheia na última volta pode ter
+  // conversa além dela, e varredura incompleta não autoriza gravar.
+  await caso('teto-de-paginas', enche(9999), 503)
+
+  // Página do meio falha: a varredura fica incompleta pelo mesmo motivo.
+  await caso('segunda-pagina-falha', enche(519), 503, undefined, { falhaNaPagina: 1 })
   return f
 }
 
@@ -271,12 +310,19 @@ const MUTACOES = [
       'return rj === _phone;']]],
   ['LID salvo passa a casar por telefone', [['if (_ehLidSalvo(rj)) return false;\n', '']]],
   ['a própria conversa conta como duplicata', [['if (String(_c.id) === String(id)) continue;\n', '']]],
-  ['teto de 500 ignorado', [['if (_todas.length >= 500) {', 'if (false) {']]],
-  // Volta a filtrar na plataforma, como estava antes: a linha sem o campo
-  // `status` deixa de voltar na leitura e a guarda a libera. A entrada conta
-  // essa linha como aberta, então o mutante tem de morrer.
+  ['teto de páginas ignorado', [['if (_k === _MAX_PAGINAS - 1) {', 'if (false) {']]],
+  // Volta a filtrar na plataforma: a linha sem o campo `status` deixa de voltar
+  // na leitura e a guarda a libera. A entrada conta essa linha como aberta,
+  // então o mutante tem de morrer.
   ['leitura filtrada na plataforma',
-    [['var _todas = (await m.Conv.findMany({})) || [];', 'var _todas = (await m.Conv.findMany({ status: "open" })) || [];']]],
+    [['_pag = (await m.Conv.findMany({ limit: _PAGINA, offset: _k * _PAGINA })) || [];',
+      '_pag = (await m.Conv.findMany({ status: "open", limit: _PAGINA, offset: _k * _PAGINA })) || [];']]],
+  // Lê uma página e para: a duplicata mais velha que a 500ª conversa passa.
+  ['lê só a primeira página', [['if (_pag.length < _PAGINA) break;', 'break;']]],
+  // Página que falha passa a valer como página vazia: a varredura termina
+  // incompleta e a rota grava sem ter conferido.
+  ['ignora falha de página',
+    [['autoriza gravar.\n      return fail(ctx, 503,', 'autoriza gravar.\n      _pag = []; if (false) return fail(ctx, 503,']]],
   ['grupo ganha dono', [['var _eu = _ehGrupo ? null : (_quem || null);', 'var _eu = _quem || null;']]],
   ['dono só pelo JWT', [['var _quem = userId(ctx) || (await _sessaoDoPortal(ctx));', 'var _quem = userId(ctx);']]],
   ['não grava o evento', [['      type: "reopened",', '      type: "outro",']]],
