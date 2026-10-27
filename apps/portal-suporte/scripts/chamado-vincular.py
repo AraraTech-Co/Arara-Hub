@@ -27,8 +27,38 @@ IRMA = 'path: "/whatsapp/:id/ticket",'
 # O escopo dos dois handlers sai da CONVERSA, no servidor. Quem chama não
 # escolhe de quem são os chamados que vai ver nem a qual pode vincular: a
 # conversa diz a empresa (ou, sem empresa, o cliente), e nada fora disso entra.
+AJUDANTES = r"""
+  // "Encerrado" não tem UM critério no servidor: `POST /tickets/acompanhar` usa
+  // os seis status abaixo (TERMINAIS), enquanto `PATCH /tickets/:id/assign` e o
+  // relógio de auto-fechamento usam só os três `resolvido*`. Aqui vale o mais
+  // largo, que é o mesmo da tela (app/lib/ticket-status.ts, RESOLVED_STATUSES):
+  // o pedido é vincular ao chamado que AINDA está pendente.
+  var _ENCERRADOS = {
+    resolvido: 1,
+    resolvido_com_manual: 1,
+    resolvido_sem_manual: 1,
+    post_mortem: 1,
+    cancelado: 1,
+    fechado: 1,
+  };
+  function _encerrado(t) {
+    if (!t) return false;
+    if (t.is_archived || t.isArchived) return true;
+    return !!_ENCERRADOS[String(t.status || "")];
+  }
+  // Card do quadro de Dev é o MESMO model, com `quadro: "dev"` e um vocabulário
+  // de status próprio (app/lib/kanban-dev.ts: `aplicado_no_cliente`,
+  // `descartado`…), que `_ENCERRADOS` não cobre. Conversa de WhatsApp é do
+  // suporte, então card de Dev não entra — nem na lista, nem no vínculo. O
+  // idioma é o das rotas de chamado: sem `quadro`, é suporte.
+  function _ehDoDev(t) {
+    return !!t && String(t.quadro || "suporte") === "dev";
+  }
+"""
+
 LISTAR = r"""async function handler(ctx) {
   // scripts/chamado-vincular.py — candidatos para vincular (PRD 06)
+""" + AJUDANTES + r"""
   var m = model(ctx);
   if (!m.Conv || !m.Ticket) return fail(ctx, 500, "Models missing");
   var id = ctx.params.id;
@@ -70,23 +100,13 @@ LISTAR = r"""async function handler(ctx) {
     }
   }
 
-  // Finalizados ficam de fora: o pedido é vincular ao chamado que AINDA não foi
-  // resolvido (a lista é app/lib/ticket-status.ts, RESOLVED_STATUSES).
-  var _FINALIZADOS = {
-    resolvido: 1,
-    resolvido_com_manual: 1,
-    resolvido_sem_manual: 1,
-    post_mortem: 1,
-    cancelado: 1,
-    fechado: 1,
-  };
   var _meu = String(conv.ticket_id || conv.ticketId || "");
   var _cands = [];
   for (var _i = 0; _i < _linhas.length; _i++) {
     var _t = _linhas[_i];
     if (_meu && String(_t.id) === _meu) continue;
-    if (_FINALIZADOS[String(_t.status || "")]) continue;
-    if (_t.is_archived || _t.isArchived) continue;
+    if (_ehDoDev(_t)) continue;
+    if (_encerrado(_t)) continue;
     _cands.push(_t);
   }
   _cands.sort(function (a, b) {
@@ -114,6 +134,7 @@ LISTAR = r"""async function handler(ctx) {
 
 VINCULAR = r"""async function handler(ctx) {
   // scripts/chamado-vincular.py — grava o vínculo (PRD 06)
+""" + AJUDANTES + r"""
   var m = model(ctx);
   if (!m.Conv || !m.Ticket) return fail(ctx, 500, "Models missing");
   var id = ctx.params.id;
@@ -130,6 +151,10 @@ VINCULAR = r"""async function handler(ctx) {
   if (!_tid) return fail(ctx, 400, "ticketId obrigatório");
   var _t = await m.Ticket.findById(_tid);
   if (!_t) return fail(ctx, 404, "Chamado não encontrado");
+  // A lista da janela não protege nada: quem chama a rota escolhe o `ticketId`.
+  // Então as duas exclusões da listagem são conferidas AQUI também.
+  if (_ehDoDev(_t)) return fail(ctx, 409, "Este chamado é do quadro de Dev");
+  if (_encerrado(_t)) return fail(ctx, 409, "Este chamado já está encerrado");
 
   // ── A guarda que importa: o chamado tem de ser do cliente DESTA conversa ──
   // Sem ela, um id de chamado qualquer vinculava, e o painel do contato passava

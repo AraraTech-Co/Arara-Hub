@@ -167,7 +167,10 @@ async function bateriaListagem(h) {
     if (chaves !== 'created_at,id,status,ticket_number,title') f.push('escopo-empresa:campos=' + chaves)
   }
 
-  // Finalizados, arquivados e o chamado da própria conversa ficam de fora.
+  // Encerrados, arquivados, card do quadro de Dev e o chamado da própria
+  // conversa ficam de fora. O card de Dev tem status de OUTRO vocabulário
+  // (app/lib/kanban-dev.ts): `aplicado_no_cliente` não está em `_ENCERRADOS`,
+  // então só o `quadro` o mantém fora.
   const w2 = mundo({
     conv: { ticket_id: 'tMeu' },
     chamados: [
@@ -176,6 +179,7 @@ async function bateriaListagem(h) {
       chamado({ id: 'tFechado', status: 'fechado' }),
       chamado({ id: 'tCancelado', status: 'cancelado' }),
       chamado({ id: 'tArquivado', is_archived: true }),
+      chamado({ id: 'tDev', quadro: 'dev', status: 'aplicado_no_cliente' }),
       chamado({ id: 'tBom' }),
     ],
   })
@@ -310,6 +314,25 @@ async function bateriaVinculo(h) {
   )
   await recusa('sem-ticketId', mundo({ chamados: [chamado({ id: 't1' })], body: {} }), 400)
   await recusa('chamado-inexistente', mundo({ chamados: [], body: { ticketId: 't1' } }), 404)
+  // A lista da janela não protege nada: quem chama a rota escolhe o id.
+  await recusa(
+    'chamado-encerrado',
+    mundo({ chamados: [chamado({ id: 't1', status: 'resolvido' })], body: { ticketId: 't1' } }),
+    409,
+  )
+  await recusa(
+    'chamado-arquivado',
+    mundo({ chamados: [chamado({ id: 't1', is_archived: true })], body: { ticketId: 't1' } }),
+    409,
+  )
+  await recusa(
+    'card-do-quadro-de-dev',
+    mundo({
+      chamados: [chamado({ id: 't1', quadro: 'dev', status: 'aplicado_no_cliente' })],
+      body: { ticketId: 't1' },
+    }),
+    409,
+  )
   // O coração da guarda: chamado de outro cliente não vincula.
   await recusa(
     'outra-empresa',
@@ -378,8 +401,9 @@ const MUT_LISTA = [
   ['escopo só por empresa', [['    else _f.client_user_id = _cliente;\n', '']]],
   // Conversa sem cliente passa a varrer e devolver o que achar.
   ['sem escopo devolve o que achar', [['if (!_empresa && !_cliente) return ok(ctx, []);', 'if (false) return ok(ctx, []);']]],
-  ['inclui finalizados', [['if (_FINALIZADOS[String(_t.status || "")]) continue;\n', '']]],
-  ['inclui arquivados', [['if (_t.is_archived || _t.isArchived) continue;\n', '']]],
+  ['inclui encerrados', [['    if (_encerrado(_t)) continue;\n', '']]],
+  ['inclui arquivados', [['    if (t.is_archived || t.isArchived) return true;\n', '']]],
+  ['inclui cards do quadro de Dev', [['    if (_ehDoDev(_t)) continue;\n', '']]],
   ['inclui a própria conversa', [['if (_meu && String(_t.id) === _meu) continue;\n', '']]],
   ['ordem invertida', [['return ta < tb ? 1 : -1;', 'return ta < tb ? -1 : 1;']]],
   ['teto de 20 ignorado', [['_s < _cands.length && _s < 20', '_s < _cands.length']]],
@@ -403,6 +427,13 @@ const MUT_VINC = [
   ['sobrescreve chamado existente',
     [['if (conv.ticket_id || conv.ticketId) return fail(ctx, 409, "Conversa já possui chamado");', '']]],
   ['aceita pedido sem ticketId', [['if (!_tid) return fail(ctx, 400, "ticketId obrigatório");', '']]],
+  // A tela deixar de oferecer não é guarda: quem chama a rota escolhe o id.
+  ['aceita chamado encerrado',
+    [['if (_encerrado(_t)) return fail(ctx, 409, "Este chamado já está encerrado");', '']]],
+  ['aceita card do quadro de Dev',
+    [['if (_ehDoDev(_t)) return fail(ctx, 409, "Este chamado é do quadro de Dev");', '']]],
+  ['encerrado só pelo status, sem o arquivado',
+    [['    if (t.is_archived || t.isArchived) return true;\n', '']]],
   ['grava mais que o vínculo',
     [['await m.Conv.update(id, { ticket_id: _t.id, updated_at: ts });',
       'await m.Conv.update(id, { ticket_id: _t.id, updated_at: ts, status: "open" });']]],
