@@ -707,6 +707,11 @@ function bateriaTela(painel, janela) {
   if (!/whatsappApi\.listLinkableTickets\(conversationId\)/.test(janela)) f.push('janela-nao-lista')
   if (!/whatsappApi\.linkTicket\(conversationId, escolhido\)/.test(janela)) f.push('janela-nao-vincula')
   if (!/disabled=\{salvando \|\| !escolhido\}/.test(janela)) f.push('confirma-sem-escolher')
+  // No modo troca, o botão de confirmar diz "Trocar chamado": "Vincular" ali
+  // promete abrir um vínculo onde o que vai acontecer é a substituição do atual.
+  if (!/\{trocando \? 'Trocar chamado' : 'Vincular chamado'\}/.test(janela)) {
+    f.push('confirmar-nao-muda-no-modo-troca')
+  }
   return f
 }
 
@@ -747,6 +752,8 @@ function rodarMutacoes(nomePrefixo, texto, muts, avaliar) {
     ['não chama a listagem', [['whatsappApi.listLinkableTickets(conversationId)', 'Promise.resolve({ data: [] })']]],
     ['não chama o vínculo', [['whatsappApi.linkTicket(conversationId, escolhido)', 'Promise.resolve({ data: {} })']]],
     ['confirma sem escolher', [['disabled={salvando || !escolhido}', 'disabled={salvando}']]],
+    ['botão de confirmar não muda no modo troca',
+      [["{trocando ? 'Trocar chamado' : 'Vincular chamado'}", 'Vincular chamado']]],
   ], (nome, mut) => {
     const fm = bateriaTela(PAINEL, mut)
     ok(`mutação janela "${nome}" é pega (${fm.slice(0, 1).join('')})`, fm.length > 0, 'sobreviveu')
