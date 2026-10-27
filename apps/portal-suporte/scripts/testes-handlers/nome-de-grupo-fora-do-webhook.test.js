@@ -22,6 +22,7 @@
 // Roda com: node nome-de-grupo-fora-do-webhook.test.js
 const fs = require('fs')
 const vm = require('vm')
+const { META } = require('./_camada.js')
 const { reply, ok, fim, ARQ } = require('./_carregar.js')
 
 function codigoDe(marca) {
@@ -96,7 +97,8 @@ function corpoGrupo(texto = 'oi do grupo', chat = JID_GRUPO) {
 function mundo({ conversa, fetchResponde, falhaCarimbo = false }) {
   const e = { conversas: conversa ? [{ ...conversa }] : [], mensagens: [], eventos: [], fila: [], notificacoes: [], fetchs: [], updates: [] }
   const filtra = (lista, arg) => {
-    const ch = Object.keys(arg || {})
+    // `limit`/`offset` não são campos de filtro na camada (`metaKeys`).
+    const ch = Object.keys(arg || {}).filter((k) => !META.includes(k))
     return ch.length ? lista.filter((x) => ch.every((k) => String(x[k] ?? '') === String(arg[k]))) : lista
   }
   const Conv = {
