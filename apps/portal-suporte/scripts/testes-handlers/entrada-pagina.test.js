@@ -57,8 +57,8 @@ function compilar(codigo) {
  *
  * As conversas entram em ORDEM DE CRIAÇÃO, que é o que `camadaFindMany` espera.
  */
-function mundo({ ruido = 519, alvo = {}, falhaNaPagina, eventos = [] } = {}) {
-  const convs = [
+function mundo({ ruido = 519, alvo = {}, falhaNaPagina, eventos = [], rodizio = false, minhas = 0, semAlvo = false } = {}) {
+  const convs = semAlvo ? [] : [
     Object.assign(
       {
         id: 'alvo',
@@ -73,6 +73,20 @@ function mundo({ ruido = 519, alvo = {}, falhaNaPagina, eventos = [] } = {}) {
       alvo,
     ),
   ]
+  // Conversas JÁ ABERTAS do atendente, as mais antigas de todas: é a conta do
+  // rodízio (`max_concurrent`) que precisa enxergá-las.
+  for (let i = 0; i < minhas; i++) {
+    convs.push({
+      id: 'minha_' + i,
+      status: 'open',
+      phase: 'em_atendimento',
+      assigned_to_id: 'u1',
+      remote_jid: '5541900' + String(i).padStart(6, '0') + '@s.whatsapp.net',
+      remote_lid: null,
+      created_at: new Date(Date.parse('2026-01-01T00:00:00Z') + i * 1000).toISOString(),
+      updated_at: new Date(Date.parse('2026-01-01T00:00:00Z') + i * 1000).toISOString(),
+    })
+  }
   for (let i = 0; i < ruido; i++) {
     convs.push({
       id: 'ruido_' + i,
@@ -122,9 +136,19 @@ function mundo({ ruido = 519, alvo = {}, falhaNaPagina, eventos = [] } = {}) {
       create: async (e) => { w.eventos.push({ ...e }); return e },
       update: async () => ({}),
     },
-    Profile: { findById: async () => ({ id: 'u9', role: 'support' }), findMany: async () => [] },
+    Profile: {
+      findById: async () => ({ id: 'u9', role: 'support' }),
+      findMany: async () => (rodizio ? [{ id: 'u1', role: 'support', active: true }] : []),
+    },
+    WaAgentProfiles: {
+      findMany: async () => (rodizio ? [{ profile_id: 'u1', online: true, max_concurrent: 5 }] : []),
+      findById: async () => null,
+    },
     Sessao: { findById: async () => null },
-    SystemSettings: { findMany: async () => [{ id: 's1', waMenuEnabled: false }], update: async () => ({}) },
+    SystemSettings: {
+      findMany: async () => [{ id: 's1', waMenuEnabled: false, waAutoAssignEnabled: rodizio }],
+      update: async () => ({}),
+    },
     PushInscricao: vazio,
     PushNaFila: { create: async (x) => x },
     SupportSchedule: vazio,
@@ -227,6 +251,38 @@ async function bateria(h) {
     if (w.msgs.length !== 1) f.push('sonda-cheia:mensagens=' + w.msgs.length)
   }
 
+  // ── A PRIMEIRA página não tolera falha no caminho da mensagem ────────────
+  // Seguir com lista vazia faria toda mensagem que chegasse durante a
+  // instabilidade do banco não achar conversa aberta nenhuma e abrir outra:
+  // duplicata em massa, que é o que esta leitura existe para evitar.
+  {
+    const w = mundo({ falhaNaPagina: 0 })
+    let subiu = false
+    try {
+      await h(w.ctx('WA_P0'))
+    } catch (e) {
+      subiu = true
+    }
+    await folga()
+    if (!subiu) f.push('primeira-pagina:nao-subiu')
+    if (w.criadas.length) f.push('primeira-pagina:criou ' + w.criadas.length + ' conversa(s)')
+    if (w.msgs.length) f.push('primeira-pagina:gravou-mensagem')
+  }
+
+  // ── O rodízio conta as abertas do atendente além da primeira página ──────
+  // Sem isso ele entrega conversa a quem já está no teto, porque as abertas
+  // mais antigas que a 500ª desaparecem da conta.
+  {
+    const w = mundo({ rodizio: true, semAlvo: true, minhas: 5, ruido: 519 })
+    await h(w.ctx('WA_RODIZIO'))
+    await folga()
+    if (w.criadas.length !== 1) f.push('rodizio:criou ' + w.criadas.length + ' conversa(s)')
+    else {
+      const nova = w.convs.find((c) => c.id === w.criadas[0].id)
+      if (nova && nova.assigned_to_id) f.push('rodizio:entregou-a-quem-esta-no-teto:' + nova.assigned_to_id)
+    }
+  }
+
   // ── A leitura pediu `limit`/`offset`, e não `take`/`skip` ─────────────────
   {
     const w = mundo()
@@ -246,6 +302,21 @@ async function bateria(h) {
 const MUTACOES = [
   // Uma leitura só: volta o defeito inteiro.
   ['lê só a primeira página', [['    if (_pgConv.length < _PAG_CONV) break;', '    break;']]],
+  // A 1ª página passa a ser tolerada: durante instabilidade do banco, cada
+  // mensagem abre uma conversa nova.
+  ['falha da 1ª página segue com vazio',
+    [['      if (_pk === 0 && !_toleraPrimeira) throw _pe;\n', '']]],
+  // O rodízio volta a contar só as 500 conversas mais novas.
+  ['rodízio lê só a primeira página',
+    [['(await _todasAsConversas(ctx, Conv, true))', '(await Conv.findMany({ limit: 500, offset: 0 }))']]],
+  // O caminho da mensagem passa a tolerar a 1ª página pelo argumento.
+  ['caminho da mensagem tolera a 1ª página',
+    [['var all = await _todasAsConversas(ctx, Conv, false);', 'var all = await _todasAsConversas(ctx, Conv, true);']]],
+  // O ajudante volta para DENTRO do handler: o rodízio deixa de enxergá-lo, o
+  // `catch` engole o ReferenceError e a conta de abertas dá zero.
+  ['ajudante fora do alcance do rodízio',
+    [['async function _todasAsConversas(ctx, _Cv, _toleraPrimeira) {', 'async function _naoChamadaAqui(ctx, _Cv, _toleraPrimeira) {'],
+     ['  var all = await _todasAsConversas(ctx, Conv, false);', '  var all = await _naoChamadaAqui(ctx, Conv, false);']]],
   // `offset` sem multiplicar pela página: as janelas se sobrepõem e o fim da
   // tabela nunca é alcançado.
   ['offset sem multiplicar pela página',
@@ -255,14 +326,51 @@ const MUTACOES = [
     [['      _pgFalhou = { pagina: _pk, erro: String((_pe && _pe.message) || _pe) };\n      break;',
       '      throw _pe;']]],
   ['falha de página não registra nada',
-    [['  if (_pgFalhou) await _diagPaginaConversas(_pgFalhou, all.length);', '']]],
+    [['  if (_pgFalhou) await _diagPaginaConversas(ctx, _pgFalhou, _acc.length);', '']]],
   ['teto de páginas em silêncio',
     [['    if (_pk === _MAX_PAG_CONV - 1) _pgFalhou = { pagina: _pk, erro: "teto de paginas" };\n', '']]],
   // Sonda sem trava vira carga justamente quando o banco está pior.
-  ['sonda grava sem limite', [['      if (_qtdP >= 6) return;\n', '']]],
+  ['sonda grava sem limite', [['    if (_qtdP >= 6) return;\n', '']]],
 ]
 
+// ─── O arquivo inteiro: a edição por script não pode ter mexido no resto ───
+//
+// Âncora errada já colocou rota DENTRO do cabeçalho do arquivo uma vez, e nada
+// disso aparece olhando só o handler editado: o número de rotas tem de ser o
+// mesmo, e TODOS os literais do arquivo ainda têm de compilar.
+const ROTAS_ESPERADAS = 507
+
+function todosOsLiterais() {
+  const s = fs.readFileSync(ARQ, 'utf8')
+  const re = /compileController\(\s*"((?:[^"\\]|\\.)*)"\s*\)/g
+  const out = []
+  let m
+  while ((m = re.exec(s))) out.push(JSON.parse('"' + m[1] + '"'))
+  return out
+}
+
+function bateriaArquivo() {
+  const f = []
+  const s = fs.readFileSync(ARQ, 'utf8')
+  const rotas = (s.match(/^\s{4}path: "/gm) || []).length
+  if (rotas !== ROTAS_ESPERADAS) f.push('rotas=' + rotas)
+  const lits = todosOsLiterais()
+  if (lits.length < 400) f.push('literais=' + lits.length)
+  const quebrados = []
+  for (let i = 0; i < lits.length; i++) {
+    try {
+      new vm.Script(lits[i])
+    } catch (e) {
+      quebrados.push(i + ':' + String((e && e.message) || e).slice(0, 60))
+    }
+  }
+  if (quebrados.length) f.push('nao-compilam=' + quebrados.slice(0, 3).join('|'))
+  return f
+}
+
 ;(async () => {
+  const fa = bateriaArquivo()
+  ok(`o arquivo de rotas segue com ${ROTAS_ESPERADAS} rotas e todos os handlers compilam`, fa.length === 0, fa)
   const base = fonteDaRota()
   const f = await bateria(compilar(base))
   ok('acha a conversa do contato acima de 500, reabre a fechada e não derruba o webhook', f.length === 0, f)
