@@ -7,6 +7,11 @@ server {
     # Docker embedded DNS
     resolver 127.0.0.11 valid=10s ipv6=off;
 
+    # Cabeçalhos de segurança — ver security-headers.conf. Entra aqui e DE NOVO
+    # em cada location que tem `add_header` próprio, porque ali o nginx
+    # substitui os herdados em vez de somar.
+    include /etc/nginx/security-headers.conf;
+
     # ── Compressão (15/10/2026) ───────────────────────────────────────────────
     #
     # O padrão do nginx comprime só `text/html`. Medido em produção: a página
@@ -61,6 +66,7 @@ server {
     location /assets/ {
         try_files $uri =404;
         add_header Cache-Control "public, max-age=31536000, immutable";
+        include /etc/nginx/security-headers.conf;
     }
 
     # ── Arquivos de programa do Next export (15/10/2026) ──────────────────────
@@ -82,6 +88,7 @@ server {
     location /_next/static/ {
         try_files $uri =404;
         add_header Cache-Control "public, max-age=31536000, immutable";
+        include /etc/nginx/security-headers.conf;
     }
 
     location / {
