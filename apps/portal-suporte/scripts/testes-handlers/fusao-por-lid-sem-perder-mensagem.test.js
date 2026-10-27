@@ -27,7 +27,7 @@
 const fs = require('fs')
 const vm = require('vm')
 const { reply, ok, fim, ARQ, carregarContexto } = require('./_carregar.js')
-const { camadaFindMany } = require('./_camada.js')
+const { camadaFindMany, META } = require('./_camada.js')
 
 function codigoDe(marca) {
   const s = fs.readFileSync(ARQ, 'utf8')
@@ -124,7 +124,8 @@ function mundo({ dup = 6, ruido = 600, camel = 0, opcoes = {}, eventos = 0, etiq
   w.models = {
     WhatsAppConversation: {
       findById: async (id) => { const c = convs.find((x) => x.id === id); return c ? { ...c } : null },
-      findMany: async (a) => { const ch = Object.keys(a || {}); return convs.filter((c) => ch.every((k) => String(c[k] ?? '') === String(a[k]))).map((c) => ({ ...c })) },
+      // `limit`/`offset` não são campos de filtro na camada (`metaKeys`).
+      findMany: async (a) => { const ch = Object.keys(a || {}).filter((k) => !META.includes(k)); return convs.filter((c) => ch.every((k) => String(c[k] ?? '') === String(a[k]))).map((c) => ({ ...c })) },
       create: async (c) => { convs.push({ ...c }); return c },
       update: async (id, p) => { const c = convs.find((x) => x.id === id); Object.assign(c, p); return { ...c } },
       delete: async (id) => { w.apagadas.push(id); const i = convs.findIndex((x) => x.id === id); if (i >= 0) convs.splice(i, 1); return { ok: true } },

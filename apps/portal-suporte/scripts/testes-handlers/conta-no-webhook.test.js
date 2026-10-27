@@ -11,6 +11,7 @@
 // Nada sai para a Avisa: ctx.fetch é interceptado.
 // Roda com: node conta-no-webhook.test.js
 const { carregarHandler, reply, ok, fim } = require('./_carregar.js')
+const { META } = require('./_camada.js')
 
 const inbound = carregarHandler('485 whatsapp POST /whatsapp/inbound')
 
@@ -48,7 +49,11 @@ function cenario({ contas = CONTAS, semModelDeConta = false } = {}) {
     WhatsAppConversation: {
       findById: async (id) => estado.conversas.find((c) => c.id === id) || null,
       findMany: async (arg) => {
-        const ch = Object.keys(arg || {})
+        // `limit`/`offset` e companhia NÃO são campos de filtro na camada
+        // (packages/api/src/lib/models.ts, `metaKeys`): tratá-los como campo
+        // faria toda leitura paginada voltar vazia aqui, e o defeito seria do
+        // mock, não do handler.
+        const ch = Object.keys(arg || {}).filter((k) => !META.includes(k))
         if (!ch.length) return estado.conversas
         return estado.conversas.filter((c) => ch.every((k) => String(c[k] ?? '') === String(arg[k])))
       },
