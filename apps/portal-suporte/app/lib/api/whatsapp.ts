@@ -614,12 +614,23 @@ export const whatsappApi = {
 
   /**
    * POST /api/whatsapp/[id]/ticket/vincular — liga a conversa a um chamado que
-   * já existe, sem criar outro. Não altera o chamado.
+   * já existe, sem criar outro. Conversa que já tem chamado TROCA de chamado.
+   * Não altera o chamado.
    */
   linkTicket: (id: string, ticketId: string) =>
     api.post<{ data: { id: string; ticket_number: string | null } }>(
       `/api/whatsapp/${id}/ticket/vincular`,
       { ticketId },
+    ),
+
+  /**
+   * POST /api/whatsapp/[id]/ticket/desvincular — solta a conversa do chamado.
+   * Funciona com chamado já resolvido, e não altera o chamado.
+   */
+  unlinkTicket: (id: string) =>
+    api.post<{ data: { ok: boolean; de: string | null } }>(
+      `/api/whatsapp/${id}/ticket/desvincular`,
+      {},
     ),
 
   /** GET /api/whatsapp/metrics — contadores do dashboard da inbox */

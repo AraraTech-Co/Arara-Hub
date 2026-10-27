@@ -26,9 +26,11 @@ const { carregarHandler, reply, ok, fim, ARQ } = require('./_carregar.js')
 
 const MARCA_LISTA = 'whatsapp GET /whatsapp/:id/chamados-vinculaveis'
 const MARCA_VINC = 'whatsapp POST /whatsapp/:id/ticket/vincular'
+const MARCA_DESV = 'whatsapp POST /whatsapp/:id/ticket/desvincular'
 
 const hLista = carregarHandler(MARCA_LISTA)
 const hVinc = carregarHandler(MARCA_VINC)
+const hDesv = carregarHandler(MARCA_DESV)
 
 const CONVERSA = {
   id: 'c1',
@@ -74,6 +76,7 @@ function mundo(over = {}) {
     updates: [],
     ticketUpdates: [],
     logs: [],
+    eventos: [],
   }
 }
 
@@ -121,6 +124,12 @@ function ctxDe(w) {
       ActivityLog: {
         create: async (row) => {
           w.logs.push(row)
+          return row
+        },
+      },
+      WaConversationEvents: {
+        create: async (row) => {
+          w.eventos.push(row)
           return row
         },
       },
@@ -270,6 +279,7 @@ async function bateriaVinculo(h) {
     if ((r.status || 200) !== esperado) f.push(nome + ':status=' + (r.status || 200))
     if (w.updates.length) f.push(nome + ':gravou')
     if (w.logs.length) f.push(nome + ':log')
+    if (w.eventos.length) f.push(nome + ':evento')
   }
 
   // Caminho feliz.
@@ -291,7 +301,45 @@ async function bateriaVinculo(h) {
     if (String(log.ticket_id) !== 't1') f.push('feliz:log-de-outro-chamado')
     if (String(log.details && log.details.conversation_id) !== 'c1') f.push('feliz:log-sem-conversa')
   }
+  // Histórico da CONVERSA, além do histórico do chamado.
+  const ev = w.eventos[0]
+  if (!ev || ev.type !== 'ticket_linked') f.push('feliz:sem-evento-da-conversa')
+  else {
+    if (String(ev.conversation_id) !== 'c1') f.push('feliz:evento-de-outra-conversa')
+    if (ev.from_value) f.push('feliz:evento-com-anterior:' + ev.from_value)
+    if (String(ev.to_value) !== 't1') f.push('feliz:evento-sem-destino')
+    if (ev.actor_id !== 'u1') f.push('feliz:evento-sem-autor:' + ev.actor_id)
+  }
   if (!r.body || !r.body.data || r.body.data.ticket_number !== 'TCK000001') f.push('feliz:resposta')
+
+  // ── Troca: conversa que já tem chamado passa a apontar para outro ────────
+  const wt = mundo({
+    conv: { ticket_id: 'tAntigo' },
+    chamados: [chamado({ id: 'tAntigo' }), chamado({ id: 't1' })],
+    body: { ticketId: 't1' },
+  })
+  const rt = await h(ctxDe(wt))
+  if ((rt.status || 200) !== 200) f.push('troca:status=' + rt.status)
+  if (wt.updates.length !== 1) f.push('troca:gravou ' + wt.updates.length + 'x')
+  else if (wt.updates[0].patch.ticket_id !== 't1') f.push('troca:ticket_id=' + wt.updates[0].patch.ticket_id)
+  const evt = wt.eventos[0]
+  if (!evt || evt.type !== 'ticket_changed') f.push('troca:evento=' + (evt && evt.type))
+  else {
+    // De qual para qual: sem isso, a troca aparece como vínculo do nada.
+    if (String(evt.from_value) !== 'tAntigo') f.push('troca:evento-sem-anterior:' + evt.from_value)
+    if (String(evt.to_value) !== 't1') f.push('troca:evento-sem-destino:' + evt.to_value)
+  }
+  const logt = wt.logs[0]
+  if (!logt || logt.action !== 'ticket_changed') f.push('troca:log=' + (logt && logt.action))
+  else if (String(logt.details && logt.details.de) !== 'tAntigo') f.push('troca:log-sem-anterior')
+  if (wt.ticketUpdates.length) f.push('troca:mexeu-no-chamado')
+
+  // O mesmo chamado de novo não é troca.
+  await recusa(
+    'mesmo-chamado',
+    mundo({ conv: { ticket_id: 't1' }, chamados: [chamado({ id: 't1' })], body: { ticketId: 't1' } }),
+    409,
+  )
 
   // Sem empresa, o vínculo sai pelo cliente.
   const wc = mundo({
@@ -307,11 +355,6 @@ async function bateriaVinculo(h) {
   // 403 da conta vem ANTES do resto: as duas saem da mesma trava.
   await recusa('outra-conta', mundo({ conv: { conta_id: 'setor9' }, body: { ticketId: 't1' } }), 403)
   await recusa('conversa-inexistente', mundo({ conv: { id: 'outra' }, body: { ticketId: 't1' } }), 404)
-  await recusa(
-    'ja-tem-chamado',
-    mundo({ conv: { ticket_id: 'tAntigo' }, chamados: [chamado({ id: 't1' })], body: { ticketId: 't1' } }),
-    409,
-  )
   await recusa('sem-ticketId', mundo({ chamados: [chamado({ id: 't1' })], body: {} }), 400)
   await recusa('chamado-inexistente', mundo({ chamados: [], body: { ticketId: 't1' } }), 404)
   // A lista da janela não protege nada: quem chama a rota escolhe o id.
@@ -366,6 +409,66 @@ async function bateriaVinculo(h) {
     }),
     409,
   )
+  return f
+}
+
+// ─── Desvincular: solta a conversa, mesmo de chamado já resolvido ──────────
+async function bateriaDesvincular(h) {
+  const f = []
+  // Caminho feliz: grava só a saída do vínculo e registra nos dois históricos.
+  const w = mundo({ conv: { ticket_id: 't1' }, chamados: [chamado({ id: 't1' })] })
+  const r = await h(ctxDe(w))
+  if ((r.status || 200) !== 200) f.push('feliz:status=' + r.status)
+  if (w.updates.length !== 1) f.push('feliz:gravou ' + w.updates.length + 'x')
+  else {
+    const p = w.updates[0].patch
+    if (p.ticket_id !== null) f.push('feliz:ticket_id=' + JSON.stringify(p.ticket_id))
+    if (!p.updated_at) f.push('feliz:sem-updated_at')
+    const chaves = Object.keys(p).sort().join(',')
+    if (chaves !== 'ticket_id,updated_at') f.push('feliz:gravou-mais=' + chaves)
+  }
+  if (w.ticketUpdates.length) f.push('feliz:mexeu-no-chamado')
+  const ev = w.eventos[0]
+  if (!ev || ev.type !== 'ticket_unlinked') f.push('feliz:evento=' + (ev && ev.type))
+  else {
+    if (String(ev.from_value) !== 't1') f.push('feliz:evento-sem-anterior:' + ev.from_value)
+    if (ev.to_value !== null) f.push('feliz:evento-com-destino:' + ev.to_value)
+    if (ev.actor_id !== 'u1') f.push('feliz:evento-sem-autor:' + ev.actor_id)
+  }
+  const log = w.logs[0]
+  if (!log || log.action !== 'ticket_unlinked') f.push('feliz:log=' + (log && log.action))
+  else if (String(log.ticket_id) !== 't1') f.push('feliz:log-de-outro-chamado')
+
+  // Chamado JÁ RESOLVIDO se desvincula: é justamente o caso em que o atendente
+  // quer soltar a conversa. Conferir a situação aqui travaria a saída.
+  const wr = mundo({
+    conv: { ticket_id: 't1' },
+    chamados: [chamado({ id: 't1', status: 'resolvido' })],
+  })
+  const rr = await h(ctxDe(wr))
+  if ((rr.status || 200) !== 200) f.push('resolvido:status=' + rr.status)
+  if (wr.updates.length !== 1) f.push('resolvido:gravou ' + wr.updates.length + 'x')
+  // Card de Dev também sai: o vínculo pode ter nascido antes desta regra.
+  const wd = mundo({
+    conv: { ticket_id: 't1' },
+    chamados: [chamado({ id: 't1', quadro: 'dev', status: 'aplicado_no_cliente' })],
+  })
+  const rd = await h(ctxDe(wd))
+  if ((rd.status || 200) !== 200) f.push('dev:status=' + rd.status)
+  // Chamado que nem existe mais: o vínculo ainda sai.
+  const wx = mundo({ conv: { ticket_id: 'tSumiu' }, chamados: [] })
+  const rx = await h(ctxDe(wx))
+  if ((rx.status || 200) !== 200) f.push('chamado-sumiu:status=' + rx.status)
+
+  async function recusa(nome, w2, esperado) {
+    const r2 = await h(ctxDe(w2))
+    if ((r2.status || 200) !== esperado) f.push(nome + ':status=' + (r2.status || 200))
+    if (w2.updates.length) f.push(nome + ':gravou')
+    if (w2.eventos.length) f.push(nome + ':evento')
+  }
+  await recusa('sem-vinculo', mundo({ conv: { ticket_id: null } }), 409)
+  await recusa('outra-conta', mundo({ conv: { ticket_id: 't1', conta_id: 'setor9' } }), 403)
+  await recusa('conversa-inexistente', mundo({ conv: { id: 'outra', ticket_id: 't1' } }), 404)
   return f
 }
 
@@ -424,8 +527,10 @@ const MUT_VINC = [
     [['    ? String(_tEmpresa || "") === String(_empresa)', '    ? !_tEmpresa || String(_tEmpresa) === String(_empresa)']]],
   ['aceita conversa sem cliente identificado',
     [['  if (!_empresa && !_cliente) {\n    return fail(ctx, 409,', '  if (false) {\n    return fail(ctx, 409,']]],
-  ['sobrescreve chamado existente',
-    [['if (conv.ticket_id || conv.ticketId) return fail(ctx, 409, "Conversa já possui chamado");', '']]],
+  // Vincular ao MESMO chamado não é troca: gravaria e geraria evento de uma
+  // troca que não houve.
+  ['aceita o mesmo chamado de novo',
+    [['  if (_antes && String(_t.id) === _antes) {', '  if (false) {']]],
   ['aceita pedido sem ticketId', [['if (!_tid) return fail(ctx, 400, "ticketId obrigatório");', '']]],
   // A tela deixar de oferecer não é guarda: quem chama a rota escolhe o id.
   ['aceita chamado encerrado',
@@ -440,11 +545,35 @@ const MUT_VINC = [
   ['mexe no chamado ao vincular',
     [['  await m.Conv.update(id, { ticket_id: _t.id, updated_at: ts });',
       '  await m.Conv.update(id, { ticket_id: _t.id, updated_at: ts });\n  await m.Ticket.update(_t.id, { status: "em_atendimento" });']]],
-  ['não registra no histórico do chamado', [['        action: "ticket_linked",', '        action: "outro",']]],
+  ['não registra no histórico do chamado',
+    [['        action: _antes ? "ticket_changed" : "ticket_linked",', '        action: "outro",']]],
+  // O histórico da conversa é a outra metade do pedido.
+  ['não grava o evento da conversa',
+    [['      type: _antes ? "ticket_changed" : "ticket_linked",', '      type: "outro",']]],
+  // Troca que não diz de qual chamado veio aparece como vínculo do nada.
+  ['troca sem registrar o anterior', [['      from_value: _antes,\n', '      from_value: null,\n']]],
+  ['troca não se distingue do vínculo',
+    [['      type: _antes ? "ticket_changed" : "ticket_linked",', '      type: "ticket_linked",']]],
   ['histórico sem a conversa', [['          conversation_id: String(id),\n', '']]],
   ['grava antes de conferir a conta',
     [['  var _barrado = await _barrarPorConta(ctx, conv);\n  if (_barrado) return _barrado;\n',
       '  var _barrado = await _barrarPorConta(ctx, conv);\n  if (_barrado) { await m.Conv.update(id, { ticket_id: "t1" }); return _barrado; }\n']]],
+]
+
+const MUT_DESV = [
+  // Conferir a situação do chamado aqui travaria a saída de um resolvido, que
+  // é justamente o caso em que o atendente quer soltar a conversa.
+  ['desvincular confere o status',
+    [['  var ts = nowIso();',
+      '  var _tv = await m.Ticket.findById(_antes);\n  if (_tv && String(_tv.status || "") === "resolvido") return fail(ctx, 409, "encerrado");\n  var ts = nowIso();']]],
+  ['desvincular sem conferir a conta',
+    [['  var _barrado = await _barrarPorConta(ctx, conv);\n  if (_barrado) return _barrado;\n', '']]],
+  ['desvincular sem vínculo nenhum',
+    [['if (!_antes) return fail(ctx, 409, "Esta conversa não tem chamado vinculado");', '']]],
+  ['não limpa o vínculo', [['{ ticket_id: null, updated_at: ts }', '{ updated_at: ts }']]],
+  ['não grava o evento da conversa', [['      type: "ticket_unlinked",', '      type: "outro",']]],
+  ['evento sem o chamado anterior', [['      from_value: _antes,\n      to_value: null,', '      from_value: null,\n      to_value: null,']]],
+  ['não registra no histórico do chamado', [['        action: "ticket_unlinked",', '        action: "outro",']]],
 ]
 
 // ─── A tela: o botão novo ao lado do de criar, e a janela chama as rotas ────
@@ -461,9 +590,18 @@ const JANELA = semComentarios(
 function bateriaTela(painel, janela) {
   const f = []
   if (!/Vincular ticket/.test(painel)) f.push('sem-rotulo')
-  if (!/setVincularDialogOpen\(true\)/.test(painel)) f.push('botao-nao-abre-a-janela')
+  // Dois botões abrem a MESMA janela: "Vincular ticket" e "Trocar".
+  if ((painel.match(/setVincularDialogOpen\(true\)/g) || []).length !== 2) {
+    f.push('botoes-nao-abrem-a-janela')
+  }
+  if (!/open=\{vincularDialogOpen\}/.test(painel)) f.push('janela-nao-ligada-ao-estado')
   if (!/<WALinkTicketDialog/.test(painel)) f.push('janela-nao-montada')
   if (!/Criar ticket/.test(painel)) f.push('criar-sumiu')
+  // Com chamado: trocar e desvincular, e o desvincular pede confirmação.
+  if (!/>\s*Trocar\s*</.test(painel)) f.push('sem-trocar')
+  if (!/setDesvincularAberto\(true\)/.test(painel)) f.push('sem-desvincular')
+  if (!/<AlertDialog\b/.test(painel)) f.push('desvincular-sem-confirmacao')
+  if (!/whatsappApi\.unlinkTicket\(detail\.id\)/.test(painel)) f.push('nao-chama-desvincular')
   // O botão tem de estar no ramo da conversa SEM chamado: o `) : (` do ternário
   // `detail.ticket ? (…) : (…)` é a fronteira, e o `</dl>` fecha a lista.
   const iTernario = painel.indexOf('{detail.ticket ? (')
@@ -473,6 +611,11 @@ function bateriaTela(painel, janela) {
   if (iTernario < 0 || iElse < 0 || iVinc < 0 || iFim < 0 || !(iElse < iVinc && iVinc < iFim)) {
     f.push('botao-fora-do-ramo-sem-chamado')
   }
+  // E "Trocar"/"Desvincular" no ramo de CIMA, o da conversa COM chamado.
+  const iTrocar = painel.search(/>\s*Trocar\s*</)
+  const iDesv = painel.indexOf('setDesvincularAberto(true)')
+  if (!(iTernario < iTrocar && iTrocar < iElse)) f.push('trocar-fora-do-ramo-com-chamado')
+  if (!(iTernario < iDesv && iDesv < iElse)) f.push('desvincular-fora-do-ramo-com-chamado')
   if (!/whatsappApi\.listLinkableTickets\(conversationId\)/.test(janela)) f.push('janela-nao-lista')
   if (!/whatsappApi\.linkTicket\(conversationId, escolhido\)/.test(janela)) f.push('janela-nao-vincula')
   if (!/disabled=\{salvando \|\| !escolhido\}/.test(janela)) f.push('confirma-sem-escolher')
@@ -500,9 +643,14 @@ function rodarMutacoes(nomePrefixo, texto, muts, avaliar) {
   ok('a tela oferece "Vincular ticket" só na conversa sem chamado e chama as duas rotas', ft.length === 0, ft)
   rodarMutacoes('tela ', PAINEL, [
     ['some o botão de vincular', [['Vincular ticket', 'Outra coisa']]],
-    ['botão não abre a janela', [['setVincularDialogOpen(true)', 'undefined']]],
+    ['botão de vincular não abre a janela',
+      [['onClick={() => setVincularDialogOpen(true)}\n                    >\n                      <Link2', 'onClick={() => undefined}\n                    >\n                      <Link2']]],
+    ['janela não liga no estado', [['open={vincularDialogOpen}', 'open={false}']]],
     ['janela não é montada', [['<WALinkTicketDialog', '<Fragment data-x']]],
     ['some o de criar', [['Criar ticket', 'Outra coisa']]],
+    ['some o Trocar', [['                        Trocar\n', '']]],
+    ['desvincular sem confirmação', [['onClick={() => setDesvincularAberto(true)}', 'onClick={() => void runAction(() => whatsappApi.unlinkTicket(detail.id), "x")}']]],
+    ['não chama o desvincular', [['whatsappApi.unlinkTicket(detail.id)', 'Promise.resolve()']]],
   ], (nome, mut) => {
     const fm = bateriaTela(mut, JANELA)
     ok(`mutação tela "${nome}" é pega (${fm.slice(0, 1).join('')})`, fm.length > 0, 'sobreviveu')
@@ -550,6 +698,24 @@ function rodarMutacoes(nomePrefixo, texto, muts, avaliar) {
     }
     const fm = await bateriaVinculo(compilar(mut))
     ok(`mutação vínculo "${nome}" é pega (${fm.slice(0, 1).join('')})`, fm.length > 0, 'sobreviveu')
+  }
+
+  const fd = await bateriaDesvincular(hDesv)
+  ok('desvincula a conversa, inclusive de chamado resolvido, e registra nos dois históricos', fd.length === 0, fd)
+  const baseD = fonteDaRota(MARCA_DESV)
+  for (const [nome, pares] of MUT_DESV) {
+    let mut = baseD
+    let aplicou = true
+    for (const [de, para] of pares) {
+      if (mut.split(de).length - 1 !== 1) { aplicou = false; break }
+      mut = mut.replace(de, () => para)
+    }
+    if (!aplicou || mut === baseD) {
+      ok(`mutação desvínculo "${nome}" aplica cada âncora exatamente uma vez`, false, 'âncora')
+      continue
+    }
+    const fm = await bateriaDesvincular(compilar(mut))
+    ok(`mutação desvínculo "${nome}" é pega (${fm.slice(0, 1).join('')})`, fm.length > 0, 'sobreviveu')
   }
   fim()
 })()

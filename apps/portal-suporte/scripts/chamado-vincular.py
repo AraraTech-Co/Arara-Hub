@@ -2,7 +2,8 @@
 # Vincular a conversa a um chamado que já existe (PRD 06).
 #
 #   GET  /whatsapp/:id/chamados-vinculaveis  — candidatos, escopo do servidor
-#   POST /whatsapp/:id/ticket/vincular       — grava o vínculo
+#   POST /whatsapp/:id/ticket/vincular       — grava o vínculo (ou troca)
+#   POST /whatsapp/:id/ticket/desvincular    — desfaz o vínculo
 #
 # Sync local: python3 scripts/chamado-vincular.py --sync-routes
 #
@@ -142,15 +143,21 @@ VINCULAR = r"""async function handler(ctx) {
   var _barrado = await _barrarPorConta(ctx, conv);
   if (_barrado) return _barrado;
   if (!conv) return fail(ctx, 404, "Conversa não encontrada");
-  // Mesma recusa da rota irmã: trocar o chamado de uma conversa que já tem um
-  // apagaria o vínculo anterior sem deixar rastro na tela.
-  if (conv.ticket_id || conv.ticketId) return fail(ctx, 409, "Conversa já possui chamado");
+
+  // Conversa que já tem chamado TROCA de chamado (decisão do Leonardo,
+  // 26/10/2026), com as mesmas guardas e registrando de qual para qual. O
+  // mesmo chamado de novo é recusado: não há o que trocar, e gravar geraria
+  // evento de uma troca que não houve.
+  var _antes = String(conv.ticket_id || conv.ticketId || "") || null;
 
   var _body = ctx.body || {};
   var _tid = String(_body.ticketId || _body.ticket_id || "").trim();
   if (!_tid) return fail(ctx, 400, "ticketId obrigatório");
   var _t = await m.Ticket.findById(_tid);
   if (!_t) return fail(ctx, 404, "Chamado não encontrado");
+  if (_antes && String(_t.id) === _antes) {
+    return fail(ctx, 409, "Esta conversa já está vinculada a este chamado");
+  }
   // A lista da janela não protege nada: quem chama a rota escolhe o `ticketId`.
   // Então as duas exclusões da listagem são conferidas AQUI também.
   if (_ehDoDev(_t)) return fail(ctx, 409, "Este chamado é do quadro de Dev");
@@ -179,21 +186,40 @@ VINCULAR = r"""async function handler(ctx) {
   // não reabre nem reclassifica nada.
   await m.Conv.update(id, { ticket_id: _t.id, updated_at: ts });
 
-  // Mesmo formato do `ticket_created` que a rota irmã grava, para o histórico
-  // do chamado dizer que uma segunda conversa foi ligada a ele. Dentro de
-  // try/catch e sem derrubar o vínculo: vínculo feito e não registrado é ruim;
-  // vínculo que deixou de existir porque o histórico falhou é pior.
+  // Histórico da CONVERSA (decisão do Leonardo, 26/10/2026), no mesmo formato
+  // do `reopened` que a reabertura grava: sem isto, a linha do tempo da
+  // conversa não contava que o chamado dela mudou.
+  if (m.Event) {
+    await m.Event.create({
+      id: uid("wae"),
+      conversation_id: id,
+      type: _antes ? "ticket_changed" : "ticket_linked",
+      from_value: _antes,
+      to_value: String(_t.id),
+      actor_id: me,
+      note: _antes ? "chamado trocado pelo atendente" : "chamado vinculado pelo atendente",
+      created_at: ts,
+    });
+  }
+
+  // Histórico do CHAMADO, no mesmo formato do `ticket_created` que a rota irmã
+  // grava: é por ele que o chamado diz que uma segunda conversa foi ligada.
+  // Dentro de try/catch e sem derrubar o vínculo: vínculo feito e não
+  // registrado é ruim; vínculo que deixou de existir porque o histórico falhou
+  // é pior.
   try {
     var _Log = ctx.models.ActivityLog;
     if (_Log) {
       await _Log.create({
         ticket_id: _t.id,
         user_id: me || null,
-        action: "ticket_linked",
+        action: _antes ? "ticket_changed" : "ticket_linked",
         details: {
           ticket_number: _t.ticket_number || _t.ticketNumber || null,
           origem: "whatsapp",
           conversation_id: String(id),
+          de: _antes,
+          para: String(_t.id),
         },
         created_at: ts,
         visible_to_client: false,
@@ -204,9 +230,65 @@ VINCULAR = r"""async function handler(ctx) {
   return ok(ctx, { id: _t.id, ticket_number: _t.ticket_number || _t.ticketNumber || null });
 }"""
 
+DESVINCULAR = r"""async function handler(ctx) {
+  // scripts/chamado-vincular.py — desfaz o vínculo (PRD 06)
+  //
+  // NÃO confere a situação do chamado, de propósito: desvincular um chamado já
+  // resolvido tem de funcionar — é justamente o caso em que o atendente quer
+  // soltar a conversa. As guardas de conta, sessão e nível continuam valendo.
+  //
+  // Nenhuma guarda de escopo aqui: isto só REMOVE um vínculo, e remover não
+  // mostra nada de ninguém.
+  var m = model(ctx);
+  if (!m.Conv) return fail(ctx, 500, "Models missing");
+  var id = ctx.params.id;
+  var conv = await m.Conv.findById(id);
+  var _barrado = await _barrarPorConta(ctx, conv);
+  if (_barrado) return _barrado;
+  if (!conv) return fail(ctx, 404, "Conversa não encontrada");
+  var _antes = String(conv.ticket_id || conv.ticketId || "") || null;
+  if (!_antes) return fail(ctx, 409, "Esta conversa não tem chamado vinculado");
+
+  var ts = nowIso();
+  var me = userId(ctx);
+  // Só o vínculo sai. O chamado não é tocado: desvincular não resolve, não
+  // reabre e não reclassifica nada.
+  await m.Conv.update(id, { ticket_id: null, updated_at: ts });
+
+  if (m.Event) {
+    await m.Event.create({
+      id: uid("wae"),
+      conversation_id: id,
+      type: "ticket_unlinked",
+      from_value: _antes,
+      to_value: null,
+      actor_id: me,
+      note: "chamado desvinculado pelo atendente",
+      created_at: ts,
+    });
+  }
+
+  try {
+    var _Log = ctx.models.ActivityLog;
+    if (_Log) {
+      await _Log.create({
+        ticket_id: _antes,
+        user_id: me || null,
+        action: "ticket_unlinked",
+        details: { origem: "whatsapp", conversation_id: String(id), de: _antes, para: null },
+        created_at: ts,
+        visible_to_client: false,
+      });
+    }
+  } catch (_e) {}
+
+  return ok(ctx, { ok: true, de: _antes });
+}"""
+
 NOVAS = [
     ("GET", 'path: "/whatsapp/:id/chamados-vinculaveis",', LISTAR),
     ("POST", 'path: "/whatsapp/:id/ticket/vincular",', VINCULAR),
+    ("POST", 'path: "/whatsapp/:id/ticket/desvincular",', DESVINCULAR),
 ]
 
 

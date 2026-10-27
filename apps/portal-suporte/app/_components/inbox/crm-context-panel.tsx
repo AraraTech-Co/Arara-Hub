@@ -18,6 +18,16 @@ import {
   X,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { whatsappApi, type WAConversationDetail } from '@/lib/api/whatsapp'
 import { schedulesApi, type QuemAvisarAgora } from '@/lib/api/schedules'
 import { formatDate, mascaraTelefone } from '@/lib/utils'
@@ -60,6 +70,7 @@ export function CrmContextPanel({ conversationId }: CrmContextPanelProps) {
   const [loading, setLoading] = useState(false)
   const [ticketDialogOpen, setTicketDialogOpen] = useState(false)
   const [vincularDialogOpen, setVincularDialogOpen] = useState(false)
+  const [desvincularAberto, setDesvincularAberto] = useState(false)
   const [busy, setBusy] = useState(false)
   const [closeOpen, setCloseOpen] = useState(false)
 
@@ -521,6 +532,30 @@ export function CrmContextPanel({ conversationId }: CrmContextPanelProps) {
                       Abrir ticket
                       <ExternalLink className="h-3 w-3" />
                     </Link>
+                    {/* Vínculo errado se desfaz ou se troca aqui; desvincular
+                        pede confirmação porque a conversa deixa de aparecer no
+                        chamado e o fluxo com condição `hasTicket` muda de ramo
+                        nas mensagens seguintes. */}
+                    <span className="flex items-center gap-1.5">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="h-6 px-2 text-xs"
+                        onClick={() => setVincularDialogOpen(true)}
+                      >
+                        Trocar
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="h-6 px-2 text-xs"
+                        onClick={() => setDesvincularAberto(true)}
+                      >
+                        Desvincular
+                      </Button>
+                    </span>
                   </div>
                 ) : (
                   // Duas saídas para a conversa sem chamado: abrir um, ou
@@ -567,8 +602,38 @@ export function CrmContextPanel({ conversationId }: CrmContextPanelProps) {
         open={vincularDialogOpen}
         onOpenChange={setVincularDialogOpen}
         conversationId={detail.id}
+        trocando={!!detail.ticket}
         onLinked={() => void load(detail.id)}
       />
+
+      <AlertDialog
+        open={desvincularAberto}
+        onOpenChange={(aberto) => !aberto && setDesvincularAberto(false)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Desvincular o chamado desta conversa?</AlertDialogTitle>
+            <AlertDialogDescription>
+              A conversa deixa de aparecer no chamado. O chamado em si não é
+              alterado, e você pode vincular outro depois.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setDesvincularAberto(false)
+                void runAction(
+                  () => whatsappApi.unlinkTicket(detail.id),
+                  'Erro ao desvincular o chamado',
+                )
+              }}
+            >
+              Desvincular
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

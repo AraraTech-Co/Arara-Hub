@@ -34,6 +34,8 @@ interface WALinkTicketDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   conversationId: string
+  /** A conversa já tem chamado: a mesma janela serve para TROCAR. */
+  trocando?: boolean
   onLinked: () => void
 }
 
@@ -52,6 +54,7 @@ export function WALinkTicketDialog({
   open,
   onOpenChange,
   conversationId,
+  trocando = false,
   onLinked,
 }: WALinkTicketDialogProps) {
   const { toast } = useToast()
@@ -94,7 +97,7 @@ export function WALinkTicketDialog({
     try {
       const res = await whatsappApi.linkTicket(conversationId, escolhido)
       toast({
-        title: 'Conversa vinculada',
+        title: trocando ? 'Chamado trocado' : 'Conversa vinculada',
         description: res.data.ticket_number
           ? `Esta conversa agora aparece no chamado ${res.data.ticket_number}.`
           : 'Esta conversa agora aparece no chamado escolhido.',
@@ -118,11 +121,12 @@ export function WALinkTicketDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Link2 className="h-4 w-4" aria-hidden />
-            Vincular chamado
+            {trocando ? 'Trocar o chamado' : 'Vincular chamado'}
           </DialogTitle>
           <DialogDescription>
-            Liga esta conversa a um chamado que já existe, sem abrir outro. O
-            chamado não é alterado.
+            {trocando
+              ? 'Liga esta conversa a outro chamado, no lugar do atual. Nenhum dos dois chamados é alterado.'
+              : 'Liga esta conversa a um chamado que já existe, sem abrir outro. O chamado não é alterado.'}
           </DialogDescription>
         </DialogHeader>
 
