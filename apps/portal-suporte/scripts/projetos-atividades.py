@@ -41,13 +41,21 @@
 #   - sem rota de exclusão: `cancelada` é o caminho (D3). Apagar de verdade
 #     entra, se entrar, por decisão expressa.
 #
-# ── Leitura completa acima de 500 (§11, barreira T4) ────────────────────────
+# ── Leitura acima de 500: o que está resolvido e o que NÃO está ─────────────
 # A camada tem teto de 500 por leitura, `offset`, ordem só por `created_at DESC`
-# e nenhum desempate. Uma lista "completa" montada por páginas pode repetir ou
-# pular linha em empate de `created_at`. Então: páginas de 500 com `offset`,
-# desduplicação por id, ordenação em memória e TETO DE PÁGINAS com erro
-# explícito. Acima do teto a rota responde 409 e NÃO devolve total nenhum —
-# resumo pela metade apresentado como completo é pior que recusa.
+# e nenhum desempate. Esta entrega faz páginas de 500 com `offset`,
+# desduplicação por id, ordenação em memória e teto de páginas com recusa
+# explícita: acima do teto a rota responde 409 e NÃO devolve total nenhum,
+# porque resumo pela metade apresentado como completo é pior que recusa.
+#
+# O que isso NÃO resolve, e fica dito para ninguém confiar além da conta: até
+# 500 atividades é UMA página, e o total é exato. Acima de 500, a
+# desduplicação cuida da linha REPETIDA, mas não há como recuperar a linha
+# PULADA na virada de página quando duas têm o mesmo `created_at` — sem
+# desempate na camada, a segunda página pode começar depois dela. Nesse caso o
+# total sai MENOR, sem 409 e sem aviso. A barreira T4 (§11 do plano) continua
+# ABERTA acima de 500; fechá-la é desempate na camada, que é mudança de
+# plataforma e precisa de autorização.
 #
 #   python3 scripts/projetos-atividades.py                  # simula (node --check)
 #   python3 scripts/projetos-atividades.py --sync-routes     # grava em routes.generated.ts
@@ -201,6 +209,11 @@ function _resumoAtiv(lista) {
 
 // Leitura por páginas de 500 com teto. `_PAGINAS_ATIV * 500` é o máximo que uma
 // resposta cobre; passando disso a rota RECUSA em vez de devolver meia lista.
+//
+// Exato até 500 (uma página). Acima disso a desduplicação cuida da linha
+// repetida, mas a linha PULADA na virada de página, em empate de `created_at`,
+// não tem como ser recuperada aqui: a camada não oferece desempate, e o total
+// pode sair menor sem nenhum aviso.
 var _PAGINAS_ATIV = 20;
 async function _atividadesDoProjeto(ctx, projetoId) {
   var A = ctx.models.ProjetoAtividade;
@@ -526,10 +539,37 @@ def sync_routes():
         print(f"! âncora de fim de array ocorre {n}x — abortado")
         sys.exit(1)
 
-    ja = [c for _, c, _, _ in ROTAS if f'path: "{c}"' in texto]
-    if ja:
-        print(f"= rotas de atividade já presentes: {', '.join(ja)}")
-        return
+    # Idempotente por SUBSTITUIÇÃO, não por desistência. Pular quando as rotas
+    # já existem é o mecanismo exato que deixou o `em_revisao` só no arquivo
+    # gerado: o script deixa de ser a fonte, a correção não chega ao arquivo e
+    # alguém edita o gerado à mão. Então: tira os blocos desta marca e põe os
+    # novos, com o total de handlers conferido no fim.
+    marca_bloco = f"({MARCA})\n"
+    existentes = texto.count(marca_bloco)
+    if existentes:
+        if existentes != len(ROTAS):
+            print(f"! {existentes} blocos desta marca, esperava {len(ROTAS)} — abortado")
+            sys.exit(1)
+        primeiro = texto.index(f"  // ")
+        corte = texto.index(marca_bloco)
+        # Recua até o início do comentário do primeiro bloco desta marca.
+        corte = texto.rindex("\n  // ", primeiro, corte) + 1
+        descartado = texto[corte:]
+        if descartado.count("    handler: compileController(") != len(ROTAS):
+            print("! o trecho a substituir não tem exatamente as rotas desta marca — abortado")
+            sys.exit(1)
+        if descartado.count(marca_bloco) != len(ROTAS):
+            print("! o trecho a substituir pegaria bloco de outra marca — abortado")
+            sys.exit(1)
+        # O array volta a terminar como terminava antes de a marca entrar.
+        texto = texto[:corte].rstrip()
+        if not texto.endswith("  },"):
+            print("! o trecho anterior à marca não termina em `  },` — abortado")
+            sys.exit(1)
+        texto = texto[: -len(",")] + "\n]\n"
+        if texto.count(ancora) != 1:
+            print("! âncora de fim de array não voltou a ser única — abortado")
+            sys.exit(1)
 
     total_antes = texto.count("    handler: compileController(")
     blocos = []
@@ -557,7 +597,8 @@ def sync_routes():
         print(f"! total de handlers foi de {total_antes} para {total_depois} — abortado")
         sys.exit(1)
     open(ROUTES, "w", encoding="utf-8").write(novo)
-    print(f"✓ {len(ROTAS)} rotas de atividade em routes.generated.ts ({total_antes} → {total_depois} handlers)")
+    verbo = "regravadas" if existentes else "acrescentadas"
+    print(f"✓ {len(ROTAS)} rotas de atividade {verbo} em routes.generated.ts ({total_antes} → {total_depois} handlers)")
 
 
 def aplicar_na_plataforma():

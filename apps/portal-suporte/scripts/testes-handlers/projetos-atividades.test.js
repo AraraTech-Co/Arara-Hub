@@ -35,12 +35,15 @@ const CRIAR = 'projetos POST /projetos/:id/atividades'
 const EDITAR = 'projetos PATCH /projetos/:id/atividades/:aid'
 
 function montar(o) {
-  const reg = { update: [], create: [], delete: [], findMany: [] }
+  const reg = { update: [], create: [], delete: [], findMany: [], findById: [] }
   const perfil = o.perfil === null ? null : (o.perfil || { role: 'admin', feature_grants: [] })
 
   function modelo(nome, linhas) {
     return {
-      findById: async (id) => linhas.find((l) => String(l.id) === String(id)) || null,
+      // `findById` também é registrado: provar que a recusa não GRAVOU é metade;
+      // a outra é provar que ela não LEU, e sem registrar a leitura por id a
+      // asserção ficaria afirmando o que não mede.
+      findById: async (id) => { reg.findById.push({ modelo: nome, id: String(id) }); return linhas.find((l) => String(l.id) === String(id)) || null },
       findMany: async (f) => { reg.findMany.push({ modelo: nome, filtro: f }); return camadaFindMany(linhas, f) },
       create: async (d) => { reg.create.push({ modelo: nome, dados: d }); linhas.push(d); return d },
       update: async (id, d) => {
@@ -145,7 +148,10 @@ async function roda() {
       ok('texto-sem-models-Ticket:' + nome, !codigo.includes('models.Ticket'), nome)
       ok('texto-sem-models-ActivityLog:' + nome, !codigo.includes('models.ActivityLog'), nome)
       ok('texto-sem-models-CardDependencia:' + nome, !codigo.includes('models.CardDependencia'), nome)
-      ok('texto-tem-guarda-de-sessao:' + nome, codigo.includes('_gsComSessao') && codigo.includes('_sessaoDoPortal'), nome)
+      // `_sessaoDoPortal` mora no `_perfilDe` e existiria mesmo SEM a guarda:
+      // exigir só ele daria verde num handler desprotegido. O que prova a
+      // guarda é o invólucro — `_gsEuSou` e o export apontando para ele.
+      ok('texto-tem-guarda-de-sessao:' + nome, codigo.includes('_gsEuSou') && /module\.exports\s*=\s*\{\s*handler:\s*_gsComSessao\s*\}/.test(codigo), nome)
       // Sem a guarda, `_perfilDe` trata "sem pessoa" como serviço e as três
       // permissões do módulo liberam tudo — o furo que o caso 4 pega.
       ok('texto-tem-401-sem-sessao:' + nome, codigo.includes('Requer sessão do portal'), nome)
@@ -184,16 +190,27 @@ async function roda() {
   }
 
   // ───────────────────────────────────────────────────────────────────────────
-  // 4. Sem sessão: 401 e nada lido
+  // 4. Sem sessão: 401, nada lido e nada gravado
   // ───────────────────────────────────────────────────────────────────────────
   {
     for (const marca of [LISTAR, CRIAR, EDITAR]) {
       const { handler } = carregar(marca)
-      const { ctx, reg } = montar({ semSessao: true, perfil: null, params: { id: 'p1', aid: 'a1' }, body: { titulo: 'x' } })
+      // A atividade `a1` EXISTE de propósito: sem ela, o PATCH sem guarda
+      // cairia em 404 antes de gravar, e a asserção "não gravou" passaria pelo
+      // motivo errado — ela não poderia falhar.
+      const { ctx, reg } = montar({
+        semSessao: true, perfil: null,
+        params: { id: 'p1', aid: 'a1' }, body: { titulo: 'x' },
+        atividades: [ativ({ id: 'a1' })],
+      })
       const r = await handler(ctx)
       const nome = marca.split(' ')[1]
       ok('sem-sessao-401:' + nome, r.status === 401, { nome, status: r.status })
       ok('sem-sessao-nada-gravado:' + nome, reg.create.length === 0 && reg.update.length === 0, { nome, reg })
+      // E nada lido: a recusa vem antes de qualquer leitura de projeto ou de
+      // atividade. Só o `Profile` de quem chamou pode ter sido consultado.
+      const leu = [].concat(reg.findMany, reg.findById).filter((e) => e.modelo !== 'Profile' && e.modelo !== 'Sessao')
+      ok('sem-sessao-nada-lido:' + nome, leu.length === 0, { nome, leu })
     }
   }
 
@@ -580,6 +597,33 @@ async function roda() {
     const ids = rb.body.data.atividades.map((x) => x.id)
     ok('T4-desduplica-por-id', ids.filter((x) => x === 'repetida').length === 1, { repetidas: ids.filter((x) => x === 'repetida').length, total: ids.length })
     ok('T4-total-sem-a-repetida', rb.body.data.resumo.total === 500, rb.body.data.resumo)
+
+    // O LIMITE, medido e não prometido: linha PULADA na virada de página não é
+    // recuperável aqui. Esta é a simulação do que a camada pode fazer em empate
+    // de `created_at` — a segunda página começa DEPOIS de uma linha que a
+    // primeira não trouxe. O total sai menor, sem 409 e sem aviso, e a barreira
+    // T4 continua aberta acima de 500.
+    const d = carregar(LISTAR)
+    const md = montar({
+      atividadeModelo: (reg) => ({
+        findById: async () => null,
+        findMany: async (f) => {
+          reg.findMany.push({ modelo: 'ProjetoAtividade', filtro: f })
+          const off = f.offset || 0
+          if (off === 0) {
+            const pagina = []
+            for (let i = 0; i < 500; i++) pagina.push(ativ({ id: 'p0_' + i }))
+            return pagina
+          }
+          // A linha `p0_500` existia e não veio em nenhuma das duas páginas.
+          if (off === 500) return [ativ({ id: 'p1_0' })]
+          return []
+        },
+        create: async (x) => x, update: async (_i, x) => x, delete: async () => true,
+      }),
+    })
+    const rd = await d.handler(md.ctx)
+    ok('atual conhecido: linha-pulada-na-virada-nao-e-recuperada', rd.status === 200 && rd.body.data.resumo.total === 501, { status: rd.status, resumo: rd.body && rd.body.data && rd.body.data.resumo })
 
     // Acima do teto: RECUSA, e sem total nenhum na resposta.
     const c = carregar(LISTAR)
