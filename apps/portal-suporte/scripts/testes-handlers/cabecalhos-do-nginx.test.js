@@ -76,9 +76,11 @@ function bateria(cabecalhos, template, entrypoint, dockerNext, dockerVite) {
   }
   const semAlways = (cabecalhos.match(/add_header[^;]*;/g) || []).filter((l) => !/\balways\s*;/.test(l))
   if (semAlways.length) f.push('add_header-sem-always:' + semAlways.length)
-  // A CSP tem decisão própria e prova própria: se aparecer aqui de carona, este
-  // teste não a cobre, e o teste tem de dizer isso em vez de deixar passar.
-  if (/content-security-policy/i.test(cabecalhos)) f.push('csp-entrou-de-carona')
+  // A CSP não se escreve NESTE arquivo: ela muda de front para front e entra pelo
+  // `include /etc/nginx/csp.conf` do fim dele, que o entrypoint monta pelo slug.
+  // Escrita aqui, sairia igual para os cinco. Quem prova a política é o
+  // `politica-de-conteudo.test.js`.
+  if (/content-security-policy/i.test(cabecalhos)) f.push('csp-escrita-neste-arquivo')
 
   // ── O template ────────────────────────────────────────────────────────────
   // No nível do `server`, antes de qualquer location.
@@ -124,9 +126,11 @@ const MUTACOES = [
     [['    include /etc/nginx/security-headers.conf;\n\n    # ── Compressão', '    # ── Compressão']]],
   ['entrypoint deixa de copiar', 'entrypoint',
     [['cp /etc/nginx/templates/security-headers.conf /etc/nginx/security-headers.conf', ':']]],
-  ['entrypoint copia para dentro do conf.d', 'entrypoint',
+  // Mantém a cópia certa e ACRESCENTA a errada, para quem reprovar ser a guarda do conf.d e não a
+  // que exige a cópia: mutante tem de morrer na asserção dele.
+  ['entrypoint copia também para dentro do conf.d', 'entrypoint',
     [['cp /etc/nginx/templates/security-headers.conf /etc/nginx/security-headers.conf',
-      'cp /etc/nginx/templates/security-headers.conf /etc/nginx/conf.d/security-headers.conf']]],
+      'cp /etc/nginx/templates/security-headers.conf /etc/nginx/security-headers.conf\ncp /etc/nginx/templates/security-headers.conf /etc/nginx/conf.d/security-headers.conf']]],
   ['imagem Vite sem o COPY', 'dockerVite',
     [['COPY deploy/nginx/security-headers.conf /etc/nginx/templates/security-headers.conf\n', '']]],
   ['imagem Next sem o COPY', 'dockerNext',

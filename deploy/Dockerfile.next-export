@@ -33,9 +33,15 @@ RUN if [ -f next.config.export.mjs ]; then \
  && test -d out
 
 FROM nginx:1.27-alpine
+ARG NEXT_PUBLIC_ARARA_APP_SLUG
 RUN apk add --no-cache gettext
 COPY deploy/nginx/spa.conf.template /etc/nginx/templates/spa.conf.template
 COPY deploy/nginx/security-headers.conf /etc/nginx/templates/security-headers.conf
+# O entrypoint escolhe a política de conteúdo por este slug; todas vão na imagem
+# porque é uma só que serve cada front, e escolher em tempo de execução deixa a
+# imagem igual à que foi provada.
+ENV ARARA_APP_SLUG=${NEXT_PUBLIC_ARARA_APP_SLUG}
+COPY deploy/nginx/csp-*.conf /etc/nginx/templates/
 COPY deploy/nginx/docker-entrypoint.sh /docker-entrypoint-spa.sh
 RUN chmod +x /docker-entrypoint-spa.sh
 COPY --from=builder /src/out /usr/share/nginx/html
