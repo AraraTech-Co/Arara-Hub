@@ -100,6 +100,17 @@ function bateria(politicas, compose, cabecalhos, entrypoint, dockerNext, dockerV
     // Permitir `eval` devolve ao atacante a execução que o resto da política tira.
     if (/'unsafe-eval'/.test(csp[0])) f.push('unsafe-eval-na-politica:' + nome)
     if (!/object-src\s+'none'/.test(csp[0])) f.push('sem-object-src-none:' + nome)
+    // `media-src` e `frame-src` têm de ser EXPLÍCITOS. Faltando, caem no `default-src 'self'`, e
+    // `'self'` NÃO cobre `data:` — a inbox toca nota de voz e vídeo a partir do `data_uri` que a
+    // API devolve, e a prévia de anexo abre PDF em `<iframe>` e vídeo em `<video>` com URL que
+    // também pode ser `data:`. Foi exatamente o que faltou na primeira versão desta política.
+    for (const d of ['media-src', 'frame-src']) {
+      const m = csp[0].match(new RegExp(d + "\\s+([^;\"]+)"))
+      if (!m) { f.push('sem-' + d + ':' + nome); continue }
+      for (const fonte of ["'self'", 'data:', 'blob:', 'https://api.arara-tech.com']) {
+        if (!m[1].includes(fonte)) f.push(d + '-sem-' + fonte.replace(/[':]/g, '') + ':' + nome)
+      }
+    }
   }
 
   // ── REGRA ESTRUTURAL: o que o front carrega x o que a política dele deixa ──
@@ -176,6 +187,14 @@ const MUTACOES = [
     { 'csp-portal-cursos.conf': [["style-src 'self' 'unsafe-inline' https://fonts.googleapis.com", "style-src 'self' 'unsafe-inline'"]] }],
   ['o portal-horas perde a origem dos arquivos de fonte', 'politicas',
     { 'csp-portal-horas.conf': [["font-src 'self' data: https://fonts.gstatic.com", "font-src 'self' data:"]] }],
+  ['a política padrão perde o media-src e som/vídeo caem no default-src', 'politicas',
+    { 'csp-default.conf': [["media-src 'self' data: blob: https://api.arara-tech.com; ", '']] }],
+  ['a política padrão perde o frame-src e a prévia de PDF cai no default-src', 'politicas',
+    { 'csp-default.conf': [["frame-src 'self' data: blob: https://api.arara-tech.com; ", '']] }],
+  ['o media-src perde o data: que a inbox usa', 'politicas',
+    { 'csp-default.conf': [["media-src 'self' data: blob:", "media-src 'self' blob:"]] }],
+  ['o portal-cursos perde o frame-src', 'politicas',
+    { 'csp-portal-cursos.conf': [["frame-src 'self' data: blob: https://api.arara-tech.com; ", '']] }],
   ['a política padrão perde a API no connect-src', 'politicas',
     { 'csp-default.conf': [["connect-src 'self' https://api.arara-tech.com", "connect-src 'self'"]] }],
   ['a política padrão perde o always', 'politicas',
