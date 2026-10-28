@@ -174,9 +174,27 @@ async function roda() {
       const r = await handler(ctx)
       ok('criar-fase:' + nome, r.status === esperado, { nome, status: r.status, esperado })
     }
-    // O developer VÊ o módulo e não cria fase; o support com `planejamento`
-    // cria fase e não vê o módulo. As duas portas não coincidem.
-    ok('atual conhecido: ver-e-planejar-sao-portas-diferentes', true)
+    // As duas portas não coincidem, e isto é DERIVADO dos status, não afirmado:
+    // o developer vê o módulo e não cria fase; o support com `planejamento`
+    // cria fase e não vê o módulo. Um `ok(..., true)` aqui não poderia falhar,
+    // e asserção que não pode falhar não é prova de nada.
+    const porta = {}
+    for (const [quem, perfil] of [
+      ['developer', { role: 'developer', feature_grants: [] }],
+      ['support+planejamento', { role: 'support', feature_grants: ['planejamento'] }],
+    ]) {
+      const a = carregar('292 projetos GET /projetos')
+      const ma = montar({ perfil })
+      porta[quem + '/ver'] = (await a.handler(ma.ctx)).status
+
+      const b = carregar('302 projetos POST /projetos/:id/fases')
+      const mb = montar({ perfil, params: { id: 'p1' }, body: { nome: 'Fase 1' } })
+      porta[quem + '/planejar'] = (await b.handler(mb.ctx)).status
+    }
+    ok('atual conhecido: ver-e-planejar-sao-portas-diferentes',
+      porta['developer/ver'] === 200 && porta['developer/planejar'] === 403 &&
+      porta['support+planejamento/ver'] === 403 && porta['support+planejamento/planejar'] === 201,
+      porta)
   }
 
   // ───────────────────────────────────────────────────────────────────────────
@@ -536,6 +554,41 @@ async function roda() {
     const r = await handler(ctx)
     ok('projeto-inexistente-404', r.status === 404, r.status)
     ok('projeto-inexistente-nao-grava', escritasEmTicket(reg).length === 0, reg.update)
+  }
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // 21b. atual conhecido: o lote grava o que já passou antes de recusar
+  // ───────────────────────────────────────────────────────────────────────────
+  {
+    const { handler } = carregar('300 projetos POST /projetos/:id/cards')
+    const { ctx, reg } = montar({
+      params: { id: 'p1' }, body: { ticket_ids: ['t1', 't2', 't3'] },
+      tickets: [
+        card({ id: 't1', proj: '' }),
+        card({ id: 't2', proj: 'OUTRO' }),
+        card({ id: 't3', proj: '' }),
+      ],
+    })
+    const r = await handler(ctx)
+    const esc = escritasEmTicket(reg)
+    // `t1` já foi gravado quando `t2` derrubou a chamada, e `t3` não chegou a
+    // ser visto. A recusa é parcial: o 409 não desfaz o que passou antes dele.
+    ok('atual conhecido: lote-grava-antes-do-409', r.status === 409 && esc.length === 1 && esc[0].id === 't1', { status: r.status, esc })
+  }
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // 21c. atual conhecido: card inexistente é pulado em silêncio
+  // ───────────────────────────────────────────────────────────────────────────
+  {
+    const { handler } = carregar('300 projetos POST /projetos/:id/cards')
+    const { ctx, reg } = montar({
+      params: { id: 'p1' }, body: { ticket_ids: ['NAO_EXISTE', 't1'] },
+      tickets: [card({ id: 't1', proj: '' })],
+    })
+    const r = await handler(ctx)
+    // Sucesso com `vinculados: 1` de dois pedidos: quem chamou não tem como
+    // saber que um dos ids não existia.
+    ok('atual conhecido: card-inexistente-pulado-em-silencio', r.status === 200 && r.body.data.vinculados === 1 && r.body.data.ids.join(',') === 't1', r.body)
   }
 
   // ───────────────────────────────────────────────────────────────────────────
