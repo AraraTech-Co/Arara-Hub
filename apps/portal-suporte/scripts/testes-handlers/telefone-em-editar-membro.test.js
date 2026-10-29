@@ -15,8 +15,10 @@
 // não basta a função estar certa se a tela a chama de um jeito que perde o `+`.
 //
 // Roda com: node telefone-em-editar-membro.test.js
+const fs = require('node:fs')
+const path = require('node:path')
 const { ok, fim } = require('./_carregar.js')
-const { registrarTS, importarTela, semComentarios } = require('./_tela.js')
+const { registrarTS, importarTela, semComentarios, APP } = require('./_tela.js')
 
 registrarTS()
 
@@ -30,6 +32,147 @@ const ESPERADO = '+55 (11) 98765-4321'
     let estado = inicio
     for (const t of teclas) estado = U.mascaraTelefone(estado + t)
     return estado
+  }
+
+  // ── 0. A LIGAÇÃO do campo, executada ──────────────────────────────────────
+  //
+  // Os casos abaixo executam a máscara, e os do bloco 5 leem o texto do
+  // `onChange`. Nenhum dos dois pega uma ligação que CHAMA a máscara certa e
+  // depois estraga o resultado — por exemplo
+  // `setEditPhone(mascaraTelefone(e.target.value).replace(/\D/g, ''))`, que
+  // tem "mascaraTelefone", não tem "soDigitosTelefone", e volta a acumular 55.
+  //
+  // Então este bloco RECORTA do `users-manager.tsx` as expressões reais do
+  // `value=` e do `onChange=` do campo, compila as duas, e roda o laço que o
+  // navegador roda: mostrar → a pessoa digita no fim → onChange → novo estado.
+  // Se a ligação estragar o valor, o laço acumula e o caso reprova.
+  {
+    const fonte = fs.readFileSync(path.join(APP, '_components/admin/users-manager.tsx'), 'utf8')
+
+    // Âncora ESTÁVEL: o placeholder do campo. Ancorar em `value={editPhone}`
+    // seria procurar pela expressão que está sob teste — qualquer mudança nela
+    // viraria "não achei o campo" em vez de reprovar o comportamento.
+    const ANCORA = 'placeholder="(19) 99999-9999"'
+    const at = fonte.indexOf(ANCORA)
+    const abre = fonte.lastIndexOf('<Input', at)
+    const fecha = fonte.indexOf('/>', at)
+    ok('achou-o-elemento-do-telefone',
+      at > 0 && abre > 0 && fecha > at && fonte.split(ANCORA).length - 1 === 1,
+      { at, abre, fecha, ocorrencias: fonte.split(ANCORA).length - 1 })
+    const elemento = fonte.slice(abre, fecha)
+
+    const mValue = elemento.match(/value=\{([^}]*)\}/)
+    const mChange = elemento.match(/onChange=\{(\(e\)\s*=>\s*[\s\S]*?)\}\s*$/m)
+    ok('recortou-o-value-e-o-onChange', !!mValue && !!mChange,
+      { value: mValue && mValue[1], onChange: mChange && mChange[1] })
+
+    const exprValue = (mValue || [])[1] || ''
+    const exprChange = (mChange || [])[1] || ''
+
+    // As duas expressões compiladas com as MESMAS funções que a tela importa.
+    // Compilar e executar com as funções que a tela importa. Se a ligação usar
+    // outra coisa, o `new Function` lança — e aqui isso é FALHA NOMEADA, não
+    // morte do arquivo: um mutante que mata a bateria por exceção não diz qual
+    // regra quebrou.
+    let mostrar = null, aoDigitar = null, erroDeCompilar = ''
+    try {
+      mostrar = new Function('editPhone', 'mascaraTelefone', 'soDigitosTelefone',
+        'return (' + exprValue + ')')
+      aoDigitar = new Function('setEditPhone', 'mascaraTelefone', 'soDigitosTelefone',
+        'return (' + exprChange + ')')
+      // Uma volta seca, só para ver se as duas rodam com o que a tela importa.
+      const sonda = aoDigitar(() => {}, U.mascaraTelefone, U.soDigitosTelefone)
+      sonda({ target: { value: '1' } })
+      mostrar('', U.mascaraTelefone, U.soDigitosTelefone)
+    } catch (e) {
+      erroDeCompilar = String((e && e.message) || e)
+    }
+    ok('ligacao: as-expressoes-do-campo-executam', erroDeCompilar === '', erroDeCompilar)
+    if (erroDeCompilar) { fim(); return }
+
+    function campo(inicial) {
+      let estado = inicial
+      const set = (v) => { estado = v }
+      const onChange = aoDigitar(set, U.mascaraTelefone, U.soDigitosTelefone)
+      return {
+        mostrado: () => mostrar(estado, U.mascaraTelefone, U.soDigitosTelefone),
+        digitar(teclas) {
+          for (const tecla of teclas) {
+            onChange({ target: { value: this.mostrado() + tecla } })
+          }
+          return this.mostrado()
+        },
+        colar(texto) {
+          onChange({ target: { value: texto } })
+          return this.mostrado()
+        },
+        apagarUm() {
+          onChange({ target: { value: this.mostrado().slice(0, -1) } })
+          return this.mostrado()
+        },
+        estado: () => estado,
+      }
+    }
+
+    // Digitar tecla a tecla, no campo de verdade.
+    {
+      const c = campo('')
+      const fim_ = c.digitar('11987654321')
+      ok('ligacao: digitar-tecla-a-tecla', fim_ === ESPERADO, fim_)
+      ok('ligacao: sem-55-a-mais-no-fim', !fim_.includes('(55)'), fim_)
+    }
+    // Cada passo intermediário: é onde o defeito aparecia na 2ª tecla.
+    {
+      const c = campo('')
+      const passos = []
+      for (const tecla of '11987654321') {
+        c.digitar(tecla)
+        passos.push(c.mostrado())
+      }
+      ok('ligacao: nenhum-passo-ganha-um-55', passos.filter((x) => x.includes('(55)')).length === 0,
+        passos)
+      ok('ligacao: o-campo-nao-congela', new Set(passos).size === passos.length, passos)
+    }
+    // Colar, com e sem DDI.
+    {
+      ok('ligacao: colar-o-numero', campo('').colar('11987654321') === ESPERADO)
+      ok('ligacao: colar-com-ddi', campo('').colar('5511987654321') === ESPERADO)
+      ok('ligacao: colar-do-whatsapp', campo('').colar('+55 11 98765-4321') === ESPERADO)
+    }
+    // Apagar e corrigir no meio.
+    {
+      const c = campo('')
+      c.digitar('11987654321')
+      c.apagarUm()
+      const corrigido = c.digitar('9')
+      ok('ligacao: apagar-o-ultimo-e-digitar', corrigido === '+55 (11) 98765-4329', corrigido)
+      const d = campo('')
+      d.digitar('11987654321')
+      for (let i = 0; i < 20; i++) d.apagarUm()
+      ok('ligacao: apagar-tudo-esvazia', d.mostrado() === '', d.mostrado())
+    }
+    // O que vai ao servidor sai do ESTADO, não do que está na tela.
+    {
+      const c = campo('')
+      c.digitar('11987654321')
+      const digitos = String(c.estado()).replace(/\D/g, '')
+      ok('ligacao: o-estado-rende-13-digitos', digitos === '5511987654321', digitos)
+    }
+    // E o carregamento do membro: o primeiro render não pode mostrar cru.
+    {
+      const mLoad = fonte.match(/setEditPhone\(([^\n]*u\.phone[^\n]*)\)\s*$/m)
+      ok('recortou-o-carregamento', !!mLoad, mLoad && mLoad[1])
+      const carregar = new Function('u', 'mascaraTelefone', 'soDigitosTelefone',
+        'return (' + ((mLoad || [])[1] || 'u.phone') + ')')
+      const vindo = carregar({ phone: '5511987654321' }, U.mascaraTelefone, U.soDigitosTelefone)
+      ok('ligacao: membro-salvo-entra-formatado',
+        mostrar(vindo, U.mascaraTelefone, U.soDigitosTelefone) === ESPERADO,
+        { vindo, mostrado: mostrar(vindo, U.mascaraTelefone, U.soDigitosTelefone) })
+      // E digitar DEPOIS de carregar continua certo.
+      const c = campo(vindo)
+      c.apagarUm()
+      ok('ligacao: editar-depois-de-carregar', c.digitar('9') === '+55 (11) 98765-4329', c.mostrado())
+    }
   }
 
   // ── 1. Digitar tecla a tecla ──────────────────────────────────────────────
