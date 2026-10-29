@@ -33,8 +33,6 @@ export interface CreateUserPayload {
 export const adminUsersApi = {
   list: () =>
     api.get<ApiList<AdminUser>>('/api/admin/users'),
-  create: (body: CreateUserPayload) =>
-    api.post<ApiOne<AdminUser>>('/api/admin/users', body),
   update: (id: string, body: Partial<CreateUserPayload>) =>
     api.patch<ApiOne<AdminUser>>(`/api/admin/users/${id}`, body),
   delete: (id: string) =>

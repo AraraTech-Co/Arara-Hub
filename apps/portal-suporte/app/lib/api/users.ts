@@ -46,17 +46,6 @@ export interface RecoveryCode {
   code: string
 }
 
-export interface CreateUserPayload {
-  email: string
-  password: string
-  full_name?: string | null
-  role: UserRole
-  position?: StaffPosition | null
-  company_id?: string | null
-  unit_id?: string | null
-  expires_at?: string | null
-}
-
 export interface UpdateUserPayload {
   full_name?: string | null
   role?: UserRole
@@ -81,10 +70,6 @@ export const usersApi = {
   /** GET /api/profiles — lista todos os usuários */
   list: () =>
     api.get<{ data: UserProfile[] }>('/api/profiles'),
-
-  /** POST /api/admin/users — cria novo usuário */
-  create: (data: CreateUserPayload) =>
-    api.post<{ data: UserProfile }>('/api/admin/users', data),
 
   /** PUT /api/profiles/[id] — atualiza dados do usuário */
   update: (id: string, data: UpdateUserPayload) =>
