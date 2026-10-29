@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { formatDateShort, mascaraTelefone, soDigitosTelefone } from '@/lib/utils'
+import { formatDateShort, mascaraTelefone } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -706,7 +706,7 @@ export function UsersManager({ audience }: Props) {
                                 setEditName(u.full_name ?? '')
                                 setEditRole(u.role)
                                 setEditPosition(u.position ?? '')
-                                setEditPhone(u.phone ?? '')
+                                setEditPhone(mascaraTelefone(u.phone ?? ''))
                                 setEditCompanyId(u.company_id ?? '')
                                 setEditUnitId(u.unit_id ?? '')
                                 setEditExpiresAt(u.expires_at ? u.expires_at.split('T')[0] : '')
@@ -1042,8 +1042,8 @@ export function UsersManager({ audience }: Props) {
               <Input
                 inputMode="numeric"
                 placeholder="(19) 99999-9999"
-                value={mascaraTelefone(editPhone)}
-                onChange={(e) => setEditPhone(soDigitosTelefone(e.target.value))}
+                value={editPhone}
+                onChange={(e) => setEditPhone(mascaraTelefone(e.target.value))}
               />
               <p className="text-xs text-muted-foreground">
                 Usado para recuperar a senha: o código vai para este número, não para o que a
