@@ -187,6 +187,11 @@ export const PORTA_ANTIGA_DE_PROJETOS = true
 export function canVerProjetos(actor: GrantActor): boolean {
   if (hasMinLevel(actor.role, 'admin')) return true
   if (hasGrant(actor, 'projetos')) return true
+  // Quem PLANEJA vê. Espelha `_podeVer` do servidor, e vem ANTES da conferência
+  // da transição de propósito: vale com a porta antiga ligada e depois de ela
+  // ser desligada. Sem isto, quem tem o grant `planejamento` sem nível de
+  // developer criava atividade e não via nenhuma.
+  if (hasGrant(actor, 'planejamento')) return true
   if (!PORTA_ANTIGA_DE_PROJETOS) return false
   return hasMinLevel(actor.role, 'developer') || hasGrant(actor, 'qa')
 }

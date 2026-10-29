@@ -95,6 +95,15 @@ function _podeVer(eu) {
   if (eu.servico) return true;
   if (eu.nivel >= _RANK.admin) return true;
   if (eu.grants.indexOf("projetos") >= 0) return true;
+  // Quem PLANEJA vê. Decisão do Leonardo (29/10): "libera a lista".
+  //
+  // Sem isto, quem tem o grant `planejamento` sem nível de developer CRIA e
+  // EDITA atividade (as portas do POST e do PATCH) e não consegue LISTAR
+  // nenhuma, porque a 507 passa só por `_podeVer`. Meia porta.
+  //
+  // Vem ANTES da conferência da transição, de propósito: vale com a porta
+  // antiga ligada e depois de ela ser desligada.
+  if (eu.grants.indexOf("planejamento") >= 0) return true;
   if (!_PORTA_ANTIGA_DE_PROJETOS) return false;
   return eu.nivel >= _RANK.developer || eu.grants.indexOf("qa") >= 0;
 }
