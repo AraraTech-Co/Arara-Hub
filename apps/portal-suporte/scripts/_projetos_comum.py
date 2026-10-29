@@ -76,11 +76,27 @@ async function _perfilDe(ctx) {
   if (!Array.isArray(grants)) grants = [];
   return { id: quem, nivel: _RANK[_canonico(p ? p.role : "")] || 0, grants: grants, servico: false };
 }
-// Ver: quem já vê o Kanban Dev. Planejar: admin ou o grant `planejamento` —
-// existe para liberar uma pessoa a planejar sem promovê-la a administradora do
-// portal, no mesmo desenho de `code_review` e `qa`.
+// Ver o módulo: decisão de 28/10 — é o campo "Projetos" em Editar membro, sem
+// concessão automática por cargo e sem o grant de QA valendo como passe.
+//
+// A troca não é feita de uma vez. Virar a porta no deploy tiraria o módulo de
+// todo developer e de todo QA no mesmo instante, antes de existir a lista de
+// quem recebe o campo. Enquanto `_PORTA_ANTIGA_DE_PROJETOS` for `true`, a porta
+// antiga vale AO LADO da nova: ninguém perde acesso, e quem já recebeu o campo
+// entra por ele. No dia da troca ela vira `false`, aqui e na tela
+// (PORTA_ANTIGA_DE_PROJETOS, em app/lib/auth/feature-grants.ts), e passam a
+// valer só admin/master por nível e o grant `projetos`.
+//
+// Planejar: admin ou o grant `planejamento` — existe para liberar uma pessoa a
+// planejar sem promovê-la a administradora do portal, no mesmo desenho de
+// `code_review` e `qa`. Continua sendo outra porta.
+var _PORTA_ANTIGA_DE_PROJETOS = true;
 function _podeVer(eu) {
-  return eu.servico || eu.nivel >= _RANK.developer || eu.grants.indexOf("qa") >= 0;
+  if (eu.servico) return true;
+  if (eu.nivel >= _RANK.admin) return true;
+  if (eu.grants.indexOf("projetos") >= 0) return true;
+  if (!_PORTA_ANTIGA_DE_PROJETOS) return false;
+  return eu.nivel >= _RANK.developer || eu.grants.indexOf("qa") >= 0;
 }
 function _podePlanejar(eu) {
   return eu.servico || eu.nivel >= _RANK.admin || eu.grants.indexOf("planejamento") >= 0;
