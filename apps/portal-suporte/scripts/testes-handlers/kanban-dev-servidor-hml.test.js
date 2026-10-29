@@ -284,5 +284,82 @@ function montar({ perfil, params, body, cards }) {
     }
   }
 
+  // ── 7. CONTRATO: o corpo real da rota nova atravessa a função da tela ────
+  //
+  // No padrão do conserto da página do projeto: nada de corpo inventado. O
+  // handler roda, devolve, e o que a tela consome passa pela mesma função que
+  // ela usa. Foi a falta desse atravessamento que derrubou a página do projeto.
+  {
+    const livre = L.SERVIDORES_HML[1]
+
+    // Troca de verdade: a tela tem de recarregar.
+    {
+      const h = carregarHandler(TROCAR)
+      const m = montar({
+        params: { id: 'c1' }, body: { environment: livre },
+        cards: [card({ id: 'c1', status: 'em_testes', env: L.SERVIDORES_HML[0] })],
+      })
+      const r = await h(m.ctx)
+      ok('contrato:troca-responde-com-mudou-true', r.body.mudou === true, r.body)
+      ok('contrato:a-tela-recarrega-depois-de-trocar', L.trocaMudouAlgo(r.body) === true, r.body)
+      ok('contrato:o-corpo-traz-o-card-atualizado',
+        !!r.body.data && String(r.body.data.environment) === livre, r.body.data)
+    }
+
+    // Valor igual: o servidor recusa regravar, e a tela NÃO recarrega.
+    {
+      const h = carregarHandler(TROCAR)
+      const m = montar({
+        params: { id: 'c1' }, body: { environment: L.SERVIDORES_HML[0] },
+        cards: [card({ id: 'c1', status: 'em_testes', env: L.SERVIDORES_HML[0] })],
+      })
+      const r = await h(m.ctx)
+      ok('contrato:valor-igual-responde-mudou-false', r.body.mudou === false, r.body)
+      ok('contrato:a-tela-nao-recarrega-sem-troca', L.trocaMudouAlgo(r.body) === false, r.body)
+    }
+
+    // E o que a função faz com forma inesperada: recarrega, em vez de mostrar
+    // dado velho achando que nada mudou.
+    for (const [nome, corpo] of [
+      ['corpo-nulo', null], ['corpo-texto', 'erro'], ['sem-a-chave', { success: true }],
+      ['mudou-de-outro-tipo', { mudou: 'sim' }],
+    ]) {
+      ok('contrato:forma-estranha-manda-recarregar:' + nome,
+        L.trocaMudouAlgo(corpo) === true, { nome, corpo })
+    }
+  }
+
+  // ── 8. A tela respeita as mesmas regras ──────────────────────────────────
+  {
+    const { semComentarios } = require('./_tela.js')
+    const seletor = semComentarios('_components/kanban-dev/trocar-servidor-hml.tsx')
+    ok('o-seletor-se-esconde-fora-das-colunas',
+      /if \(!travaHml\(card\.status\)\) return null/.test(seletor), null)
+    ok('o-seletor-oferece-sem-servidor', seletor.includes('value={SEM_SERVIDOR_HML}'), null)
+    ok('o-seletor-nao-conta-sem-servidor-como-ocupado',
+      /env !== SEM_SERVIDOR_HML\) ocupados\.add/.test(seletor), null)
+    ok('o-salvar-so-habilita-quando-muda',
+      /disabled=\{!podeEditar \|\| !mudou \|\| salvando\}/.test(seletor), null)
+    ok('o-seletor-consome-o-mudou-pela-funcao', seletor.includes('trocaMudouAlgo(r)'), null)
+    ok('o-erro-fica-na-tela-e-a-escolha-continua',
+      /catch \(e\) \{[\s\S]{0,200}setErro\(/.test(seletor) && !/catch[\s\S]{0,120}aoTrocar\(\)/.test(seletor),
+      null)
+
+    const painel = semComentarios('_components/kanban-dev/servidores-hml-panel.tsx')
+    ok('o-painel-ignora-sem-servidor',
+      /if \(env === SEM_SERVIDOR_HML\) continue/.test(painel), null)
+
+    const pagina = semComentarios('(admin)/admin/kanban-dev/page.tsx')
+    ok('o-dialogo-de-mover-oferece-sem-servidor',
+      /<option value=\{SEM_SERVIDOR_HML\}>/.test(pagina), null)
+    ok('o-dialogo-aceita-a-escolha-nova', /ehEscolhaDeHml\(servidorHml\)/.test(pagina), null)
+    ok('a-etiqueta-nao-escreve-HML-sem-servidor',
+      /card\.environment === SEM_SERVIDOR_HML\s*\?\s*labelServidorHml\(SEM_SERVIDOR_HML\)/.test(pagina),
+      null)
+    ok('o-detalhe-nao-chama-sem-servidor-de-ocupado',
+      /travaHml\(card\.status\) && card\.environment !== SEM_SERVIDOR_HML/.test(pagina), null)
+    ok('o-detalhe-mostra-o-seletor', pagina.includes('<TrocarServidorHml'), null)
+  }
+
   fim()
 })()

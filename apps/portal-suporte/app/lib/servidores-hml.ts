@@ -76,6 +76,26 @@ export function labelServidorHml(id: string): string {
     .join(' ')
 }
 
+/**
+ * A troca mudou alguma coisa?
+ *
+ * A rota responde `mudou: false` quando o valor escolhido é igual ao gravado —
+ * ela se recusa a regravar, para não mexer no carimbo nem encher o histórico de
+ * troca que não aconteceu. A tela usa isto para não recarregar o quadro sem
+ * motivo.
+ *
+ * Existe como função pura porque é o ponto por onde o teste de contrato passa o
+ * corpo REAL do handler. Foi a falta desse atravessamento que derrubou a página
+ * do projeto numa entrega anterior: havia teste das duas pontas e nenhum da
+ * junção. Ausente ou de outro tipo conta como "mudou", para a tela recarregar
+ * em vez de mostrar dado velho.
+ */
+export function trocaMudouAlgo(resposta: unknown): boolean {
+  if (!resposta || typeof resposta !== 'object') return true
+  const m = (resposta as { mudou?: unknown }).mudou
+  return m !== false
+}
+
 export function travaHml(status: string | null | undefined): boolean {
   return (STATUS_TRAVAM_HML as readonly string[]).includes(String(status || ''))
 }
