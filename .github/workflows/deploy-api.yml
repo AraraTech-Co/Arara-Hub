@@ -13,7 +13,10 @@ on:
 
 concurrency:
   group: deploy-api
-  cancel-in-progress: true
+  # O deploy da API NAO pode ser interrompido no meio: ele remove o container
+  # antigo antes de subir o novo, e morrer entre as duas coisas deixa a API
+  # fora. Com `false`, o deploy seguinte espera na fila.
+  cancel-in-progress: false
 
 jobs:
   deploy:
@@ -67,10 +70,36 @@ jobs:
           docker build -t "\$IMAGE" .
 
           ENV_FILE=prd.env
-          if docker inspect arara-platform-prd >/dev/null 2>&1; then
-            docker inspect arara-platform-prd --format '{{range .Config.Env}}{{println .}}{{end}}' > "\$ENV_FILE"
-          fi
+          # A CONFIGURACAO DO SERVIDOR E A FONTE.
+          #
+          # Antes, o env era extraido do container POR CIMA deste arquivo:
+          # `docker inspect ... > prd.env`. Redirecionamento trunca o destino
+          # antes de escrever, entao o arquivo ficava vazio no instante em que o
+          # comando comecava — e qualquer interrupcao ali deixava a configuracao
+          # em branco, com a API subindo sem segredo nenhum.
+          #
+          # Agora: copia rotativa antes de qualquer gravacao, extracao do
+          # container para um arquivo TEMPORARIO, e dele so entram as chaves que
+          # faltam no prd.env. O que esta no servidor nunca e sobrescrito.
           touch "\$ENV_FILE"
+          cp "\$ENV_FILE" "\$ENV_FILE.bak"
+
+          if docker inspect arara-platform-prd >/dev/null 2>&1; then
+            TMP_ENV="\$(mktemp)"
+            docker inspect arara-platform-prd --format '{{range .Config.Env}}{{println .}}{{end}}' > "\$TMP_ENV"
+            while IFS= read -r linha; do
+              case "\$linha" in
+                *=*) ;;
+                *) continue ;;
+              esac
+              chave="\${linha%%=*}"
+              [ -n "\$chave" ] || continue
+              if ! grep -q "^\${chave}=" "\$ENV_FILE"; then
+                printf '%s\\n' "\$linha" >> "\$ENV_FILE"
+              fi
+            done < "\$TMP_ENV"
+            rm -f "\$TMP_ENV"
+          fi
 
           ensure_env() {
             local key="\$1" val="\$2"
@@ -106,6 +135,28 @@ jobs:
             sed -i "s|^SANDBOX_FETCH_ALLOWLIST_BY_APP=\\(.*\\)|SANDBOX_FETCH_ALLOWLIST_BY_APP=portal-suporte:mmg.whatsapp.net,\\1|" "\$ENV_FILE"
           fi
 
+          # TRAVA ANTES DE REMOVER O CONTAINER.
+          #
+          # Sem estas tres chaves a API nao sobe, e remover o container antigo
+          # antes de descobrir isso troca "deploy falhou" por "API fora". O nome
+          # da chave vai na mensagem; o valor, nunca.
+          faltando=""
+          for chave in DATABASE_URL JWT_SECRET APP_SECRETS_KEY; do
+            # `|| true` porque o script roda com `set -euo pipefail`: grep que nao
+            # acha a chave sai 1, e isso mataria o deploy AQUI, antes de dizer
+            # qual chave falta — o oposto do que esta trava existe para fazer.
+            valor="\$(grep "^\${chave}=" "\$ENV_FILE" | head -1 | cut -d= -f2- || true)"
+            if [ -z "\$valor" ]; then
+              faltando="\$faltando \$chave"
+            fi
+          done
+          if [ -n "\$faltando" ]; then
+            echo "A configuracao de producao esta incompleta; o container antigo NAO foi removido." >&2
+            echo "Falta(m) em \$DIR/\$ENV_FILE:\$faltando" >&2
+            echo "Ha copia em \$ENV_FILE.bak" >&2
+            exit 1
+          fi
+
           docker rm -f arara-platform-prd
           docker run -d \\
             --name arara-platform-prd \\
@@ -115,7 +166,22 @@ jobs:
             --env-file "\$ENV_FILE" \\
             "\$IMAGE"
 
-          sleep 3
+          # Espera com tentativas, na mesma ordem de grandeza do healthcheck do
+          # compose. Um `sleep 3` com um curl so dava "falhou" sem dizer por que,
+          # e reprovava deploy que teria subido em 10 segundos.
+          subiu=""
+          for tentativa in \$(seq 1 20); do
+            if curl -sf http://127.0.0.1:4100/health >/dev/null 2>&1; then
+              subiu="sim"
+              break
+            fi
+            sleep 2
+          done
+          if [ -z "\$subiu" ]; then
+            echo "A API nao respondeu em ~40s. Ultimas linhas do container:" >&2
+            docker logs --tail 30 arara-platform-prd 2>&1 || true
+            exit 1
+          fi
           curl -sf http://127.0.0.1:4100/health
           echo
           docker ps --filter name=arara-platform-prd --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}'
