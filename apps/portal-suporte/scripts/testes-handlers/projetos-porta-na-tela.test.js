@@ -45,9 +45,13 @@ registerHooks({
     if (url.includes(MARCA_DA_TROCA)) {
       const arq = decodeURIComponent(url.split('?')[0].replace('file://', ''))
       const fonte = fs.readFileSync(arq, 'utf8')
+      // Sem `throw`: se a linha não casar, o módulo é servido como está e a
+      // asserção nomeada `a-linha-da-constante-e-unica-e-esta-true` reprova
+      // dizendo o porquê. Lançar aqui mataria o arquivo de teste antes de
+      // qualquer caso rodar, e a saída não diria qual regra quebrou.
       const de = 'export const PORTA_ANTIGA_DE_PROJETOS = true'
       if (fonte.split(de).length - 1 !== 1) {
-        throw new Error('a linha da constante não é única em ' + arq)
+        return { format: 'module-typescript', source: fonte, shortCircuit: true }
       }
       return {
         // `module-typescript`: é o Node que apaga os tipos, o mesmo caminho do
@@ -110,6 +114,14 @@ const DESLIGADA = await import(pathToFileURL(CAMINHO).href + '?' + MARCA_DA_TROC
 {
   ok('a-constante-da-transicao-vem-ligada', G.PORTA_ANTIGA_DE_PROJETOS === true,
     G.PORTA_ANTIGA_DE_PROJETOS)
+  // O que a variante do dia da troca depende para existir. Dito por asserção
+  // e não por exceção: assim a falha nomeia a regra em vez de matar o arquivo.
+  {
+    const fonte = fs.readFileSync(CAMINHO, 'utf8')
+    const linha = 'export const PORTA_ANTIGA_DE_PROJETOS = true'
+    ok('a-linha-da-constante-e-unica-e-esta-true',
+      fonte.split(linha).length - 1 === 1, fonte.split(linha).length - 1)
+  }
   const esperado = {
     'master': true, 'admin': true,
     'user+projetos': true, 'developer+projetos': true,
@@ -179,6 +191,27 @@ const DESLIGADA = await import(pathToFileURL(CAMINHO).href + '?' + MARCA_DA_TROC
   const divergem = Object.keys(servidor)
     .filter((quem) => G.canVerProjetos(QUEM[quem]) !== servidor[quem])
   ok('tela-e-servidor-nao-divergem', divergem.length === 0, divergem)
+}
+
+// ── 4b. O espelho do catálogo nos handlers de arquivos ──────────────────────
+//
+// Os handlers 490a1–a4 têm um `GRANTS_VALIDOS` que se declara espelho deste
+// catálogo: grant fora da lista é RECUSADO no POST, porque trancaria o arquivo
+// para todos menos admin. Espelho que fica para trás não acusa nada sozinho —
+// o grant novo simplesmente não pode ser usado, e ninguém descobre por que.
+{
+  const gerado = fs.readFileSync(
+    path.resolve(__dirname, '../../../../packages/api/src/apps/portal-suporte/routes.generated.ts'),
+    'utf8')
+  const achados = [...gerado.matchAll(/var GRANTS_VALIDOS = \[([^\]]*)\]/g)]
+    .map((m) => m[1].split(',').map((s) => s.trim().replace(/\\?"/g, '')))
+  ok('achou-os-espelhos-nos-handlers-de-arquivos', achados.length === 4, achados.length)
+  const doCatalogo = G.FEATURE_GRANTS.map((g) => g.key).sort().join(',')
+  const divergentes = achados
+    .map((lista, i) => [i, lista.slice().sort().join(',')])
+    .filter(([, lista]) => lista !== doCatalogo)
+  ok('o-espelho-do-servidor-tem-as-mesmas-chaves-do-catalogo',
+    divergentes.length === 0, { doCatalogo, divergentes })
 }
 
 // ── 5. O menu usa a régua, e não uma cópia dela ─────────────────────────────
