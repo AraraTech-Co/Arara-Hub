@@ -262,7 +262,7 @@ async function roda() {
     const b = carregar(CRIAR)
     const mb = montar({ params: { id: 'p1' }, body: { titulo: 'Nova', projeto_id: 'OUTRO' } })
     const rb = await b.handler(mb.ctx)
-    ok('criar-ignora-projeto_id-do-corpo', rb.body.data.projeto_id === 'p1', rb.body.data)
+    ok('criar-ignora-projeto_id-do-corpo', (rb.body.data || {}).projeto_id === 'p1', rb.body.data)
 
     // Atividade de outro projeto não é editável por este.
     const c = carregar(EDITAR)
@@ -326,7 +326,7 @@ async function roda() {
     const b = carregar(CRIAR)
     const mb = montar({ body: { titulo: 'x'.repeat(300) } })
     const rb = await b.handler(mb.ctx)
-    ok('titulo-cortado-em-200', rb.body.data.titulo.length === 200, rb.body.data.titulo.length)
+    ok('titulo-cortado-em-200', (rb.body.data || {}).titulo.length === 200, (rb.body.data || {}).titulo.length)
   }
 
   // ───────────────────────────────────────────────────────────────────────────
@@ -381,23 +381,23 @@ async function roda() {
     const a = carregar(EDITAR)
     const ma = montar({ params: { id: 'p1', aid: 'a1' }, body: { status: 'deploy_feito' }, atividades: [ativ({ id: 'a1' })] })
     const ra = await a.handler(ma.ctx)
-    ok('concluir-carimba', ra.body.data.concluida_em === AGORA, ra.body.data)
+    ok('concluir-carimba', (ra.body.data || {}).concluida_em === AGORA, ra.body.data)
 
     const b = carregar(EDITAR)
     const mb = montar({ params: { id: 'p1', aid: 'a1' }, body: { status: 'backlog' }, atividades: [ativ({ id: 'a1', status: 'deploy_feito', concluida: '2026-02-05T00:00:00.000Z' })] })
     const rb = await b.handler(mb.ctx)
-    ok('reabrir-limpa-o-carimbo', rb.body.data.concluida_em === '', rb.body.data)
+    ok('reabrir-limpa-o-carimbo', (rb.body.data || {}).concluida_em === '', rb.body.data)
 
     const c = carregar(EDITAR)
     const mc = montar({ params: { id: 'p1', aid: 'a1' }, body: { status: 'cancelada' }, atividades: [ativ({ id: 'a1' })] })
     const rc = await c.handler(mc.ctx)
-    ok('cancelar-carimba', rc.body.data.cancelada_em === AGORA && rc.body.data.concluida_em === '', rc.body.data)
+    ok('cancelar-carimba', (rc.body.data || {}).cancelada_em === AGORA && (rc.body.data || {}).concluida_em === '', rc.body.data)
 
     // Concluir duas vezes não reescreve o primeiro carimbo.
     const d = carregar(EDITAR)
     const md = montar({ params: { id: 'p1', aid: 'a1' }, body: { status: 'deploy_feito' }, atividades: [ativ({ id: 'a1', status: 'deploy_feito', concluida: '2026-02-05T00:00:00.000Z' })] })
     const rd = await d.handler(md.ctx)
-    ok('concluir-de-novo-mantem-o-carimbo', rd.body.data.concluida_em === '2026-02-05T00:00:00.000Z', rd.body.data)
+    ok('concluir-de-novo-mantem-o-carimbo', (rd.body.data || {}).concluida_em === '2026-02-05T00:00:00.000Z', rd.body.data)
   }
 
   // ───────────────────────────────────────────────────────────────────────────
@@ -580,19 +580,19 @@ async function roda() {
     const a = carregar(LISTAR)
     const ma = montar({ atividades, query: { fase_id: 'f1' } })
     const ra = await a.handler(ma.ctx)
-    ok('filtro-por-fase-recorta', ra.body.data.atividades.map((x) => x.id).join(',') === 'a,b', ra.body.data.atividades.map((x) => x.id))
-    ok('filtro-nao-muda-o-resumo', ra.body.data.resumo.total === 4 && ra.body.data.resumo.progresso === 25, ra.body.data.resumo)
+    ok('filtro-por-fase-recorta', (ra.body.data || {}).atividades.map((x) => x.id).join(',') === 'a,b', (ra.body.data || {}).atividades.map((x) => x.id))
+    ok('filtro-nao-muda-o-resumo', (ra.body.data || {}).resumo.total === 4 && (ra.body.data || {}).resumo.progresso === 25, (ra.body.data || {}).resumo)
 
     const b = carregar(LISTAR)
     const mb = montar({ atividades, query: { fase_id: '' } })
     const rb = await b.handler(mb.ctx)
-    ok('filtro-fase-vazia-traz-sem-fase', rb.body.data.atividades.map((x) => x.id).join(',') === 'd', rb.body.data.atividades.map((x) => x.id))
+    ok('filtro-fase-vazia-traz-sem-fase', (rb.body.data || {}).atividades.map((x) => x.id).join(',') === 'd', (rb.body.data || {}).atividades.map((x) => x.id))
 
     const c = carregar(LISTAR)
     const mc = montar({ atividades, query: { status: 'deploy_feito' } })
     const rc = await c.handler(mc.ctx)
-    ok('filtro-por-status-recorta', rc.body.data.atividades.map((x) => x.id).join(',') === 'a', rc.body.data.atividades.map((x) => x.id))
-    ok('filtro-status-nao-muda-o-resumo', rc.body.data.resumo.total === 4, rc.body.data.resumo)
+    ok('filtro-por-status-recorta', (rc.body.data || {}).atividades.map((x) => x.id).join(',') === 'a', (rc.body.data || {}).atividades.map((x) => x.id))
+    ok('filtro-status-nao-muda-o-resumo', (rc.body.data || {}).resumo.total === 4, (rc.body.data || {}).resumo)
   }
 
   // ───────────────────────────────────────────────────────────────────────────
@@ -605,7 +605,7 @@ async function roda() {
     const a = carregar(LISTAR)
     const ma = montar({ atividades: muitas })
     const ra = await a.handler(ma.ctx)
-    ok('T4-le-as-1200', ra.body.data.resumo.total === 1200 && ra.body.data.atividades.length === 1200, { resumo: ra.body.data.resumo, lidas: ra.body.data.atividades.length })
+    ok('T4-le-as-1200', (ra.body.data || {}).resumo.total === 1200 && (ra.body.data || {}).atividades.length === 1200, { resumo: (ra.body.data || {}).resumo, lidas: (ra.body.data || {}).atividades.length })
     const paginas = ma.reg.findMany.filter((f) => f.modelo === 'ProjetoAtividade')
     ok('T4-pagina-de-500-com-offset', paginas.length === 3 && paginas.every((p) => p.filtro.limit === 500) && paginas.map((p) => p.filtro.offset).join(',') === '0,500,1000', paginas.map((p) => p.filtro))
 
@@ -627,9 +627,9 @@ async function roda() {
       }),
     })
     const rb = await b.handler(mb.ctx)
-    const ids = rb.body.data.atividades.map((x) => x.id)
+    const ids = (rb.body.data || {}).atividades.map((x) => x.id)
     ok('T4-desduplica-por-id', ids.filter((x) => x === 'repetida').length === 1, { repetidas: ids.filter((x) => x === 'repetida').length, total: ids.length })
-    ok('T4-total-sem-a-repetida', rb.body.data.resumo.total === 500, rb.body.data.resumo)
+    ok('T4-total-sem-a-repetida', (rb.body.data || {}).resumo.total === 500, (rb.body.data || {}).resumo)
 
     // O LIMITE, medido e não prometido: linha PULADA na virada de página não é
     // recuperável aqui. Esta é a simulação do que a camada pode fazer em empate
@@ -656,7 +656,7 @@ async function roda() {
       }),
     })
     const rd = await d.handler(md.ctx)
-    ok('atual conhecido: linha-pulada-na-virada-nao-e-recuperada', rd.status === 200 && rd.body.data.resumo.total === 501, { status: rd.status, resumo: rd.body && rd.body.data && rd.body.data.resumo })
+    ok('atual conhecido: linha-pulada-na-virada-nao-e-recuperada', rd.status === 200 && (rd.body.data || {}).resumo.total === 501, { status: rd.status, resumo: rd.body && rd.body.data && (rd.body.data || {}).resumo })
 
     // Acima do teto: RECUSA, e sem total nenhum na resposta.
     const c = carregar(LISTAR)
@@ -838,6 +838,41 @@ async function roda() {
       ok('2b: atividade-sem-responsavel-nao-e-de-todos', r.status === 403, { status: r.status, body: r.body })
       ok('2b: atividade-sem-responsavel-nao-grava', reg.update.length === 0, reg.update)
     }
+    // O responsável mandando o PRÓPRIO id, sem mudar nada, tem de conseguir
+    // salvar: o formulário manda o objeto inteiro, e recusar aqui o deixaria
+    // sem gravar nada na atividade dele — que é o que a porta de cima acabou
+    // de permitir. Mesma lição da permissão extra em Editar membro.
+    {
+      const { handler } = carregar(EDITAR)
+      const { ctx, reg } = montar({
+        params: { id: 'p1', aid: 'a1' },
+        body: { responsavel_id: 'u1', status: 'em_desenvolvimento' }, corpoCru: true,
+        perfil: { role: 'developer', feature_grants: [] },
+        atividades: [Object.assign(ativ({ id: 'a1' }), { responsavel_id: 'u1' })],
+      })
+      const r = await handler(ctx)
+      const gravado = (reg.update[0] || {}).dados || {}
+      ok('2b: responsavel-manda-o-proprio-id-e-grava-o-resto',
+        r.status === 200 && gravado.status === 'em_desenvolvimento', { status: r.status, gravado })
+      // E o valor igual NÃO entra na gravação: gravar o mesmo dado mexeria no
+      // `updated_at` e levaria o próximo PATCH a um 409 sem motivo.
+      ok('2b: responsavel-igual-nao-entra-na-gravacao',
+        gravado.responsavel_id === undefined, gravado)
+    }
+    // Mas mandar OUTRO id continua recusado.
+    {
+      const { handler } = carregar(EDITAR)
+      const { ctx, reg } = montar({
+        params: { id: 'p1', aid: 'a1' },
+        body: { responsavel_id: 'u9', status: 'em_desenvolvimento' }, corpoCru: true,
+        perfil: { role: 'developer', feature_grants: [] },
+        atividades: [Object.assign(ativ({ id: 'a1' }), { responsavel_id: 'u1' })],
+      })
+      const r = await handler(ctx)
+      ok('2b: responsavel-mandando-outro-id-recusa', r.status === 403, { status: r.status, body: r.body })
+      ok('2b: responsavel-mandando-outro-id-nao-grava', reg.update.length === 0, reg.update)
+    }
+
     // Trocar o RESPONSÁVEL é só de quem planeja (protótipo declarado).
     for (const [nome, perfil, esperado] of [
       ['quem-planeja-troca-o-responsavel', { role: 'admin', feature_grants: [] }, 200],

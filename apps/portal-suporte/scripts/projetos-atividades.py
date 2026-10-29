@@ -562,15 +562,26 @@ async function handler(ctx) {
     antes.ordem = a.ordem || 0; mudou.ordem = Math.round(ordem);
   }
   if (b.responsavel_id !== undefined) {
-    // PROTÓTIPO, não regra aprovada: trocar o RESPONSÁVEL é só de quem
+    // PROTÓTIPO, não regra aprovada: TROCAR o responsável é só de quem
     // planeja. Não foi perguntado ao Leonardo. O motivo de não deixar no
     // responsável: ele poderia passar a atividade adiante e sair da própria
     // porta, ou tomar para si a atividade de outra pessoa.
-    if (!_podePlanejar(eu)) {
+    //
+    // A recusa é só quando o valor MUDA. O formulário manda o objeto inteiro,
+    // então o responsável manda o próprio id junto de qualquer edição —
+    // recusar aí o deixaria sem conseguir salvar nada na atividade dele, que é
+    // justamente o que a porta de cima acabou de permitir.
+    var _novoDono = String(b.responsavel_id || "");
+    var _mudaDono = _novoDono !== String(a.responsavel_id || "");
+    if (_mudaDono && !_podePlanejar(eu)) {
       return ctx.reply.status(403).send({ error: "Só quem planeja pode trocar o responsável" });
     }
-    antes.responsavel_id = a.responsavel_id || "";
-    mudou.responsavel_id = String(b.responsavel_id || "");
+    // Valor igual não entra em `mudou`: gravar o mesmo dado mexeria no
+    // `updated_at` e levaria o próximo PATCH a um 409 sem motivo.
+    if (_mudaDono) {
+      antes.responsavel_id = a.responsavel_id || "";
+      mudou.responsavel_id = _novoDono;
+    }
   }
   if (b.fase_id !== undefined) {
     var faseId = String(b.fase_id || "");
