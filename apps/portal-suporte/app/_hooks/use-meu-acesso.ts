@@ -21,6 +21,14 @@ import { canVerProjetos, type FeatureGrant } from '@/lib/auth/feature-grants'
 const ORDEM: SystemAccessLevel[] = ['user', 'developer', 'admin', 'master']
 
 export type MeuAcesso = {
+  /**
+   * O id da pessoa logada, como a plataforma o conhece (users.id).
+   *
+   * Sai daqui porque este hook já resolve a identidade: quem precisasse do id
+   * chamaria `useAuth` de novo, e aí haveria duas respostas possíveis para
+   * "quem sou eu" na mesma tela.
+   */
+  meuId: string
   nivel: SystemAccessLevel | null
   grants: string[]
   carregando: boolean
@@ -86,6 +94,7 @@ export function useMeuAcesso(): MeuAcesso {
     !!nivel && ORDEM.indexOf(nivel) >= ORDEM.indexOf(min)
 
   return {
+    meuId: String(user?.id || ''),
     nivel,
     grants,
     carregando,
