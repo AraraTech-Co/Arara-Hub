@@ -192,6 +192,62 @@ export function destinoDoTeclado(
 }
 
 /**
+ * O que a tela usa, extraído do corpo que a ROTA devolve de verdade.
+ *
+ * Existe porque a página do projeto caiu em produção: a 507 responde
+ * `data: { atividades, resumo }`, a tela fazia `data || []` e o `.filter` do
+ * agrupamento recebeu um objeto. O Kanban é a vista padrão, então a página
+ * inteira foi com ele.
+ *
+ * A lição não é "corrigir o caminho": é que ninguém atravessava a junção. O
+ * servidor era testado com as expectativas do servidor e a tela com as minhas.
+ * Esta função é o ponto por onde o teste de contrato passa o corpo REAL do
+ * handler — se as duas pontas divergirem de novo, ele reprova aqui.
+ *
+ * E ela NUNCA lança: forma inesperada devolve lista vazia e `erro` preenchido,
+ * porque uma resposta estranha não pode derrubar a página.
+ */
+export function extrairAtividades(resposta: unknown): {
+  lista: Atividade[]
+  resumo: { total: number; concluidas: number; canceladas: number; progresso: number } | null
+  erro: string
+} {
+  const vazio = { lista: [] as Atividade[], resumo: null, erro: '' }
+  if (!resposta || typeof resposta !== 'object') {
+    return { ...vazio, erro: 'A resposta do servidor não veio no formato esperado.' }
+  }
+  const data = (resposta as { data?: unknown }).data
+  // A forma de hoje: `data` é um objeto com a lista dentro.
+  const dentro = data && typeof data === 'object' && !Array.isArray(data)
+    ? (data as { atividades?: unknown; resumo?: unknown })
+    : null
+  // Tolerância deliberada: se um dia a rota passar a devolver `data` como
+  // array, a tela continua funcionando em vez de cair.
+  const cru = dentro ? dentro.atividades : data
+  if (!Array.isArray(cru)) {
+    return { ...vazio, erro: 'A resposta do servidor não veio no formato esperado.' }
+  }
+  const resumoCru = dentro && dentro.resumo
+    ? dentro.resumo
+    : (resposta as { resumo?: unknown }).resumo
+  const r = resumoCru && typeof resumoCru === 'object'
+    ? (resumoCru as Record<string, unknown>)
+    : null
+  return {
+    lista: cru as Atividade[],
+    resumo: r
+      ? {
+        total: Number(r.total || 0),
+        concluidas: Number(r.concluidas || 0),
+        canceladas: Number(r.canceladas || 0),
+        progresso: Number(r.progresso || 0),
+      }
+      : null,
+    erro: '',
+  }
+}
+
+/**
  * O recado de erro que a pessoa lê.
  *
  * Enquanto os models das atividades não existirem na plataforma, as três rotas

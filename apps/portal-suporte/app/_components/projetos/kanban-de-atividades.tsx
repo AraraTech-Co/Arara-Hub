@@ -34,8 +34,8 @@ import { ChevronLeft, ChevronRight, Loader2, Pencil, RotateCw, TriangleAlert } f
 import { projetosApi } from '@/lib/api/projetos'
 import { usersApi } from '@/lib/api/users'
 import {
-  COLUNAS, STATUS_LABELS, agrupar, atrasada, destinoDoTeclado, mensagemDeErro,
-  podeMover, resumo, type Atividade, type AtividadeStatus,
+  COLUNAS, STATUS_LABELS, agrupar, atrasada, destinoDoTeclado, extrairAtividades,
+  mensagemDeErro, podeMover, resumo, type Atividade, type AtividadeStatus,
 } from '@/lib/projetos-atividades'
 import { NovaAtividade } from '@/components/projetos/nova-atividade'
 import { EditarAtividade } from '@/components/projetos/editar-atividade'
@@ -168,9 +168,14 @@ export function KanbanDeAtividades({
     projetosApi.atividades
       .listar(projetoId)
       .then((r) => {
-        setAtividades(r.data || [])
-        setResumoDoServidor(r.resumo || null)
-        setErro('')
+        // A extração mora numa função pura, e é por ela que o teste de
+        // contrato passa o corpo REAL do handler. Forma inesperada vira
+        // ESTADO DE ERRO, não exceção: foi uma exceção aqui que derrubou a
+        // página do projeto inteira, porque o Kanban é a vista padrão.
+        const { lista, resumo: doServidor, erro: erroDeForma } = extrairAtividades(r)
+        setAtividades(lista)
+        setResumoDoServidor(doServidor)
+        setErro(erroDeForma)
       })
       .catch((e) => setErro(mensagemDeErro(e, 'ler')))
       .finally(() => setCarregando(false))
