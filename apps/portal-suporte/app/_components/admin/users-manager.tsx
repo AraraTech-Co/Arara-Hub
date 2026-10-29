@@ -162,6 +162,20 @@ export function UsersManager({ audience }: Props) {
     return String(meu?.role ?? '').toLowerCase() === 'master'
   }, [authUser, users])
 
+  /**
+   * Editando um master sem ser master (e sem ser ele próprio)?
+   *
+   * Nesse caso o telefone fica travado: é por ele que o código de recuperação
+   * de senha chega, então trocá-lo entrega a conta. O servidor recusa com 403
+   * (PUT /profiles/:id) — isto aqui é só não oferecer o que a rota vai negar.
+   * O e-mail não tem campo neste diálogo, e por isso não aparece aqui.
+   */
+  const mexendoEmMasterAlheio = useMemo(() => {
+    if (isMaster) return false
+    if (String(editUser?.role ?? '').trim().toLowerCase() !== 'master') return false
+    return String(editUser?.id ?? '') !== String(authUser?.id ?? '')
+  }, [isMaster, editUser, authUser])
+
   // Invite codes (team only)
   const [invites, setInvites] = useState<any[]>([])
   const [showInvite, setShowInvite] = useState(false)
@@ -922,7 +936,17 @@ export function UsersManager({ audience }: Props) {
             </div>
             <div className="space-y-1">
               <Label>Perfil</Label>
-              <Select value={editRole} onValueChange={(v) => setEditRole(v as UserRole)}>
+              {/* Papel master: só o master dá ou tira, e o servidor recusa com
+                  403 quem tentar (PUT /profiles/:id). A tela não oferece o que
+                  a rota vai recusar — e, editando um master sem ser master, o
+                  seletor fica travado, porque QUALQUER troca seria recusada.
+                  O item "Master" continua aparecendo quando o membro já é
+                  master, senão o seletor mostraria um rótulo vazio. */}
+              <Select
+                value={editRole}
+                onValueChange={(v) => setEditRole(v as UserRole)}
+                disabled={!isMaster && editRole === 'master'}
+              >
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {isTeam ? (
@@ -930,7 +954,9 @@ export function UsersManager({ audience }: Props) {
                       <SelectItem value="support">Suporte</SelectItem>
                         <SelectItem value="developer">Desenvolvedor</SelectItem>
                       <SelectItem value="admin">Administrador</SelectItem>
-                      <SelectItem value="master">Master</SelectItem>
+                      {(isMaster || editRole === 'master') && (
+                        <SelectItem value="master">Master</SelectItem>
+                      )}
                     </>
                   ) : (
                     <SelectItem value="user">Usuário</SelectItem>
@@ -1044,7 +1070,14 @@ export function UsersManager({ audience }: Props) {
                 placeholder="(19) 99999-9999"
                 value={editPhone}
                 onChange={(e) => setEditPhone(mascaraTelefone(e.target.value))}
+                disabled={mexendoEmMasterAlheio}
               />
+              {mexendoEmMasterAlheio && (
+                <p className="text-xs text-muted-foreground">
+                  O telefone de um master só o próprio ou outro master pode mudar: é por ele
+                  que chega o código de recuperação de senha.
+                </p>
+              )}
               <p className="text-xs text-muted-foreground">
                 Usado para recuperar a senha: o código vai para este número, não para o que a
                 pessoa digitar na hora. Sem ele, ela fica sem caminho de volta.
