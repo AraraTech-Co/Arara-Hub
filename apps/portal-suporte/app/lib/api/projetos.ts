@@ -246,7 +246,13 @@ export const projetosApi = {
    */
   atividades: {
     listar: (projetoId: string, filtros?: { status?: AtividadeStatus; fase_id?: string }) =>
-      araraFetch.get<Ok<Atividade[]> & { resumo?: { total: number; concluidas: number; canceladas: number; progresso: number } }>(
+      // `data` é um OBJETO com a lista dentro — é o que o handler devolve.
+      // Tipar como array foi o que deixou a página cair: o compilador
+      // concordava com `data || []`, e em produção veio um objeto.
+      araraFetch.get<Ok<{
+        atividades: Atividade[]
+        resumo: { total: number; concluidas: number; canceladas: number; progresso: number }
+      }>>(
         `/api/projetos/${projetoId}/atividades`
         + (filtros && (filtros.status || filtros.fase_id)
           ? '?' + new URLSearchParams(
