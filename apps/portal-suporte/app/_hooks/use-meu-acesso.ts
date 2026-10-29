@@ -16,7 +16,9 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '@/lib/arara/AuthProvider'
 import { api } from '@/lib/api/client'
 import type { SystemAccessLevel } from '@/lib/auth/types'
-import { canVerProjetos, type FeatureGrant } from '@/lib/auth/feature-grants'
+import {
+  canCadastrarEmpresa, canPlanejar, canVerProjetos, type FeatureGrant,
+} from '@/lib/auth/feature-grants'
 
 const ORDEM: SystemAccessLevel[] = ['user', 'developer', 'admin', 'master']
 
@@ -100,8 +102,12 @@ export function useMeuAcesso(): MeuAcesso {
     carregando,
     temNivel,
     tem: (g: FeatureGrant) => grants.includes(g),
-    podePlanejar: temNivel('admin') || grants.includes('planejamento'),
+    // Chama a regra do catálogo em vez de refazê-la. A conta inline passava
+    // por `temNivel('developer')` sem nenhum teste reprovar — e este campo
+    // decide o botão de criar atividade e o seletor de responsável. Duas
+    // cópias da mesma régua divergem no dia em que uma delas muda.
+    podePlanejar: canPlanejar({ role: nivel || 'user', featureGrants: grants }),
     podeVerProjetos: canVerProjetos({ role: nivel || 'user', featureGrants: grants }),
-    podeCadastrarEmpresa: temNivel('admin') || grants.includes('cadastro_empresa'),
+    podeCadastrarEmpresa: canCadastrarEmpresa({ role: nivel || 'user', featureGrants: grants }),
   }
 }

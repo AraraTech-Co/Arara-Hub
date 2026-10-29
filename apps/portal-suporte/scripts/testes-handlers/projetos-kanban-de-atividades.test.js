@@ -12,7 +12,9 @@
 //
 // Roda com: node projetos-kanban-de-atividades.test.js
 const { carregarHandlerEContexto, reply, ok, fim } = require('./_carregar.js')
-const { registrarTS, importarTela, semComentarios } = require('./_tela.js')
+const fs = require('node:fs')
+const path = require('node:path')
+const { registrarTS, importarTela, semComentarios, APP } = require('./_tela.js')
 
 registrarTS()
 
@@ -367,6 +369,99 @@ function a(o) {
     const form = semComentarios('_components/projetos/nova-atividade.tsx')
     ok('o-formulario-tem-campo-de-responsavel', form.includes('ativ-dono'), null)
     ok('o-formulario-diz-o-que-falta-com-rotulo', form.includes('ROTULOS[c]'), null)
+  }
+
+  // ── 13. Os botões do cartão ficam atrás da MESMA porta do arraste ────────
+  //
+  // Provar que o arraste está travado não prova nada sobre os botões: trocar
+  // `{podeMexer && (` por `{true && (` deixa ‹ ›, › e Editar na tela de todo
+  // mundo e nenhuma asserção de permissão reprova. Então o recorte é
+  // estrutural: a função `Cartao`, e dentro dela o bloco da porta.
+  {
+    const fonte = fs.readFileSync(
+      path.join(APP, '_components/projetos/kanban-de-atividades.tsx'), 'utf8')
+    const iCartao = fonte.indexOf('function Cartao(')
+    const iColuna = fonte.indexOf('function Coluna(')
+    ok('achou-a-funcao-do-cartao', iCartao > 0 && iColuna > iCartao, { iCartao, iColuna })
+    const cartao = fonte.slice(iCartao, iColuna)
+
+    const iPorta = cartao.indexOf('{podeMexer && (')
+    ok('o-cartao-tem-o-bloco-da-porta', iPorta > 0, iPorta)
+    const dentro = cartao.slice(iPorta)
+    const fora = cartao.slice(0, iPorta)
+
+    // Os três controles de escrita moram DENTRO do bloco, e nenhum fora dele.
+    for (const [nome, marca] of [
+      ['mover-para-a-etapa-anterior', '<ChevronLeft'],
+      ['mover-para-a-proxima-etapa', '<ChevronRight'],
+      ['editar', '<Pencil'],
+    ]) {
+      ok('controle-dentro-da-porta:' + nome, dentro.includes(marca), { nome, marca })
+      ok('controle-nao-aparece-fora-da-porta:' + nome, !fora.includes(marca), { nome, marca })
+    }
+    // E a porta é a MESMA que trava o arraste: um `true` no lugar dela deixaria
+    // os botões soltos com o arraste ainda travado.
+    ok('a-porta-do-bloco-e-a-variavel-e-nao-um-literal',
+      /\{podeMexer && \(/.test(cartao) && !/\{true && \(/.test(cartao), null)
+    ok('o-arraste-usa-a-mesma-variavel', cartao.includes('disabled: !podeMexer || salvando'), null)
+    // Nenhum `onClick` de escrita fora do bloco.
+    ok('nenhum-clique-de-escrita-fora-da-porta',
+      !/onClick=\{\(\) => (aoMover|aoEditar)/.test(fora), null)
+  }
+
+  // ── 14. `podePlanejar` é a régua do catálogo, não uma cópia ──────────────
+  //
+  // Este campo decide o botão de criar atividade e o seletor de responsável. A
+  // conta estava refeita dentro do hook, e trocar `temNivel('admin')` por
+  // `temNivel('developer')` passava por todos os testes.
+  {
+    const G = await importarTela('lib/auth/feature-grants.ts')
+    const esperado = [
+      ['developer-sem-grant', { role: 'developer', featureGrants: [] }, false],
+      ['support-sem-grant', { role: 'support', featureGrants: [] }, false],
+      ['user-sem-grant', { role: 'user', featureGrants: [] }, false],
+      ['support+planejamento', { role: 'support', featureGrants: ['planejamento'] }, true],
+      ['developer+planejamento', { role: 'developer', featureGrants: ['planejamento'] }, true],
+      ['admin', { role: 'admin', featureGrants: [] }, true],
+      ['master', { role: 'master', featureGrants: [] }, true],
+      // QA não é planejamento: são permissões diferentes.
+      ['support+qa', { role: 'support', featureGrants: ['qa'] }, false],
+    ]
+    for (const [nome, actor, vale] of esperado) {
+      ok('canPlanejar:' + nome, G.canPlanejar(actor) === vale, { nome, actor })
+    }
+
+    // `canCadastrarEmpresa` entrou aqui porque o hook passou a depender dela
+    // junto com `canPlanejar` — e regra da qual a tela depende sem tabela-
+    // verdade é regra que pode perder uma metade sem ninguém notar. Tirar o
+    // grant dela passava na suíte inteira.
+    const empresa = [
+      ['admin', { role: 'admin', featureGrants: [] }, true],
+      ['master', { role: 'master', featureGrants: [] }, true],
+      ['support+cadastro_empresa', { role: 'support', featureGrants: ['cadastro_empresa'] }, true],
+      ['developer+cadastro_empresa', { role: 'developer', featureGrants: ['cadastro_empresa'] }, true],
+      ['developer-sem-grant', { role: 'developer', featureGrants: [] }, false],
+      ['support-sem-grant', { role: 'support', featureGrants: [] }, false],
+      // Planejamento não é cadastro de empresa: são permissões diferentes.
+      ['support+planejamento', { role: 'support', featureGrants: ['planejamento'] }, false],
+    ]
+    for (const [nome, actor, vale] of empresa) {
+      ok('canCadastrarEmpresa:' + nome, G.canCadastrarEmpresa(actor) === vale, { nome, actor })
+    }
+    // As duas são permissões SEPARADAS: quem tem uma não ganha a outra.
+    ok('as-duas-permissoes-nao-se-confundem',
+      G.canPlanejar({ role: 'support', featureGrants: ['cadastro_empresa'] }) === false
+      && G.canCadastrarEmpresa({ role: 'support', featureGrants: ['planejamento'] }) === false, null)
+
+    // E o hook CHAMA a regra, em vez de repeti-la.
+    const hook = semComentarios('_hooks/use-meu-acesso.ts')
+    ok('o-hook-chama-canPlanejar', /podePlanejar: canPlanejar\(\{/.test(hook), null)
+    ok('o-hook-nao-refaz-a-conta-do-planejamento',
+      !/podePlanejar:\s*temNivel\(/.test(hook) && !hook.includes("includes('planejamento')"), null)
+    // O vizinho tinha a mesma cópia e foi junto: deixar um dos dois refeito
+    // seria manter o mesmo defeito ao lado do conserto.
+    ok('o-vizinho-do-cadastro-de-empresa-tambem-chama-a-regra',
+      /podeCadastrarEmpresa: canCadastrarEmpresa\(\{/.test(hook), null)
   }
 
   fim()
