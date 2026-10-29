@@ -63,7 +63,7 @@ import { NotificationBell } from '@/components/notifications/notification-bell'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
 import type { SystemAccessLevel } from '@/lib/auth/types'
 import { verify } from '@/lib/auth'
-import type { FeatureGrant } from '@/lib/auth/feature-grants'
+import { canVerProjetos, type FeatureGrant } from '@/lib/auth/feature-grants'
 import { useAuth } from '@/lib/arara/AuthProvider'
 import { clearAuth } from '@/lib/arara/auth-storage'
 import { api } from '@/lib/api/client'
@@ -89,6 +89,12 @@ type NavItem = {
    * `minLevel: admin`, mas quem tem o grant `wa_flow_editor` (mesmo developer) o vê.
    */
   grant?: FeatureGrant
+  /**
+   * Regra própria, quando o par nível+grant não dá conta — caso do módulo de
+   * Projetos, que durante a transição tem DUAS portas. Quando existe, decide
+   * sozinha: a regra mora no catálogo de grants, não aqui.
+   */
+  pode?: (actor: { role: AccessLevel; featureGrants: string[] }) => boolean
   hidden?: boolean
 }
 
@@ -114,10 +120,12 @@ const NAV_GROUPS: NavGroup[] = [
       // caminho do Suporte é o botão "Escalar para o Dev" no chamado; a trava
       // real de mover continua no servidor.
       { href: '/admin/kanban-dev', label: 'Kanban Dev', icon: LayoutGrid, minLevel: 'developer', grant: 'qa' },
-      // Mesma régua do quadro Dev: quem trabalha nele. Planejar (criar projeto,
-      // mexer em data) é outra coisa e exige admin ou o grant `planejamento` —
-      // a trava real está no servidor, em cada rota do módulo `projetos`.
-      { href: '/admin/projetos', label: 'Projetos', icon: FolderKanban, minLevel: 'developer', grant: 'qa' },
+      // Decisão de 28/10: o acesso ao módulo é o campo "Projetos" em Editar
+      // membro. A régua inteira — inclusive a porta antiga que segue valendo
+      // durante a transição — está em canVerProjetos(). Planejar (criar
+      // projeto, mexer em data) continua sendo outra permissão. A trava real
+      // está no servidor, em cada rota do módulo `projetos`.
+      { href: '/admin/projetos', label: 'Projetos', icon: FolderKanban, pode: canVerProjetos },
       { href: '/inbox',        label: 'WhatsApp',  icon: MessageSquare },
       { href: '/admin/whatsapp/flow', label: 'Fluxos do WhatsApp', icon: Workflow, minLevel: 'admin', grant: 'wa_flow_editor' },
       { href: '/admin/whatsapp-analytics', label: 'Desempenho WhatsApp', icon: TrendingUp, minLevel: 'admin' },
@@ -317,6 +325,9 @@ function NavGroup({
     if (item.hidden) return false
     // Visível por NÍVEL ou por GRANT — o grant libera individualmente uma função
     // que o nível não daria (ex.: editor de fluxo para um developer).
+    // Regra própria manda: existe para o item cuja porta não cabe no par
+    // nível+grant. Sem ela, vale o de sempre — nível OU grant.
+    if (item.pode) return item.pode({ role: role || 'user', featureGrants: grants })
     const byLevel = !item.minLevel || (!!role && verify(item.minLevel, { role }))
     const byGrant = !!item.grant && grants.includes(item.grant)
     if (!byLevel && !byGrant) return false

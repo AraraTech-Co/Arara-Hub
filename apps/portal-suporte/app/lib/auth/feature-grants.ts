@@ -19,6 +19,7 @@ export type FeatureGrant =
   | 'wa_flow_editor'
   | 'qa'
   | 'code_review'
+  | 'projetos'
   | 'planejamento'
   | 'cadastro_empresa'
   /**
@@ -52,6 +53,14 @@ export const FEATURE_GRANTS: {
     description:
       'Permite aprovar ou devolver a etapa de revisão de código no quadro do Dev. '
       + 'É o dev que revisa todos os códigos antes do teste.',
+  },
+  {
+    key: 'projetos',
+    label: 'Projetos',
+    description:
+      'Dá acesso ao módulo de Projetos — ver os projetos, o cronograma e as atividades. '
+      + 'É só o acesso: planejar (criar projeto, mexer em data) continua sendo '
+      + '"Planejamento de projetos", que é outra permissão.',
   },
   {
     key: 'planejamento',
@@ -148,6 +157,40 @@ export function canPlanejar(actor: GrantActor): boolean {
  * 403 — quem arrastava via o diálogo da declaração e só descobria a falta da
  * permissão depois de confirmar. O servidor continua sendo a verdade.
  */
+/**
+ * Dia da troca da porta de Projetos.
+ *
+ * A decisão de 28/10 é que o acesso ao módulo passa a ser o campo "Projetos" em
+ * Editar membro, SEM concessão automática por cargo e sem o grant de QA valendo
+ * como passe. Virar a porta de uma vez tiraria o módulo de todo developer e de
+ * todo QA no instante do deploy — antes de existir a lista de quem recebe o
+ * campo, e essa lista não é minha para escrever.
+ *
+ * Enquanto esta constante for `true`, a porta ANTIGA (developer+ ou grant `qa`)
+ * continua valendo ao lado da nova: ninguém perde acesso no deploy, e quem já
+ * recebeu o campo entra por ele. No dia da troca, com a lista pronta, ela vira
+ * `false` e passam a valer só admin/master por nível e o grant `projetos`.
+ *
+ * O servidor tem a MESMA constante, com o mesmo nome, em cada handler do módulo
+ * `projetos`. As duas viram juntas — a daqui só decide o que a TELA mostra.
+ */
+export const PORTA_ANTIGA_DE_PROJETOS = true
+
+/**
+ * Pode ver o módulo de Projetos?
+ *
+ * admin/master por nível, OU o grant `projetos`. Durante a transição, também
+ * quem entrava pela porta antiga (ver `PORTA_ANTIGA_DE_PROJETOS`).
+ *
+ * Espelha `_podeVer` dos handlers do módulo. Só VER: planejar é `canPlanejar`.
+ */
+export function canVerProjetos(actor: GrantActor): boolean {
+  if (hasMinLevel(actor.role, 'admin')) return true
+  if (hasGrant(actor, 'projetos')) return true
+  if (!PORTA_ANTIGA_DE_PROJETOS) return false
+  return hasMinLevel(actor.role, 'developer') || hasGrant(actor, 'qa')
+}
+
 export function canRevisarCodigo(actor: GrantActor): boolean {
   return hasMinLevel(actor.role, 'admin') || hasGrant(actor, 'code_review')
 }
