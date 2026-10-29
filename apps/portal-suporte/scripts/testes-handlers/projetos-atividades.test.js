@@ -75,17 +75,29 @@ function montar(o) {
     user: o.semSessao ? {} : { id: 'u1' },
     params: o.params || { id: 'p1' },
     query: o.query || {},
-    body: o.body || {},
+    body: corpoDeCriacao(o.body, o.corpoCru) || {},
     reply: reply(),
     models,
   }
   return { ctx, reg }
 }
 
+// Os quatro obrigatórios, para os casos que não são sobre eles. O valor que o
+// caso passa sempre vence — inclusive um vazio de propósito.
+const OBRIGATORIOS = {
+  descricao: 'O que precisa ser feito',
+  responsavel_id: 'u1',
+  previsao_entrega: '2026-12-01',
+}
+function corpoDeCriacao(body, cru) {
+  if (cru || !body) return body
+  return Object.assign({}, OBRIGATORIOS, body)
+}
+
 function ativ(o) {
   return {
     id: o.id, projeto_id: o.proj === undefined ? 'p1' : o.proj, fase_id: o.fase || '',
-    titulo: o.titulo || 'Atividade', descricao: '', status: o.status || 'a_fazer',
+    titulo: o.titulo || 'Atividade', descricao: 'd', status: o.status || 'backlog',
     ordem: o.ordem === undefined ? 0 : o.ordem, responsavel_id: '',
     inicio_planejado: o.ini || '', previsao_entrega: o.fim || '', estimativa_min: 0,
     concluida_em: o.concluida || '', cancelada_em: o.cancelada || '', criado_por: 'u1',
@@ -107,7 +119,7 @@ async function roda() {
     const casos = [
       [LISTAR, { id: 'p1' }, {}],
       [CRIAR, { id: 'p1' }, { titulo: 'Nova', fase_id: 'f1' }],
-      [EDITAR, { id: 'p1', aid: 'a1' }, { titulo: 'Outro', status: 'concluida', fase_id: 'f1' }],
+      [EDITAR, { id: 'p1', aid: 'a1' }, { titulo: 'Outro', status: 'deploy_feito', fase_id: 'f1' }],
     ]
     for (const [marca, params, body] of casos) {
       const { handler } = carregar(marca)
@@ -175,17 +187,22 @@ async function roda() {
       const r = await handler(ctx)
       ok('prototipo: ver-atividades:' + nome, r.status === esperado, { nome, status: r.status, esperado })
     }
+    // D6c, decidido em 29/10: CRIAR é só de quem planeja. O developer comum
+    // perdeu essa porta — ele vê, e mexe na atividade de que é responsável,
+    // mas não abre atividade nova.
     const escrever = [
       ['support', { role: 'support', feature_grants: [] }, 403],
       ['support+qa', { role: 'support', feature_grants: ['qa'] }, 403],
       ['support+planejamento', { role: 'support', feature_grants: ['planejamento'] }, 201],
-      ['developer', { role: 'developer', feature_grants: [] }, 201],
+      ['admin', { role: 'admin', feature_grants: [] }, 201],
+      ['developer', { role: 'developer', feature_grants: [] }, 403],
+      ['developer+planejamento', { role: 'developer', feature_grants: ['planejamento'] }, 201],
     ]
     for (const [nome, perfil, esperado] of escrever) {
       const { handler } = carregar(CRIAR)
       const { ctx } = montar({ perfil, body: { titulo: 'Nova' } })
       const r = await handler(ctx)
-      ok('prototipo: criar-atividade:' + nome, r.status === esperado, { nome, status: r.status, esperado })
+      ok('criar-atividade-e-so-de-quem-planeja:' + nome, r.status === esperado, { nome, status: r.status, esperado })
     }
   }
 
@@ -337,9 +354,20 @@ async function roda() {
   // ───────────────────────────────────────────────────────────────────────────
   {
     for (const [nome, status, esperado] of [
-      ['a_fazer', 'a_fazer', 201], ['em_andamento', 'em_andamento', 201],
-      ['concluida', 'concluida', 201], ['cancelada', 'cancelada', 201],
+      ['backlog', 'backlog', 201],
+      ['em_desenvolvimento', 'em_desenvolvimento', 201],
+      ['finalizado_dev', 'finalizado_dev', 201],
+      ['pronto_para_teste', 'pronto_para_teste', 201],
+      ['teste_aprovado', 'teste_aprovado', 201],
+      ['teste_reprovado', 'teste_reprovado', 201],
+      ['deploy_feito', 'deploy_feito', 201],
+      ['cancelada', 'cancelada', 201],
       ['inventado', 'arquivada', 400],
+      // As etapas do protótipo anterior deixaram de existir: mandá-las agora
+      // é mandar status inválido, e o 400 é o que separa a regra nova da velha.
+      ['a_fazer-saiu', 'a_fazer', 400],
+      ['em_andamento-saiu', 'em_andamento', 400],
+      ['concluida-saiu', 'concluida', 400],
     ]) {
       const { handler } = carregar(CRIAR)
       const { ctx, reg } = montar({ body: { titulo: 'Nova', status } })
@@ -351,12 +379,12 @@ async function roda() {
     // Concluir carimba; REABRIR limpa o carimbo — sem isso a atividade volta
     // para a coluna "a fazer" ainda com data de conclusão.
     const a = carregar(EDITAR)
-    const ma = montar({ params: { id: 'p1', aid: 'a1' }, body: { status: 'concluida' }, atividades: [ativ({ id: 'a1' })] })
+    const ma = montar({ params: { id: 'p1', aid: 'a1' }, body: { status: 'deploy_feito' }, atividades: [ativ({ id: 'a1' })] })
     const ra = await a.handler(ma.ctx)
     ok('concluir-carimba', ra.body.data.concluida_em === AGORA, ra.body.data)
 
     const b = carregar(EDITAR)
-    const mb = montar({ params: { id: 'p1', aid: 'a1' }, body: { status: 'a_fazer' }, atividades: [ativ({ id: 'a1', status: 'concluida', concluida: '2026-02-05T00:00:00.000Z' })] })
+    const mb = montar({ params: { id: 'p1', aid: 'a1' }, body: { status: 'backlog' }, atividades: [ativ({ id: 'a1', status: 'deploy_feito', concluida: '2026-02-05T00:00:00.000Z' })] })
     const rb = await b.handler(mb.ctx)
     ok('reabrir-limpa-o-carimbo', rb.body.data.concluida_em === '', rb.body.data)
 
@@ -367,7 +395,7 @@ async function roda() {
 
     // Concluir duas vezes não reescreve o primeiro carimbo.
     const d = carregar(EDITAR)
-    const md = montar({ params: { id: 'p1', aid: 'a1' }, body: { status: 'concluida' }, atividades: [ativ({ id: 'a1', status: 'concluida', concluida: '2026-02-05T00:00:00.000Z' })] })
+    const md = montar({ params: { id: 'p1', aid: 'a1' }, body: { status: 'deploy_feito' }, atividades: [ativ({ id: 'a1', status: 'deploy_feito', concluida: '2026-02-05T00:00:00.000Z' })] })
     const rd = await d.handler(md.ctx)
     ok('concluir-de-novo-mantem-o-carimbo', rd.body.data.concluida_em === '2026-02-05T00:00:00.000Z', rd.body.data)
   }
@@ -394,6 +422,9 @@ async function roda() {
       const { handler } = carregar(marca)
       const { ctx, reg } = montar({
         params: { id: 'p1', aid: 'a1' }, body,
+        // Só a criação exige os quatro campos; no PATCH, completar o corpo
+        // faria a linha testar outra coisa.
+        corpoCru: marca !== CRIAR,
         atividades: [ativ({ id: 'a1', ini: '2026-02-01', fim: '2026-02-28' })],
       })
       const r = await handler(ctx)
@@ -431,7 +462,9 @@ async function roda() {
   // ───────────────────────────────────────────────────────────────────────────
   {
     const { handler } = carregar(EDITAR)
-    const { ctx, reg } = montar({ params: { id: 'p1', aid: 'a1' }, body: {}, atividades: [ativ({ id: 'a1' })] })
+    // Corpo CRU: este caso é sobre o corpo vazio, e completá-lo com os
+    // obrigatórios faria o PATCH deixar de ser vazio.
+    const { ctx, reg } = montar({ params: { id: 'p1', aid: 'a1' }, body: {}, corpoCru: true, atividades: [ativ({ id: 'a1' })] })
     const r = await handler(ctx)
     ok('patch-vazio-nao-grava', r.status === 200 && reg.update.length === 0 && r.body.data.id === 'a1', { status: r.status, reg })
   }
@@ -468,11 +501,11 @@ async function roda() {
     const casos = [
       ['sem-atividade', [], { total: 0, concluidas: 0, progresso: 0 }],
       ['uma-a-fazer', [ativ({ id: 'a' })], { total: 1, concluidas: 0, progresso: 0 }],
-      ['uma-de-quatro', [ativ({ id: 'a', status: 'concluida' }), ativ({ id: 'b' }), ativ({ id: 'c' }), ativ({ id: 'd' })], { total: 4, concluidas: 1, progresso: 25 }],
-      ['quatro-de-quatro', [1, 2, 3, 4].map((n) => ativ({ id: 'a' + n, status: 'concluida' })), { total: 4, concluidas: 4, progresso: 100 }],
-      ['cancelada-fora-do-total', [ativ({ id: 'a', status: 'concluida' }), ativ({ id: 'b', status: 'cancelada' })], { total: 1, concluidas: 1, canceladas: 1, progresso: 100 }],
+      ['uma-de-quatro', [ativ({ id: 'a', status: 'deploy_feito' }), ativ({ id: 'b' }), ativ({ id: 'c' }), ativ({ id: 'd' })], { total: 4, concluidas: 1, progresso: 25 }],
+      ['quatro-de-quatro', [1, 2, 3, 4].map((n) => ativ({ id: 'a' + n, status: 'deploy_feito' })), { total: 4, concluidas: 4, progresso: 100 }],
+      ['cancelada-fora-do-total', [ativ({ id: 'a', status: 'deploy_feito' }), ativ({ id: 'b', status: 'cancelada' })], { total: 1, concluidas: 1, canceladas: 1, progresso: 100 }],
       ['tudo-cancelado-nunca-100', [ativ({ id: 'a', status: 'cancelada' }), ativ({ id: 'b', status: 'cancelada' })], { total: 0, concluidas: 0, canceladas: 2, progresso: 0 }],
-      ['um-de-tres-arredonda', [ativ({ id: 'a', status: 'concluida' }), ativ({ id: 'b' }), ativ({ id: 'c' })], { total: 3, concluidas: 1, progresso: 33 }],
+      ['um-de-tres-arredonda', [ativ({ id: 'a', status: 'deploy_feito' }), ativ({ id: 'b' }), ativ({ id: 'c' })], { total: 3, concluidas: 1, progresso: 33 }],
     ]
     for (const [nome, atividades, esperado] of casos) {
       const { handler } = carregar(LISTAR)
@@ -498,7 +531,7 @@ async function roda() {
       ['prazo-hoje', ativ({ id: 'a', fim: HOJE }), false],
       ['prazo-amanha', ativ({ id: 'a', fim: '2026-03-11' }), false],
       ['sem-prazo', ativ({ id: 'a' }), false],
-      ['concluida-nunca-atrasa', ativ({ id: 'a', fim: '2026-01-01', status: 'concluida' }), false],
+      ['concluida-nunca-atrasa', ativ({ id: 'a', fim: '2026-01-01', status: 'deploy_feito' }), false],
       ['cancelada-nunca-atrasa', ativ({ id: 'a', fim: '2026-01-01', status: 'cancelada' }), false],
     ]
     for (const [nome, a, esperado] of casos) {
@@ -539,7 +572,7 @@ async function roda() {
   // ───────────────────────────────────────────────────────────────────────────
   {
     const atividades = [
-      ativ({ id: 'a', fase: 'f1', status: 'concluida' }),
+      ativ({ id: 'a', fase: 'f1', status: 'deploy_feito' }),
       ativ({ id: 'b', fase: 'f1' }),
       ativ({ id: 'c', fase: 'f2' }),
       ativ({ id: 'd', fase: '' }),
@@ -556,7 +589,7 @@ async function roda() {
     ok('filtro-fase-vazia-traz-sem-fase', rb.body.data.atividades.map((x) => x.id).join(',') === 'd', rb.body.data.atividades.map((x) => x.id))
 
     const c = carregar(LISTAR)
-    const mc = montar({ atividades, query: { status: 'concluida' } })
+    const mc = montar({ atividades, query: { status: 'deploy_feito' } })
     const rc = await c.handler(mc.ctx)
     ok('filtro-por-status-recorta', rc.body.data.atividades.map((x) => x.id).join(',') === 'a', rc.body.data.atividades.map((x) => x.id))
     ok('filtro-status-nao-muda-o-resumo', rc.body.data.resumo.total === 4, rc.body.data.resumo)
@@ -648,6 +681,199 @@ async function roda() {
       // mentira mais cara que esta rota poderia contar.
       ok('sem-modelo-da-500:' + nome, r.status === 500, { nome, status: r.status, body: r.body })
     }
+  }
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // 2b-A. Os quatro obrigatórios (D5, 29/10)
+  // ───────────────────────────────────────────────────────────────────────────
+  {
+    const cheio = {
+      titulo: 'Nova', descricao: 'Detalhe', responsavel_id: 'u9',
+      previsao_entrega: '2026-12-01',
+    }
+    // Cada um dos quatro, faltando sozinho. Um por um e não todos de uma vez:
+    // com todos faltando, o primeiro erro esconderia os outros três.
+    for (const campo of ['titulo', 'descricao', 'responsavel_id', 'previsao_entrega']) {
+      const corpo = Object.assign({}, cheio)
+      delete corpo[campo]
+      const { handler } = carregar(CRIAR)
+      const { ctx, reg } = montar({ body: corpo, corpoCru: true })
+      const r = await handler(ctx)
+      ok('2b: criar-sem-' + campo + '-recusa', r.status === 400, { campo, status: r.status, body: r.body })
+      ok('2b: criar-sem-' + campo + '-nao-grava',
+        reg.create.filter((c) => c.modelo === 'ProjetoAtividade').length === 0, reg.create)
+    }
+    // Em branco é tão ausente quanto não mandar: espaço não preenche campo.
+    for (const campo of ['titulo', 'descricao', 'responsavel_id', 'previsao_entrega']) {
+      const corpo = Object.assign({}, cheio)
+      corpo[campo] = '   '
+      const { handler } = carregar(CRIAR)
+      const { ctx } = montar({ body: corpo, corpoCru: true })
+      const r = await handler(ctx)
+      ok('2b: criar-com-' + campo + '-em-branco-recusa', r.status === 400, { campo, status: r.status })
+    }
+    // Com os quatro, cria.
+    {
+      const { handler } = carregar(CRIAR)
+      const { ctx, reg } = montar({ body: cheio, corpoCru: true })
+      const r = await handler(ctx)
+      const g = reg.create.find((c) => c.modelo === 'ProjetoAtividade')
+      ok('2b: criar-com-os-quatro-cria', r.status === 201, { status: r.status, body: r.body })
+      ok('2b: nasce-em-backlog', !!g && g.dados.status === 'backlog', g && g.dados.status)
+      ok('2b: guarda-o-responsavel', !!g && g.dados.responsavel_id === 'u9', g && g.dados.responsavel_id)
+    }
+    // O PATCH não pode ESVAZIAR nenhum dos quatro — exigir no nascimento e
+    // deixar apagar depois é a mesma regra valendo pela metade.
+    for (const campo of ['titulo', 'descricao', 'responsavel_id', 'previsao_entrega']) {
+      const corpo = {}
+      corpo[campo] = ''
+      const { handler } = carregar(EDITAR)
+      const { ctx, reg } = montar({
+        params: { id: 'p1', aid: 'a1' }, body: corpo, corpoCru: true,
+        perfil: { role: 'admin', feature_grants: [] },
+        atividades: [ativ({ id: 'a1' })],
+      })
+      const r = await handler(ctx)
+      ok('2b: patch-nao-esvazia-' + campo, r.status === 400, { campo, status: r.status, body: r.body })
+      ok('2b: patch-nao-esvazia-' + campo + '-nao-grava', reg.update.length === 0, reg.update)
+    }
+  }
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // 2b-B. Progresso: só `deploy_feito` conta (D4, 29/10)
+  // ───────────────────────────────────────────────────────────────────────────
+  {
+    const { contexto } = carregarHandlerEContexto(LISTAR)
+    const r1 = contexto._resumoAtiv([
+      ativ({ id: 'a', status: 'teste_aprovado' }), ativ({ id: 'b', status: 'backlog' }),
+    ])
+    ok('2b: teste-aprovado-nao-conta-como-pronto',
+      r1.total === 2 && r1.concluidas === 0 && r1.progresso === 0, r1)
+    // E o espelho: com uma no ar e uma em backlog, dá 50. Os dois juntos
+    // separam "conta só deploy_feito" de "conta qualquer etapa avançada".
+    const r1b = contexto._resumoAtiv([
+      ativ({ id: 'a', status: 'deploy_feito' }), ativ({ id: 'b', status: 'backlog' }),
+    ])
+    ok('2b: so-a-que-esta-no-ar-conta',
+      r1b.total === 2 && r1b.concluidas === 1 && r1b.progresso === 50, r1b)
+    // A etapa anterior ao deploy é a que mais tenta parecer pronta: aprovado no
+    // teste ainda não está no ar.
+    const r2 = contexto._resumoAtiv([
+      ativ({ id: 'a', status: 'teste_aprovado' }), ativ({ id: 'b', status: 'teste_aprovado' }),
+    ])
+    ok('2b: tudo-aprovado-mas-nada-no-ar-e-zero',
+      r2.total === 2 && r2.concluidas === 0 && r2.progresso === 0, r2)
+    const r3 = contexto._resumoAtiv([
+      ativ({ id: 'a', status: 'deploy_feito' }), ativ({ id: 'b', status: 'cancelada' }),
+    ])
+    ok('2b: cancelada-continua-fora-do-total',
+      r3.total === 1 && r3.canceladas === 1 && r3.progresso === 100, r3)
+    const r4 = contexto._resumoAtiv([ativ({ id: 'a', status: 'teste_reprovado' })])
+    ok('2b: teste-reprovado-conta-no-total',
+      r4.total === 1 && r4.concluidas === 0, r4)
+    // `por_status` cobre as 8 etapas: com 7 colunas, contador fixo de duas
+    // deixaria cinco invisíveis.
+    const r5 = contexto._resumoAtiv([ativ({ id: 'a', status: 'pronto_para_teste' })])
+    const chaves = Object.keys(r5.por_status).sort().join(',')
+    ok('2b: por_status-tem-as-oito-etapas',
+      chaves === 'backlog,cancelada,deploy_feito,em_desenvolvimento,finalizado_dev,'
+        + 'pronto_para_teste,teste_aprovado,teste_reprovado', chaves)
+    ok('2b: por_status-conta-a-etapa-certa',
+      r5.por_status.pronto_para_teste === 1 && r5.por_status.backlog === 0, r5.por_status)
+    ok('2b: resumo-nao-tem-mais-contador-de-etapa-que-saiu',
+      r5.a_fazer === undefined && r5.em_andamento === undefined, Object.keys(r5))
+  }
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // 2b-C. Atraso: terminal é no ar ou cancelada
+  // ───────────────────────────────────────────────────────────────────────────
+  {
+    const { contexto } = carregarHandlerEContexto(LISTAR)
+    const passado = '2026-01-01'
+    ok('2b: deploy-feito-no-passado-nao-atrasa',
+      contexto._ativAtrasada(ativ({ id: 'a', fim: passado, status: 'deploy_feito' })) === false)
+    ok('2b: cancelada-no-passado-nao-atrasa',
+      contexto._ativAtrasada(ativ({ id: 'a', fim: passado, status: 'cancelada' })) === false)
+    // Aprovado no teste AINDA tem prazo a cumprir: o deploy não aconteceu.
+    ok('2b: teste-aprovado-no-passado-atrasa',
+      contexto._ativAtrasada(ativ({ id: 'a', fim: passado, status: 'teste_aprovado' })) === true)
+    ok('2b: backlog-no-passado-atrasa',
+      contexto._ativAtrasada(ativ({ id: 'a', fim: passado, status: 'backlog' })) === true)
+  }
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // 2b-D. Porta de edição: quem planeja OU o responsável (D6c, 29/10)
+  // ───────────────────────────────────────────────────────────────────────────
+  {
+    const casos = [
+      ['quem-planeja-mexe-na-de-outro', { role: 'admin', feature_grants: [] }, 'OUTRO', 200],
+      ['grant-de-planejamento-mexe', { role: 'support', feature_grants: ['planejamento'] }, 'OUTRO', 200],
+      ['responsavel-mexe-na-sua', { role: 'developer', feature_grants: [] }, 'u1', 200],
+      ['developer-nao-mexe-na-de-outro', { role: 'developer', feature_grants: [] }, 'OUTRO', 403],
+      ['quem-nem-ve-nao-mexe', { role: 'support', feature_grants: [] }, 'u1', 403],
+    ]
+    for (const [nome, perfil, dono, esperado] of casos) {
+      const { handler } = carregar(EDITAR)
+      const { ctx, reg } = montar({
+        params: { id: 'p1', aid: 'a1' }, body: { status: 'em_desenvolvimento' }, corpoCru: true,
+        perfil,
+        atividades: [Object.assign(ativ({ id: 'a1' }), { responsavel_id: dono })],
+      })
+      const r = await handler(ctx)
+      ok('2b: ' + nome, r.status === esperado, { nome, status: r.status, esperado, body: r.body })
+      if (esperado === 403) {
+        ok('2b: ' + nome + '-nao-grava', reg.update.length === 0, reg.update)
+      }
+    }
+    // O caso perigoso: atividade SEM responsável não pode virar atividade de
+    // todo mundo. `"" === ""` daria true e abriria a porta.
+    {
+      const { handler } = carregar(EDITAR)
+      const { ctx, reg } = montar({
+        params: { id: 'p1', aid: 'a1' }, body: { status: 'em_desenvolvimento' }, corpoCru: true,
+        perfil: { role: 'developer', feature_grants: [] },
+        atividades: [Object.assign(ativ({ id: 'a1' }), { responsavel_id: '' })],
+      })
+      const r = await handler(ctx)
+      ok('2b: atividade-sem-responsavel-nao-e-de-todos', r.status === 403, { status: r.status, body: r.body })
+      ok('2b: atividade-sem-responsavel-nao-grava', reg.update.length === 0, reg.update)
+    }
+    // Trocar o RESPONSÁVEL é só de quem planeja (protótipo declarado).
+    for (const [nome, perfil, esperado] of [
+      ['quem-planeja-troca-o-responsavel', { role: 'admin', feature_grants: [] }, 200],
+      ['responsavel-nao-passa-adiante', { role: 'developer', feature_grants: [] }, 403],
+    ]) {
+      const { handler } = carregar(EDITAR)
+      const { ctx, reg } = montar({
+        params: { id: 'p1', aid: 'a1' }, body: { responsavel_id: 'u7' }, corpoCru: true,
+        perfil,
+        atividades: [Object.assign(ativ({ id: 'a1' }), { responsavel_id: 'u1' })],
+      })
+      const r = await handler(ctx)
+      ok('2b: ' + nome, r.status === esperado, { nome, status: r.status, body: r.body })
+      if (esperado === 403) ok('2b: ' + nome + '-nao-grava', reg.update.length === 0, reg.update)
+    }
+  }
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // 2b-E. O carimbo acompanha `deploy_feito`, nos dois sentidos
+  // ───────────────────────────────────────────────────────────────────────────
+  {
+    const mover = async (de, para) => {
+      const { handler } = carregar(EDITAR)
+      const { ctx, reg } = montar({
+        params: { id: 'p1', aid: 'a1' }, body: { status: para }, corpoCru: true,
+        perfil: { role: 'admin', feature_grants: [] },
+        atividades: [Object.assign(ativ({ id: 'a1', status: de }),
+          { concluida_em: de === 'deploy_feito' ? '2026-02-02T00:00:00.000Z' : '' })],
+      })
+      const r = await handler(ctx)
+      return { r, gravado: (reg.update[0] || {}).dados || {} }
+    }
+    const subiu = await mover('teste_aprovado', 'deploy_feito')
+    ok('2b: ao-entrar-no-ar-carimba', !!subiu.gravado.concluida_em, subiu.gravado)
+    const voltou = await mover('deploy_feito', 'teste_reprovado')
+    ok('2b: ao-sair-do-ar-limpa-o-carimbo', voltou.gravado.concluida_em === '', voltou.gravado)
   }
 
   fim()

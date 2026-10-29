@@ -59,10 +59,20 @@ NOVOS = [
         # O único campo obrigatório do cadastro (protótipo da D5).
         "titulo": {"type": "string"},
         "descricao": {"type": "string"},
-        # "a_fazer" | "em_andamento" | "concluida" | "cancelada".
+        # As 7 etapas do fluxo (decisão de 29/10), mais `cancelada`:
+        # backlog | em_desenvolvimento | finalizado_dev | pronto_para_teste |
+        # teste_aprovado | teste_reprovado | deploy_feito | cancelada.
+        #
+        # O schema declara `string` e NÃO uma lista fechada, de propósito: a
+        # lista válida é conferida no handler, que é quem recusa com 400. Pôr a
+        # lista aqui também criaria um segundo lugar para mantê-la, e uma etapa
+        # nova passaria a exigir mudança no modelo — gravação em produção — em
+        # vez de um deploy de rota.
+        #
         # `cancelada` fica FORA do denominador do progresso e CONTINUA visível:
         # se contasse, cancelar trabalho que não vai acontecer derrubaria o
         # percentual, e quem cancela estaria sendo punido por organizar a lista.
+        # Não existe apagar: cancelar é o caminho.
         "status": {"type": "string"},
         # Posição dentro da coluna do Kanban. Número e não lista encadeada
         # porque a camada não tem gravação condicional: reordenar por ponteiro

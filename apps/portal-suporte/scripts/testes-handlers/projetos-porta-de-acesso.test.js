@@ -70,6 +70,7 @@ const QUEM = {
   'admin':               { role: 'admin',     feature_grants: [] },
   'developer':           { role: 'developer', feature_grants: [] },
   'developer+projetos':  { role: 'developer', feature_grants: ['projetos'] },
+  'developer+planejamento': { role: 'developer', feature_grants: ['planejamento'] },
   'support+qa':          { role: 'support',   feature_grants: ['qa'] },
   'support':             { role: 'support',   feature_grants: [] },
   'user+projetos':       { role: 'user',      feature_grants: ['projetos'] },
@@ -77,6 +78,9 @@ const QUEM = {
 }
 
 async function statusDe(marca, quem, portaAntiga, extra) {
+  // Nome fora do mapa daria `perfil: undefined`, um 403 e a impressão de que a
+  // regra recusou. Melhor parar dizendo o nome errado.
+  if (!QUEM[quem]) throw new Error('perfil desconhecido no teste: ' + quem)
   const { handler, contexto } = carregarHandlerEContexto(marca)
   if (portaAntiga === false) contexto._PORTA_ANTIGA_DE_PROJETOS = false
   const r = await handler(montar(QUEM[quem], extra))
@@ -135,18 +139,26 @@ async function statusDe(marca, quem, portaAntiga, extra) {
 
   // ── 4. O campo dá ACESSO, não escrita ─────────────────────────────────────
   //
-  // PROTÓTIPO, não regra aprovada: o alcance da permissão por ação (D6c) está
-  // em aberto. Hoje escrever atividade continua em `_podeMexerNoCard`
-  // (developer+ ou grant `planejamento`), que a decisão de 28/10 não tocou.
-  // Quem recebe só o campo "Projetos" vê o módulo e NÃO escreve nele.
+  // O alcance por ação (D6c) foi decidido em 29/10: CRIAR atividade é só de
+  // quem planeja. Então o campo "Projetos" dá o módulo e nada mais — e o
+  // developer comum, que antes criava, também não cria mais. Quem muda isso é
+  // o grant `planejamento`, que é outra permissão.
   {
-    const corpo = { body: { titulo: 'Atividade' }, params: { id: 'p1' } }
+    const corpo = {
+      body: {
+        titulo: 'Atividade', descricao: 'Detalhe',
+        responsavel_id: 'u1', previsao_entrega: '2026-12-01',
+      },
+      params: { id: 'p1' },
+    }
     const verUsuario = await statusDe(VER_ATIV, 'user+projetos')
     const escreverUsuario = await statusDe(ESCREVER_ATIV, 'user+projetos', undefined, corpo)
     const escreverDev = await statusDe(ESCREVER_ATIV, 'developer', undefined, corpo)
+    const escreverPlanejador = await statusDe(ESCREVER_ATIV, 'developer+planejamento', undefined, corpo)
     ok('campo-projetos-ve-mas-nao-escreve', verUsuario === 200 && escreverUsuario === 403,
       { verUsuario, escreverUsuario })
-    ok('escrever-continua-na-porta-de-sempre', escreverDev === 201, escreverDev)
+    ok('developer-comum-tambem-nao-cria-mais', escreverDev === 403, escreverDev)
+    ok('quem-planeja-cria', escreverPlanejador === 201, escreverPlanejador)
   }
 
   // ── 5. Os 21 handlers do módulo têm a MESMA porta ─────────────────────────
