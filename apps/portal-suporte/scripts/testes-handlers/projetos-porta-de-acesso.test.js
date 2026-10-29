@@ -72,6 +72,7 @@ const QUEM = {
   'developer+projetos':  { role: 'developer', feature_grants: ['projetos'] },
   'developer+planejamento': { role: 'developer', feature_grants: ['planejamento'] },
   'support+qa':          { role: 'support',   feature_grants: ['qa'] },
+  'support+planejamento': { role: 'support',  feature_grants: ['planejamento'] },
   'support':             { role: 'support',   feature_grants: [] },
   'user+projetos':       { role: 'user',      feature_grants: ['projetos'] },
   'user':                { role: 'user',      feature_grants: [] },
@@ -101,6 +102,8 @@ async function statusDe(marca, quem, portaAntiga, extra) {
       'master': 200, 'admin': 200,
       'user+projetos': 200, 'developer+projetos': 200,
       'developer': 200, 'support+qa': 200,
+      // Quem planeja vê, hoje e depois da troca (decisão de 29/10).
+      'support+planejamento': 200,
       'support': 403, 'user': 403,
     }
     for (const marca of [VER, VER_ATIV]) {
@@ -119,6 +122,9 @@ async function statusDe(marca, quem, portaAntiga, extra) {
       'master': 200, 'admin': 200,
       'user+projetos': 200, 'developer+projetos': 200,
       'developer': 403, 'support+qa': 403,
+      // Quem planeja continua vendo no dia da troca: a liberação vem ANTES da
+      // conferência da transição, justamente para não cair com ela.
+      'support+planejamento': 200,
       'support': 403, 'user': 403,
     }
     for (const marca of [VER, VER_ATIV]) {
@@ -161,6 +167,39 @@ async function statusDe(marca, quem, portaAntiga, extra) {
     ok('quem-planeja-cria', escreverPlanejador === 201, escreverPlanejador)
   }
 
+  // ── 4b. Quem planeja CRIA e LISTA ────────────────────────────────────────
+  //
+  // Fecha o ponto que a entrega do servidor deixou aberto: o grant
+  // `planejamento` abria o POST e o PATCH de atividade e não abria a listagem,
+  // porque a 507 passa só por `_podeVer`. A pessoa criava atividade e não
+  // conseguia ver nenhuma.
+  {
+    const corpo = {
+      body: {
+        titulo: 'Atividade', descricao: 'Detalhe',
+        responsavel_id: 'u1', previsao_entrega: '2026-12-01',
+      },
+      params: { id: 'p1' },
+    }
+    for (const porta of [undefined, false]) {
+      const quando = porta === false ? 'no-dia-da-troca' : 'hoje'
+      const cria = await statusDe(ESCREVER_ATIV, 'support+planejamento', porta, corpo)
+      const lista = await statusDe(VER_ATIV, 'support+planejamento', porta)
+      const projeto = await statusDe(VER, 'support+planejamento', porta)
+      ok('quem-planeja-cria-e-lista:' + quando,
+        cria === 201 && lista === 200 && projeto === 200, { quando, cria, lista, projeto })
+    }
+    // E quem NÃO planeja nem tem o campo continua de fora, nos dois estados.
+    for (const porta of [undefined, false]) {
+      const quando = porta === false ? 'no-dia-da-troca' : 'hoje'
+      ok('support-sem-grant-continua-fora:' + quando,
+        (await statusDe(VER_ATIV, 'support', porta)) === 403, quando)
+    }
+    // O grant de QA não ganhou passe no dia da troca por causa disto.
+    ok('qa-continua-sem-passe-no-dia-da-troca',
+      (await statusDe(VER_ATIV, 'support+qa', false)) === 403, null)
+  }
+
   // ── 5. Os 21 handlers do módulo têm a MESMA porta ─────────────────────────
   {
     const texto = fs.readFileSync(ARQ, 'utf8')
@@ -181,6 +220,7 @@ async function statusDe(marca, quem, portaAntiga, extra) {
       'if (eu.nivel >= _RANK.admin) return true;',
       'if (eu.grants.indexOf(\\"projetos\\") >= 0) return true;',
       'if (!_PORTA_ANTIGA_DE_PROJETOS) return false;',
+      'if (eu.grants.indexOf(\\"planejamento\\") >= 0) return true;',
     ]
     for (const p of PEDACOS) {
       const faltam = doModulo.filter((e) => !e.corpo.includes(p)).map((e) => e.marca)

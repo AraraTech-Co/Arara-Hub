@@ -25,6 +25,7 @@ const QUEM = {
   'developer':          { role: 'developer', featureGrants: [] },
   'developer+projetos': { role: 'developer', featureGrants: ['projetos'] },
   'support+qa':         { role: 'support',   featureGrants: ['qa'] },
+  'support+planejamento': { role: 'support', featureGrants: ['planejamento'] },
   'support':            { role: 'support',   featureGrants: [] },
   'user+projetos':      { role: 'user',      featureGrants: ['projetos'] },
   'user':               { role: 'user',      featureGrants: [] },
@@ -70,6 +71,8 @@ const DESLIGADA = await importarTela(REL, MARCA_DA_TROCA)
     'master': true, 'admin': true,
     'user+projetos': true, 'developer+projetos': true,
     'developer': true, 'support+qa': true,
+    // Quem planeja vê (decisão de 29/10).
+    'support+planejamento': true,
     'support': false, 'user': false, 'sem-grants': false,
   }
   const vistos = {}
@@ -90,8 +93,10 @@ const DESLIGADA = await importarTela(REL, MARCA_DA_TROCA)
       planeja: G.canPlanejar(QUEM['user+projetos']),
     })
   const soPlanejamento = { role: 'user', featureGrants: ['planejamento'] }
-  ok('planejamento-sozinho-nao-da-acesso-ao-modulo-hoje',
-    G.canPlanejar(soPlanejamento) === true && G.canVerProjetos(soPlanejamento) === false, {
+  // MUDOU em 29/10: quem planeja passou a ver. Antes isto afirmava o contrário,
+  // e o contrário era o buraco — a pessoa criava atividade e não listava.
+  ok('planejamento-agora-da-acesso-ao-modulo',
+    G.canPlanejar(soPlanejamento) === true && G.canVerProjetos(soPlanejamento) === true, {
       planeja: G.canPlanejar(soPlanejamento),
       ve: G.canVerProjetos(soPlanejamento),
     })
@@ -107,6 +112,9 @@ const DESLIGADA = await importarTela(REL, MARCA_DA_TROCA)
     'master': true, 'admin': true,
     'user+projetos': true, 'developer+projetos': true,
     'developer': false, 'support+qa': false,
+    // Continua vendo no dia da troca: a liberação vem antes da conferência da
+    // transição, justamente para não cair com ela.
+    'support+planejamento': true,
     'support': false, 'user': false,
   }
   const vistos = {}
@@ -118,8 +126,8 @@ const DESLIGADA = await importarTela(REL, MARCA_DA_TROCA)
   ok('a-constante-e-a-causa-da-diferenca-na-tela',
     G.canVerProjetos(QUEM['developer']) === true
     && DESLIGADA.canVerProjetos(QUEM['developer']) === false, null)
-  ok('no-dia-da-troca-planejamento-sozinho-nao-ve-o-modulo',
-    DESLIGADA.canVerProjetos({ role: 'user', featureGrants: ['planejamento'] }) === false, null)
+  ok('no-dia-da-troca-planejamento-continua-vendo',
+    DESLIGADA.canVerProjetos({ role: 'user', featureGrants: ['planejamento'] }) === true, null)
 }
 
 // ── 4. Tela e servidor dizem a mesma coisa ──────────────────────────────────
@@ -131,6 +139,7 @@ const DESLIGADA = await importarTela(REL, MARCA_DA_TROCA)
   const servidor = {
     'master': true, 'admin': true, 'user+projetos': true, 'developer+projetos': true,
     'developer': true, 'support+qa': true, 'support': false, 'user': false,
+    'support+planejamento': true,
   }
   const divergem = Object.keys(servidor)
     .filter((quem) => G.canVerProjetos(QUEM[quem]) !== servidor[quem])

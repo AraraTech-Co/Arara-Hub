@@ -139,11 +139,14 @@ async function roda() {
       const r = await handler(ctx)
       ok('ver-lista:' + nome, r.status === esperado, { nome, status: r.status, esperado })
     }
-    // §3.8 item 5: quem tem só `planejamento` GRAVA no módulo e não o VÊ.
+    // Era o item 5 da §3.8: quem tinha só `planejamento` GRAVAVA no módulo e
+    // não o VIA. Corrigido por decisão do Leonardo em 29/10 ("libera a
+    // lista") — este caso passou a afirmar a regra nova, e é ele que impede o
+    // defeito de voltar.
     const { handler } = carregar('292 projetos GET /projetos')
     const { ctx } = montar({ perfil: { role: 'support', feature_grants: ['planejamento'] } })
     const r = await handler(ctx)
-    ok('atual conhecido: planejamento-sozinho-nao-ve', r.status === 403, r.status)
+    ok('planejamento-sozinho-agora-ve', r.status === 200, r.status)
   }
 
   // ───────────────────────────────────────────────────────────────────────────
@@ -191,9 +194,12 @@ async function roda() {
       const mb = montar({ perfil, params: { id: 'p1' }, body: { nome: 'Fase 1' } })
       porta[quem + '/planejar'] = (await b.handler(mb.ctx)).status
     }
-    ok('atual conhecido: ver-e-planejar-sao-portas-diferentes',
+    // As duas portas continuam DIFERENTES, mas não são mais independentes:
+  // planejar implica ver (29/10), e ver não implica planejar. O developer
+  // enxerga o módulo e não planeja; quem planeja faz as duas coisas.
+  ok('planejar-implica-ver-mas-ver-nao-implica-planejar',
       porta['developer/ver'] === 200 && porta['developer/planejar'] === 403 &&
-      porta['support+planejamento/ver'] === 403 && porta['support+planejamento/planejar'] === 201,
+      porta['support+planejamento/ver'] === 200 && porta['support+planejamento/planejar'] === 201,
       porta)
   }
 
