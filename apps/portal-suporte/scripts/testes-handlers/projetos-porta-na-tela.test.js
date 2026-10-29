@@ -1,79 +1,23 @@
-// A porta de Projetos na TELA — o campo em Editar membro e o que ele libera.
-//
-// O servidor é a verdade (ver projetos-porta-de-acesso.test.js). Isto aqui é
-// sobre a tela: o campo tem de EXISTIR no catálogo (senão ninguém consegue
-// conceder), ser aceito na gravação, e o menu tem de esconder e mostrar pela
-// MESMA régua do servidor — senão a pessoa vê um item que a API recusa, ou
-// deixa de ver um módulo que ela pode abrir.
-//
-// POR QUE EXECUTAR O MÓDULO, E NÃO LER O TEXTO DELE:
-// uma tabela-verdade lida por `grep` afirma sobre a letra, não sobre o
-// resultado. `canVerProjetos` é uma função de cinco linhas com duas portas e
-// uma constante — é exatamente o tipo de regra que passa no olho e erra no
-// caso de borda. Então o teste IMPORTA o `.ts` de verdade: o Node 26 apaga os
-// tipos, e um par de ganchos resolve o que o TypeScript resolveria (extensão
-// omitida e o JSON de configuração).
-//
-// Roda com: node projetos-porta-na-tela.test.js
 const fs = require('node:fs')
 const path = require('node:path')
-const { pathToFileURL } = require('node:url')
-const { registerHooks } = require('node:module')
 const { ok, fim } = require('./_carregar.js')
+const { registrarTS, importarTela, semComentarios, APP } = require('./_tela.js')
 
-const APP = path.resolve(__dirname, '../../app')
 const MARCA_DA_TROCA = 'porta=desligada'
 
-registerHooks({
-  resolve(esp, ctx, proximo) {
-    // Especificador relativo sem extensão: o que o `tsc` resolveria para .ts.
-    if (/^\.{1,2}\//.test(esp) && !path.extname(esp) && ctx.parentURL) {
-      const base = path.dirname(ctx.parentURL.replace('file://', ''))
-      const alvo = path.resolve(decodeURIComponent(base), esp + '.ts')
-      if (fs.existsSync(alvo)) return { url: pathToFileURL(alvo).href, shortCircuit: true }
-    }
-    return proximo(esp, ctx)
-  },
-  load(url, ctx, proximo) {
-    // A variante do DIA DA TROCA: o mesmo módulo com a constante em `false`.
-    //
-    // `PORTA_ANTIGA_DE_PROJETOS` é constante de módulo — não há como virá-la em
-    // tempo de execução, e sem virar ninguém prova o que a troca faz. Então o
-    // gancho serve uma SEGUNDA instância do mesmo arquivo com a única linha da
-    // constante trocada, e a troca exige ocorrência única: se o arquivo mudar
-    // de forma, o teste para em vez de servir um módulo que não é o do repo.
-    if (url.includes(MARCA_DA_TROCA)) {
-      const arq = decodeURIComponent(url.split('?')[0].replace('file://', ''))
-      const fonte = fs.readFileSync(arq, 'utf8')
-      // Sem `throw`: se a linha não casar, o módulo é servido como está e a
-      // asserção nomeada `a-linha-da-constante-e-unica-e-esta-true` reprova
-      // dizendo o porquê. Lançar aqui mataria o arquivo de teste antes de
-      // qualquer caso rodar, e a saída não diria qual regra quebrou.
-      const de = 'export const PORTA_ANTIGA_DE_PROJETOS = true'
-      if (fonte.split(de).length - 1 !== 1) {
-        return { format: 'module-typescript', source: fonte, shortCircuit: true }
-      }
-      return {
-        // `module-typescript`: é o Node que apaga os tipos, o mesmo caminho do
-        // arquivo original. Servir como `module` cru faria o `import type`
-        // chegar ao compilador e o teste morrer de sintaxe.
-        format: 'module-typescript',
-        source: fonte.replace(de, 'export const PORTA_ANTIGA_DE_PROJETOS = false'),
-        shortCircuit: true,
-      }
-    }
-    // `import cfg from '....json'` sem atributo de importação: o bundler do
-    // Next entrega isso; o Node, não. O gancho devolve o mesmo valor.
-    if (url.endsWith('.json')) {
-      const texto = fs.readFileSync(decodeURIComponent(url.replace('file://', '')), 'utf8')
-      return { format: 'module', source: 'export default ' + texto, shortCircuit: true }
-    }
-    return proximo(url, ctx)
-  },
-})
-
+// A variante do DIA DA TROCA: o mesmo módulo com a constante em `false`.
+// `PORTA_ANTIGA_DE_PROJETOS` é constante de módulo — não há como virá-la em
+// tempo de execução, e sem virar ninguém prova o que a troca faz. O helper
+// NÃO lança quando a linha não casa: quem reprova é
+// `a-linha-da-constante-e-unica-e-esta-true`, que diz o porquê.
+registrarTS([{
+  marca: MARCA_DA_TROCA,
+  de: 'export const PORTA_ANTIGA_DE_PROJETOS = true',
+  para: 'export const PORTA_ANTIGA_DE_PROJETOS = false',
+}])
 
 const CAMINHO = path.join(APP, 'lib/auth/feature-grants.ts')
+const REL = 'lib/auth/feature-grants.ts'
 
 const QUEM = {
   'master':             { role: 'master',    featureGrants: [] },
@@ -88,8 +32,8 @@ const QUEM = {
 }
 
 ;(async () => {
-const G = await import(pathToFileURL(CAMINHO).href)
-const DESLIGADA = await import(pathToFileURL(CAMINHO).href + '?' + MARCA_DA_TROCA)
+const G = await importarTela(REL)
+const DESLIGADA = await importarTela(REL, MARCA_DA_TROCA)
 
 // ── 1. O campo existe e é concedível ────────────────────────────────────────
 {
@@ -216,12 +160,7 @@ const DESLIGADA = await import(pathToFileURL(CAMINHO).href + '?' + MARCA_DA_TROC
 
 // ── 5. O menu usa a régua, e não uma cópia dela ─────────────────────────────
 {
-  const texto = fs.readFileSync(path.join(APP, '_components/admin/admin-sidebar.tsx'), 'utf8')
-  // Sem comentários: o comentário que EXPLICA a decisão cita os mesmos nomes
-  // que a busca procura, e acharia a palavra sem que o código a use.
-  const semComentario = texto
-    .replace(/\/\*[\s\S]*?\*\//g, '')
-    .split('\n').filter((l) => !/^\s*\/\//.test(l)).join('\n')
+  const semComentario = semComentarios('_components/admin/admin-sidebar.tsx')
 
   const linha = semComentario.split('\n').find((l) => l.includes("href: '/admin/projetos'"))
   ok('o-item-de-projetos-existe-no-menu', !!linha, linha)
@@ -235,9 +174,7 @@ const DESLIGADA = await import(pathToFileURL(CAMINHO).href + '?' + MARCA_DA_TROC
     semComentario.includes("canVerProjetos") && semComentario.includes("auth/feature-grants"), null)
 
   // O hook não refaz a conta: uma segunda cópia da régua divergiria no dia da troca.
-  const hook = fs.readFileSync(path.join(APP, '_hooks/use-meu-acesso.ts'), 'utf8')
-    .replace(/\/\*[\s\S]*?\*\//g, '')
-    .split('\n').filter((l) => !/^\s*(\/\/|\*)/.test(l)).join('\n')
+  const hook = semComentarios('_hooks/use-meu-acesso.ts')
   ok('o-hook-expoe-podeVerProjetos', /podeVerProjetos:\s*canVerProjetos\(/.test(hook), null)
   ok('o-hook-nao-reimplementa-a-regra',
     !hook.includes("includes('projetos')") && !hook.includes('_PORTA_ANTIGA'), null)

@@ -4,6 +4,7 @@
 // =============================================================================
 
 import { araraFetch } from '@/lib/arara/client'
+import type { Atividade, AtividadeStatus } from '@/lib/projetos-atividades'
 
 export type Projeto = {
   id: string
@@ -231,6 +232,58 @@ export const projetosApi = {
       }),
     remover: (projetoId: string, depId: string) =>
       araraFetch.delete<Ok<{ removida: boolean }>>(`/api/projetos/${projetoId}/dependencias/${depId}`),
+  },
+
+  /**
+   * Atividades do projeto (rotas 507–509).
+   *
+   * O projeto vem sempre da URL e nunca do corpo — é assim no servidor, e
+   * mandar `projeto_id` no corpo daria a impressão de que a tela escolhe.
+   *
+   * `editar` manda o `updated_at` que a tela LEU: é a concorrência otimista do
+   * módulo. Sem ele, duas pessoas no mesmo cartão gravam em cima uma da outra
+   * sem ninguém perceber.
+   */
+  atividades: {
+    listar: (projetoId: string, filtros?: { status?: AtividadeStatus; fase_id?: string }) =>
+      araraFetch.get<Ok<Atividade[]> & { resumo?: { total: number; concluidas: number; canceladas: number; progresso: number } }>(
+        `/api/projetos/${projetoId}/atividades`
+        + (filtros && (filtros.status || filtros.fase_id)
+          ? '?' + new URLSearchParams(
+            Object.entries(filtros).filter(([, v]) => !!v) as [string, string][],
+          ).toString()
+          : ''),
+      ),
+    criar: (
+      projetoId: string,
+      body: {
+        titulo: string
+        descricao?: string
+        status?: AtividadeStatus
+        fase_id?: string
+        responsavel_id?: string
+        inicio_planejado?: string
+        previsao_entrega?: string
+        estimativa_min?: number
+        ordem?: number
+      },
+    ) => araraFetch.post<Ok<Atividade>>(`/api/projetos/${projetoId}/atividades`, body),
+    editar: (
+      projetoId: string,
+      atividadeId: string,
+      body: Partial<{
+        titulo: string
+        descricao: string
+        status: AtividadeStatus
+        fase_id: string
+        responsavel_id: string
+        inicio_planejado: string
+        previsao_entrega: string
+        estimativa_min: number
+        ordem: number
+        updated_at: string
+      }>,
+    ) => araraFetch.patch<Ok<Atividade>>(`/api/projetos/${projetoId}/atividades/${atividadeId}`, body),
   },
 
   marcos: {

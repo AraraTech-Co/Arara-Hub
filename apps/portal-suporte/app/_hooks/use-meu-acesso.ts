@@ -16,11 +16,21 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '@/lib/arara/AuthProvider'
 import { api } from '@/lib/api/client'
 import type { SystemAccessLevel } from '@/lib/auth/types'
-import { canVerProjetos, type FeatureGrant } from '@/lib/auth/feature-grants'
+import {
+  canCadastrarEmpresa, canPlanejar, canVerProjetos, type FeatureGrant,
+} from '@/lib/auth/feature-grants'
 
 const ORDEM: SystemAccessLevel[] = ['user', 'developer', 'admin', 'master']
 
 export type MeuAcesso = {
+  /**
+   * O id da pessoa logada, como a plataforma o conhece (users.id).
+   *
+   * Sai daqui porque este hook já resolve a identidade: quem precisasse do id
+   * chamaria `useAuth` de novo, e aí haveria duas respostas possíveis para
+   * "quem sou eu" na mesma tela.
+   */
+  meuId: string
   nivel: SystemAccessLevel | null
   grants: string[]
   carregando: boolean
@@ -86,13 +96,18 @@ export function useMeuAcesso(): MeuAcesso {
     !!nivel && ORDEM.indexOf(nivel) >= ORDEM.indexOf(min)
 
   return {
+    meuId: String(user?.id || ''),
     nivel,
     grants,
     carregando,
     temNivel,
     tem: (g: FeatureGrant) => grants.includes(g),
-    podePlanejar: temNivel('admin') || grants.includes('planejamento'),
+    // Chama a regra do catálogo em vez de refazê-la. A conta inline passava
+    // por `temNivel('developer')` sem nenhum teste reprovar — e este campo
+    // decide o botão de criar atividade e o seletor de responsável. Duas
+    // cópias da mesma régua divergem no dia em que uma delas muda.
+    podePlanejar: canPlanejar({ role: nivel || 'user', featureGrants: grants }),
     podeVerProjetos: canVerProjetos({ role: nivel || 'user', featureGrants: grants }),
-    podeCadastrarEmpresa: temNivel('admin') || grants.includes('cadastro_empresa'),
+    podeCadastrarEmpresa: canCadastrarEmpresa({ role: nivel || 'user', featureGrants: grants }),
   }
 }

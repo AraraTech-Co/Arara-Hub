@@ -14,7 +14,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
-import { ArrowLeft, TriangleAlert, Plus, Archive, List, GanttChartSquare } from 'lucide-react'
+import { ArrowLeft, TriangleAlert, Plus, Archive, List, GanttChartSquare, LayoutGrid } from 'lucide-react'
 import { projetosApi, type CardDoProjeto, type ProjetoDetalhe } from '@/lib/api/projetos'
 import {
   PROJETO_STATUS_CLASSES, PROJETO_STATUS_LABELS, PROJETO_TIPO_LABELS,
@@ -26,6 +26,7 @@ import { VincularCardsDialog } from '@/components/projetos/vincular-cards-dialog
 import { PlanejarCardDialog } from '@/components/projetos/planejar-card-dialog'
 import { Gantt } from '@/components/projetos/gantt/gantt'
 import { MarcosDoProjeto } from '@/components/projetos/marcos-do-projeto'
+import { KanbanDeAtividades } from '@/components/projetos/kanban-de-atividades'
 
 export default function ProjetoVerClient() {
   const params = useSearchParams()
@@ -38,7 +39,11 @@ export default function ProjetoVerClient() {
   // O diálogo de planejamento vive AQUI: a lista e o Gantt abrem o mesmo, e
   // duas cópias do mesmo diálogo é como as duas telas começam a divergir.
   const [planejando, setPlanejando] = useState<CardDoProjeto | null>(null)
-  const [vista, setVista] = useState<'lista' | 'gantt'>('gantt')
+  // Kanban como visão padrão é PROTÓTIPO autorizado, não regra aprovada: as
+  // atividades são o trabalho do dia, e o Cronograma responde "quando", que se
+  // consulta menos. Trocar é mudar esta constante.
+  const VISTA_PADRAO = 'kanban' as const
+  const [vista, setVista] = useState<'kanban' | 'lista' | 'gantt'>(VISTA_PADRAO)
 
   const carregar = useCallback(() => {
     if (!id) { setCarregando(false); setErro('Projeto não informado.'); return }
@@ -140,10 +145,20 @@ export default function ProjetoVerClient() {
 
       <MarcosDoProjeto projeto={projeto} podePlanejar={acesso.podePlanejar} aoMudar={carregar} />
 
-      {/* Lista e Gantt são a MESMA informação em duas leituras: a lista responde
-          "o que existe", o Gantt responde "quando". Nenhuma das duas é a
-          versão reduzida da outra. */}
+      {/* Três leituras do mesmo projeto, nenhuma versão reduzida da outra: o
+          Kanban responde "o que está acontecendo agora", a Lista responde "o
+          que existe", o Cronograma responde "quando". Kanban e Lista NÃO são a
+          mesma coisa: o Kanban mostra as atividades do projeto, a Lista mostra
+          os cards vinculados por fase. */}
       <div className="inline-flex rounded-lg border border-border overflow-hidden">
+        <button
+          onClick={() => setVista('kanban')}
+          className={`inline-flex items-center gap-1.5 px-3 h-8 text-xs font-medium transition-colors ${
+            vista === 'kanban' ? 'bg-indigo-600 text-white' : 'bg-background text-foreground/70 hover:bg-muted'
+          }`}
+        >
+          <LayoutGrid className="w-3.5 h-3.5" /> Kanban
+        </button>
         <button
           onClick={() => setVista('gantt')}
           className={`inline-flex items-center gap-1.5 px-3 h-8 text-xs font-medium transition-colors ${
@@ -162,6 +177,15 @@ export default function ProjetoVerClient() {
         </button>
       </div>
 
+      {vista === 'kanban' && (
+        <KanbanDeAtividades
+          projetoId={projeto.id}
+          fases={projeto.fases.map((f) => ({ id: f.id, nome: f.nome }))}
+          podePlanejar={acesso.podePlanejar}
+          meuId={acesso.meuId}
+        />
+      )}
+
       {vista === 'gantt' ? (
         <Gantt
           projeto={projeto}
@@ -170,7 +194,7 @@ export default function ProjetoVerClient() {
           aoPlanejar={setPlanejando}
           aoMudar={carregar}
         />
-      ) : (
+      ) : vista === 'lista' ? (
         <FasesDoProjeto
           projeto={projeto}
           podePlanejar={acesso.podePlanejar}
@@ -178,7 +202,7 @@ export default function ProjetoVerClient() {
           aoMudar={carregar}
           aoPlanejar={setPlanejando}
         />
-      )}
+      ) : null}
 
       {vista === 'lista' && semFase.length > 0 && (
         <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4">

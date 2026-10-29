@@ -27,19 +27,23 @@
 # efeito sobrevive a reverter o código. O histórico da atividade fica em
 # `ProjetoAtividadeEvento`, só dela.
 #
-# ── Protótipos locais, NÃO regra de negócio aprovada ─────────────────────────
-# O Leonardo autorizou construir com protótipos fáceis de trocar enquanto as
-# decisões D1–D5 não existem. Nesta entrega:
-#   - colunas: a_fazer / em_andamento / concluida, mais `cancelada` fora do
-#     total e visível (D2, D3);
-#   - progresso: concluídas sobre o total não cancelado, pesos iguais (D4);
-#   - cadastro: `titulo` obrigatório, o resto opcional (D5);
+# ── Decidido pelo Leonardo em 29/10/2026 ─────────────────────────────────────
+#   - D2, as 7 etapas na ordem: backlog, em_desenvolvimento, finalizado_dev,
+#     pronto_para_teste, teste_aprovado, teste_reprovado, deploy_feito;
+#   - D3, cancelar: `cancelada` sai do quadro e da conta e fica no histórico.
+#     Não existe apagar;
+#   - D4, progresso: contagem simples, e conta como concluída SÓ `deploy_feito`.
+#     O total exclui a cancelada;
+#   - D5, obrigatórios na criação: título, responsável, prazo e descrição. O
+#     PATCH também não pode esvaziar nenhum dos quatro;
+#   - D6c, quem mexe: criar é só de quem planeja; editar e mover é de quem
+#     planeja OU do responsável daquela atividade; developer comum só vê.
+#
+# ── O que AQUI é protótipo, e não decisão dele ───────────────────────────────
+#   - trocar o RESPONSÁVEL é só de quem planeja. Não foi perguntado a ele;
 #   - sem dependência entre atividades (D11) e sem notificação (D14);
-#   - permissão: ver com `_podeVer`, escrever com `_podeMexerNoCard` — a MESMA
-#     porta dos cards hoje. O campo "Projetos" (decisão C) é etapa própria, e o
-#     alcance por ação (D6c) continua em aberto;
-#   - sem rota de exclusão: `cancelada` é o caminho (D3). Apagar de verdade
-#     entra, se entrar, por decisão expressa.
+#   - D10 (bloqueio manual), D12 (identificador visível) e o teto de 10.000
+#     continuam em aberto.
 #
 # ── Leitura acima de 500: o que está resolvido e o que NÃO está ─────────────
 # A camada tem teto de 500 por leitura, `offset`, ordem só por `created_at DESC`
@@ -120,7 +124,7 @@ def _guarda_de_sessao():
     """O bloco de guarda de sessão, lido do `guarda-sessao.py`.
 
     `_perfilDe` trata "sem pessoa" como chamada de serviço (`servico: true`,
-    nível 99), e `_podeVer`/`_podeMexerNoCard` liberam quem é serviço. Sem a
+    nível 99), e `_podeVer`/`_podePlanejar` liberam quem é serviço. Sem a
     guarda na frente, qualquer credencial aceita pelo app — a chave de API não
     carrega pessoa — passaria por cima das três permissões. É o mesmo furo que
     o `guarda-sessao.py` fechou nas outras rotas, e foi o teste desta entrega
@@ -160,10 +164,29 @@ MARCA = "scripts/projetos-atividades.py"
 # ── Bloco comum das atividades ───────────────────────────────────────────────
 ATIV = """
 // ── Atividades do projeto ────────────────────────────────────────────────────
-// `cancelada` existe e fica VISÍVEL, mas fora do denominador do progresso: se
-// contasse, cancelar trabalho que não vai acontecer derrubaria o percentual do
-// projeto, e quem cancela estaria sendo punido por organizar a lista.
-var _ST_ATIV = ["a_fazer", "em_andamento", "concluida", "cancelada"];
+// As 7 etapas do fluxo, na ordem, decididas pelo Leonardo em 29/10/2026. É uma
+// LISTA ORDENADA e não um conjunto: a ordem é a do quadro, e mover para a
+// etapa seguinte é andar um passo nela.
+//
+// `teste_reprovado` é etapa do fluxo, não erro: trabalho reprovado volta a ser
+// trabalho, e por isso conta no total como qualquer outra.
+var _ST_FLUXO = ["backlog", "em_desenvolvimento", "finalizado_dev",
+  "pronto_para_teste", "teste_aprovado", "teste_reprovado", "deploy_feito"];
+
+// `cancelada` existe e fica VISÍVEL, mas fora do fluxo e fora do denominador
+// do progresso: se contasse, cancelar trabalho que não vai acontecer derrubaria
+// o percentual do projeto, e quem cancela estaria sendo punido por organizar a
+// lista. Não existe apagar atividade — cancelar é o que há.
+var _ST_ATIV = _ST_FLUXO.concat(["cancelada"]);
+
+// Onde a atividade nasce, e a única etapa que conta como pronta.
+var _ST_INICIAL = "backlog";
+var _ST_PRONTO = "deploy_feito";
+
+// D5: os quatro campos que o cadastro exige. Valem na CRIAÇÃO e também no
+// PATCH, que não pode esvaziar nenhum deles — exigir no nascimento e deixar
+// apagar depois é a mesma regra valendo pela metade.
+var _OBRIG_ATIV = ["titulo", "descricao", "responsavel_id", "previsao_entrega"];
 var _CAMPOS_ATIV = ["id", "projeto_id", "fase_id", "titulo", "descricao", "status",
   "ordem", "responsavel_id", "inicio_planejado", "previsao_entrega", "estimativa_min",
   "concluida_em", "cancelada_em", "criado_por", "created_at", "updated_at"];
@@ -183,26 +206,34 @@ function _ativ(a) {
 function _ativAtrasada(a) {
   var fim = _dataCal(a.previsao_entrega);
   if (!fim) return false;
-  if (["concluida", "cancelada"].indexOf(String(a.status || "")) >= 0) return false;
+  // Terminal é o que não tem mais prazo a cumprir: no ar, ou cancelada.
+  if ([_ST_PRONTO, "cancelada"].indexOf(String(a.status || "")) >= 0) return false;
   return fim < new Date().toISOString().slice(0, 10);
 }
 
-// Progresso por CONCLUSÃO, pesos iguais (protótipo da D4). Sem atividade, 0 —
-// e não 100, que faria projeto vazio parecer pronto.
+// Contagem simples (D4, decidida em 29/10): conta como concluída SÓ a etapa
+// `deploy_feito`. Trabalho em teste aprovado ainda não está no ar, e tratá-lo
+// como pronto faria o projeto parecer entregue antes de existir entrega.
+// Sem atividade, 0 — e não 100, que faria projeto vazio parecer pronto.
+//
+// `por_status` substitui os contadores de `a_fazer` e `em_andamento`: com 7
+// etapas, dois contadores fixos deixariam cinco etapas invisíveis, e manter
+// chaves de etapas que não existem mais seria devolver zero para sempre.
 function _resumoAtiv(lista) {
-  var total = 0, concluidas = 0, canceladas = 0, andamento = 0, aFazer = 0, atrasadas = 0;
+  var total = 0, concluidas = 0, canceladas = 0, atrasadas = 0;
+  var porStatus = {};
+  for (var k = 0; k < _ST_ATIV.length; k++) porStatus[_ST_ATIV[k]] = 0;
   for (var i = 0; i < (lista || []).length; i++) {
     var s = String(lista[i].status || "");
+    if (porStatus[s] !== undefined) porStatus[s]++;
     if (s === "cancelada") { canceladas++; continue; }
     total++;
-    if (s === "concluida") concluidas++;
-    else if (s === "em_andamento") andamento++;
-    else aFazer++;
+    if (s === _ST_PRONTO) concluidas++;
     if (_ativAtrasada(lista[i])) atrasadas++;
   }
   return {
     total: total, concluidas: concluidas, canceladas: canceladas,
-    em_andamento: andamento, a_fazer: aFazer, atrasadas: atrasadas,
+    atrasadas: atrasadas, por_status: porStatus,
     progresso: total === 0 ? 0 : Math.round((concluidas * 100) / total),
   };
 }
@@ -248,6 +279,27 @@ function _tituloValido(v) {
   var s = String(v === null || v === undefined ? "" : v).trim();
   if (!s) return null;
   return s.slice(0, 200);
+}
+
+// Em branco é o que não serve para nenhum dos quatro obrigatórios: string
+// vazia, só espaço, null, undefined. Zero e `false` não aparecem nestes
+// campos, mas `String()` os preservaria, e por isso não se usa `!v` aqui.
+function _emBranco(v) {
+  return String(v === null || v === undefined ? "" : v).trim() === "";
+}
+
+// O nome que vai na mensagem de erro, para quem recebe o 400 saber qual campo
+// faltou em vez de procurar.
+var _ROTULO_ATIV = {
+  titulo: "título", descricao: "descrição",
+  responsavel_id: "responsável", previsao_entrega: "prazo",
+};
+function _faltaObrigatorio(valores) {
+  for (var i = 0; i < _OBRIG_ATIV.length; i++) {
+    var c = _OBRIG_ATIV[i];
+    if (_emBranco(valores[c])) return _ROTULO_ATIV[c] || c;
+  }
+  return "";
 }
 """
 
@@ -335,17 +387,27 @@ async function handler(ctx) {
   if (!P) return ctx.reply.status(500).send({ error: "Model Projeto missing" });
   if (!A) return ctx.reply.status(500).send({ error: "Model ProjetoAtividade missing" });
   var eu = await _perfilDe(ctx);
-  if (!_podeMexerNoCard(eu)) return ctx.reply.status(403).send({ error: "Sem permissão para mexer em atividades" });
+  // D6c (29/10): CRIAR é só de quem planeja. Developer comum vê e, sendo
+  // responsável, mexe na sua atividade — mas não abre atividade nova.
+  if (!_podePlanejar(eu)) return ctx.reply.status(403).send({ error: "Sem permissão para criar atividades" });
 
   var projetoId = String(ctx.params.id);
   var p = await P.findById(projetoId);
   if (!p) return ctx.reply.status(404).send({ error: "Projeto não encontrado" });
 
   var b = ctx.body || {};
+  // Os quatro obrigatórios conferidos ANTES de qualquer outra validação: quem
+  // esqueceu o responsável tem de ouvir isso, e não um erro de data.
+  var falta = _faltaObrigatorio({
+    titulo: b.titulo, descricao: b.descricao,
+    responsavel_id: b.responsavel_id, previsao_entrega: b.previsao_entrega,
+  });
+  if (falta) return ctx.reply.status(400).send({ error: "Informe o " + falta + " da atividade" });
+
   var titulo = _tituloValido(b.titulo);
   if (!titulo) return ctx.reply.status(400).send({ error: "Informe o título da atividade" });
 
-  var status = String(b.status || "a_fazer");
+  var status = String(b.status || _ST_INICIAL);
   if (_ST_ATIV.indexOf(status) < 0) return ctx.reply.status(400).send({ error: "Status de atividade inválido" });
 
   var faseId = String(b.fase_id || "");
@@ -391,7 +453,7 @@ async function handler(ctx) {
     inicio_planejado: ini,
     previsao_entrega: fim,
     estimativa_min: est,
-    concluida_em: status === "concluida" ? _agora() : "",
+    concluida_em: status === _ST_PRONTO ? _agora() : "",
     cancelada_em: status === "cancelada" ? _agora() : "",
     criado_por: eu && eu.id ? String(eu.id) : "",
     created_at: _agora(),
@@ -414,7 +476,16 @@ async function handler(ctx) {
   var A = ctx.models.ProjetoAtividade;
   if (!A) return ctx.reply.status(500).send({ error: "Model ProjetoAtividade missing" });
   var eu = await _perfilDe(ctx);
-  if (!_podeMexerNoCard(eu)) return ctx.reply.status(403).send({ error: "Sem permissão para mexer em atividades" });
+  // Duas portas, em ordem. Primeiro ALCANÇAR o módulo: quem não alcança não
+  // recebe nem 404 nem 403 de atividade, e por isso não descobre o que existe.
+  //
+  // `_podeVer` sozinho não serve aqui: ele é developer+ ou grant `qa`, e quem
+  // tem o grant `planejamento` sem nível de developer CRIA atividade (a porta
+  // do POST) — travar o PATCH nele deixaria essa pessoa criando o que não
+  // poderia editar depois.
+  if (!_podeVer(eu) && !_podePlanejar(eu)) {
+    return ctx.reply.status(403).send({ error: "Sem permissão para ver atividades" });
+  }
 
   var projetoId = String(ctx.params.id);
   var a = await A.findById(String(ctx.params.aid));
@@ -425,9 +496,29 @@ async function handler(ctx) {
     return ctx.reply.status(404).send({ error: "Esta atividade não é deste projeto" });
   }
 
+  // D6c (29/10): editar e mover é de quem planeja OU do responsável DAQUELA
+  // atividade. A conferência exige responsável preenchido: comparar dois
+  // vazios daria `true` e abriria a atividade sem responsável para qualquer
+  // pessoa que enxergue o módulo.
+  var _dono = String(a.responsavel_id || "");
+  var _souEu = String((eu && eu.id) || "");
+  var _souODono = _dono !== "" && _souEu !== "" && _dono === _souEu;
+  if (!_podePlanejar(eu) && !_souODono) {
+    return ctx.reply.status(403).send({ error: "Só quem planeja ou o responsável pode mexer nesta atividade" });
+  }
+
   var b = ctx.body || {};
   if (_conflito(a, b)) {
     return ctx.reply.status(409).send({ error: "Alguém alterou esta atividade enquanto você editava. Recarregue para ver a versão atual." });
+  }
+
+  // Nenhum dos quatro obrigatórios pode ser esvaziado depois. Conferido sobre
+  // o que o corpo MANDA, campo a campo: o que não vem no corpo não muda.
+  for (var o = 0; o < _OBRIG_ATIV.length; o++) {
+    var campo = _OBRIG_ATIV[o];
+    if (b[campo] !== undefined && _emBranco(b[campo])) {
+      return ctx.reply.status(400).send({ error: "O " + (_ROTULO_ATIV[campo] || campo) + " não pode ficar em branco" });
+    }
   }
 
   var mudou = {}, antes = {};
@@ -446,7 +537,7 @@ async function handler(ctx) {
     // O carimbo acompanha o status, nos dois sentidos: reabrir uma atividade
     // tem de LIMPAR o `concluida_em`, senão ela volta para a coluna como se
     // ainda tivesse data de conclusão.
-    mudou.concluida_em = status === "concluida" ? (a.concluida_em || _agora()) : "";
+    mudou.concluida_em = status === _ST_PRONTO ? (a.concluida_em || _agora()) : "";
     mudou.cancelada_em = status === "cancelada" ? (a.cancelada_em || _agora()) : "";
   }
   var datas = ["inicio_planejado", "previsao_entrega"];
@@ -471,8 +562,26 @@ async function handler(ctx) {
     antes.ordem = a.ordem || 0; mudou.ordem = Math.round(ordem);
   }
   if (b.responsavel_id !== undefined) {
-    antes.responsavel_id = a.responsavel_id || "";
-    mudou.responsavel_id = String(b.responsavel_id || "");
+    // PROTÓTIPO, não regra aprovada: TROCAR o responsável é só de quem
+    // planeja. Não foi perguntado ao Leonardo. O motivo de não deixar no
+    // responsável: ele poderia passar a atividade adiante e sair da própria
+    // porta, ou tomar para si a atividade de outra pessoa.
+    //
+    // A recusa é só quando o valor MUDA. O formulário manda o objeto inteiro,
+    // então o responsável manda o próprio id junto de qualquer edição —
+    // recusar aí o deixaria sem conseguir salvar nada na atividade dele, que é
+    // justamente o que a porta de cima acabou de permitir.
+    var _novoDono = String(b.responsavel_id || "");
+    var _mudaDono = _novoDono !== String(a.responsavel_id || "");
+    if (_mudaDono && !_podePlanejar(eu)) {
+      return ctx.reply.status(403).send({ error: "Só quem planeja pode trocar o responsável" });
+    }
+    // Valor igual não entra em `mudou`: gravar o mesmo dado mexeria no
+    // `updated_at` e levaria o próximo PATCH a um 409 sem motivo.
+    if (_mudaDono) {
+      antes.responsavel_id = a.responsavel_id || "";
+      mudou.responsavel_id = _novoDono;
+    }
   }
   if (b.fase_id !== undefined) {
     var faseId = String(b.fase_id || "");
