@@ -92,6 +92,11 @@ async function _perfilDe(ctx) {
 function _podeVer(eu) {
   if (eu.servico) return true;
   if (eu.nivel >= _RANK.admin) return true;
+  // O campo "Projetos" é a porta, mas não vale abaixo de `support`: `user` é o
+  // nível do CLIENTE (e `vendedor` é apelido dele), e projeto interno não é
+  // coisa de cliente. Sem esta linha, a caixa marcada num perfil de cliente
+  // abria o módulo inteiro.
+  if (eu.nivel < _RANK.support) return false;
   if (eu.grants.indexOf("projetos") >= 0) return true;
   return eu.grants.indexOf("planejamento") >= 0;
 }
