@@ -55,7 +55,12 @@ async function handler(ctx) {
       escopo: ESCOPO_MATERIAL,
       projeto_id: projetoId,
       pasta: "",
-      ativo: "sim",
+      // SEM `ativo`. A listagem do acervo sem pasta filtra por `ativo: "sim"`
+      // na camada, e material com esse campo entraria na janela de 500 para
+      // depois ser descartado em memória — o acervo encolheria em silêncio,
+      // exatamente o que aquele filtro existe para evitar. Sem o campo, a
+      // camada já não traz o material: o `equals` do caminho JSON não casa
+      // campo ausente. Aqui o estado é só `apagado_em`.
       // Sem ACL própria: quem alcança o material é quem alcança o PROJETO, e
       // isso é conferido nas rotas daqui. Gravar ACL seria uma segunda régua
       // para a mesma pergunta.

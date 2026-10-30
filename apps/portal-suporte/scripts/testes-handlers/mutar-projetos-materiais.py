@@ -46,9 +46,29 @@ TRAVA_UM = (
 # (nome, marca do handler, de, para, asserção que deve falhar)
 MUTANTES = [
     # ── o isolamento ──
+    # As três linhas que o Orquestrador achou sem guarda, e a regressão do
+    # acervo. Cada uma tem agora um caso que só ela faz passar.
+    ("o-apagar-ignora-de-que-projeto-e", APAGAR,
+     '  if (!m || String(m.escopo || "") !== ESCOPO_MATERIAL\n'
+     '      || String(m.projeto_id || "") !== projetoId\n',
+     '  if (!m || String(m.escopo || "") !== ESCOPO_MATERIAL\n',
+     "apagar:material-de-outro-projeto-da-404"),
+    ("o-apagar-ignora-o-escopo", APAGAR,
+     '  if (!m || String(m.escopo || "") !== ESCOPO_MATERIAL\n'
+     '      || String(m.projeto_id || "") !== projetoId\n',
+     '  if (!m\n      || String(m.projeto_id || "") !== projetoId\n',
+     "apagar:linha-sem-escopo-mas-com-projeto-da-404"),
+    ("o-download-ignora-so-o-escopo", BAIXAR,
+     '  if (!m || String(m.escopo || "") !== ESCOPO_MATERIAL\n'
+     '      || String(m.projeto_id || "") !== projetoId\n',
+     '  if (!m\n      || String(m.projeto_id || "") !== projetoId\n',
+     "baixar:linha-sem-escopo-mas-com-projeto-da-404"),
+    ("o-material-volta-a-gravar-o-estado-do-acervo", ENVIAR,
+     '      pasta: "",\n', '      pasta: "",\n      ativo: "sim",\n',
+     "enviar:nao-grava-o-estado-que-o-acervo-filtra"),
     ("o-acervo-volta-a-listar-material", ACERVO_LISTA,
      '    if (String(a.escopo || "") === ESCOPO_MATERIAL) continue;\n', "",
-     "acervo:a-listagem-nao-mostra-material"),
+     "acervo:material-com-estado-do-acervo-ainda-assim-nao-aparece"),
     ("o-acervo-volta-a-baixar-material", ACERVO_UM, TRAVA_UM, "",
      "acervo:baixar-material-pelo-acervo-da-404"),
     ("o-acervo-volta-a-apagar-material", ACERVO_APAGA, TRAVA_UM, "",
@@ -63,7 +83,7 @@ MUTANTES = [
     # o dia em que a leitura mudar, e quem a cobre é o mutante que devolve a
     # leitura para `findMany({})` — esse morre.
     ("a-lista-mostra-apagado", LISTAR,
-     '    if (a.apagado_em || String(a.ativo || "sim") !== "sim") continue;\n', "",
+     "    if (a.apagado_em) continue;\n", "",
      "lista:traz-so-os-do-projeto-e-ativos"),
     ("a-lista-devolve-o-conteudo", LISTAR,
      "      dono_id: a.dono_id, criado_em: a.criado_em || a.created_at || \"\",",
@@ -104,8 +124,8 @@ MUTANTES = [
      "  if (false) {",
      "apagar:quem-nao-enviou-nem-planeja-recusa"),
     ("apagar-deixa-de-ser-logico", APAGAR,
-     '  await A.update(String(m.id), { ativo: "nao", apagado_em: _agora() });',
-     '  await A.update(String(m.id), { apagado_em: _agora() });',
+     "  await A.update(String(m.id), { apagado_em: _agora() });",
+     "  await A.delete(String(m.id));",
      "apagar:apagar-e-logico"),
     ("o-dono-fica-trancado-fora", APAGAR,
      '  if (!(sou && String(m.dono_id || "") === sou) && !_podePlanejar(eu)) {',

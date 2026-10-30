@@ -22,7 +22,9 @@ async function handler(ctx) {
     // projeto é só o que foi gravado como material de projeto.
     if (String(a.escopo || "") !== ESCOPO_MATERIAL) continue;
     if (String(a.projeto_id || "") !== projetoId) continue;
-    if (a.apagado_em || String(a.ativo || "sim") !== "sim") continue;
+    // O estado do material é só `apagado_em`: ele não grava `ativo`, para não
+    // entrar no filtro da listagem do acervo.
+    if (a.apagado_em) continue;
     saida.push({
       id: a.id, nome: a.nome, tipo: a.tipo, tamanho: a.tamanho,
       dono_id: a.dono_id, criado_em: a.criado_em || a.created_at || "",

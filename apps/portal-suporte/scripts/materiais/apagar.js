@@ -9,7 +9,7 @@ async function handler(ctx) {
   var m = await A.findById(String(ctx.params.mid || ""));
   if (!m || String(m.escopo || "") !== ESCOPO_MATERIAL
       || String(m.projeto_id || "") !== projetoId
-      || m.apagado_em || String(m.ativo || "sim") !== "sim") {
+      || m.apagado_em) {
     return ctx.reply.status(404).send({ error: "Material não encontrado" });
   }
 
@@ -20,9 +20,10 @@ async function handler(ctx) {
     return ctx.reply.status(403).send({ error: "Só quem enviou o material, ou quem planeja o projeto, pode apagá-lo" });
   }
 
-  // Apagar é LÓGICO: `ativo` é o campo que a listagem filtra na camada, e
-  // apagar de verdade levaria junto o histórico de quem subiu o quê.
-  await A.update(String(m.id), { ativo: "nao", apagado_em: _agora() });
+  // Apagar é LÓGICO: apagar de verdade levaria junto o histórico de quem
+  // subiu o quê. `apagado_em` é o estado do material — `ativo` fica de fora de
+  // propósito, para o material não entrar no filtro da listagem do acervo.
+  await A.update(String(m.id), { apagado_em: _agora() });
   await _log(ctx, eu, "material_apagado", projetoId, "", { id: m.id, nome: m.nome });
   return ctx.reply.send({ success: true, data: { id: m.id } });
 }

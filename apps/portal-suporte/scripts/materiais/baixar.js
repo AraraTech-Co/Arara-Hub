@@ -11,7 +11,7 @@ async function handler(ctx) {
   // passado por esta rota não vira download, por mais que exista.
   if (!m || String(m.escopo || "") !== ESCOPO_MATERIAL
       || String(m.projeto_id || "") !== projetoId
-      || m.apagado_em || String(m.ativo || "sim") !== "sim") {
+      || m.apagado_em) {
     return ctx.reply.status(404).send({ error: "Material não encontrado" });
   }
   var p = await P.findById(projetoId);
