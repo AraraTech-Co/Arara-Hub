@@ -23,6 +23,7 @@ import sys
 
 AQUI = os.path.dirname(os.path.abspath(__file__))
 TESTE = os.path.join(AQUI, "perimetro-sem-pessoa.test.js")
+TESTE_SESSAO = os.path.join(AQUI, "auth-sessao-estado-admin.test.js")
 ROTAS = os.path.abspath(os.path.join(
     AQUI, "../../../../packages/api/src/apps/portal-suporte/routes.generated.ts"))
 
@@ -58,7 +59,8 @@ def no_arquivo(de, para):
     return aplicar
 
 
-# (nome, arquivo, aplicação, trecho que tem de aparecer na asserção reprovada)
+# (nome, arquivo, aplicação, trecho que tem de aparecer na asserção reprovada
+#  [, arquivo de teste a rodar — por omissão o do perímetro])
 MUTACOES = [
     # Invólucro definido no corpo e exportação entregando o handler cru — o
     # jeito de a guarda existir no código e não valer.
@@ -86,9 +88,42 @@ MUTACOES = [
      "de fato responde sem pessoa"),
     # A régua afrouxada: erro tratado como proteção.
     ("varredura passa a aceitar 500 como recusa", TESTE,
-     no_arquivo("resp.status !== 401 && resp.status !== 403",
-                "resp.status !== 401 && resp.status !== 403 && resp.status !== 500"),
+     no_arquivo("const recusou = resp.status === 401 || resp.status === 403",
+                "const recusou = resp.status === 401 || resp.status === 403 || resp.status === 500"),
      "a varredura acusa 500 sem pessoa"),
+    # Estouro e tempo esgotado voltando para o vão: a rota rodou o corpo sem
+    # pessoa e a varredura diria que está protegida.
+    ("régua volta a ignorar estouro", TESTE,
+     no_arquivo("""        status: resp.estouro ? `estouro: ${resp.estouro}` : resp.status,\n""",
+                """        status: resp.status,\n"""),
+     "a-varredura-acusa-rota-que-estoura"),
+    ("régua volta a engolir estouro e tempo esgotado", TESTE,
+     no_arquivo("    const recusou = resp.status === 401 || resp.status === 403\n",
+                "    const recusou = typeof resp.status !== 'number'\n"
+                "      || (resp.status === 401 || resp.status === 403)\n"),
+     "a-varredura-acusa-rota-que-nunca-responde"),
+    # A rota de telemetria perdendo a guarda: tem de reprovar nos DOIS testes.
+    ("a telemetria de sessão perde o invólucro", ROTAS,
+     no_literal("GET /auth/sessao/estado", INVOLUCRO, "module.exports = { handler };"),
+     "nenhuma rota de negócio responde sem pessoa"),
+    ("a telemetria de sessão perde o invólucro (teste próprio)", ROTAS,
+     no_literal("GET /auth/sessao/estado", INVOLUCRO, "module.exports = { handler };"),
+     "sem-pessoa:recusa-com-401", TESTE_SESSAO),
+    # Achado do Orquestrador: a asserção de "não vaza" não podia falhar,
+    # porque o campo nem existia na massa. Agora existe, e este mutante mede.
+    ("a telemetria passa a devolver o verificador", ROTAS,
+     # Raw string: no literal as aspas vão escapadas (\"), e escrever isso
+     # numa string comum já me custou um mutante que não aplicou.
+     no_literal("GET /auth/sessao/estado",
+                r'agente: String(r.agente || \"\").slice(0, 60),',
+                r'agente: String(r.agente || \"\").slice(0, 60), verificador: r.verificador, token: r.token,'),
+     "nem-para-o-admin-sai-token-ou-verificador", TESTE_SESSAO),
+    ("a telemetria de sessão cai para developer", ROTAS,
+     # No arquivo o literal guarda as aspas escapadas: procurar a forma crua
+     # não casa nada, e o mutante sai como NÃO APLICOU em vez de morto.
+     no_literal("GET /auth/sessao/estado",
+                '_gsRANK[\\"admin\\"]', '_gsRANK[\\"developer\\"]'),
+     "nivel-abaixo-de-admin-recusa:developer", TESTE_SESSAO),
     # A credencial deixa de ser sem pessoa: a varredura perde o sentido, e as
     # 401 que ela colhe passam a ser um acaso do laboratório.
     ("a sonda passa a carregar uma pessoa", TESTE,
@@ -105,16 +140,18 @@ MUTACOES = [
 
 
 def main():
-    originais = {a: open(a, encoding="utf8").read() for a in (TESTE, ROTAS)}
+    originais = {a: open(a, encoding="utf8").read() for a in (TESTE, TESTE_SESSAO, ROTAS)}
     mortos, vivos = 0, []
-    for nome, arq, aplicar, esperado in MUTACOES:
+    for mut in MUTACOES:
+        nome, arq, aplicar, esperado = mut[:4]
+        qual = mut[4] if len(mut) > 4 else TESTE
         mutado, erro = aplicar(originais[arq])
         if erro:
             vivos.append(f"{nome}: NÃO APLICOU — {erro}")
             continue
         try:
             open(arq, "w", encoding="utf8").write(mutado)
-            r = subprocess.run(["node", TESTE], capture_output=True, text=True, cwd=AQUI)
+            r = subprocess.run(["node", qual], capture_output=True, text=True, cwd=AQUI)
             saida = r.stdout + r.stderr
             linhas = [l for l in saida.splitlines() if l.startswith("FALHA")]
             if r.returncode == 0:
