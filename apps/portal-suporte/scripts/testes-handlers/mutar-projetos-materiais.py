@@ -214,6 +214,93 @@ NA_TELA = [
      "                {podeApagarMaterial(m, { meuId, podePlanejar }) && (",
      "                {false && (",
      "a-tela-usa-a-regra-de-apagar"),
+    # ── lista longa ──
+    #
+    # Sem estes, "o bloco recolhe e filtra" seria texto num arquivo: o acervo
+    # volta a esticar a página e ninguém reprova. Os três primeiros são os que
+    # o Orquestrador achou vivos quando a decisão ainda morava no JSX e a
+    # asserção só procurava `aria-expanded` no arquivo.
+    ("recolhido-volta-a-desenhar-a-lista", TELA_LIB,
+     "  if (!estado.aberto) return nada\n", "",
+     "recolhido:nao-desenha-nada:acervo-grande"),
+    ("o-clique-deixa-de-alternar", TELA_BLOCO,
+     "onClick={() => setAberto(alternar)}", "onClick={() => {}}",
+     "o-clique-usa-a-regua"),
+    ("alternar-devolve-sempre-o-mesmo", TELA_LIB,
+     "export function alternar(aberto: boolean): boolean {\n  return !aberto\n}",
+     "export function alternar(aberto: boolean): boolean {\n  return aberto\n}",
+     "alternar-abre-e-fecha"),
+    # A régua que desenha o tempo todo passaria em "recolhido não desenha
+    # nada" se não houvesse o contraste com o mesmo acervo aberto.
+    ("a-regua-nunca-desenha-a-lista", TELA_LIB,
+     "  return { lista, mostrarBusca: muitos,",
+     "  return { lista: [], mostrarBusca: muitos,",
+     "aberto:o-mesmo-acervo-aparece"),
+    # Achado do Orquestrador na revisão do 9d3aa7e: com o bloco recolhido
+    # sobrava um <ul> vazio no DOM. Invisível, mas é o JSX decidindo de novo.
+    ("a-ul-volta-a-olhar-o-acervo-inteiro", TELA_BLOCO,
+     "      {vista.lista.length > 0 && (", "      {materiais.length > 0 && (",
+     "o-bloco-desenha-so-o-que-a-regua-mandou"),
+    ("o-bloco-volta-a-decidir-por-fora", TELA_BLOCO,
+     "      {vista.lista.length > 0 && (", "      {aberto && vista.lista.length > 0 && (",
+     "o-bloco-nao-decide-nada-por-fora"),
+    ("a-busca-aparece-sempre", TELA_LIB,
+     "  return { lista, mostrarBusca: muitos,", "  return { lista, mostrarBusca: true,",
+     "busca-aparece-so-acima-do-limiar"),
+    ("o-recado-de-vazio-ignora-o-erro", TELA_LIB,
+     "  const vazio = !estado.carregando && !estado.erro && materiais.length === 0",
+     "  const vazio = !estado.carregando && materiais.length === 0",
+     "com-erro-nenhum-dos-recados-aparece"),
+    ("o-recado-de-vazio-aparece-carregando", TELA_LIB,
+     "  const vazio = !estado.carregando && !estado.erro && materiais.length === 0",
+     "  const vazio = !estado.erro && materiais.length === 0",
+     "carregando-nao-diz-que-nao-ha-material"),
+    ("os-dois-recados-viram-um-so", TELA_LIB,
+     "    ? 'Nenhum material com esse nome. A busca ignora acento e maiúscula.'",
+     "    ? 'Nenhum material ainda. Envie o que o projeto precisa ter à mão — escopo, contrato, planilha. Vale só dentro deste projeto.'",
+     "os-dois-recados-nao-se-confundem"),
+    ("a-regua-estoura-sem-a-lista", TELA_LIB,
+     "  const materiais = estado.materiais || []", "  const materiais = estado.materiais",
+     "materiais-ausente-nao-estoura"),
+    ("a-busca-passa-a-copiar-a-lista-sempre", TELA_LIB,
+     "  if (!alvo) return lista\n", "",
+     "busca:vazia-nao-copia-a-lista"),
+    ("a-busca-volta-a-exigir-acento-e-caixa", TELA_LIB,
+     "  return String(texto || '')\n"
+     "    .normalize('NFD')\n"
+     "    .replace(/[\\u0300-\\u036f]/g, '')\n"
+     "    .toLowerCase()\n"
+     "    .trim()\n",
+     "  return String(texto || '').trim()\n",
+     "busca:ignora-acento"),
+    ("a-busca-so-casa-o-comeco-do-nome", TELA_LIB,
+     "return lista.filter((m) => dobrar(m.nome).includes(alvo))",
+     "return lista.filter((m) => dobrar(m.nome).startsWith(alvo))",
+     "busca:acha-no-meio-do-nome"),
+    ("a-busca-deixa-de-filtrar", TELA_LIB,
+     "return lista.filter((m) => dobrar(m.nome).includes(alvo))",
+     "return lista",
+     "busca:sem-resultado-devolve-vazio"),
+    ("o-limiar-da-lista-longa-muda", TELA_LIB,
+     "export const MUITOS = 8", "export const MUITOS = 40",
+     "a-tela-e-o-teste-usam-o-mesmo-limiar"),
+    ("a-lista-volta-a-crescer-sem-limite", TELA_BLOCO,
+     'className="divide-y divide-border max-h-80 overflow-y-auto"',
+     'className="divide-y divide-border"',
+     "a-lista-rola-por-conta-propria"),
+    ("o-titulo-volta-para-dentro-do-botao", TELA_BLOCO,
+     "            <span>Materiais de Apoio</span>",
+     "            <h2>Materiais de Apoio</h2>",
+     "o-botao-fica-dentro-do-titulo"),
+    ("o-botao-deixa-de-apontar-a-lista", TELA_BLOCO,
+     '            aria-controls="materiais-do-projeto-lista"\n', "",
+     "o-botao-aponta-para-a-lista-que-ele-recolhe"),
+    ("o-bloco-deixa-de-recolher", TELA_BLOCO,
+     "            aria-expanded={aberto}\n", "",
+     "o-bloco-recolhe"),
+    ("o-envio-deixa-o-arquivo-novo-invisivel", TELA_BLOCO,
+     "        setAberto(true)\n        setBusca('')\n", "",
+     "enviar-reabre-o-bloco-e-limpa-a-busca"),
 ]
 
 

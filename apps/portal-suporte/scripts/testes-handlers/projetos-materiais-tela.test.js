@@ -172,5 +172,142 @@ function montar(o) {
     ok('o-bloco-nao-fica-atras-do-seletor-de-vistas', !antes.includes("vista === '"), antes)
   }
 
+  // ── 6. Lista longa: a altura do bloco para de depender do acervo ────────
+  //
+  // Com algumas centenas de materiais, a lista inteira empurrava marcos e
+  // atividades para fora da tela. O bloco passa a recolher, a rolar por conta
+  // própria e a filtrar por nome.
+  {
+    const nomes = (lista) => lista.map((x) => x.nome)
+    const acervo = [
+      material({ id: 'a', nome: 'Contrato Anexo.pdf' }),
+      material({ id: 'b', nome: 'ESCOPO final.docx' }),
+      material({ id: 'c', nome: 'Orçamento revisão 2.xlsx' }),
+    ]
+
+    ok('busca:vazia-devolve-tudo', L.filtrarMateriais(acervo, '').length === 3, null)
+    ok('busca:so-espaco-devolve-tudo', L.filtrarMateriais(acervo, '   ').length === 3, null)
+    // Devolver a MESMA lista no caso comum: filtrar 500 itens a cada tecla, para
+    // nada, é trabalho que a tela não precisa fazer.
+    ok('busca:vazia-nao-copia-a-lista', L.filtrarMateriais(acervo, '') === acervo, null)
+
+    ok('busca:acha-no-meio-do-nome',
+      nomes(L.filtrarMateriais(acervo, 'anexo')).join() === 'Contrato Anexo.pdf',
+      nomes(L.filtrarMateriais(acervo, 'anexo')))
+    ok('busca:ignora-maiuscula',
+      L.filtrarMateriais(acervo, 'escopo').length === 1, null)
+    ok('busca:ignora-acento',
+      L.filtrarMateriais(acervo, 'orcamento').length === 1
+      && L.filtrarMateriais(acervo, 'revisao').length === 1, null)
+    ok('busca:sem-resultado-devolve-vazio',
+      L.filtrarMateriais(acervo, 'contrato social').length === 0, null)
+    // Nome ausente não pode estourar no meio da renderização.
+    ok('busca:material-sem-nome-nao-estoura',
+      L.filtrarMateriais([material({ nome: undefined })], 'x').length === 0, null)
+
+    ok('a-tela-e-o-teste-usam-o-mesmo-limiar', L.MUITOS === 8, L.MUITOS)
+
+    // ── o que aparece, por COMPORTAMENTO ──────────────────────────────────
+    //
+    // A decisão inteira mora na régua justamente para ser medida chamando a
+    // função. Enquanto ela morava no JSX, a única prova possível era procurar
+    // texto no arquivo — e atributo presente não é bloco recolhido.
+    const muitos = []
+    for (let i = 0; i < 9; i++) muitos.push(material({ id: 'm' + i, nome: `Doc ${i}.pdf` }))
+    const base = { aberto: true, carregando: false, erro: '', materiais: acervo, busca: '' }
+    const v = (o) => L.oQueMostrar(Object.assign({}, base, o))
+
+    // Recolhido é recolhido — em qualquer tamanho, com ou sem busca.
+    for (const caso of [
+      ['acervo-pequeno', { materiais: acervo }],
+      ['acervo-grande', { materiais: muitos }],
+      ['com-busca-digitada', { materiais: muitos, busca: 'doc' }],
+      ['sem-material', { materiais: [] }],
+    ]) {
+      const r = v(Object.assign({ aberto: false }, caso[1]))
+      ok('recolhido:nao-desenha-nada:' + caso[0],
+        r.lista.length === 0 && !r.mostrarBusca && !r.recadoVazio && !r.recadoSemResultado, r)
+    }
+    // E o contraste: os MESMOS casos, abertos, desenham algo. Sem isto,
+    // "recolhido não desenha nada" passaria com uma função que nunca desenha.
+    ok('aberto:o-mesmo-acervo-aparece', v({ materiais: acervo }).lista.length === 3, null)
+    ok('aberto:o-acervo-grande-aparece', v({ materiais: muitos }).lista.length === 9, null)
+    ok('aberto:sem-material-tem-recado', v({ materiais: [] }).recadoVazio.length > 10, null)
+
+    ok('busca-aparece-so-acima-do-limiar',
+      !v({ materiais: muitos.slice(0, L.MUITOS) }).mostrarBusca
+      && v({ materiais: muitos }).mostrarBusca,
+      { com8: v({ materiais: muitos.slice(0, L.MUITOS) }).mostrarBusca,
+        com9: v({ materiais: muitos }).mostrarBusca })
+    ok('ate-o-limiar-a-lista-nao-e-filtrada',
+      v({ materiais: acervo, busca: 'nada casa isto' }).lista.length === 3, null)
+    ok('acima-do-limiar-a-busca-filtra',
+      v({ materiais: muitos, busca: 'Doc 3' }).lista.length === 1, null)
+    ok('busca-sem-resultado-tem-recado-e-lista-vazia',
+      v({ materiais: muitos, busca: 'zzz' }).recadoSemResultado.includes('acento')
+      && v({ materiais: muitos, busca: 'zzz' }).lista.length === 0, null)
+    // Os dois recados são diferentes: "não há material" e "a busca não achou"
+    // pedem ações opostas de quem está olhando.
+    ok('os-dois-recados-nao-se-confundem',
+      v({ materiais: [] }).recadoSemResultado === ''
+      && v({ materiais: muitos, busca: 'zzz' }).recadoVazio === ''
+      && v({ materiais: [] }).recadoVazio !== v({ materiais: muitos, busca: 'zzz' }).recadoSemResultado,
+      null)
+    ok('carregando-nao-diz-que-nao-ha-material',
+      v({ materiais: [], carregando: true }).recadoVazio === '', null)
+    ok('com-erro-nenhum-dos-recados-aparece',
+      v({ materiais: [], erro: 'deu ruim' }).recadoVazio === ''
+      && v({ materiais: [], erro: 'deu ruim' }).recadoSemResultado === '', null)
+    // Em try/catch: estourar aqui mataria o ARQUIVO de teste, e arquivo morto
+    // não é mutante morto — a saída não diria qual regra quebrou.
+    let semLista = null
+    try {
+      semLista = L.oQueMostrar({ aberto: true, carregando: false, erro: '', busca: '' })
+    } catch (e) { semLista = { estouro: String(e && e.message) } }
+    ok('materiais-ausente-nao-estoura',
+      !!semLista && Array.isArray(semLista.lista) && semLista.lista.length === 0, semLista)
+
+    // O clique: o próximo estado é da régua, então dá para medir.
+    ok('alternar-abre-e-fecha', L.alternar(true) === false && L.alternar(false) === true, null)
+
+    const bloco = semComentarios('_components/projetos/materiais-do-projeto.tsx')
+    ok('a-lista-rola-por-conta-propria',
+      /<ul id="materiais-do-projeto-lista" className="[^"]*max-h-\d+[^"]*overflow-y-auto/.test(bloco),
+      null)
+    // O JSX não pode ter régua própria: nenhuma condição de aparecer fora da
+    // `vista`, senão os mutantes do recolher voltam a sobreviver.
+    ok('o-bloco-desenha-so-o-que-a-regua-mandou',
+      bloco.includes('{vista.lista.length > 0 && (')
+      && bloco.includes('{vista.lista.map((m) => (')
+      && bloco.includes('{vista.recadoVazio && (')
+      && bloco.includes('{vista.recadoSemResultado && (')
+      && bloco.includes('{vista.mostrarBusca && ('), null)
+    ok('o-bloco-nao-decide-nada-por-fora',
+      !bloco.includes('aberto &&') && !bloco.includes('muitos &&')
+      && !bloco.includes('materiais.length > 0')
+      && !bloco.includes('filtrarMateriais(') && !bloco.includes('.toLowerCase()'), null)
+    ok('o-clique-usa-a-regua', bloco.includes('onClick={() => setAberto(alternar)}'), null)
+    // Botão só aceita conteúdo de frase: com o h2 dentro dele, o HTML é
+    // inválido e o leitor de tela perde o título da seção.
+    // Um h2 só, e ele ABRE antes do botão: assim o título não pode voltar
+    // para dentro do botão sem reprovar, por mais longe que fique.
+    ok('o-botao-fica-dentro-do-titulo',
+      (bloco.match(/<h2[\s>]/g) || []).length === 1
+      && /<h2[^>]*>\s*<button/.test(bloco)
+      && bloco.indexOf('<h2') < bloco.indexOf('<button'), null)
+    ok('o-botao-aponta-para-a-lista-que-ele-recolhe',
+      bloco.includes('aria-controls="materiais-do-projeto-lista"')
+      && bloco.includes('id="materiais-do-projeto-lista"'), null)
+    ok('o-bloco-recolhe', bloco.includes('aria-expanded={aberto}'), null)
+    ok('a-busca-tem-rotulo-para-leitor-de-tela',
+      bloco.includes('aria-label="Buscar material pelo nome"'), null)
+    // Recolhido ou com uma busca que não casa, o arquivo recém-enviado entraria
+    // invisível e pareceria que o envio falhou.
+    const envio = bloco.slice(bloco.indexOf('async function enviar'),
+      bloco.indexOf('async function baixar'))
+    ok('enviar-reabre-o-bloco-e-limpa-a-busca',
+      envio.includes('setAberto(true)') && envio.includes("setBusca('')"), null)
+  }
+
   fim()
 })()
