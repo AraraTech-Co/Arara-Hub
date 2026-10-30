@@ -177,8 +177,9 @@ async function roda() {
     const ver = [
       ['user', { role: 'user', feature_grants: [] }, 403],
       ['support', { role: 'support', feature_grants: [] }, 403],
-      ['support+qa', { role: 'support', feature_grants: ['qa'] }, 200],
-      ['developer', { role: 'developer', feature_grants: [] }, 200],
+      ['support+qa', { role: 'support', feature_grants: ['qa'] }, 403],
+      ['developer', { role: 'developer', feature_grants: [] }, 403],
+      ['developer+projetos', { role: 'developer', feature_grants: ['projetos'] }, 200],
       ['admin', { role: 'admin', feature_grants: [] }, 200],
     ]
     for (const [nome, perfil, esperado] of ver) {
@@ -808,8 +809,14 @@ async function roda() {
     const casos = [
       ['quem-planeja-mexe-na-de-outro', { role: 'admin', feature_grants: [] }, 'OUTRO', 200],
       ['grant-de-planejamento-mexe', { role: 'support', feature_grants: ['planejamento'] }, 'OUTRO', 200],
-      ['responsavel-mexe-na-sua', { role: 'developer', feature_grants: [] }, 'u1', 200],
-      ['developer-nao-mexe-na-de-outro', { role: 'developer', feature_grants: [] }, 'OUTRO', 403],
+      // O responsável precisa do campo "Projetos" para ALCANÇAR o módulo: sem
+      // ele a 509 recusa antes de olhar de quem é a atividade. Ser responsável
+      // não é passe para o módulo, é permissão DENTRO dele.
+      ['responsavel-mexe-na-sua', { role: 'developer', feature_grants: ['projetos'] }, 'u1', 200],
+      ['responsavel-sem-o-campo-nao-alcanca',
+        { role: 'developer', feature_grants: [] }, 'u1', 403],
+      ['developer-nao-mexe-na-de-outro',
+        { role: 'developer', feature_grants: ['projetos'] }, 'OUTRO', 403],
       ['quem-nem-ve-nao-mexe', { role: 'support', feature_grants: [] }, 'u1', 403],
     ]
     for (const [nome, perfil, dono, esperado] of casos) {
@@ -847,7 +854,7 @@ async function roda() {
       const { ctx, reg } = montar({
         params: { id: 'p1', aid: 'a1' },
         body: { responsavel_id: 'u1', status: 'em_desenvolvimento' }, corpoCru: true,
-        perfil: { role: 'developer', feature_grants: [] },
+        perfil: { role: 'developer', feature_grants: ['projetos'] },
         atividades: [Object.assign(ativ({ id: 'a1' }), { responsavel_id: 'u1' })],
       })
       const r = await handler(ctx)

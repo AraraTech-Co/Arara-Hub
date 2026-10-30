@@ -3,18 +3,10 @@ const path = require('node:path')
 const { ok, fim } = require('./_carregar.js')
 const { registrarTS, importarTela, semComentarios, APP } = require('./_tela.js')
 
-const MARCA_DA_TROCA = 'porta=desligada'
-
-// A variante do DIA DA TROCA: o mesmo módulo com a constante em `false`.
-// `PORTA_ANTIGA_DE_PROJETOS` é constante de módulo — não há como virá-la em
-// tempo de execução, e sem virar ninguém prova o que a troca faz. O helper
-// NÃO lança quando a linha não casa: quem reprova é
-// `a-linha-da-constante-e-unica-e-esta-true`, que diz o porquê.
-registrarTS([{
-  marca: MARCA_DA_TROCA,
-  de: 'export const PORTA_ANTIGA_DE_PROJETOS = true',
-  para: 'export const PORTA_ANTIGA_DE_PROJETOS = false',
-}])
+// Sem variante nenhuma: o que `registrarTS` instala e este teste precisa é o
+// resolvedor dos imports relativos sem extensão do `.ts` da tela. A variante da
+// transição saiu junto com a constante que ela virava.
+registrarTS([])
 
 const CAMINHO = path.join(APP, 'lib/auth/feature-grants.ts')
 const REL = 'lib/auth/feature-grants.ts'
@@ -34,7 +26,6 @@ const QUEM = {
 
 ;(async () => {
 const G = await importarTela(REL)
-const DESLIGADA = await importarTela(REL, MARCA_DA_TROCA)
 
 // ── 1. O campo existe e é concedível ────────────────────────────────────────
 {
@@ -55,31 +46,36 @@ const DESLIGADA = await importarTela(REL, MARCA_DA_TROCA)
     chaves.filter((k) => k === 'projetos' || k === 'planejamento').length === 2, chaves)
 }
 
-// ── 2. A régua da tela, hoje (transição ligada) ─────────────────────────────
+// ── 2. A régua da tela ──────────────────────────────────────────────────────
+//
+// Decisão do Leonardo (30/10): "libera projetos para todos os membros, mas quem
+// vai ter acesso aos projetos é na área de membros que eu decido, selecionando
+// as caixas e dando permissão". A porta antiga — developer+ por cargo, ou o
+// grant `qa` como passe — saiu, e a constante de transição com ela.
 {
-  ok('a-constante-da-transicao-vem-ligada', G.PORTA_ANTIGA_DE_PROJETOS === true,
-    G.PORTA_ANTIGA_DE_PROJETOS)
-  // O que a variante do dia da troca depende para existir. Dito por asserção
-  // e não por exceção: assim a falha nomeia a regra em vez de matar o arquivo.
-  {
-    const fonte = fs.readFileSync(CAMINHO, 'utf8')
-    const linha = 'export const PORTA_ANTIGA_DE_PROJETOS = true'
-    ok('a-linha-da-constante-e-unica-e-esta-true',
-      fonte.split(linha).length - 1 === 1, fonte.split(linha).length - 1)
-  }
+  const fonte = fs.readFileSync(CAMINHO, 'utf8')
+  ok('a-constante-da-transicao-nao-existe-mais',
+    !fonte.includes('PORTA_ANTIGA_DE_PROJETOS'), null)
+
   const esperado = {
     'master': true, 'admin': true,
     'user+projetos': true, 'developer+projetos': true,
-    'developer': true, 'support+qa': true,
-    // Quem planeja vê (decisão de 29/10).
+    'developer': false, 'support+qa': false,
+    // Quem planeja vê sem o campo (decisão de 29/10, que segue valendo).
     'support+planejamento': true,
     'support': false, 'user': false, 'sem-grants': false,
   }
   const vistos = {}
   for (const quem of Object.keys(esperado)) vistos[quem] = G.canVerProjetos(QUEM[quem])
   for (const quem of Object.keys(esperado)) {
-    ok(`tela-hoje:${quem}=${esperado[quem]}`, vistos[quem] === esperado[quem], vistos)
+    ok(`tela:${quem}=${esperado[quem]}`, vistos[quem] === esperado[quem], vistos)
   }
+  // O campo é a causa: o mesmo cargo, só a caixa muda. Sem este contraste,
+  // "developer é false" passaria também numa função que devolvesse false para
+  // todo mundo.
+  ok('o-campo-e-a-causa-da-diferenca-na-tela',
+    G.canVerProjetos(QUEM['developer']) === false
+    && G.canVerProjetos(QUEM['developer+projetos']) === true, null)
 }
 
 // ── 3. Ver não é planejar ───────────────────────────────────────────────────
@@ -102,34 +98,6 @@ const DESLIGADA = await importarTela(REL, MARCA_DA_TROCA)
     })
 }
 
-// ── 3b. O dia da troca, na tela ─────────────────────────────────────────────
-{
-  ok('a-variante-da-troca-e-o-mesmo-modulo-com-a-constante-virada',
-    DESLIGADA.PORTA_ANTIGA_DE_PROJETOS === false
-    && DESLIGADA.FEATURE_GRANTS.length === G.FEATURE_GRANTS.length,
-    DESLIGADA.PORTA_ANTIGA_DE_PROJETOS)
-  const esperado = {
-    'master': true, 'admin': true,
-    'user+projetos': true, 'developer+projetos': true,
-    'developer': false, 'support+qa': false,
-    // Continua vendo no dia da troca: a liberação vem antes da conferência da
-    // transição, justamente para não cair com ela.
-    'support+planejamento': true,
-    'support': false, 'user': false,
-  }
-  const vistos = {}
-  for (const quem of Object.keys(esperado)) vistos[quem] = DESLIGADA.canVerProjetos(QUEM[quem])
-  for (const quem of Object.keys(esperado)) {
-    ok(`tela-troca:${quem}=${esperado[quem]}`, vistos[quem] === esperado[quem], vistos)
-  }
-  // O que prova que a constante é a causa: os MESMOS perfis nas duas instâncias.
-  ok('a-constante-e-a-causa-da-diferenca-na-tela',
-    G.canVerProjetos(QUEM['developer']) === true
-    && DESLIGADA.canVerProjetos(QUEM['developer']) === false, null)
-  ok('no-dia-da-troca-planejamento-continua-vendo',
-    DESLIGADA.canVerProjetos({ role: 'user', featureGrants: ['planejamento'] }) === true, null)
-}
-
 // ── 4. Tela e servidor dizem a mesma coisa ──────────────────────────────────
 //
 // As duas réguas são código diferente em linguagens diferentes. O que amarra
@@ -138,7 +106,7 @@ const DESLIGADA = await importarTela(REL, MARCA_DA_TROCA)
 {
   const servidor = {
     'master': true, 'admin': true, 'user+projetos': true, 'developer+projetos': true,
-    'developer': true, 'support+qa': true, 'support': false, 'user': false,
+    'developer': false, 'support+qa': false, 'support': false, 'user': false,
     'support+planejamento': true,
   }
   const divergem = Object.keys(servidor)

@@ -158,42 +158,27 @@ export function canPlanejar(actor: GrantActor): boolean {
  * permissão depois de confirmar. O servidor continua sendo a verdade.
  */
 /**
- * Dia da troca da porta de Projetos.
- *
- * A decisão de 28/10 é que o acesso ao módulo passa a ser o campo "Projetos" em
- * Editar membro, SEM concessão automática por cargo e sem o grant de QA valendo
- * como passe. Virar a porta de uma vez tiraria o módulo de todo developer e de
- * todo QA no instante do deploy — antes de existir a lista de quem recebe o
- * campo, e essa lista não é minha para escrever.
- *
- * Enquanto esta constante for `true`, a porta ANTIGA (developer+ ou grant `qa`)
- * continua valendo ao lado da nova: ninguém perde acesso no deploy, e quem já
- * recebeu o campo entra por ele. No dia da troca, com a lista pronta, ela vira
- * `false` e passam a valer só admin/master por nível e o grant `projetos`.
- *
- * O servidor tem a MESMA constante, com o mesmo nome, em cada handler do módulo
- * `projetos`. As duas viram juntas — a daqui só decide o que a TELA mostra.
- */
-export const PORTA_ANTIGA_DE_PROJETOS = true
-
-/**
  * Pode ver o módulo de Projetos?
  *
- * admin/master por nível, OU o grant `projetos`. Durante a transição, também
- * quem entrava pela porta antiga (ver `PORTA_ANTIGA_DE_PROJETOS`).
+ * O campo "Projetos" em Editar membro, e mais nada. Decisão do Leonardo
+ * (30/10): "libera projetos para todos os membros, mas quem vai ter acesso aos
+ * projetos é na área de membros que eu decido, selecionando as caixas e dando
+ * permissão".
+ *
+ * A porta antiga — developer+ por cargo, ou o grant `qa` como passe — saiu.
+ * Quem entrava por cargo e ainda não tem o campo marcado perde o módulo: é o
+ * combinado, e é por isso que a constante de transição não existe mais.
+ *
+ * Quem planeja continua entrando sem o campo: o grant `planejamento` abre o
+ * POST e o PATCH de atividade, e sem isto a pessoa criaria atividade sem ver
+ * nenhuma.
  *
  * Espelha `_podeVer` dos handlers do módulo. Só VER: planejar é `canPlanejar`.
  */
 export function canVerProjetos(actor: GrantActor): boolean {
   if (hasMinLevel(actor.role, 'admin')) return true
   if (hasGrant(actor, 'projetos')) return true
-  // Quem PLANEJA vê. Espelha `_podeVer` do servidor, e vem ANTES da conferência
-  // da transição de propósito: vale com a porta antiga ligada e depois de ela
-  // ser desligada. Sem isto, quem tem o grant `planejamento` sem nível de
-  // developer criava atividade e não via nenhuma.
-  if (hasGrant(actor, 'planejamento')) return true
-  if (!PORTA_ANTIGA_DE_PROJETOS) return false
-  return hasMinLevel(actor.role, 'developer') || hasGrant(actor, 'qa')
+  return hasGrant(actor, 'planejamento')
 }
 
 export function canRevisarCodigo(actor: GrantActor): boolean {

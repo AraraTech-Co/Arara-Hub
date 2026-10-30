@@ -76,36 +76,24 @@ async function _perfilDe(ctx) {
   if (!Array.isArray(grants)) grants = [];
   return { id: quem, nivel: _RANK[_canonico(p ? p.role : "")] || 0, grants: grants, servico: false };
 }
-// Ver o módulo: decisão de 28/10 — é o campo "Projetos" em Editar membro, sem
-// concessão automática por cargo e sem o grant de QA valendo como passe.
+// Ver o módulo: o campo "Projetos" em Editar membro, e mais nada. Decisão do
+// Leonardo (30/10): "libera projetos para todos os membros, mas quem vai ter
+// acesso aos projetos é na área de membros que eu decido, selecionando as
+// caixas e dando permissão".
 //
-// A troca não é feita de uma vez. Virar a porta no deploy tiraria o módulo de
-// todo developer e de todo QA no mesmo instante, antes de existir a lista de
-// quem recebe o campo. Enquanto `_PORTA_ANTIGA_DE_PROJETOS` for `true`, a porta
-// antiga vale AO LADO da nova: ninguém perde acesso, e quem já recebeu o campo
-// entra por ele. No dia da troca ela vira `false`, aqui e na tela
-// (PORTA_ANTIGA_DE_PROJETOS, em app/lib/auth/feature-grants.ts), e passam a
-// valer só admin/master por nível e o grant `projetos`.
+// A porta antiga — developer+ por cargo, ou o grant `qa` como passe — SAI. Ela
+// existia só enquanto não houvesse quem marcasse as caixas, e quem marca é o
+// Leonardo. Quem entrava por cargo e ainda não tem o campo marcado perde o
+// módulo no deploy: é o combinado, não um efeito colateral.
 //
-// Planejar: admin ou o grant `planejamento` — existe para liberar uma pessoa a
-// planejar sem promovê-la a administradora do portal, no mesmo desenho de
-// `code_review` e `qa`. Continua sendo outra porta.
-var _PORTA_ANTIGA_DE_PROJETOS = true;
+// Quem planeja continua entrando sem o campo: o grant `planejamento` abre o
+// POST e o PATCH de atividade, e sem isto a pessoa criaria atividade sem ver
+// nenhuma. Planejar continua sendo outra porta, `_podePlanejar`.
 function _podeVer(eu) {
   if (eu.servico) return true;
   if (eu.nivel >= _RANK.admin) return true;
   if (eu.grants.indexOf("projetos") >= 0) return true;
-  // Quem PLANEJA vê. Decisão do Leonardo (29/10): "libera a lista".
-  //
-  // Sem isto, quem tem o grant `planejamento` sem nível de developer CRIA e
-  // EDITA atividade (as portas do POST e do PATCH) e não consegue LISTAR
-  // nenhuma, porque a 507 passa só por `_podeVer`. Meia porta.
-  //
-  // Vem ANTES da conferência da transição, de propósito: vale com a porta
-  // antiga ligada e depois de ela ser desligada.
-  if (eu.grants.indexOf("planejamento") >= 0) return true;
-  if (!_PORTA_ANTIGA_DE_PROJETOS) return false;
-  return eu.nivel >= _RANK.developer || eu.grants.indexOf("qa") >= 0;
+  return eu.grants.indexOf("planejamento") >= 0;
 }
 function _podePlanejar(eu) {
   return eu.servico || eu.nivel >= _RANK.admin || eu.grants.indexOf("planejamento") >= 0;

@@ -120,11 +120,10 @@ const NAV_GROUPS: NavGroup[] = [
       // caminho do Suporte é o botão "Escalar para o Dev" no chamado; a trava
       // real de mover continua no servidor.
       { href: '/admin/kanban-dev', label: 'Kanban Dev', icon: LayoutGrid, minLevel: 'developer', grant: 'qa' },
-      // Decisão de 28/10: o acesso ao módulo é o campo "Projetos" em Editar
-      // membro. A régua inteira — inclusive a porta antiga que segue valendo
-      // durante a transição — está em canVerProjetos(). Planejar (criar
-      // projeto, mexer em data) continua sendo outra permissão. A trava real
-      // está no servidor, em cada rota do módulo `projetos`.
+      // O acesso ao módulo é o campo "Projetos" em Editar membro. A régua
+      // inteira está em canVerProjetos() — não há mais porta por cargo.
+      // Planejar (criar projeto, mexer em data) continua sendo outra
+      // permissão. A trava real está no servidor, em cada rota do módulo.
       { href: '/admin/projetos', label: 'Projetos', icon: FolderKanban, pode: canVerProjetos },
       { href: '/inbox',        label: 'WhatsApp',  icon: MessageSquare },
       { href: '/admin/whatsapp/flow', label: 'Fluxos do WhatsApp', icon: Workflow, minLevel: 'admin', grant: 'wa_flow_editor' },
