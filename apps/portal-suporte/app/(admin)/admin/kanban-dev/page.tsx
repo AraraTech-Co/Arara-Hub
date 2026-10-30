@@ -39,9 +39,10 @@ import {
   numeroDev, type DevStatus,
 } from '@/lib/kanban-dev'
 import {
-  ehServidorHml, labelServidorHml, SERVIDORES_HML, travaHml,
+  ehEscolhaDeHml, ehServidorHml, labelServidorHml, SEM_SERVIDOR_HML, SERVIDORES_HML, travaHml,
 } from '@/lib/servidores-hml'
 import { ServidoresHmlPanel } from '@/components/kanban-dev/servidores-hml-panel'
+import { TrocarServidorHml } from '@/components/kanban-dev/trocar-servidor-hml'
 import { araraFetchIndicadores, carregarDescricaoCompleta, carregarOrigem, kanbanDevApi, type OrigemPacote, type Versao, type Reprovacao } from '@/lib/api/kanban-dev'
 import { arara, araraFetch } from '@/lib/arara/client'
 
@@ -399,7 +400,7 @@ export default function KanbanDevPage() {
           onFeito={() => { setReestimando(null); setDetalhe(null); carregar() }} />
       )}
       {detalhe && (
-        <PainelDetalhe card={detalhe} devs={devs} onFechar={() => setDetalhe(null)}
+        <PainelDetalhe card={detalhe} cards={cards} devs={devs} onFechar={() => setDetalhe(null)}
           onAtualizado={carregar}
           onReestimar={podeMover ? () => { setReestimando(detalhe); setDetalhe(null) } : undefined} />
       )}
@@ -501,8 +502,19 @@ function CardDev({ card, podeMover, onMover, onAbrir, onReestimar }: {
         )}
         {card.version && <span>v{card.version}</span>}
         {card.environment && travaHml(card.status) && (
-          <span className="rounded bg-primary/10 px-1.5 py-0.5 font-medium text-primary" title="Servidor HML">
-            HML {labelServidorHml(card.environment)}
+          <span
+            className={`rounded px-1.5 py-0.5 font-medium ${
+              card.environment === SEM_SERVIDOR_HML
+                ? 'bg-muted text-muted-foreground'
+                : 'bg-primary/10 text-primary'
+            }`}
+            title="Servidor HML"
+          >
+            {/* "HML Sem servidor HML" não se lê. O prefixo só faz sentido
+                quando há servidor. */}
+            {card.environment === SEM_SERVIDOR_HML
+              ? labelServidorHml(SEM_SERVIDOR_HML)
+              : `HML ${labelServidorHml(card.environment)}`}
           </span>
         )}
         <PrazoSelo card={card} />
@@ -757,7 +769,9 @@ function DialogoMover({ card, para, cards, devs, euId, onFechar, onFeito }: {
     (!exige.declaracao || declarado || card.migrado) &&
     (!exige.motivo || motivo.trim() || card.migrado) &&
     (!exige.versao || versao || novaVersao.trim() || card.migrado) &&
-    (!exige.servidorHml || ehServidorHml(servidorHml) || card.migrado) &&
+    // `ehEscolhaDeHml`: um servidor OU "sem servidor". A escolha continua
+    // obrigatória; o que mudou é que agora existe uma a mais.
+    (!exige.servidorHml || ehEscolhaDeHml(servidorHml) || card.migrado) &&
     (!exige.esforco || (esforcoValido(esforco) && !asapSemData) || card.migrado) &&
     (!exige.reprovacao || card.migrado ||
       (reprovacao.motivo.trim() && reprovacao.encontrado.trim() && reprovacao.esperado.trim()))
@@ -849,7 +863,8 @@ function DialogoMover({ card, para, cards, devs, euId, onFechar, onFeito }: {
           <div className="mt-4">
             <label className="text-sm font-medium text-foreground">Servidor HML *</label>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              Em qual homologação o código foi publicado? Só aparecem servidores livres.
+              Em qual homologação o código foi publicado? Só aparecem servidores livres. Se o teste
+              não precisa de homologação, escolha “{labelServidorHml(SEM_SERVIDOR_HML)}”.
             </p>
             <select
               value={servidorHml}
@@ -860,10 +875,15 @@ function DialogoMover({ card, para, cards, devs, euId, onFechar, onFeito }: {
               {servidoresLivres.map((s) => (
                 <option key={s} value={s}>{labelServidorHml(s)}</option>
               ))}
+              {/* Decisão de 29/10: o card pode ir para teste sem ocupar máquina
+                  nenhuma. Fica por último, depois dos servidores, para não ser
+                  escolhido por descuido no lugar de um deles. */}
+              <option value={SEM_SERVIDOR_HML}>{labelServidorHml(SEM_SERVIDOR_HML)}</option>
             </select>
             {servidoresLivres.length === 0 && (
-              <p className="mt-2 text-xs font-medium text-red-600 dark:text-red-400">
-                Todos os servidores HML estão ocupados. Liberte um saindo de Pronto p/ Teste ou Em Testes.
+              <p className="mt-2 text-xs text-muted-foreground">
+                Todos os servidores HML estão ocupados. Dá para seguir sem servidor, ou liberar um
+                saindo de Pronto p/ Teste ou Em Testes.
               </p>
             )}
           </div>
@@ -1134,8 +1154,12 @@ function CartaoArrastavel({ card, habilitado, alvoDeOrdem, children }: {
 // Painel do PRÓPRIO quadro, de propósito: a tela de detalhe do Suporte oferece
 // as ações daquele quadro (Em Atendimento, Resolvido…), que corromperiam o
 // estado de um card Dev. Aqui é leitura + o link para o chamado de origem.
-function PainelDetalhe({ card, devs, onFechar, onAtualizado, onReestimar }: {
-  card: Card; devs: { id: string; nome: string }[]
+function PainelDetalhe({ card, cards, devs, onFechar, onAtualizado, onReestimar }: {
+  card: Card
+  // A lista inteira entra porque a troca de servidor precisa saber quais estão
+  // ocupados, e a ocupação é derivada dos cards do quadro.
+  cards: Card[]
+  devs: { id: string; nome: string }[]
   onFechar: () => void; onAtualizado: () => void
   onReestimar?: () => void
 }) {
@@ -1285,7 +1309,12 @@ function PainelDetalhe({ card, devs, onFechar, onAtualizado, onReestimar }: {
           {card.version && <><dt className="text-muted-foreground">Versão</dt><dd>{card.version}</dd></>}
           {card.environment && (
             <><dt className="text-muted-foreground">Servidor HML</dt>
-            <dd>{labelServidorHml(card.environment)}{travaHml(card.status) ? ' · ocupado' : ''}</dd></>
+            <dd>
+              {labelServidorHml(card.environment)}
+              {/* "Sem servidor" não ocupa nada: dizer "ocupado" ali seria a
+                  tela afirmando o contrário do que a regra faz. */}
+              {travaHml(card.status) && card.environment !== SEM_SERVIDOR_HML ? ' · ocupado' : ''}
+            </dd></>
           )}
           {card.esforco_entrega && <><dt className="text-muted-foreground">Esforço</dt>
             <dd>{labelEsforco(card.esforco_entrega as EsforcoEntrega) || card.esforco_entrega}</dd></>}
@@ -1304,6 +1333,17 @@ function PainelDetalhe({ card, devs, onFechar, onAtualizado, onReestimar }: {
           {card.created_at && <><dt className="text-muted-foreground">Criado em</dt>
             <dd>{new Date(card.created_at).toLocaleDateString('pt-BR')}</dd></>}
         </dl>
+
+        {/* A troca do servidor fica FORA da lista de dados: ali os itens são de
+            leitura, e um seletor com botão no meio deles confundiria o que se
+            lê com o que se edita. O componente se esconde sozinho fora das
+            colunas em que o servidor está reservado. */}
+        <TrocarServidorHml
+          card={{ id: card.id, status: card.status, environment: card.environment }}
+          cards={cards}
+          podeEditar={podeEditar}
+          aoTrocar={onAtualizado}
+        />
 
         <div className="mt-4">
           <label className="text-xs font-medium uppercase text-muted-foreground">Branch / Pull Request no GitHub</label>

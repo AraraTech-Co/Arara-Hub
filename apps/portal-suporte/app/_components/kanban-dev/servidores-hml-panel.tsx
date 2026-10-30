@@ -9,6 +9,7 @@
 // =============================================================================
 
 import {
+  SEM_SERVIDOR_HML,
   SERVIDORES_HML,
   labelServidorHml,
   travaHml,
@@ -28,6 +29,9 @@ export function ServidoresHmlPanel({ cards }: { cards: CardHmlRef[] }) {
   for (const c of cards) {
     const env = String(c.environment || '').trim()
     if (!env || !travaHml(c.status)) continue
+    // "Sem servidor HML" não é servidor: contá-lo aqui faria o cabeçalho dizer
+    // um ocupado a mais, e o número de livres deixaria de fechar com a lista.
+    if (env === SEM_SERVIDOR_HML) continue
     if (!ocupacao.has(env)) ocupacao.set(env, c)
   }
 

@@ -85,6 +85,21 @@ export const kanbanDevApi = {
   ) => araraFetch.post<Ok<Record<string, unknown>>>(`/api/dev/tickets/${id}/mover`, { status, ...extras }),
 
   /**
+   * Troca o servidor HML de um card já em teste.
+   *
+   * Só vale com o card em Pronto p/ Teste ou Em Testes — fora dessas colunas o
+   * campo não significa nada. O servidor antigo fica livre sem gravação nele: a
+   * ocupação é derivada de quem está nas colunas de teste com aquele valor.
+   *
+   * A resposta traz `mudou`: o servidor recusa gravar valor igual, e a tela usa
+   * isso para não recarregar o quadro sem motivo.
+   */
+  trocarServidorHml: (id: string, environment: string) =>
+    araraFetch.patch<Ok<Record<string, unknown>> & { mudou?: boolean }>(
+      `/api/dev/tickets/${id}/servidor-hml`, { environment },
+    ),
+
+  /**
    * Reestima prazo de card atrasado (não-ASAP). Servidor recalcula a sexta 12:00
    * e exige motivo do atraso. Não muda status.
    */
