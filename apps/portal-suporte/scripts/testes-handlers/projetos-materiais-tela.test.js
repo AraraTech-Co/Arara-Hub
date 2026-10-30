@@ -277,12 +277,14 @@ function montar(o) {
     // O JSX não pode ter régua própria: nenhuma condição de aparecer fora da
     // `vista`, senão os mutantes do recolher voltam a sobreviver.
     ok('o-bloco-desenha-so-o-que-a-regua-mandou',
-      bloco.includes('{vista.lista.map((m) => (')
+      bloco.includes('{vista.lista.length > 0 && (')
+      && bloco.includes('{vista.lista.map((m) => (')
       && bloco.includes('{vista.recadoVazio && (')
       && bloco.includes('{vista.recadoSemResultado && (')
       && bloco.includes('{vista.mostrarBusca && ('), null)
     ok('o-bloco-nao-decide-nada-por-fora',
       !bloco.includes('aberto &&') && !bloco.includes('muitos &&')
+      && !bloco.includes('materiais.length > 0')
       && !bloco.includes('filtrarMateriais(') && !bloco.includes('.toLowerCase()'), null)
     ok('o-clique-usa-a-regua', bloco.includes('onClick={() => setAberto(alternar)}'), null)
     // Botão só aceita conteúdo de frase: com o h2 dentro dele, o HTML é

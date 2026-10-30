@@ -236,6 +236,11 @@ NA_TELA = [
      "  return { lista, mostrarBusca: muitos,",
      "  return { lista: [], mostrarBusca: muitos,",
      "aberto:o-mesmo-acervo-aparece"),
+    # Achado do Orquestrador na revisão do 9d3aa7e: com o bloco recolhido
+    # sobrava um <ul> vazio no DOM. Invisível, mas é o JSX decidindo de novo.
+    ("a-ul-volta-a-olhar-o-acervo-inteiro", TELA_BLOCO,
+     "      {vista.lista.length > 0 && (", "      {materiais.length > 0 && (",
+     "o-bloco-desenha-so-o-que-a-regua-mandou"),
     ("o-bloco-volta-a-decidir-por-fora", TELA_BLOCO,
      "      {vista.lista.length > 0 && (", "      {aberto && vista.lista.length > 0 && (",
      "o-bloco-nao-decide-nada-por-fora"),
