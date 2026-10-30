@@ -278,39 +278,42 @@ export function KanbanDeAtividades({
         </p>
       )}
 
-      {todas.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-border p-8 text-center">
-          <p className="text-sm text-foreground">Este projeto ainda não tem atividades.</p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {podePlanejar
-              ? 'Crie a primeira em "Nova atividade". Elas valem só dentro deste projeto.'
-              : 'Quem planeja o projeto pode criar a primeira.'}
-          </p>
-        </div>
-      ) : (
-        <DndContext sensors={sensores} onDragEnd={aoSoltar}>
-          {/* Em celular as 7 etapas empilham; no desktop viram uma faixa que
-              rola para o lado. Sete colunas lado a lado numa tela estreita
-              dariam cartões de ~100px, estreitos demais para ler o título. */}
-          <div className="flex flex-col sm:flex-row gap-3 sm:overflow-x-auto sm:pb-2">
-            {colunas.map((c) => (
-              <Coluna key={c.status} status={c.status} titulo={c.titulo} quantas={c.itens.length}>
-                {c.itens.length === 0 ? (
-                  <p className="px-1 py-3 text-xs text-muted-foreground">Nada aqui.</p>
-                ) : (
-                  c.itens.map((a) => (
-                    <Cartao
-                      key={a.id} a={a} hoje={hoje} pessoas={pessoas}
-                      podeMexer={podeMover(a, { podePlanejar, meuId })}
-                      salvando={salvando === a.id} aoMover={mover} aoEditar={setEditando}
-                    />
-                  ))
-                )}
-              </Coluna>
-            ))}
-          </div>
-        </DndContext>
+      {/* Projeto sem atividade nenhuma mostra o quadro assim mesmo: as 7 etapas
+          vazias SÃO a informação — é por elas que se vê o caminho que uma
+          atividade percorre. Trocar o quadro por um cartão de aviso, como era
+          antes, escondia justamente isso de quem abria o projeto pela primeira
+          vez. O aviso continua, como uma linha acima do quadro. */}
+      {todas.length === 0 && (
+        <p className="text-xs text-muted-foreground">
+          Este projeto ainda não tem atividades.{' '}
+          {podePlanejar
+            ? 'Crie a primeira em "Nova atividade". Elas valem só dentro deste projeto.'
+            : 'Quem planeja o projeto pode criar a primeira.'}
+        </p>
       )}
+
+      <DndContext sensors={sensores} onDragEnd={aoSoltar}>
+        {/* Em celular as 7 etapas empilham; no desktop viram uma faixa que
+            rola para o lado. Sete colunas lado a lado numa tela estreita
+            dariam cartões de ~100px, estreitos demais para ler o título. */}
+        <div className="flex flex-col sm:flex-row gap-3 sm:overflow-x-auto sm:pb-2">
+          {colunas.map((c) => (
+            <Coluna key={c.status} status={c.status} titulo={c.titulo} quantas={c.itens.length}>
+              {c.itens.length === 0 ? (
+                <p className="px-1 py-3 text-xs text-muted-foreground">Nada aqui.</p>
+              ) : (
+                c.itens.map((a) => (
+                  <Cartao
+                    key={a.id} a={a} hoje={hoje} pessoas={pessoas}
+                    podeMexer={podeMover(a, { podePlanejar, meuId })}
+                    salvando={salvando === a.id} aoMover={mover} aoEditar={setEditando}
+                  />
+                ))
+              )}
+            </Coluna>
+          ))}
+        </div>
+      </DndContext>
 
       {canceladas.length > 0 && (
         <div className="rounded-xl border border-border bg-muted/20 p-3">
