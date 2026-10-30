@@ -34,8 +34,7 @@ const PUBLICAS = {
   'POST /auth/login': 'stub 501 — o login de verdade é do hub',
   'POST /auth/register': 'stub 501',
   'POST /auth/signout': 'stub 501',
-  'GET /auth/sessao/estado': 'diagnóstico de sessão sem expor token',
-  'POST /auth/sessao/encerrar': 'encerrar sessão não exige sessão válida',
+  'POST /auth/sessao/encerrar': 'revoga só com o token da própria sessão',
   'POST /auth/senha/solicitar': 'pedido de redefinição por e-mail',
   'POST /auth/senha/redefinir': 'redefinição pelo token do e-mail',
   'GET /diag/senha-estado': '410 — rota aposentada',
@@ -174,9 +173,9 @@ async function responde(literal, metodo) {
       new Promise((pronto) => setTimeout(() => pronto({ status: 'tempo esgotado' }), 3000)),
     ])
   } catch (e) {
-    // Exceção não é recusa: ninguém garante que o 500 do framework não
-    // vazou nada antes de estourar. Mas também não é resposta 2xx — fica
-    // registrada como estouro e não conta como vazamento.
+    // Exceção é rota ABERTA, não recusa: com a guarda, o 401 sai ANTES de o
+    // corpo rodar. Se estourou, o corpo rodou — e ninguém garante o que ele
+    // fez antes de estourar.
     return { estouro: String(e && e.message).slice(0, 80), escritas: escritas.length }
   }
   return { status: (r && r.status) || 200, escritas: escritas.length }
@@ -190,8 +189,15 @@ async function varrer(lista) {
     const metodo = r.chave.split(' ')[0]
     const resp = await responde(r.literal, metodo)
     if (resp.erro) { quebradas.push(`${r.id} ${r.chave}: ${resp.erro}`); continue }
-    if (typeof resp.status === 'number' && resp.status !== 401 && resp.status !== 403) {
-      abertas.push({ ...r, status: resp.status, gravou: resp.escritas > 0 })
+    // Só 401 e 403 são recusa. Estouro e tempo esgotado contam como ABERTAS:
+    // os dois significam que o corpo da rota rodou sem pessoa.
+    const recusou = resp.status === 401 || resp.status === 403
+    if (!recusou) {
+      abertas.push({
+        ...r,
+        status: resp.estouro ? `estouro: ${resp.estouro}` : resp.status,
+        gravou: resp.escritas > 0,
+      })
     }
   }
   return { abertas, quebradas }
@@ -254,6 +260,21 @@ async function varrer(lista) {
     const r = await varrer([{ chave: `GET /brinquedo/${st}`, id: 'teste', literal: brinquedo(st) }])
     ok(`a varredura acusa ${st} sem pessoa`,
       r.abertas.length === 1 && r.abertas[0].status === st, r)
+  }
+  // Estouro e rota que nunca resolve: os dois querem dizer que o corpo rodou.
+  {
+    const lancador = JSON.stringify(
+      'module.exports = { handler: async () => { throw new Error("quebrei"); } };').slice(1, -1)
+    const r = await varrer([{ chave: 'GET /brinquedo/estouro', id: 'teste', literal: lancador }])
+    ok('a-varredura-acusa-rota-que-estoura',
+      r.abertas.length === 1 && String(r.abertas[0].status).startsWith('estouro'), r)
+  }
+  {
+    const dorminhoca = JSON.stringify(
+      'module.exports = { handler: () => new Promise(function () {}) };').slice(1, -1)
+    const r = await varrer([{ chave: 'GET /brinquedo/eterna', id: 'teste', literal: dorminhoca }])
+    ok('a-varredura-acusa-rota-que-nunca-responde',
+      r.abertas.length === 1 && r.abertas[0].status === 'tempo esgotado', r)
   }
   for (const st of [401, 403]) {
     const r = await varrer([{ chave: `GET /brinquedo/${st}`, id: 'teste', literal: brinquedo(st) }])
