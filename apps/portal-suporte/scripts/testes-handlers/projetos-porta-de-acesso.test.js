@@ -211,6 +211,18 @@ async function statusDe(marca, quem, extra) {
       ok('porta-nova-em-todos:' + p.slice(0, 40), faltam.length === 0, faltam)
     }
 
+    // NENHUM handler do módulo responde sem PESSOA.
+    //
+    // A porta do módulo (`_podeVer`) não basta: `_perfilDe` trata "sem pessoa"
+    // como chamada de serviço e devolve `servico: true`, que passa por ela. As
+    // rotas de Materiais nasceram assim e foram ao ar assim — uma chave de app
+    // listava, gravava, baixava e apagava material. Quem fecha isso é o
+    // invólucro de sessão, e esta varredura é o que impede a próxima rota do
+    // módulo de nascer sem ele.
+    const INVOLUCRO = 'module.exports = { handler: _gsComSessao };'
+    const semSessao = doModulo.filter((e) => !e.corpo.includes(INVOLUCRO)).map((e) => e.marca)
+    ok('todo-handler-do-modulo-exige-sessao', semSessao.length === 0, semSessao)
+
     // E a constante da transição não ficou em módulo nenhum do arquivo.
     const sobras = entradas
       .filter((e) => e.corpo.includes('_PORTA_ANTIGA_DE_PROJETOS'))
