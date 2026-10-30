@@ -26,6 +26,7 @@ GER = os.path.join(PS, "..", "..", "packages", "api", "src", "apps",
                    "portal-suporte", "routes.generated.ts")
 TESTE = "projetos-materiais.test.js"
 TESTE_TELA = "projetos-materiais-tela.test.js"
+TESTE_MODULO = "projetos-porta-de-acesso.test.js"
 TELA_LIB = os.path.join(PS, "app", "lib", "projetos-materiais.ts")
 TELA_BLOCO = os.path.join(PS, "app", "_components", "projetos", "materiais-do-projeto.tsx")
 
@@ -46,6 +47,30 @@ TRAVA_UM = (
 # (nome, marca do handler, de, para, asserção que deve falhar)
 MUTANTES = [
     # ── o isolamento ──
+    # ── a guarda de sessão ──
+    #
+    # O invólucro é o que separa "credencial" de "pessoa". Tirá-lo de uma das
+    # quatro devolve exatamente o buraco que foi ao ar.
+    ("a-lista-volta-a-aceitar-chave-sem-pessoa", LISTAR,
+     "module.exports = { handler: _gsComSessao };",
+     "module.exports = { handler: handler };",
+     "sessao:chave-sem-pessoa-recusa:512"),
+    ("o-envio-volta-a-aceitar-chave-sem-pessoa", ENVIAR,
+     "module.exports = { handler: _gsComSessao };",
+     "module.exports = { handler: handler };",
+     "sessao:chave-sem-pessoa-nao-grava:513"),
+    ("o-download-volta-a-aceitar-chave-sem-pessoa", BAIXAR,
+     "module.exports = { handler: _gsComSessao };",
+     "module.exports = { handler: handler };",
+     "sessao:chave-sem-pessoa-nao-devolve-dado:514"),
+    ("o-apagar-volta-a-aceitar-chave-sem-pessoa", APAGAR,
+     "module.exports = { handler: _gsComSessao };",
+     "module.exports = { handler: handler };",
+     "sessao:chave-sem-pessoa-nao-grava:515"),
+    ("a-guarda-deixa-de-recusar-quem-nao-tem-pessoa", LISTAR,
+     "  var eu = await _gsEuSou(ctx);\n  if (!eu) {",
+     "  var eu = (await _gsEuSou(ctx)) || { id: \"\", nivel: 99 };\n  if (!eu) {",
+     "sessao:sem-user-recusa:512"),
     # As três linhas que o Orquestrador achou sem guarda, e a regressão do
     # acervo. Cada uma tem agora um caso que só ela faz passar.
     ("o-apagar-aceita-apagar-de-novo", APAGAR,
@@ -219,7 +244,7 @@ def main():
     caminho_teste = os.path.join(AQUI, TESTE)
     bases = {p: io.open(p, encoding="utf-8").read()
              for p in (GER, caminho_teste, TELA_LIB, TELA_BLOCO)}
-    for teste in (TESTE, TESTE_TELA):
+    for teste in (TESTE, TESTE_TELA, TESTE_MODULO):
         if roda(teste):
             sys.exit(f"! base já reprova em {teste}")
     print("base limpa\n")
@@ -257,6 +282,28 @@ def main():
         if not casou:
             vivos.append(nome)
 
+    for nome, marca, de, para in [
+        ("a-varredura-do-modulo-nao-ve-rota-sem-sessao", LISTAR,
+         "module.exports = { handler: _gsComSessao };",
+         "module.exports = { handler: handler };"),
+    ]:
+        base = bases[GER]
+        i, j, cod = literal(base, marca)
+        if cod.count(de) != 1:
+            pulados.append((nome, f"âncora {cod.count(de)}x no literal")); continue
+        io.open(GER, "w", encoding="utf-8").write(
+            base[:i] + json.dumps(cod.replace(de, para)) + base[j:])
+        try:
+            fs = roda(TESTE_MODULO)
+        finally:
+            io.open(GER, "w", encoding="utf-8").write(base)
+        esperada = "todo-handler-do-modulo-exige-sessao"
+        casou = [f for f in fs if esperada in f]
+        print(("MORTO  " if casou else "VIVO   ") + nome +
+              ("  -> " + casou[0] if casou else f"  (esperava {esperada!r}; falhou: {fs[:3]})"))
+        if not casou:
+            vivos.append(nome)
+
     for nome, arq, de, para, esperada in NA_TELA:
         base = io.open(arq, encoding="utf-8").read()
         if base.count(de) != 1:
@@ -272,7 +319,7 @@ def main():
         if not casou:
             vivos.append(nome)
 
-    total = len(MUTANTES) + len(NO_TESTE) + len(NA_TELA)
+    total = len(MUTANTES) + len(NO_TESTE) + len(NA_TELA) + 1
     print(f"\n{total - len(vivos) - len(pulados)}/{total} mortos")
     for n, p in pulados:
         print(f"  NÃO APLICOU {n}: {p}")

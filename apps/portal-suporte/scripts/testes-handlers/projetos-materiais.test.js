@@ -489,5 +489,47 @@ async function chamar(marca, o) {
     ok('porta:com-o-campo-passa', r.status === 200, r.status)
   }
 
+  // ── 7. Sem PESSOA, nada acontece ─────────────────────────────────────────
+  //
+  // Credencial não é pessoa. A chave de API de app não carrega `ctx.user.id`,
+  // e o `_perfilDe` do módulo trata "sem pessoa" como chamada de serviço —
+  // devolve `servico: true`, que passa em `_podeVer`. Sem o invólucro de
+  // sessão, as quatro rotas listavam, gravavam, devolviam conteúdo e apagavam
+  // com uma chave de app. Era assim no ar, e é isto que o invólucro fecha.
+  {
+    const chamadas = [
+      ['512', LISTAR, { id: 'p1' }, {}],
+      ['513', ENVIAR, { id: 'p1' }, { nome: 'x.pdf', conteudo: PDF }],
+      ['514', BAIXAR, { id: 'p1', mid: 'm1' }, {}],
+      ['515', APAGAR, { id: 'p1', mid: 'm1' }, {}],
+    ]
+    for (const [num, marca, params, body] of chamadas) {
+      for (const [quem, user] of [['chave-sem-pessoa', { type: 'apiKey' }], ['sem-user', undefined]]) {
+        const h = carregarHandler(marca)
+        const m = montar({
+          arquivos: [material()], conteudos: [{ id: 'm1', arquivo_id: 'm1', conteudo: PDF }],
+          params, body,
+        })
+        // A chave não carrega pessoa: é isto que o `ctx.user` do caso imita.
+        m.ctx.user = user
+        const r = await h(m.ctx)
+        ok(`sessao:${quem}-recusa:${num}`, r.status === 401,
+          { num, quem, status: r.status, body: r.body })
+        ok(`sessao:${quem}-nao-grava:${num}`,
+          m.reg.create.length === 0 && m.reg.update.length === 0 && m.reg.delete.length === 0,
+          { criou: m.reg.create.length, gravou: m.reg.update.length })
+        ok(`sessao:${quem}-nao-devolve-dado:${num}`,
+          !r.body || r.body.data === undefined, r.body)
+      }
+    }
+
+    // Contraste: a MESMA chamada, com pessoa e com o campo, responde. Sem ele,
+    // "401" passaria também num handler que recusasse todo mundo.
+    const h = carregarHandler(LISTAR)
+    const m = montar({ arquivos: [material()] })
+    const r = await h(m.ctx)
+    ok('sessao:com-pessoa-e-campo-responde', r.status === 200, { status: r.status })
+  }
+
   fim()
 })()

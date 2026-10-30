@@ -90,6 +90,42 @@ def tipos_e_teto(texto):
     return bloco
 
 
+FONTE_GUARDA = "// 507 projetos GET /projetos/:id/atividades"
+
+
+def guarda_de_sessao(texto):
+    """O invólucro de sessão, recortado de uma rota do módulo que JÁ o tem.
+
+    Sem ele, "sem pessoa" vira "chamada de serviço": `_perfilDe` devolve
+    `servico: true`, `_podeVer` passa, e uma chave de API de app — que não
+    carrega pessoa — lista, envia, baixa e apaga material. Foi assim que as
+    quatro rotas nasceram: este script recortava o prelúdio ANTES do
+    `async function handler` e o invólucro, que vive DEPOIS dele, ficava fora.
+
+    Recortado e não copiado para cá: uma segunda cópia do invólucro é como uma
+    delas fica para trás numa correção.
+    """
+    cod = literal(texto, FONTE_GUARDA)
+    anc = "async function _gsSessao(ctx) {"
+    if cod.count(anc) != 1:
+        raise SystemExit(f"! `_gsSessao` aparece {cod.count(anc)}x na rota de referência")
+    i = cod.index(anc)
+    # Leva junto o comentário colado acima, que explica por que a guarda existe.
+    linhas = cod[:i].splitlines(True)
+    n = 0
+    while n < len(linhas) and linhas[-1 - n].lstrip().startswith("//"):
+        n += 1
+    inicio = i - sum(len(l) for l in linhas[len(linhas) - n:])
+    fim = "module.exports = { handler: _gsComSessao };"
+    if not cod.rstrip().endswith(fim):
+        raise SystemExit("! a rota de referência não termina no invólucro de sessão")
+    bloco = cod[inicio:cod.rindex(fim) + len(fim)]
+    for exigido in ("var _gsOriginal = handler;", 'status(401)', "_gsRANK"):
+        if exigido not in bloco:
+            raise SystemExit(f"! o invólucro recortado não tem {exigido!r}")
+    return bloco
+
+
 def corpo(nome):
     with open(os.path.join(CORPOS, nome), encoding="utf-8") as f:
         texto = f.read()
@@ -220,9 +256,18 @@ def main():
     if texto.count(fim) != 1:
         raise SystemExit(f"! o fecho do array aparece {texto.count(fim)}x")
 
+    guarda = guarda_de_sessao(texto)
+
     novas = []
     for i, (num, metodo, caminho, arquivo) in enumerate(AS_ROTAS):
         cod = prel + corpo(arquivo)
+        # O invólucro de sessão entra NO LUGAR do `module.exports` do corpo:
+        # é ele que passa a ser o handler exportado, e o original vira o que
+        # ele chama depois de exigir pessoa.
+        anc = "module.exports = { handler };"
+        if cod.count(anc) != 1:
+            raise SystemExit(f"! {num}: `module.exports` aparece {cod.count(anc)}x")
+        cod = cod.replace(anc, guarda)
         # O que a geração promete, conferido e não suposto.
         if cod.count("var ESCOPO_MATERIAL") != 1:
             raise SystemExit(f"! {num}: a constante de escopo apareceria mais de uma vez")
@@ -230,6 +275,10 @@ def main():
             raise SystemExit(f"! {num}: o handler não usa a trava de escopo")
         if cod.index("_perfilDe(ctx)") > cod.index("ctx.params.id"):
             raise SystemExit(f"! {num}: a identidade ficaria depois de usar o parâmetro")
+        if "module.exports = { handler: _gsComSessao };" not in cod:
+            raise SystemExit(f"! {num}: sairia sem o invólucro de sessão")
+        if cod.count("async function _gsComSessao(ctx)") != 1:
+            raise SystemExit(f"! {num}: o invólucro de sessão apareceria mais de uma vez")
         novas.append(entrada(num, metodo, caminho, cod, i == len(AS_ROTAS) - 1))
 
     fecha = texto.rindex(fim)
