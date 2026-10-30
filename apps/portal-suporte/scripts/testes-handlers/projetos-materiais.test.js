@@ -442,6 +442,19 @@ async function chamar(marca, o) {
     ok('apagar:linha-sem-escopo-mas-com-projeto-nao-grava',
       apagarSemEscopo.m.reg.update.length === 0, apagarSemEscopo.m.reg.update)
 
+    // Material JÁ apagado: 404, e nada gravado. Sem este caso, apagar de novo
+    // respondia 200, regravava `apagado_em` — perdendo a data original — e
+    // duplicava o log.
+    const jaApagado = await chamar(APAGAR, {
+      arquivos: [material({ apagado_em: '2026-10-29T08:00:00.000Z', dono_id: 'u1' })],
+      params: { id: 'p1', mid: 'm1' },
+    })
+    ok('apagar:material-ja-apagado-da-404', jaApagado.r.status === 404, jaApagado.r.body)
+    ok('apagar:material-ja-apagado-nao-regrava-a-data',
+      jaApagado.m.reg.update.length === 0, jaApagado.m.reg.update)
+    ok('apagar:material-ja-apagado-nao-duplica-o-log',
+      jaApagado.m.reg.log.length === 0, jaApagado.m.reg.log)
+
     // E some da listagem depois de apagado.
     const depois = await chamar(LISTAR, {
       arquivos: [material({ apagado_em: '2026-10-30T12:00:00.000Z' })],

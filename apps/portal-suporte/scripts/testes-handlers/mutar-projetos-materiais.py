@@ -48,6 +48,9 @@ MUTANTES = [
     # ── o isolamento ──
     # As três linhas que o Orquestrador achou sem guarda, e a regressão do
     # acervo. Cada uma tem agora um caso que só ela faz passar.
+    ("o-apagar-aceita-apagar-de-novo", APAGAR,
+     "      || m.apagado_em) {", "      || false) {",
+     "apagar:material-ja-apagado-da-404"),
     ("o-apagar-ignora-de-que-projeto-e", APAGAR,
      '  if (!m || String(m.escopo || "") !== ESCOPO_MATERIAL\n'
      '      || String(m.projeto_id || "") !== projetoId\n',
