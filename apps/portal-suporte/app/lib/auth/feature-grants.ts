@@ -177,6 +177,11 @@ export function canPlanejar(actor: GrantActor): boolean {
  */
 export function canVerProjetos(actor: GrantActor): boolean {
   if (hasMinLevel(actor.role, 'admin')) return true
+  // O campo "Projetos" é a porta, mas não vale abaixo de `support`: `user` é o
+  // nível do CLIENTE (e `vendedor` é apelido dele), e projeto interno não é
+  // coisa de cliente. A tela espelha o servidor — oferecer o módulo e tomar
+  // 403 na entrada é pior do que não oferecer.
+  if (!hasMinLevel(actor.role, 'support')) return false
   if (hasGrant(actor, 'projetos')) return true
   return hasGrant(actor, 'planejamento')
 }

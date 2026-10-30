@@ -75,7 +75,10 @@ const QUEM = {
   'support+planejamento': { role: 'support',  feature_grants: ['planejamento'] },
   'support':             { role: 'support',   feature_grants: [] },
   'user+projetos':       { role: 'user',      feature_grants: ['projetos'] },
+  'user+planejamento':   { role: 'user',      feature_grants: ['planejamento'] },
+  'vendedor+projetos':   { role: 'vendedor',  feature_grants: ['projetos'] },
   'user':                { role: 'user',      feature_grants: [] },
+  'support+projetos':    { role: 'support',   feature_grants: ['projetos'] },
 }
 
 async function statusDe(marca, quem, extra) {
@@ -98,8 +101,14 @@ async function statusDe(marca, quem, extra) {
   {
     const esperado = {
       'master': 200, 'admin': 200,
-      'user+projetos': 200, 'developer+projetos': 200,
+      'developer+projetos': 200, 'support+projetos': 200,
       'developer': 403, 'support+qa': 403,
+      // O campo não vale abaixo de `support`: `user` é o nível do CLIENTE, e
+      // projeto interno não é coisa de cliente. A caixa marcada num perfil de
+      // cliente abria o módulo inteiro.
+      'user+projetos': 403, 'user+planejamento': 403,
+      // `vendedor` é apelido de `user` na régua do servidor, então cai junto.
+      'vendedor+projetos': 403,
       // Quem planeja continua vendo sem o campo: o grant abre o POST e o PATCH
       // de atividade, e sem isto a pessoa criaria atividade sem ver nenhuma.
       'support+planejamento': 200,
@@ -120,6 +129,14 @@ async function statusDe(marca, quem, extra) {
     const comCampo = await statusDe(VER, 'developer+projetos')
     ok('o-campo-e-a-causa-da-diferenca', semCampo === 403 && comCampo === 200,
       { semCampo, comCampo })
+    // E o contraste do NÍVEL: a mesma caixa marcada, e a diferença é só o
+    // cargo. Sem ele, "user+projetos recusa" passaria num handler que
+    // recusasse qualquer um que não fosse admin.
+    const clienteComCampo = await statusDe(VER, 'user+projetos')
+    const equipeComCampo = await statusDe(VER, 'support+projetos')
+    ok('o-nivel-e-a-causa-da-diferenca',
+      clienteComCampo === 403 && equipeComCampo === 200,
+      { clienteComCampo, equipeComCampo })
   }
 
   // ── 4. O campo dá ACESSO, não escrita ─────────────────────────────────────
@@ -136,8 +153,8 @@ async function statusDe(marca, quem, extra) {
       },
       params: { id: 'p1' },
     }
-    const verUsuario = await statusDe(VER_ATIV, 'user+projetos')
-    const escreverUsuario = await statusDe(ESCREVER_ATIV, 'user+projetos', corpo)
+    const verUsuario = await statusDe(VER_ATIV, 'support+projetos')
+    const escreverUsuario = await statusDe(ESCREVER_ATIV, 'support+projetos', corpo)
     const escreverDev = await statusDe(ESCREVER_ATIV, 'developer', corpo)
     const escreverPlanejador = await statusDe(ESCREVER_ATIV, 'developer+planejamento', corpo)
     ok('campo-projetos-ve-mas-nao-escreve', verUsuario === 200 && escreverUsuario === 403,

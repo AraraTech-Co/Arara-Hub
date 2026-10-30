@@ -20,6 +20,7 @@ const QUEM = {
   'support+planejamento': { role: 'support', featureGrants: ['planejamento'] },
   'support':            { role: 'support',   featureGrants: [] },
   'user+projetos':      { role: 'user',      featureGrants: ['projetos'] },
+  'support+projetos':   { role: 'support',   featureGrants: ['projetos'] },
   'user':               { role: 'user',      featureGrants: [] },
   'sem-grants':         { role: 'user' },
 }
@@ -59,7 +60,8 @@ const G = await importarTela(REL)
 
   const esperado = {
     'master': true, 'admin': true,
-    'user+projetos': true, 'developer+projetos': true,
+    // `user` é o nível do CLIENTE: a caixa marcada não abre projeto interno.
+    'user+projetos': false, 'support+projetos': true, 'developer+projetos': true,
     'developer': false, 'support+qa': false,
     // Quem planeja vê sem o campo (decisão de 29/10, que segue valendo).
     'support+planejamento': true,
@@ -83,12 +85,12 @@ const G = await importarTela(REL)
   // O campo "Projetos" NÃO libera planejar, e o grant `planejamento` não é
   // exigido para ver. São duas portas, e trocá-las daria acesso que ninguém pediu.
   ok('campo-projetos-nao-libera-planejar',
-    G.canVerProjetos(QUEM['user+projetos']) === true
-    && G.canPlanejar(QUEM['user+projetos']) === false, {
-      ve: G.canVerProjetos(QUEM['user+projetos']),
-      planeja: G.canPlanejar(QUEM['user+projetos']),
+    G.canVerProjetos(QUEM['support+projetos']) === true
+    && G.canPlanejar(QUEM['support+projetos']) === false, {
+      ve: G.canVerProjetos(QUEM['support+projetos']),
+      planeja: G.canPlanejar(QUEM['support+projetos']),
     })
-  const soPlanejamento = { role: 'user', featureGrants: ['planejamento'] }
+  const soPlanejamento = { role: 'support', featureGrants: ['planejamento'] }
   // MUDOU em 29/10: quem planeja passou a ver. Antes isto afirmava o contrário,
   // e o contrário era o buraco — a pessoa criava atividade e não listava.
   ok('planejamento-agora-da-acesso-ao-modulo',
@@ -105,7 +107,7 @@ const G = await importarTela(REL)
 // conferida contra a função da tela.
 {
   const servidor = {
-    'master': true, 'admin': true, 'user+projetos': true, 'developer+projetos': true,
+    'master': true, 'admin': true, 'user+projetos': false, 'developer+projetos': true,
     'developer': false, 'support+qa': false, 'support': false, 'user': false,
     'support+planejamento': true,
   }

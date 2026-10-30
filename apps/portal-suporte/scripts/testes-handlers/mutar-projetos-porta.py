@@ -37,8 +37,21 @@ PORTA_NOVA = (
     "  return eu.grants.indexOf(\"planejamento\") >= 0;"
 )
 
+NIVEL_MINIMO_TELA = "  if (!hasMinLevel(actor.role, 'support')) return false\n"
+
 # (nome, arquivo, teste, de, para, assercao_que_deve_falhar)
 EM_TEXTO = [
+    # O nível mínimo: sem ele, a caixa marcada num perfil de CLIENTE abre o
+    # módulo inteiro. Tem de morrer nos dois lados — tela e gerador.
+    ("a-tela-perde-o-nivel-minimo", TELA, NA_TELA,
+     NIVEL_MINIMO_TELA, "", "tela:user+projetos=false"),
+    ("a-tela-sobe-o-nivel-minimo-e-tranca-a-equipe", TELA, NA_TELA,
+     "  if (!hasMinLevel(actor.role, 'support')) return false",
+     "  if (!hasMinLevel(actor.role, 'developer')) return false",
+     "tela:support+projetos=true"),
+    ("o-gerador-perde-o-nivel-minimo", COMUM, DESVIO,
+     "  if (eu.nivel < _RANK.support) return false;\n", "",
+     "o-codigo-do-bloco-e-igual-em-todo-handler"),
     ("a-tela-devolve-o-cargo-de-developer", TELA, NA_TELA,
      "  if (hasGrant(actor, 'projetos')) return true",
      "  if (hasGrant(actor, 'projetos')) return true\n"
@@ -69,6 +82,15 @@ EM_TEXTO = [
 
 # (nome, marca, teste, de, para, assercao) — no literal DECODIFICADO
 NO_LITERAL = [
+    # O nível mínimo no HANDLER publicado, que é o que decide de verdade: sem
+    # ele, a caixa marcada num perfil de cliente abre o módulo.
+    ("a-rota-perde-o-nivel-minimo", MARCA_292, SERVIDOR,
+     "  if (eu.nivel < _RANK.support) return false;\n", "",
+     "porta:user+projetos:292=403"),
+    ("a-rota-sobe-o-nivel-minimo-e-tranca-a-equipe", MARCA_292, SERVIDOR,
+     "  if (eu.nivel < _RANK.support) return false;",
+     "  if (eu.nivel < _RANK.developer) return false;",
+     "porta:support+projetos:292=200"),
     ("uma-rota-fica-para-tras", MARCA_OUTRA, SERVIDOR,
      PORTA_NOVA,
      "  if (eu.grants.indexOf(\"projetos\") >= 0) return true;\n"
