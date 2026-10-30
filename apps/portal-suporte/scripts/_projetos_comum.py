@@ -89,17 +89,34 @@ async function _perfilDe(ctx) {
 // Quem planeja continua entrando sem o campo: o grant `planejamento` abre o
 // POST e o PATCH de atividade, e sem isto a pessoa criaria atividade sem ver
 // nenhuma. Planejar continua sendo outra porta, `_podePlanejar`.
+// O piso do módulo: as caixas de permissão de Projetos valem a partir de
+// `support`. `user` é o nível de CLIENTE no portal (e `vendedor` é apelido
+// dele), e projeto interno é coisa da equipe. Adm e master entram por nível;
+// abaixo de `support`, nenhuma caixa abre o módulo nem deixa planejar.
+//
+// O piso mora aqui e as três portas o consultam: repetido em três lugares,
+// ficaria em dois na próxima correção.
+function _daEquipe(eu) {
+  return eu.nivel >= _RANK.support;
+}
 function _podeVer(eu) {
   if (eu.servico) return true;
   if (eu.nivel >= _RANK.admin) return true;
+  if (!_daEquipe(eu)) return false;
   if (eu.grants.indexOf("projetos") >= 0) return true;
   return eu.grants.indexOf("planejamento") >= 0;
 }
 function _podePlanejar(eu) {
-  return eu.servico || eu.nivel >= _RANK.admin || eu.grants.indexOf("planejamento") >= 0;
+  if (eu.servico) return true;
+  if (eu.nivel >= _RANK.admin) return true;
+  if (!_daEquipe(eu)) return false;
+  return eu.grants.indexOf("planejamento") >= 0;
 }
 function _podeMexerNoCard(eu) {
-  return eu.servico || eu.nivel >= _RANK.developer || eu.grants.indexOf("planejamento") >= 0;
+  if (eu.servico) return true;
+  if (eu.nivel >= _RANK.developer) return true;
+  if (!_daEquipe(eu)) return false;
+  return eu.grants.indexOf("planejamento") >= 0;
 }
 
 function _agora() { return new Date().toISOString(); }
