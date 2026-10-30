@@ -57,7 +57,15 @@ NOVO = '''      var hml = String(body.environment || "").trim();
       // "Sem servidor" nao ocupa nada, e por isso nao disputa com ninguem: dois
       // cards nessa situacao conviveriam, e sem esta excecao o segundo levaria
       // um 400 dizendo que o servidor "sem-servidor-hml" esta em uso.
-      var ocupantes = hml === SEM_SERVIDOR_HML ? [] : ((await Ticket.findMany({})) || []);
+      //
+      // O FILTRO VAI PARA A CAMADA. `findMany({})` devolve as 500 linhas mais
+      // novas de uma tabela que cresce: acima disso a trava deixava de ver o
+      // card que ocupa o servidor e aceitava duas reservas do mesmo HML sem
+      // erro. Filtrando por `environment` na camada, as 500 sao 500 candidatos
+      // de verdade. Quadro e status continuam em JS, porque sao poucos.
+      var ocupantes = hml === SEM_SERVIDOR_HML
+        ? []
+        : ((await Ticket.findMany({ environment: hml, limit: 500 })) || []);
       for (var oi = 0; oi < ocupantes.length; oi++) {'''
 
 

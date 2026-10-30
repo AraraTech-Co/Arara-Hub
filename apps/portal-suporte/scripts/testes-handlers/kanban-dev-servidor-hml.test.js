@@ -9,6 +9,7 @@
 //
 // Roda com: node kanban-dev-servidor-hml.test.js
 const { carregarHandler, carregarContexto, reply, ok, fim } = require('./_carregar.js')
+const { camadaFindMany } = require('./_camada.js')
 const { registrarTS, importarTela } = require('./_tela.js')
 
 registrarTS()
@@ -42,7 +43,11 @@ function montar({ perfil, params, body, cards }) {
         Sessao: { findById: async () => null },
         Ticket: {
           findById: async (id) => linhas.find((l) => String(l.id) === String(id)) || null,
-          findMany: async () => linhas.slice(),
+          // `camadaFindMany` é o emulador FIEL da camada (teto de 500, filtro
+          // de campo antes do teto, mais recente primeiro), e ele é conferido
+          // contra Postgres real. Um fake que devolvesse tudo faria o caso de
+          // "acima de 500" passar sem provar nada.
+          findMany: async (f) => camadaFindMany(linhas, f),
           update: async (id, d) => {
             reg.update.push({ id: String(id), dados: d })
             const i = linhas.findIndex((l) => String(l.id) === String(id))
@@ -281,6 +286,77 @@ function montar({ perfil, params, body, cards }) {
       const h2 = carregarHandler(TROCAR)
       const m2 = montar({ params: { id: 'NAO_EXISTE' }, body: { environment: livre }, cards: [] })
       ok('card-inexistente-404', (await h2(m2.ctx)).status === 404, null)
+    }
+  }
+
+  // ── 6b. Acima de 500 tickets a trava não pode cegar ──────────────────────
+  //
+  // A camada devolve no máximo 500 linhas por leitura, e a tabela de tickets
+  // cresce. Lendo `findMany({})`, o card que OCUPA o servidor pode ficar fora
+  // das 500 mais novas — e aí a trava não o vê e aceita duas reservas do mesmo
+  // HML sem erro nenhum. O filtro por `environment` vai para a camada
+  // justamente para as 500 serem 500 candidatos de verdade.
+  //
+  // O fake aqui é o emulador FIEL (filtro antes do teto, 500 por leitura, mais
+  // recente primeiro), conferido contra Postgres real. Com um fake que
+  // devolvesse tudo, este caso passaria sem medir nada.
+  {
+    const alvo = L.SERVIDORES_HML[3]
+
+    // O ocupante é o mais ANTIGO: numa leitura sem filtro ele cai fora das 500
+    // mais novas. Os 600 do meio usam outro servidor, para não entrarem no
+    // conjunto filtrado.
+    const massa = () => {
+      const fora = [card({ id: 'cOcupante', numero: 'DEV-900', status: 'em_testes', env: alvo })]
+      for (let i = 0; i < 600; i++) {
+        fora.push(card({ id: 'f' + i, status: 'em_desenvolvimento', env: L.SERVIDORES_HML[0] }))
+      }
+      return fora
+    }
+
+    // Trocar para um servidor ocupado por um card antigo.
+    {
+      const h = carregarHandler(TROCAR)
+      const m = montar({
+        params: { id: 'c1' }, body: { environment: alvo },
+        cards: massa().concat([card({ id: 'c1', status: 'em_testes', env: L.SERVIDORES_HML[1] })]),
+      })
+      const r = await h(m.ctx)
+      ok('acima-de-500:trocar-ve-o-ocupante-antigo', r.status === 400,
+        { status: r.status, body: r.body })
+      ok('acima-de-500:trocar-nomeia-o-ocupante',
+        String((r.body || {}).error || '').includes('DEV-900'), r.body)
+      ok('acima-de-500:trocar-nao-grava', m.reg.update.length === 0, m.reg.update)
+    }
+
+    // E o mesmo ao MOVER para Pronto p/ Teste.
+    {
+      const h = carregarHandler(MOVER)
+      const m = montar({
+        params: { id: 'c1' }, body: { status: 'pronto_para_teste', environment: alvo },
+        cards: massa().concat([card({ id: 'c1', status: 'finalizado_dev' })]),
+      })
+      const r = await h(m.ctx)
+      ok('acima-de-500:mover-ve-o-ocupante-antigo', r.status === 400,
+        { status: r.status, body: r.body })
+      ok('acima-de-500:mover-nao-grava', m.reg.update.length === 0, m.reg.update)
+    }
+
+    // A prova de que o laboratório está medindo: a leitura SEM filtro, feita
+    // pelo MESMO fake que o handler recebe, realmente não alcança o ocupante.
+    // Medir aqui pelo `camadaFindMany` direto não serviria: provaria o
+    // emulador, não o fake entregue ao handler, e um fake degradado passaria
+    // em branco com os dois casos acima passando por acidente.
+    {
+      const m = montar({ cards: massa() })
+      const T = m.ctx.models.Ticket
+      const semFiltro = (await T.findMany({})) || []
+      const comFiltro = (await T.findMany({ environment: alvo, limit: 500 })) || []
+      ok('acima-de-500:o-teto-da-camada-esconde-o-ocupante',
+        semFiltro.length === 500 && !semFiltro.some((c) => c.id === 'cOcupante'),
+        { lidas: semFiltro.length })
+      ok('acima-de-500:com-o-filtro-o-ocupante-aparece',
+        comFiltro.some((c) => c.id === 'cOcupante'), comFiltro.map((c) => c.id))
     }
   }
 

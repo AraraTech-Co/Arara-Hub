@@ -78,7 +78,11 @@ async function handler(ctx) {
 
   // "Sem servidor" não ocupa nada, e por isso não disputa com ninguém.
   if (novo !== SEM_SERVIDOR_HML) {
-    var outros = (await Ticket.findMany({})) || [];
+    // O FILTRO VAI PARA A CAMADA, pelo mesmo motivo da rota de mover:
+    // `findMany({})` traz as 500 linhas mais novas da tabela de tickets, e
+    // acima disso o card que ocupa o servidor pode ficar fora da leitura — a
+    // trava deixaria de ver o ocupante e aceitaria duas reservas do mesmo HML.
+    var outros = (await Ticket.findMany({ environment: novo, limit: 500 })) || [];
     for (var i = 0; i < outros.length; i++) {
       var o = outros[i];
       if (String(o.id) === String(id)) continue;
