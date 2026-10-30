@@ -212,6 +212,16 @@ function a(o) {
     ok('os-tres-estados-existem',
       quadro.includes('Carregando atividades') && quadro.includes('Tentar de novo')
       && quadro.includes('ainda não tem atividades'), null)
+    // Projeto sem atividade nenhuma mostra as 7 etapas vazias. Era o contrário:
+    // `todas.length === 0 ? (cartão de aviso) : (quadro)` trocava o quadro pelo
+    // aviso, e quem abria um projeto novo não via etapa nenhuma — justo quem
+    // mais precisa ver o caminho que uma atividade percorre. O aviso continua,
+    // agora ao lado do quadro e não no lugar dele.
+    ok('o-quadro-nao-fica-escondido-quando-nao-ha-atividade',
+      !/todas\.length === 0\s*\?/.test(quadro) && /todas\.length === 0 &&/.test(quadro), null)
+    ok('o-quadro-e-desenhado-uma-vez-so',
+      (quadro.match(/<DndContext /g) || []).length === 1
+      && (quadro.match(/colunas\.map\(/g) || []).length === 1, null)
     ok('o-erro-de-leitura-e-anunciado', (quadro.match(/role="alert"/g) || []).length >= 2, null)
     ok('mover-tem-rotulo-para-leitor-de-tela',
       (quadro.match(/aria-label=\{/g) || []).length >= 2, null)
