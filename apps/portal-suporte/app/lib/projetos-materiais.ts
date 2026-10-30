@@ -66,6 +66,41 @@ export function podeApagarMaterial(
 }
 
 /**
+ * Quantos materiais a lista mostra antes de virar uma lista com rolagem e
+ * campo de busca.
+ *
+ * Abaixo disso o bloco cabe na tela e qualquer enfeite é atrapalho; acima, a
+ * lista empurra o resto da página do projeto para longe — com algumas centenas
+ * de arquivos, para fora de qualquer rolagem razoável.
+ */
+export const MUITOS = 8
+
+/** Sem acento e sem caixa: quem procura "contrato" acha "Contrato Anexo.pdf". */
+function dobrar(texto: string): string {
+  return String(texto || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim()
+}
+
+/**
+ * A lista que a tela desenha, dado o que foi digitado na busca.
+ *
+ * Busca vazia devolve TUDO — e devolve a mesma lista, não uma cópia filtrada,
+ * para o caso comum não pagar por nada. Nenhum termo casa nada? Devolve vazio,
+ * e a tela diz que a busca não achou, que é diferente de "não há material".
+ */
+export function filtrarMateriais(
+  lista: MaterialDoProjeto[],
+  busca: string,
+): MaterialDoProjeto[] {
+  const alvo = dobrar(busca)
+  if (!alvo) return lista
+  return lista.filter((m) => dobrar(m.nome).includes(alvo))
+}
+
+/**
  * O que dizer quando o envio não dá certo.
  *
  * A mensagem do servidor VENCE: é ela que sabe o tipo recusado e o tamanho

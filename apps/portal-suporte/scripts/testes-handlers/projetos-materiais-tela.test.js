@@ -172,5 +172,68 @@ function montar(o) {
     ok('o-bloco-nao-fica-atras-do-seletor-de-vistas', !antes.includes("vista === '"), antes)
   }
 
+  // ── 6. Lista longa: a altura do bloco para de depender do acervo ────────
+  //
+  // Com algumas centenas de materiais, a lista inteira empurrava marcos e
+  // atividades para fora da tela. O bloco passa a recolher, a rolar por conta
+  // própria e a filtrar por nome.
+  {
+    const nomes = (lista) => lista.map((x) => x.nome)
+    const acervo = [
+      material({ id: 'a', nome: 'Contrato Anexo.pdf' }),
+      material({ id: 'b', nome: 'ESCOPO final.docx' }),
+      material({ id: 'c', nome: 'Orçamento revisão 2.xlsx' }),
+    ]
+
+    ok('busca:vazia-devolve-tudo', L.filtrarMateriais(acervo, '').length === 3, null)
+    ok('busca:so-espaco-devolve-tudo', L.filtrarMateriais(acervo, '   ').length === 3, null)
+    // Devolver a MESMA lista no caso comum: filtrar 500 itens a cada tecla, para
+    // nada, é trabalho que a tela não precisa fazer.
+    ok('busca:vazia-nao-copia-a-lista', L.filtrarMateriais(acervo, '') === acervo, null)
+
+    ok('busca:acha-no-meio-do-nome',
+      nomes(L.filtrarMateriais(acervo, 'anexo')).join() === 'Contrato Anexo.pdf',
+      nomes(L.filtrarMateriais(acervo, 'anexo')))
+    ok('busca:ignora-maiuscula',
+      L.filtrarMateriais(acervo, 'escopo').length === 1, null)
+    ok('busca:ignora-acento',
+      L.filtrarMateriais(acervo, 'orcamento').length === 1
+      && L.filtrarMateriais(acervo, 'revisao').length === 1, null)
+    ok('busca:sem-resultado-devolve-vazio',
+      L.filtrarMateriais(acervo, 'contrato social').length === 0, null)
+    // Nome ausente não pode estourar no meio da renderização.
+    ok('busca:material-sem-nome-nao-estoura',
+      L.filtrarMateriais([material({ nome: undefined })], 'x').length === 0, null)
+
+    ok('a-tela-e-o-teste-usam-o-mesmo-limiar', L.MUITOS === 8, L.MUITOS)
+
+    const bloco = semComentarios('_components/projetos/materiais-do-projeto.tsx')
+    ok('a-lista-rola-por-conta-propria',
+      /<ul className="[^"]*max-h-\d+[^"]*overflow-y-auto/.test(bloco), null)
+    ok('a-lista-desenha-o-filtrado-e-nao-o-acervo-inteiro',
+      bloco.includes('{mostrados.map((m) => (') && !bloco.includes('{materiais.map((m) => ('),
+      null)
+    ok('o-filtro-vem-da-regua-e-nao-de-uma-copia',
+      bloco.includes('filtrarMateriais(') && !bloco.includes('.toLowerCase()'), null)
+    ok('o-limiar-vem-da-regua-e-nao-de-um-numero-solto',
+      bloco.includes('materiais.length > MUITOS') && !/length > 8\b/.test(bloco), null)
+    ok('o-bloco-recolhe', bloco.includes('aria-expanded={aberto}'), null)
+    ok('a-busca-tem-rotulo-para-leitor-de-tela',
+      bloco.includes('aria-label="Buscar material pelo nome"'), null)
+    // Recolhido ou com uma busca que não casa, o arquivo recém-enviado entraria
+    // invisível e pareceria que o envio falhou.
+    const envio = bloco.slice(bloco.indexOf('async function enviar'),
+      bloco.indexOf('async function baixar'))
+    ok('enviar-reabre-o-bloco-e-limpa-a-busca',
+      envio.includes('setAberto(true)') && envio.includes("setBusca('')"), null)
+    // A busca só existe quando a lista deixa de caber de olho — e o recado de
+    // "nada encontrado" é diferente do de "não há material".
+    ok('a-busca-so-aparece-com-lista-longa',
+      bloco.includes('{aberto && muitos && ('), null)
+    ok('busca-sem-resultado-tem-recado-proprio',
+      bloco.includes('{aberto && muitos && mostrados.length === 0 && (')
+      && bloco.includes('Nenhum material com esse nome'), null)
+  }
+
   fim()
 })()

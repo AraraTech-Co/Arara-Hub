@@ -214,6 +214,45 @@ NA_TELA = [
      "                {podeApagarMaterial(m, { meuId, podePlanejar }) && (",
      "                {false && (",
      "a-tela-usa-a-regra-de-apagar"),
+    # ── lista longa ──
+    #
+    # Sem estes, "o bloco recolhe e filtra" seria texto num arquivo: o acervo
+    # volta a esticar a página e ninguém reprova.
+    ("a-busca-passa-a-copiar-a-lista-sempre", TELA_LIB,
+     "  if (!alvo) return lista\n", "",
+     "busca:vazia-nao-copia-a-lista"),
+    ("a-busca-volta-a-exigir-acento-e-caixa", TELA_LIB,
+     "  return String(texto || '')\n"
+     "    .normalize('NFD')\n"
+     "    .replace(/[\\u0300-\\u036f]/g, '')\n"
+     "    .toLowerCase()\n"
+     "    .trim()\n",
+     "  return String(texto || '').trim()\n",
+     "busca:ignora-acento"),
+    ("a-busca-so-casa-o-comeco-do-nome", TELA_LIB,
+     "return lista.filter((m) => dobrar(m.nome).includes(alvo))",
+     "return lista.filter((m) => dobrar(m.nome).startsWith(alvo))",
+     "busca:acha-no-meio-do-nome"),
+    ("a-busca-deixa-de-filtrar", TELA_LIB,
+     "return lista.filter((m) => dobrar(m.nome).includes(alvo))",
+     "return lista",
+     "busca:sem-resultado-devolve-vazio"),
+    ("o-limiar-da-lista-longa-muda", TELA_LIB,
+     "export const MUITOS = 8", "export const MUITOS = 40",
+     "a-tela-e-o-teste-usam-o-mesmo-limiar"),
+    ("a-lista-volta-a-crescer-sem-limite", TELA_BLOCO,
+     '<ul className="divide-y divide-border max-h-80 overflow-y-auto">',
+     '<ul className="divide-y divide-border">',
+     "a-lista-rola-por-conta-propria"),
+    ("o-bloco-volta-a-desenhar-o-acervo-inteiro", TELA_BLOCO,
+     "          {mostrados.map((m) => (", "          {materiais.map((m) => (",
+     "a-lista-desenha-o-filtrado-e-nao-o-acervo-inteiro"),
+    ("o-bloco-deixa-de-recolher", TELA_BLOCO,
+     "          aria-expanded={aberto}\n", "",
+     "o-bloco-recolhe"),
+    ("o-envio-deixa-o-arquivo-novo-invisivel", TELA_BLOCO,
+     "        setAberto(true)\n        setBusca('')\n", "",
+     "enviar-reabre-o-bloco-e-limpa-a-busca"),
 ]
 
 
