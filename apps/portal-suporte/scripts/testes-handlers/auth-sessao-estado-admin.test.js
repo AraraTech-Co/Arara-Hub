@@ -17,15 +17,27 @@ const { carregarHandler, reply, ok, fim } = require('./_carregar.js')
 
 const ROTA = '158 auth GET /auth/sessao/estado'
 
+// Valores improváveis de aparecer por acaso: a asserção procura o VALOR no
+// corpo, não a palavra "verificador", que um nome de campo poderia trazer.
+const SEGREDOS = [
+  'vrf-SEGREDO-UM-7f3a', 'tok-SEGREDO-DOIS-91c2',
+  'vrf-SEGREDO-TRES-b4e8', 'tok-SEGREDO-QUATRO-2d16',
+]
+
 function montar(quem) {
   const lido = []
   const sessoes = [
+    // O verificador e o token ENTRAM na massa de propósito: sem eles na linha,
+    // "o corpo não traz verificador" sai verdadeiro de graça — o campo vazado
+    // viria `undefined` e o JSON.stringify o sumiria.
     { id: 'ses_1', user_id: 'u1', criada_em: '2026-10-29T10:00:00.000Z',
       ultimo_uso: '2026-10-30T09:00:00.000Z', expira_em: '2026-11-29T10:00:00.000Z',
-      agente: 'Mozilla/5.0 (Macintosh)' },
+      agente: 'Mozilla/5.0 (Macintosh)',
+      verificador: SEGREDOS[0], token: SEGREDOS[1] },
     { id: 'ses_2', user_id: 'u2', criada_em: '2026-10-28T10:00:00.000Z',
       ultimo_uso: '2026-10-28T11:00:00.000Z', expira_em: '2026-10-29T10:00:00.000Z',
-      agente: 'Mozilla/5.0 (iPhone)' },
+      agente: 'Mozilla/5.0 (iPhone)',
+      verificador: SEGREDOS[2], token: SEGREDOS[3] },
   ]
   return {
     lido,
@@ -82,12 +94,22 @@ function montar(quem) {
   }
 
   // A telemetria nunca devolve o token nem o verificador, em nenhum nível.
+  //
+  // Mede os VALORES, não os nomes dos campos: a massa carrega quatro segredos
+  // improváveis, e nenhum deles pode sair no corpo. O controle está logo
+  // abaixo — o mesmo corpo TEM de trazer o que a rota promete, senão "nada
+  // vazou" seria só uma resposta vazia.
   {
     const m = montar({ user: { id: 'u9' }, perfil: { id: 'u9', role: 'admin' } })
     const r = await h(m.ctx)
     const texto = JSON.stringify(r.body || {})
-    ok('nem-para-o-admin-sai-token-ou-verificador',
-      !texto.includes('verificador') && !texto.includes('token'), texto.slice(0, 200))
+    const vazados = SEGREDOS.filter((x) => texto.includes(x))
+    ok('nem-para-o-admin-sai-token-ou-verificador', vazados.length === 0, vazados)
+    ok('nem-o-nome-do-campo-aparece',
+      !texto.includes('verificador') && !texto.includes('token'), texto.slice(0, 300))
+    ok('o-corpo-conferido-e-o-corpo-cheio',
+      texto.includes('u1') && texto.includes('Macintosh'),
+      texto.slice(0, 300))
   }
 
   fim()

@@ -109,6 +109,15 @@ MUTACOES = [
     ("a telemetria de sessão perde o invólucro (teste próprio)", ROTAS,
      no_literal("GET /auth/sessao/estado", INVOLUCRO, "module.exports = { handler };"),
      "sem-pessoa:recusa-com-401", TESTE_SESSAO),
+    # Achado do Orquestrador: a asserção de "não vaza" não podia falhar,
+    # porque o campo nem existia na massa. Agora existe, e este mutante mede.
+    ("a telemetria passa a devolver o verificador", ROTAS,
+     # Raw string: no literal as aspas vão escapadas (\"), e escrever isso
+     # numa string comum já me custou um mutante que não aplicou.
+     no_literal("GET /auth/sessao/estado",
+                r'agente: String(r.agente || \"\").slice(0, 60),',
+                r'agente: String(r.agente || \"\").slice(0, 60), verificador: r.verificador, token: r.token,'),
+     "nem-para-o-admin-sai-token-ou-verificador", TESTE_SESSAO),
     ("a telemetria de sessão cai para developer", ROTAS,
      # No arquivo o literal guarda as aspas escapadas: procurar a forma crua
      # não casa nada, e o mutante sai como NÃO APLICOU em vez de morto.
