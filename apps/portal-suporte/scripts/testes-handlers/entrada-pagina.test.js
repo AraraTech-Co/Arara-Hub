@@ -338,7 +338,7 @@ const MUTACOES = [
 // Âncora errada já colocou rota DENTRO do cabeçalho do arquivo uma vez, e nada
 // disso aparece olhando só o handler editado: o número de rotas tem de ser o
 // mesmo, e TODOS os literais do arquivo ainda têm de compilar.
-const ROTAS_ESPERADAS = 510
+const ROTAS_ESPERADAS = 514
 
 function todosOsLiterais() {
   const s = fs.readFileSync(ARQ, 'utf8')

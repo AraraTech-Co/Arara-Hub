@@ -1,0 +1,94 @@
+/**
+ * Materiais de Apoio do projeto — a régua que a tela e o teste compartilham.
+ *
+ * O que vive aqui é o que não pode divergir entre a tela e o servidor, e o que
+ * a tela precisa decidir sem chamar o servidor. A régua de QUEM apaga é a
+ * mesma do handler: quem enviou, ou quem planeja.
+ */
+import type { MaterialDoProjeto } from '@/lib/api/projetos'
+
+/** Teto do conteúdo, igual ao do servidor e ao dos anexos de chamado. */
+export const MAX_BYTES = 10 * 1024 * 1024
+
+/**
+ * Lê a resposta da listagem SEM nunca estourar.
+ *
+ * A página do projeto já caiu uma vez porque a tela fez `.filter` no que
+ * achava ser um array e veio um objeto. Forma inesperada aqui vira lista vazia
+ * mais um recado, nunca uma exceção no meio da renderização.
+ */
+export function extrairMateriais(resposta: unknown): {
+  lista: MaterialDoProjeto[]
+  erro: string
+} {
+  const vazio = { lista: [] as MaterialDoProjeto[], erro: '' }
+  if (!resposta || typeof resposta !== 'object') {
+    return { ...vazio, erro: 'Resposta inesperada ao ler os materiais.' }
+  }
+  const dados = (resposta as { data?: unknown }).data
+  if (!dados || typeof dados !== 'object') {
+    return { ...vazio, erro: 'Resposta inesperada ao ler os materiais.' }
+  }
+  const bruto = (dados as { materiais?: unknown }).materiais
+  if (!Array.isArray(bruto)) {
+    return { ...vazio, erro: 'Resposta inesperada ao ler os materiais.' }
+  }
+  return {
+    lista: bruto.filter((m): m is MaterialDoProjeto =>
+      !!m && typeof m === 'object' && typeof (m as { id?: unknown }).id === 'string'),
+    erro: '',
+  }
+}
+
+/** Tamanho legível. Sem casa decimal abaixo de 1 MB: "0,1 MB" não ajuda. */
+export function tamanhoLegivel(bytes: number): string {
+  const n = Number(bytes)
+  if (!Number.isFinite(n) || n < 0) return '—'
+  if (n < 1024) return `${Math.round(n)} B`
+  if (n < 1024 * 1024) return `${Math.round(n / 1024)} KB`
+  return `${Math.round((n / (1024 * 1024)) * 10) / 10} MB`
+}
+
+/**
+ * Quem pode apagar este material?
+ *
+ * Espelha o handler: quem enviou, ou quem planeja o projeto. A tela esconde o
+ * botão para o resto em vez de oferecer um clique que o servidor vai recusar
+ * com 403 — e o servidor continua sendo a verdade.
+ */
+export function podeApagarMaterial(
+  material: Pick<MaterialDoProjeto, 'dono_id'>,
+  quem: { meuId: string; podePlanejar: boolean },
+): boolean {
+  if (quem.podePlanejar) return true
+  const eu = String(quem.meuId || '')
+  return !!eu && String(material.dono_id || '') === eu
+}
+
+/**
+ * O que dizer quando o envio não dá certo.
+ *
+ * A mensagem do servidor VENCE: é ela que sabe o tipo recusado e o tamanho
+ * real. O texto daqui é o último recurso, para a falha não virar um "erro"
+ * seco.
+ */
+export function mensagemDeErroNoEnvio(resposta: unknown): string {
+  const padrao = 'Não deu para enviar o material.'
+  if (!resposta || typeof resposta !== 'object') return padrao
+  const erro = (resposta as { error?: unknown }).error
+  return typeof erro === 'string' && erro.trim() ? erro : padrao
+}
+
+/**
+ * O arquivo escolhido vira o data URI que o servidor espera.
+ *
+ * O tamanho é conferido ANTES de ler: ler 200 MB para depois recusar trava a
+ * aba de quem escolheu o arquivo errado. O servidor confere de novo, no
+ * conteúdo — este lado é só a gentileza de avisar antes.
+ */
+export function recusaAntesDeLer(arquivo: { size: number }): string {
+  if (Number(arquivo.size) > MAX_BYTES) {
+    return `Material acima do limite de 10 MB (este tem ${tamanhoLegivel(arquivo.size)}).`
+  }
+  return ''
+}
