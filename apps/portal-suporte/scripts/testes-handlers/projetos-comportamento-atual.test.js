@@ -122,14 +122,16 @@ async function roda() {
   }
 
   // ───────────────────────────────────────────────────────────────────────────
-  // 2. Permissão de LEITURA do módulo (`_podeVer`): developer+ ou grant `qa`
+  // 2. Permissão de LEITURA do módulo (`_podeVer`): o campo "Projetos"
   // ───────────────────────────────────────────────────────────────────────────
   {
     const casos = [
       ['user', { role: 'user', feature_grants: [] }, 403],
       ['support', { role: 'support', feature_grants: [] }, 403],
-      ['support+qa', { role: 'support', feature_grants: ['qa'] }, 200],
-      ['developer', { role: 'developer', feature_grants: [] }, 200],
+      ['support+qa', { role: 'support', feature_grants: ['qa'] }, 403],
+      ['developer', { role: 'developer', feature_grants: [] }, 403],
+      ['developer+projetos', { role: 'developer', feature_grants: ['projetos'] }, 200],
+      ['support+projetos', { role: 'support', feature_grants: ['projetos'] }, 200],
       ['admin', { role: 'admin', feature_grants: [] }, 200],
       ['master', { role: 'master', feature_grants: [] }, 200],
     ]
@@ -183,7 +185,7 @@ async function roda() {
     // e asserção que não pode falhar não é prova de nada.
     const porta = {}
     for (const [quem, perfil] of [
-      ['developer', { role: 'developer', feature_grants: [] }],
+      ['developer+projetos', { role: 'developer', feature_grants: ['projetos'] }],
       ['support+planejamento', { role: 'support', feature_grants: ['planejamento'] }],
     ]) {
       const a = carregar('292 projetos GET /projetos')
@@ -195,10 +197,11 @@ async function roda() {
       porta[quem + '/planejar'] = (await b.handler(mb.ctx)).status
     }
     // As duas portas continuam DIFERENTES, mas não são mais independentes:
-  // planejar implica ver (29/10), e ver não implica planejar. O developer
-  // enxerga o módulo e não planeja; quem planeja faz as duas coisas.
+  // planejar implica ver (29/10), e ver não implica planejar. Quem tem o
+  // campo "Projetos" enxerga o módulo e não planeja; quem planeja faz as
+  // duas coisas.
   ok('planejar-implica-ver-mas-ver-nao-implica-planejar',
-      porta['developer/ver'] === 200 && porta['developer/planejar'] === 403 &&
+      porta['developer+projetos/ver'] === 200 && porta['developer+projetos/planejar'] === 403 &&
       porta['support+planejamento/ver'] === 200 && porta['support+planejamento/planejar'] === 201,
       porta)
   }

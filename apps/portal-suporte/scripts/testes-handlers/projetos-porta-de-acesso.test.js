@@ -78,31 +78,30 @@ const QUEM = {
   'user':                { role: 'user',      feature_grants: [] },
 }
 
-async function statusDe(marca, quem, portaAntiga, extra) {
+async function statusDe(marca, quem, extra) {
   // Nome fora do mapa daria `perfil: undefined`, um 403 e a impressão de que a
   // regra recusou. Melhor parar dizendo o nome errado.
   if (!QUEM[quem]) throw new Error('perfil desconhecido no teste: ' + quem)
-  const { handler, contexto } = carregarHandlerEContexto(marca)
-  if (portaAntiga === false) contexto._PORTA_ANTIGA_DE_PROJETOS = false
+  const { handler } = carregarHandlerEContexto(marca)
   const r = await handler(montar(QUEM[quem], extra))
   return r.status
 }
 
 ;(async () => {
-  // ── 1. A constante existe no handler e vale `true` no arquivo entregue ─────
-  {
-    const { contexto } = carregarHandlerEContexto(VER)
-    ok('a-constante-da-transicao-existe-no-handler',
-      contexto._PORTA_ANTIGA_DE_PROJETOS === true, contexto._PORTA_ANTIGA_DE_PROJETOS)
-  }
-
-  // ── 2. Hoje: a porta nova vale, e a antiga ainda vale ao lado dela ─────────
+  // ── 1. A porta do módulo: o campo "Projetos", e mais nada ─────────────────
+  //
+  // Decisão do Leonardo (30/10): "libera projetos para todos os membros, mas
+  // quem vai ter acesso aos projetos é na área de membros que eu decido,
+  // selecionando as caixas e dando permissão". A porta antiga — developer+ por
+  // cargo, ou o grant `qa` como passe — saiu junto com a constante de
+  // transição, e por isso `developer` e `support+qa` agora recusam.
   {
     const esperado = {
       'master': 200, 'admin': 200,
       'user+projetos': 200, 'developer+projetos': 200,
-      'developer': 200, 'support+qa': 200,
-      // Quem planeja vê, hoje e depois da troca (decisão de 29/10).
+      'developer': 403, 'support+qa': 403,
+      // Quem planeja continua vendo sem o campo: o grant abre o POST e o PATCH
+      // de atividade, e sem isto a pessoa criaria atividade sem ver nenhuma.
       'support+planejamento': 200,
       'support': 403, 'user': 403,
     }
@@ -110,37 +109,17 @@ async function statusDe(marca, quem, portaAntiga, extra) {
       const vistos = {}
       for (const quem of Object.keys(esperado)) vistos[quem] = await statusDe(marca, quem)
       for (const quem of Object.keys(esperado)) {
-        ok(`hoje:${quem}:${marca.split(' ')[0]}=${esperado[quem]}`,
+        ok(`porta:${quem}:${marca.split(' ')[0]}=${esperado[quem]}`,
           vistos[quem] === esperado[quem], vistos)
       }
     }
-  }
-
-  // ── 3. O dia da troca: só admin/master por nível e o grant `projetos` ─────
-  {
-    const esperado = {
-      'master': 200, 'admin': 200,
-      'user+projetos': 200, 'developer+projetos': 200,
-      'developer': 403, 'support+qa': 403,
-      // Quem planeja continua vendo no dia da troca: a liberação vem ANTES da
-      // conferência da transição, justamente para não cair com ela.
-      'support+planejamento': 200,
-      'support': 403, 'user': 403,
-    }
-    for (const marca of [VER, VER_ATIV]) {
-      const vistos = {}
-      for (const quem of Object.keys(esperado)) vistos[quem] = await statusDe(marca, quem, false)
-      for (const quem of Object.keys(esperado)) {
-        ok(`troca:${quem}:${marca.split(' ')[0]}=${esperado[quem]}`,
-          vistos[quem] === esperado[quem], vistos)
-      }
-    }
-    // O que prova que a constante é a causa: os MESMOS perfis, o mesmo handler,
-    // e a diferença aparece só quando ela vira.
-    const comPorta = await statusDe(VER, 'developer')
-    const semPorta = await statusDe(VER, 'developer', false)
-    ok('a-constante-e-a-causa-da-diferenca', comPorta === 200 && semPorta === 403,
-      { comPorta, semPorta })
+    // O campo é a causa: os MESMOS cargos, o mesmo handler, e a diferença é só
+    // a caixa marcada. Sem este contraste, "developer recusa" passaria também
+    // num handler que recusasse todo mundo.
+    const semCampo = await statusDe(VER, 'developer')
+    const comCampo = await statusDe(VER, 'developer+projetos')
+    ok('o-campo-e-a-causa-da-diferenca', semCampo === 403 && comCampo === 200,
+      { semCampo, comCampo })
   }
 
   // ── 4. O campo dá ACESSO, não escrita ─────────────────────────────────────
@@ -158,9 +137,9 @@ async function statusDe(marca, quem, portaAntiga, extra) {
       params: { id: 'p1' },
     }
     const verUsuario = await statusDe(VER_ATIV, 'user+projetos')
-    const escreverUsuario = await statusDe(ESCREVER_ATIV, 'user+projetos', undefined, corpo)
-    const escreverDev = await statusDe(ESCREVER_ATIV, 'developer', undefined, corpo)
-    const escreverPlanejador = await statusDe(ESCREVER_ATIV, 'developer+planejamento', undefined, corpo)
+    const escreverUsuario = await statusDe(ESCREVER_ATIV, 'user+projetos', corpo)
+    const escreverDev = await statusDe(ESCREVER_ATIV, 'developer', corpo)
+    const escreverPlanejador = await statusDe(ESCREVER_ATIV, 'developer+planejamento', corpo)
     ok('campo-projetos-ve-mas-nao-escreve', verUsuario === 200 && escreverUsuario === 403,
       { verUsuario, escreverUsuario })
     ok('developer-comum-tambem-nao-cria-mais', escreverDev === 403, escreverDev)
@@ -169,10 +148,9 @@ async function statusDe(marca, quem, portaAntiga, extra) {
 
   // ── 4b. Quem planeja CRIA e LISTA ────────────────────────────────────────
   //
-  // Fecha o ponto que a entrega do servidor deixou aberto: o grant
-  // `planejamento` abria o POST e o PATCH de atividade e não abria a listagem,
-  // porque a 507 passa só por `_podeVer`. A pessoa criava atividade e não
-  // conseguia ver nenhuma.
+  // O grant `planejamento` abria o POST e o PATCH de atividade e não abria a
+  // listagem, porque a 507 passa só por `_podeVer`. A pessoa criava atividade e
+  // não conseguia ver nenhuma. Continua valendo com a porta antiga fora.
   {
     const corpo = {
       body: {
@@ -181,23 +159,20 @@ async function statusDe(marca, quem, portaAntiga, extra) {
       },
       params: { id: 'p1' },
     }
-    for (const porta of [undefined, false]) {
-      const quando = porta === false ? 'no-dia-da-troca' : 'hoje'
-      const cria = await statusDe(ESCREVER_ATIV, 'support+planejamento', porta, corpo)
-      const lista = await statusDe(VER_ATIV, 'support+planejamento', porta)
-      const projeto = await statusDe(VER, 'support+planejamento', porta)
-      ok('quem-planeja-cria-e-lista:' + quando,
-        cria === 201 && lista === 200 && projeto === 200, { quando, cria, lista, projeto })
-    }
-    // E quem NÃO planeja nem tem o campo continua de fora, nos dois estados.
-    for (const porta of [undefined, false]) {
-      const quando = porta === false ? 'no-dia-da-troca' : 'hoje'
-      ok('support-sem-grant-continua-fora:' + quando,
-        (await statusDe(VER_ATIV, 'support', porta)) === 403, quando)
-    }
-    // O grant de QA não ganhou passe no dia da troca por causa disto.
-    ok('qa-continua-sem-passe-no-dia-da-troca',
-      (await statusDe(VER_ATIV, 'support+qa', false)) === 403, null)
+    const cria = await statusDe(ESCREVER_ATIV, 'support+planejamento', corpo)
+    const lista = await statusDe(VER_ATIV, 'support+planejamento')
+    const projeto = await statusDe(VER, 'support+planejamento')
+    ok('quem-planeja-cria-e-lista',
+      cria === 201 && lista === 200 && projeto === 200, { cria, lista, projeto })
+
+    // E quem não planeja nem tem o campo continua de fora.
+    ok('support-sem-grant-continua-fora',
+      (await statusDe(VER_ATIV, 'support')) === 403, null)
+    // O grant de QA não é mais passe para o módulo.
+    ok('qa-nao-e-mais-passe', (await statusDe(VER_ATIV, 'support+qa')) === 403, null)
+    // Nem o cargo de developer sozinho.
+    ok('cargo-de-developer-nao-e-mais-passe',
+      (await statusDe(VER_ATIV, 'developer')) === 403, null)
   }
 
   // ── 5. Os 21 handlers do módulo têm a MESMA porta ─────────────────────────
@@ -211,28 +186,34 @@ async function statusDe(marca, quem, portaAntiga, extra) {
     const doModulo = entradas.filter((e) => e.marca.includes(' projetos '))
     ok('achou-os-21-handlers-do-modulo', doModulo.length === 21, doModulo.length)
 
-    const ANTIGA = 'return eu.servico || eu.nivel >= _RANK.developer || eu.grants.indexOf(\\"qa\\") >= 0;'
-    const comAntiga = doModulo.filter((e) => e.corpo.includes(ANTIGA)).map((e) => e.marca)
-    ok('nenhum-handler-do-modulo-ficou-com-a-porta-antiga', comAntiga.length === 0, comAntiga)
-
-    const PEDACOS = [
+    // O que SAIU. Uma rota que ficasse para trás teria a porta antiga de volta,
+    // e o módulo passaria a ter duas réguas ao mesmo tempo.
+    const SAIU = [
       'var _PORTA_ANTIGA_DE_PROJETOS = true;',
+      'if (!_PORTA_ANTIGA_DE_PROJETOS) return false;',
+      'return eu.nivel >= _RANK.developer || eu.grants.indexOf(\\"qa\\") >= 0;',
+    ]
+    for (const p of SAIU) {
+      const sobrou = doModulo.filter((e) => e.corpo.includes(p)).map((e) => e.marca)
+      ok('porta-antiga-fora-de-todos:' + p.slice(0, 40), sobrou.length === 0, sobrou)
+    }
+
+    // O que FICOU, em todos.
+    const FICOU = [
       'if (eu.nivel >= _RANK.admin) return true;',
       'if (eu.grants.indexOf(\\"projetos\\") >= 0) return true;',
-      'if (!_PORTA_ANTIGA_DE_PROJETOS) return false;',
-      'if (eu.grants.indexOf(\\"planejamento\\") >= 0) return true;',
+      'return eu.grants.indexOf(\\"planejamento\\") >= 0;',
     ]
-    for (const p of PEDACOS) {
+    for (const p of FICOU) {
       const faltam = doModulo.filter((e) => !e.corpo.includes(p)).map((e) => e.marca)
       ok('porta-nova-em-todos:' + p.slice(0, 40), faltam.length === 0, faltam)
     }
 
-    // E a porta nova NÃO vazou para outro módulo: `_podeVer` de outros módulos
-    // é outra regra, e trocá-la aqui mudaria permissão que ninguém pediu.
-    const foraDoModulo = entradas
-      .filter((e) => !e.marca.includes(' projetos ') && e.corpo.includes('_PORTA_ANTIGA_DE_PROJETOS'))
+    // E a constante da transição não ficou em módulo nenhum do arquivo.
+    const sobras = entradas
+      .filter((e) => e.corpo.includes('_PORTA_ANTIGA_DE_PROJETOS'))
       .map((e) => e.marca)
-    ok('porta-nova-nao-vazou-para-outro-modulo', foraDoModulo.length === 0, foraDoModulo)
+    ok('a-constante-da-transicao-nao-existe-mais', sobras.length === 0, sobras)
   }
 
   fim()

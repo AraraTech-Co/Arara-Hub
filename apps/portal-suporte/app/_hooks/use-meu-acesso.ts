@@ -40,9 +40,9 @@ export type MeuAcesso = {
   /** admin+ ou o grant `planejamento`. Espelha canPlanejar() do servidor. */
   podePlanejar: boolean
   /**
-   * Acesso ao módulo de Projetos. Espelha canVerProjetos() — que é a ÚNICA
-   * fonte da regra, inclusive da porta antiga em transição. Não refaz a conta
-   * aqui: duas cópias da mesma régua divergem no dia em que uma delas vira.
+   * Acesso ao módulo de Projetos. Espelha canVerProjetos(), que é a ÚNICA
+   * fonte da regra. Não refaz a conta aqui: duas cópias da mesma régua
+   * divergem no dia em que uma delas vira.
    */
   podeVerProjetos: boolean
   /** admin+ ou o grant `cadastro_empresa`. Espelha a regra de POST /admin/companies. */
