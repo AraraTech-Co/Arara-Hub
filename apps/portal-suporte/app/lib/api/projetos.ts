@@ -147,6 +147,17 @@ export type LinhaPortfolio = {
   marcos: { id: string; nome: string; data: string; atingido_em: string }[]
 }
 
+/** Material de Apoio do projeto. Mora no mesmo armazenamento do acervo de
+ *  Arquivos, mas com escopo próprio: nenhuma rota de /arquivos o alcança. */
+export interface MaterialDoProjeto {
+  id: string
+  nome: string
+  tipo: string
+  tamanho: number
+  dono_id: string
+  criado_em: string
+}
+
 export const projetosApi = {
   listar: (f?: FiltroProjetos) => araraFetch.get<Ok<Projeto[]>>(`/api/projetos${query(f)}`),
 
@@ -290,6 +301,23 @@ export const projetosApi = {
         updated_at: string
       }>,
     ) => araraFetch.patch<Ok<Atividade>>(`/api/projetos/${projetoId}/atividades/${atividadeId}`, body),
+  },
+
+  materiais: {
+    // `data` é um OBJETO com a lista dentro, como nas atividades. Tipar como
+    // array foi o que derrubou a página do projeto uma vez: o compilador
+    // concorda com `data || []` e em produção vem o objeto.
+    listar: (projetoId: string) =>
+      araraFetch.get<Ok<{ materiais: MaterialDoProjeto[] }>>(
+        `/api/projetos/${projetoId}/materiais`),
+    enviar: (projetoId: string, body: { nome: string; conteudo: string }) =>
+      araraFetch.post<Ok<MaterialDoProjeto>>(`/api/projetos/${projetoId}/materiais`, body),
+    baixar: (projetoId: string, materialId: string) =>
+      araraFetch.get<Ok<{ id: string; nome: string; tipo: string; conteudo: string }>>(
+        `/api/projetos/${projetoId}/materiais/${materialId}/conteudo`),
+    apagar: (projetoId: string, materialId: string) =>
+      araraFetch.delete<Ok<{ id: string }>>(
+        `/api/projetos/${projetoId}/materiais/${materialId}`),
   },
 
   marcos: {

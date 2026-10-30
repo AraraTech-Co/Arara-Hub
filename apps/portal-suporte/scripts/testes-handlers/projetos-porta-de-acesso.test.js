@@ -184,7 +184,9 @@ async function statusDe(marca, quem, extra) {
     while ((m = re.exec(texto))) entradas.push({ marca: m[1], corpo: m[2] })
 
     const doModulo = entradas.filter((e) => e.marca.includes(' projetos '))
-    ok('achou-os-21-handlers-do-modulo', doModulo.length === 21, doModulo.length)
+    // 25 = os 21 de antes mais as quatro rotas de Materiais de Apoio, que são
+    // do mesmo módulo e carregam a mesma porta.
+    ok('achou-os-25-handlers-do-modulo', doModulo.length === 25, doModulo.length)
 
     // O que SAIU. Uma rota que ficasse para trás teria a porta antiga de volta,
     // e o módulo passaria a ter duas réguas ao mesmo tempo.

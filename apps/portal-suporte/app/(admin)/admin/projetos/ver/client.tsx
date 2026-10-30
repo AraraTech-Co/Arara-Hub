@@ -27,6 +27,7 @@ import { PlanejarCardDialog } from '@/components/projetos/planejar-card-dialog'
 import { Gantt } from '@/components/projetos/gantt/gantt'
 import { MarcosDoProjeto } from '@/components/projetos/marcos-do-projeto'
 import { KanbanDeAtividades } from '@/components/projetos/kanban-de-atividades'
+import { MateriaisDoProjeto } from '@/components/projetos/materiais-do-projeto'
 
 export default function ProjetoVerClient() {
   const params = useSearchParams()
@@ -144,6 +145,15 @@ export default function ProjetoVerClient() {
       </div>
 
       <MarcosDoProjeto projeto={projeto} podePlanejar={acesso.podePlanejar} aoMudar={carregar} />
+
+      {/* Fica FORA do seletor de Kanban / Cronograma / Lista: material de apoio
+          não é mais uma leitura do andamento, é o que o projeto precisa ter à
+          mão. E é isolado do acervo de Arquivos — a trava é do servidor. */}
+      <MateriaisDoProjeto
+        projetoId={projeto.id}
+        podePlanejar={acesso.podePlanejar}
+        meuId={acesso.meuId}
+      />
 
       {/* Três leituras do mesmo projeto, nenhuma versão reduzida da outra: o
           Kanban responde "o que está acontecendo agora", a Lista responde "o
