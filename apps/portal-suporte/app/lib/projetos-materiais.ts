@@ -100,6 +100,60 @@ export function filtrarMateriais(
   return lista.filter((m) => dobrar(m.nome).includes(alvo))
 }
 
+/** O próximo estado do bloco. Mora aqui para o teste poder medir o clique. */
+export function alternar(aberto: boolean): boolean {
+  return !aberto
+}
+
+/** O que a tela desenha. Nada fora disto decide aparecer ou não. */
+export type VistaDosMateriais = {
+  lista: MaterialDoProjeto[]
+  mostrarBusca: boolean
+  recadoVazio: string
+  recadoSemResultado: string
+}
+
+/**
+ * O que aparece, dado o estado do bloco.
+ *
+ * Esta função é a decisão inteira: recolhido, nada; aberto, a lista filtrada,
+ * a busca quando o acervo deixa de caber de olho, e um recado diferente para
+ * "não há material" e para "a busca não achou". O componente só consome.
+ *
+ * Mora na régua porque decisão que mora no JSX só pode ser conferida lendo o
+ * JSX — e atributo presente não é comportamento. Aqui um teste chama a função
+ * e vê o que ela devolve.
+ */
+export function oQueMostrar(estado: {
+  aberto: boolean
+  carregando: boolean
+  erro: string
+  materiais: MaterialDoProjeto[]
+  busca: string
+}): VistaDosMateriais {
+  const nada: VistaDosMateriais = {
+    lista: [], mostrarBusca: false, recadoVazio: '', recadoSemResultado: '',
+  }
+  // Recolhido é recolhido: nem lista, nem busca, nem recado, em qualquer
+  // tamanho de acervo e com qualquer busca digitada antes.
+  if (!estado.aberto) return nada
+
+  const materiais = estado.materiais || []
+  const muitos = materiais.length > MUITOS
+  const lista = muitos ? filtrarMateriais(materiais, estado.busca) : materiais
+
+  // Com erro na tela, o recado de vazio sobraria: o bloco já está dizendo que
+  // a leitura não deu certo, e "nenhum material ainda" seria mentira.
+  const vazio = !estado.carregando && !estado.erro && materiais.length === 0
+    ? 'Nenhum material ainda. Envie o que o projeto precisa ter à mão — escopo, contrato, planilha. Vale só dentro deste projeto.'
+    : ''
+  const semResultado = muitos && materiais.length > 0 && lista.length === 0
+    ? 'Nenhum material com esse nome. A busca ignora acento e maiúscula.'
+    : ''
+
+  return { lista, mostrarBusca: muitos, recadoVazio: vazio, recadoSemResultado: semResultado }
+}
+
 /**
  * O que dizer quando o envio não dá certo.
  *

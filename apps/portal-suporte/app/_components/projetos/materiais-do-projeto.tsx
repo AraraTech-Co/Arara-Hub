@@ -12,7 +12,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Paperclip, Upload, Download, Trash2, Loader2, ChevronDown, ChevronRight, Search } from 'lucide-react'
 import { projetosApi, type MaterialDoProjeto } from '@/lib/api/projetos'
 import {
-  MUITOS, extrairMateriais, filtrarMateriais, mensagemDeErroNoEnvio,
+  alternar, extrairMateriais, mensagemDeErroNoEnvio, oQueMostrar,
   podeApagarMaterial, recusaAntesDeLer, tamanhoLegivel,
 } from '@/lib/projetos-materiais'
 
@@ -31,8 +31,9 @@ export function MateriaisDoProjeto({
   const [aberto, setAberto] = useState(true)
   const [busca, setBusca] = useState('')
   const entrada = useRef<HTMLInputElement>(null)
-  const muitos = materiais.length > MUITOS
-  const mostrados = muitos ? filtrarMateriais(materiais, busca) : materiais
+  // Quem decide o que aparece é a régua, não o JSX: condição escrita aqui só
+  // poderia ser conferida lendo este arquivo.
+  const vista = oQueMostrar({ aberto, carregando, erro, materiais, busca })
 
   const carregar = useCallback(async () => {
     setCarregando(true)
@@ -110,22 +111,29 @@ export function MateriaisDoProjeto({
       <div className="flex items-center justify-between gap-3">
         {/* O cabeçalho inteiro recolhe a lista. Com algumas centenas de
             arquivos o bloco empurra marcos e atividades para fora da tela, e
-            quem veio ver o andamento do projeto não quer rolar o acervo. */}
-        <button
-          type="button"
-          onClick={() => setAberto((v) => !v)}
-          aria-expanded={aberto}
-          className="flex items-center gap-2 min-w-0 text-left"
-        >
-          {aberto
-            ? <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />
-            : <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />}
-          <Paperclip className="w-4 h-4 text-muted-foreground shrink-0" />
-          <h2 className="text-sm font-medium text-foreground">Materiais de Apoio</h2>
-          <span className="text-xs text-muted-foreground">
-            {carregando ? 'carregando…' : `${materiais.length} arquivo(s)`}
-          </span>
-        </button>
+            quem veio ver o andamento do projeto não quer rolar o acervo.
+
+            O botão fica DENTRO do h2, e não o contrário: botão só aceita
+            conteúdo de frase, e com o h2 lá dentro o leitor de tela perde o
+            título da seção. */}
+        <h2 className="text-sm font-medium text-foreground min-w-0">
+          <button
+            type="button"
+            onClick={() => setAberto(alternar)}
+            aria-expanded={aberto}
+            aria-controls="materiais-do-projeto-lista"
+            className="flex items-center gap-2 min-w-0 text-left"
+          >
+            {aberto
+              ? <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />
+              : <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />}
+            <Paperclip className="w-4 h-4 text-muted-foreground shrink-0" />
+            <span>Materiais de Apoio</span>
+            <span className="text-xs font-normal text-muted-foreground">
+              {carregando ? 'carregando…' : `${materiais.length} arquivo(s)`}
+            </span>
+          </button>
+        </h2>
         <label className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 h-8 text-xs font-medium cursor-pointer hover:bg-muted">
           {enviando ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
           {enviando ? 'Enviando…' : 'Enviar material'}
@@ -150,15 +158,12 @@ export function MateriaisDoProjeto({
 
       {/* Lista vazia não esconde o bloco: é no bloco que se descobre que existe
           onde pôr o material do projeto. */}
-      {aberto && !carregando && materiais.length === 0 && !erro && (
-        <p className="text-xs text-muted-foreground">
-          Nenhum material ainda. Envie o que o projeto precisa ter à mão — escopo,
-          contrato, planilha. Vale só dentro deste projeto.
-        </p>
+      {vista.recadoVazio && (
+        <p className="text-xs text-muted-foreground">{vista.recadoVazio}</p>
       )}
 
       {/* A busca só aparece quando a lista deixa de caber de olho. */}
-      {aberto && muitos && (
+      {vista.mostrarBusca && (
         <div className="relative">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
           <input
@@ -172,17 +177,15 @@ export function MateriaisDoProjeto({
         </div>
       )}
 
-      {aberto && muitos && mostrados.length === 0 && (
-        <p className="text-xs text-muted-foreground">
-          Nenhum material com esse nome. A busca ignora acento e maiúscula.
-        </p>
+      {vista.recadoSemResultado && (
+        <p className="text-xs text-muted-foreground">{vista.recadoSemResultado}</p>
       )}
 
-      {aberto && mostrados.length > 0 && (
+      {vista.lista.length > 0 && (
         /* Rolagem PRÓPRIA: a altura do bloco deixa de depender de quantos
            arquivos o projeto tem. */
-        <ul className="divide-y divide-border max-h-80 overflow-y-auto">
-          {mostrados.map((m) => (
+        <ul id="materiais-do-projeto-lista" className="divide-y divide-border max-h-80 overflow-y-auto">
+          {vista.lista.map((m) => (
             <li key={m.id} className="flex items-center justify-between gap-3 py-2">
               <div className="min-w-0">
                 <p className="text-sm text-foreground truncate">{m.nome}</p>
