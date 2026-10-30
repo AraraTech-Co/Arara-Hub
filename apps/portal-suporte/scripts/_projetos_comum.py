@@ -137,7 +137,7 @@ function _janelaValida(inicio, fim) {
 var _PCT = {
   no_status: 0, backlog: 0,
   em_desenvolvimento: 25, teste_reprovado: 40,
-  desenvolvimento_finalizado: 50,
+  desenvolvimento_finalizado: 50, em_revisao: 60,
   pronto_para_teste: 70, em_testes: 80, teste_aprovado: 90,
   aplicado_no_cliente: 100,
 };
