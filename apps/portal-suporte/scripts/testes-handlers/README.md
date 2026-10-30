@@ -30,6 +30,23 @@ const handler = carregarHandler('490b profiles POST /admin/membros')   // marca 
 Monte `ctx.models.<Model>` com `findById`/`findMany`/`create`/`update`/`delete` falsos que
 **registrem o que foi chamado** — é assim que se prova que uma recusa não escreveu nada.
 
+## O perímetro
+
+`perimetro-sem-pessoa.test.js` varre TODAS as rotas publicadas: chama cada handler
+exportado com uma credencial de aplicativo sem pessoa e exige 401 ou 403. As que podem
+responder sem pessoa estão nomeadas em `PUBLICAS`, uma a uma, com o motivo — e a lista não
+apodrece: entrada que não existe mais, ou que hoje recusa, reprova o teste.
+
+É por COMPORTAMENTO de propósito. O `conferir-guarda.py` procura a marca da guarda no
+código, e marca presente não é guarda aplicada: o invólucro pode estar definido no corpo e a
+exportação entregar o handler cru. Só chamar o handler exportado prova. Rota nova sem guarda
+volta a aparecer aqui sem ninguém precisar lembrar de conferir — e sem chave nem rede.
+
+```bash
+node perimetro-sem-pessoa.test.js
+python3 mutar-perimetro.py   # 8 mutações; cada uma reprova numa asserção nomeada
+```
+
 Depois de mexer num handler, rode também:
 
 ```bash
