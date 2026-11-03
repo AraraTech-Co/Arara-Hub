@@ -223,10 +223,8 @@ GUARDA = '''
 // ── Guarda de sessão (%(marca)s) ──
 // Nada responde sem pessoa identificada. A identidade vem do JWT (`ctx.user`)
 // ou da sessão do portal (`x-portal-sessao`); sem nenhuma das duas, 401.
-//
-// O desenho anterior tratava "sem pessoa" como chamada de serviço e liberava
-// tudo. Como a chave de API de app não carrega pessoa, qualquer credencial
-// aceita pelo app — inclusive a de um cliente — passava por cima do nível.
+// Chave de API de app não carrega pessoa, então não identifica ninguém.
+// Membro desativado (`active: false` no Profile) recebe 403 em toda rota.
 async function _gsSessao(ctx) {
   try {
     var h = (ctx.headers && (ctx.headers["x-portal-sessao"] || ctx.headers["X-Portal-Sessao"])) || "";
@@ -255,13 +253,21 @@ async function _gsEuSou(ctx) {
   if (ctx.models && ctx.models.Profile) {
     p = await ctx.models.Profile.findById(quem).catch(function () { return null; });
   }
-  return { id: quem, nivel: _gsRANK[_gsCanonico(p ? p.role : "")] || 0 };
+  return {
+    id: quem,
+    nivel: _gsRANK[_gsCanonico(p ? p.role : "")] || 0,
+    // Só `false` literal desativa: cadastro sem o campo é de antes dele existir.
+    desativado: !!(p && p.active === false),
+  };
 }
 var _gsOriginal = %(anterior)s;
 async function _gsComSessao(ctx) {
   var eu = await _gsEuSou(ctx);
   if (!eu) {
     return ctx.reply.status(401).send({ success: false, error: "Requer sessão do portal" });
+  }
+  if (eu.desativado) {
+    return ctx.reply.status(403).send({ success: false, error: "Acesso desativado", desativado: true });
   }
   if (eu.nivel < _gsRANK["%(minimo)s"]) {
     return ctx.reply.status(403).send({ success: false, error: "Sem permissão para esta operação" });
