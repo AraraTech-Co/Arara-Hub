@@ -338,6 +338,13 @@ export function planejarPreenchimento(opcoes: {
   const temFilaDeBackup = !!backup && backup.ordem.length > 0
   const soBackup = temFilaDeBackup && (preencher === 'backup' || !plantao.ordem.length)
 
+  // "Só backup" escolhido e nenhuma fila de backup: não há o que gravar. Cair
+  // no modo de sempre faria o contrário do escolhido — com refazer, reescrever
+  // o plantão inteiro. A escolha vale aqui, não só no botão da tela.
+  if (preencher === 'backup' && !temFilaDeBackup) {
+    return { dias: [], preservados: [], semSequencia: [], soBackup: true }
+  }
+
   const saida: DiaGerado[] = []
   const preservados: string[] = []
   const semSequencia: string[] = []
