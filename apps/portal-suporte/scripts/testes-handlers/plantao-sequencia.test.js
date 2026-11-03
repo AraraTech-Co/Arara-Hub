@@ -216,6 +216,65 @@ const d0 = (p) => (p && p.dias && p.dias[0]) || VAZIO
       JSON.stringify(d.sequencia.ordem) === JSON.stringify(['ana', 'carlos']) && d.confirmado === true, d)
   }
 
+  // ESCOLHER só o backup com a fila de plantão montada: o mês já gravado tem
+  // a retaguarda trocada sem que o plantão seja refeito. É o caso de quem
+  // usou "usar o que já está lançado" (que monta as duas filas) e quer mudar
+  // só o backup.
+  {
+    const lancados = [
+      dia('2026-11-01', ['joao'], ['willian']),
+      dia('2026-11-02', ['maria'], ['willian']),
+      dia('2026-11-03', ['pedro'], []),
+    ]
+    const comum = {
+      dias: ['2026-11-01', '2026-11-02', '2026-11-03'],
+      plantao: seq(['ze', 'ana'], '2026-11-01'),
+      backup: seq(['hefler', 'eron'], '2026-11-01'),
+      lancados,
+    }
+    const p = planejarPreenchimento({ ...comum, preencher: 'backup' })
+    ok('preencher só backup com fila de plantão montada: o modo liga', p.soBackup === true, p.soBackup)
+    ok('  sem refazer, só o dia sem backup entra',
+      p.dias.map((d) => d.data).join(',') === '2026-11-03', p.dias.map((d) => d.data))
+    ok('  e o plantonista dele é o lançado, não o da fila',
+      d0(p).agentIds.join(',') === 'pedro', d0(p).agentIds)
+
+    const r = planejarPreenchimento({ ...comum, preencher: 'backup', refazer: true })
+    ok('preencher só backup + refazer: os três dias entram', r.dias.length === 3, r.dias.length)
+    ok('  nenhum plantonista vem da fila de plantão',
+      r.dias.map((d) => d.agentIds.join(',')).join(';') === 'joao;maria;pedro', r.dias.map((d) => d.agentIds))
+    ok('  o backup é trocado pela fila de backup',
+      r.dias.map((d) => d.backupIds.join(',')).join(';') === 'hefler;eron;hefler', r.dias.map((d) => d.backupIds))
+
+    const t = planejarPreenchimento({ ...comum, refazer: true })
+    ok('sem escolher, a fila de plantão montada refaz o plantão (o modo de sempre)',
+      t.soBackup === false && d0(t).agentIds.join(',') === 'ze', [t.soBackup, d0(t).agentIds])
+
+    // A reconferência de antes de gravar usa o MESMO modo da prévia.
+    const d = decidirGravacao({ ...comum, plano: r, preencher: 'backup', refazer: true })
+    ok('gravar a prévia "só backup" com o mesmo modo: grava', d.acao === 'gravar', d.acao)
+    const d2 = decidirGravacao({ ...comum, plano: r, refazer: true })
+    ok('reconferir a prévia "só backup" com outro modo: não grava', d2.acao === 'mudou', d2.acao)
+  }
+
+  // Dois planos iguais DIA A DIA, um "só backup" e outro não: não são a mesma
+  // gravação. Montado para os dias coincidirem — fila de plantão igual ao que
+  // está lançado, todo dia já com backup — e assim só o modo os distingue.
+  {
+    const comum = {
+      dias: ['2026-11-01', '2026-11-02'],
+      plantao: seq(['joao', 'maria'], '2026-11-01'),
+      backup: seq(['hefler', 'eron'], '2026-11-01'),
+      lancados: [dia('2026-11-01', ['joao'], ['willian']), dia('2026-11-02', ['maria'], ['willian'])],
+      refazer: true,
+    }
+    const tudo = planejarPreenchimento(comum)
+    const soB = planejarPreenchimento({ ...comum, preencher: 'backup' })
+    const chave = (p) => JSON.stringify(p.dias)
+    ok('o caso foi montado com os dias idênticos nos dois modos', chave(tudo) === chave(soB), [chave(tudo), chave(soB)])
+    ok('dias iguais em modos diferentes não são o mesmo plano', mesmoPlano(tudo, soB) === false, 'iguais')
+  }
+
   // Sem regressão: com fila de plantão, o plano é o mesmo de antes.
   // Primeiro do gerador de propósito: se o modo só-backup ligar com fila de
   // plantão, os casos seguintes esvaziam e alguns estouram — esta asserção

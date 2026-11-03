@@ -312,8 +312,14 @@ export function planejarPreenchimento(opcoes: {
   backup?: SequenciaDePlantao
   lancados: DiaLancado[]
   refazer?: boolean
+  /**
+   * O que o lote escreve. `'backup'` preenche SÓ o backup técnico, mantendo o
+   * plantonista de cada dia, mesmo com a fila de plantão montada na tela.
+   * Omitido: as duas filas, e só-backup quando a fila de plantão está vazia.
+   */
+  preencher?: 'tudo' | 'backup'
 }): PlanoDePreenchimento {
-  const { dias, plantao, backup, lancados, refazer = false } = opcoes
+  const { dias, plantao, backup, lancados, refazer = false, preencher = 'tudo' } = opcoes
   const porData = new Map<string, DiaLancado>()
   for (const d of lancados || []) {
     if (d && ((d.agent_ids || []).length > 0 || (d.backup_ids || []).length > 0)) porData.set(d.date, d)
@@ -324,7 +330,13 @@ export function planejarPreenchimento(opcoes: {
   // falta é a retaguarda. Aqui o plantonista de cada dia NÃO é calculado — é
   // o que o dia já tem, reescrito igual. É o que permite acrescentar backup a
   // um mês inteiro sem passar por cima da escala que já está combinada.
-  const soBackup = !plantao.ordem.length && !!backup && backup.ordem.length > 0
+  //
+  // Também quando a pessoa ESCOLHE preencher só o backup: a fila de plantão
+  // pode estar montada (o "usar o que já está lançado" monta as duas), e sem a
+  // escolha o refazer reescrevia plantão e backup juntos — não havia como
+  // trocar só a retaguarda de um mês já gravado.
+  const temFilaDeBackup = !!backup && backup.ordem.length > 0
+  const soBackup = temFilaDeBackup && (preencher === 'backup' || !plantao.ordem.length)
 
   const saida: DiaGerado[] = []
   const preservados: string[] = []
@@ -417,6 +429,9 @@ export function mesmoPlano(a: PlanoDePreenchimento, b: PlanoDePreenchimento): bo
       d.substituindo ? `${d.substituindo.agentIds.join(',')}/${d.substituindo.backupIds.join(',')}` : '-',
     ].join('|'))
     .join(';')
+  // O modo entra na conta: a mesma lista de dias escrita "só backup" e escrita
+  // "plantão e backup" não é a mesma gravação que a pessoa confirmou.
+  if (a.soBackup !== b.soBackup) return false
   // Os dias preservados não precisam de conferência própria: preservado é
   // justamente o dia que NÃO entra nesta lista, então um dia que deixa de ser
   // preservado aparece aqui, e um que passa a ser preservado desaparece daqui.
@@ -453,9 +468,11 @@ export function decidirGravacao(opcoes: {
   /** O que o servidor diz AGORA, relido no momento do clique. */
   lancados: DiaLancado[]
   refazer?: boolean
+  /** O mesmo `preencher` da prévia: reconferir com outro modo daria outro plano. */
+  preencher?: 'tudo' | 'backup'
 }): DecisaoDeGravacao {
-  const { plano, dias, plantao, backup, lancados, refazer = false } = opcoes
-  const conferido = planejarPreenchimento({ dias, plantao, backup, lancados, refazer })
+  const { plano, dias, plantao, backup, lancados, refazer = false, preencher = 'tudo' } = opcoes
+  const conferido = planejarPreenchimento({ dias, plantao, backup, lancados, refazer, preencher })
   if (!mesmoPlano(plano, conferido)) return { acao: 'mudou', plano: conferido }
   return { acao: 'gravar', dias: conferido.dias }
 }

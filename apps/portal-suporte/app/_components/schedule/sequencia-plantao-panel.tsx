@@ -21,7 +21,7 @@ import type { Deducao, SequenciaDePlantao } from '@/lib/plantao-sequencia'
 
 export function SequenciaPlantaoPanel({
   plantao, backup, agentes, deducaoPlantao, deducaoBackup, ocupados, total,
-  onPlantao, onBackup, onDeduzir, onPrever, trabalhando,
+  onPlantao, onBackup, onDeduzir, onPrever, trabalhando, preencher, onPreencher,
 }: {
   plantao: SequenciaDePlantao
   backup: SequenciaDePlantao
@@ -37,7 +37,16 @@ export function SequenciaPlantaoPanel({
   onDeduzir: () => void
   onPrever: () => void
   trabalhando?: boolean
+  /** O que o lote escreve: as duas filas, ou só o backup técnico. */
+  preencher: 'tudo' | 'backup'
+  onPreencher: (v: 'tudo' | 'backup') => void
 }) {
+  // "Só backup" precisa da fila de backup; "plantão e backup" precisa de pelo
+  // menos uma das filas (só com a de backup, o gerador já preenche só ela).
+  const podePrever = preencher === 'backup'
+    ? backup.ordem.length > 0
+    : plantao.ordem.length > 0 || backup.ordem.length > 0
+
   const [busca, setBusca] = useState('')
   const [papel, setPapel] = useState<'plantao' | 'backup'>('plantao')
 
@@ -113,20 +122,43 @@ export function SequenciaPlantaoPanel({
               className="h-8 pl-7"
             />
           </div>
+          {/* Escolha explícita do que o lote escreve. Sem ela, com as duas
+              filas montadas, não havia como refazer só o backup: o refazer
+              reescrevia o plantão junto. */}
+          <label className="ml-auto flex items-center gap-1.5 text-xs text-muted-foreground">
+            Preencher
+            <select
+              value={preencher}
+              onChange={(e) => onPreencher(e.target.value as 'tudo' | 'backup')}
+              disabled={trabalhando}
+              aria-label="O que o lote vai preencher"
+              className="h-8 rounded-md border border-border bg-background px-1.5 text-xs text-foreground"
+            >
+              <option value="tudo">Plantão e backup</option>
+              <option value="backup">Só backup técnico</option>
+            </select>
+          </label>
           <Button
             type="button"
             size="sm"
-            className="ml-auto"
             onClick={onPrever}
             // Uma fila basta. As duas giram separadas, e com o mês de plantão
             // já lançado a fila que falta é a de backup: exigir plantão aqui
             // deixava o botão morto, sem dizer por quê, e a única saída era
             // abrir os 30 dias um a um.
-            disabled={trabalhando || (plantao.ordem.length === 0 && backup.ordem.length === 0)}
+            disabled={trabalhando || !podePrever}
           >
             Ver o que vai entrar
           </Button>
         </div>
+        {/* Botão desligado sempre diz por quê. */}
+        {!podePrever && (
+          <p className="text-xs text-muted-foreground">
+            {preencher === 'backup'
+              ? 'Para preencher só o backup, acrescente as pessoas na fila de backup técnico.'
+              : 'Monte a fila de plantão, a de backup, ou as duas.'}
+          </p>
+        )}
 
         {/* Dois botões por pessoa: com uma lista só, clicar num nome seria
             ambíguo, porque há duas filas. */}

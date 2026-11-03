@@ -91,6 +91,10 @@ export default function PlantaoPage() {
   const [deducaoBackup, setDeducaoBackup] = useState<Deducao | null>(null)
   const [plano, setPlano] = useState<PlanoDePreenchimento | null>(null)
   const [refazer, setRefazer] = useState(false)
+  // O que o lote escreve. "Só backup" mantém o plantonista de cada dia mesmo
+  // com a fila de plantão montada — é o caminho para trocar a retaguarda de um
+  // mês já gravado sem refazer o plantão.
+  const [preencher, setPreencher] = useState<'tudo' | 'backup'>('tudo')
   const [gravados, setGravados] = useState(0)
 
   const doMes = useMemo(() => diasDoMes(mesRef), [mesRef])
@@ -272,6 +276,7 @@ export default function PlantaoPage() {
       backup: backup.ordem.length ? { ...backup, ancora: backup.ancora || de } : undefined,
       lancados: lancadosDoMes,
       refazer: comRefazer,
+      preencher,
     })
     setRefazer(comRefazer)
     setPlano(p)
@@ -308,6 +313,7 @@ export default function PlantaoPage() {
           date: d.date, agent_ids: d.agent_ids, backup_ids: d.backup_ids,
         })),
         refazer,
+        preencher,
       })
       // O que está na tela passa a ser o que acabou de ser lido: a linha "sai"
       // de cada célula não pode falar de um estado anterior à conferência.
@@ -494,10 +500,11 @@ export default function PlantaoPage() {
             const prev = previstos.get(data)
             const ehHoje = data === hoje
             const temGente = !!dia && (dia.agentes.length > 0 || dia.backup.length > 0)
-            // Quando o dia vai ser substituído, a célula mostra o que VAI
-            // entrar: mostrar o que está gravado escondia a troca do backup e
-            // a saída de um segundo plantonista.
-            const mostrarPrevia = !!prev && (!temGente || prev.substitui)
+            // Todo dia que o lote vai gravar mostra o que VAI entrar. Antes só
+            // o dia vazio e o substituído mostravam: no "só backup" o dia já
+            // tem plantonista e não é substituição, então a célula seguia com
+            // o que estava gravado e a prévia não aparecia em lugar nenhum.
+            const mostrarPrevia = !!prev
             return (
               <button
                 key={data}
@@ -510,7 +517,7 @@ export default function PlantaoPage() {
                 className={cn(
                   'flex min-h-[4.5rem] flex-col gap-0.5 rounded-lg border p-1.5 text-left transition-colors hover:bg-muted/40',
                   ehHoje ? 'border-blue-600 ring-1 ring-blue-600/20' : 'border-border',
-                  prev && !temGente && 'border-dashed',
+                  prev && !prev.substitui && 'border-dashed',
                   prev && prev.substitui && 'border-sem-warning-bd bg-sem-warning/30',
                 )}
               >
@@ -542,7 +549,11 @@ export default function PlantaoPage() {
                   // Prévia: ainda não gravado. Cor apagada e borda tracejada
                   // dizem isso sem precisar de legenda.
                   <>
-                    <span className="truncate text-xs text-muted-foreground">{nomeDe(prev.agentIds[0])}</span>
+                    {/* Todos os plantonistas do dia: no "só backup" o dia
+                        mantém os que já tinha, e pode ser mais de um. */}
+                    <span className="truncate text-xs text-muted-foreground">
+                      {prev.agentIds.length ? prev.agentIds.map(nomeDe).join(', ') : '—'}
+                    </span>
                     {prev.backupIds.length > 0 && (
                       <span className="truncate text-[11px] text-muted-foreground">B: {nomeDe(prev.backupIds[0])}</span>
                     )}
@@ -583,6 +594,9 @@ export default function PlantaoPage() {
           onBackup={(ordem) => { setBackup((s) => ({ ordem, ancora: s.ancora || de })); setPlano(null) }}
           onDeduzir={deduzir}
           onPrever={() => prever(false)}
+          preencher={preencher}
+          // Trocar o que se preenche invalida a prévia: ela descrevia outra gravação.
+          onPreencher={(v) => { setPreencher(v); setPlano(null); setRefazer(false) }}
           trabalhando={salvando}
           // Mexer na fila com o lote em curso fazia a barra de progresso
           // desaparecer, enquanto o laço continuava gravando a fila antiga.
