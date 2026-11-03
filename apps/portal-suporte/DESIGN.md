@@ -6,14 +6,14 @@ colors:
   marca-azul-texto: "oklch(0.43 0.138 231.4)"
   marca-verde: "oklch(0.723 0.160 123)"
   fundo-claro: "oklch(0.992 0.003 70)"
-  fundo-escuro: "oklch(0.185 0.008 70)"
+  fundo-escuro: "oklch(0.173 0.009 264.3)"
   superficie-clara: "oklch(1 0 0)"
-  superficie-escura: "oklch(0.225 0.009 70)"
-  lateral: "oklch(0.155 0.012 70)"
+  superficie-escura: "oklch(0.222 0.014 266.9)"
+  lateral: "oklch(0.211 0.014 278.7)"
   contorno-claro: "oklch(0.912 0.006 70)"
-  contorno-escuro: "oklch(0.305 0.010 70)"
+  contorno-escuro: "oklch(0.306 0.021 269.4)"
   texto-secundario-claro: "oklch(0.505 0.008 70)"
-  texto-secundario-escuro: "oklch(0.635 0.011 70)"
+  texto-secundario-escuro: "oklch(0.711 0.024 263.2)"
 typography:
   title:
     fontFamily: "Geist, Geist Fallback, system-ui, sans-serif"
@@ -93,8 +93,12 @@ vivem em acento, ação e estado — nunca como bloco de fundo.
 ## Colors
 
 **Origem.** Duas matizes, extraídas do logotipo em 10/09/2026: azul `#06A8E0`
-(matiz **231.4**) e verde `#93B52E` (matiz **123**). Os neutros são quentes,
-matiz **70** — cinza puro ao lado do azul da marca lê como sujeira.
+(matiz **231.4**) e verde `#93B52E` (matiz **123**). No tema claro os neutros
+são quentes, matiz **70** — cinza puro ao lado do azul da marca lê como sujeira.
+No **escuro e na lateral** os neutros são frios, matiz **~265**, os mesmos da
+Gestão de Horas (`#0e1014` fundo, `#181b22` cartão, `#17181f` lateral): o
+carvão quente lia como marrom-avermelhado ao lado dos outros apps da Arara
+(03/11/2026, pedido do Leonardo).
 
 **A marca precisa de rampa por tema, e a medição diz por quê.** O azul cheio
 carrega texto branco a apenas 2,73:1 e, sobre fundo claro, lê a 2,67:1 — os
@@ -103,7 +107,7 @@ dois reprovam. Por isso:
 | | Claro | Escuro |
 |---|---|---|
 | `--primary` | `oklch(0.43 0.138 231.4)` — carrega branco a 7,45:1 | `oklch(0.687 0.138 231.4)` — cheio, com texto quase-preto a 6,84:1 |
-| `--primary-foreground` | branco | `oklch(0.17 0.010 70)` **quase-preto, não branco** |
+| `--primary-foreground` | branco | `oklch(0.173 0.009 264.3)` **quase-preto, não branco** |
 
 Mesmo matiz, mesma croma, luminância trocada. **Nunca use o azul cheio como
 fundo de texto branco.**
@@ -175,7 +179,7 @@ borda.**
 - **Sobreposição** (diálogo, menu): `alta`.
 
 No tema claro a sombra faz o trabalho; no escuro, metade dele é o degrau de
-luminância entre `--background` (0.185) e `--card` (0.225). Por isso **painel
+luminância entre `--background` (0.173) e `--card` (0.222). Por isso **painel
 usa `bg-card`, nunca `bg-background`** — igualar os dois deixa o bloco
 indistinguível e obriga a borda de volta.
 
@@ -204,7 +208,7 @@ Faixa e trilha grandes recebem a cor como **filete**, não preenchimento:
 | Coluna do Kanban | Trilha única elevada: cabeçalho `bg-card` com `border-t-4` da etapa, corpo `bg-muted/40`, sombra no invólucro. |
 | Campo e `Select` | Já se pintam por token (`border-input`, `bg-background`, `bg-popover`). **Não sobrepor cor.** |
 | Distintivo | `rounded-full`, fundo + `-fg` + `-bd` da mesma família, `text-[11px] font-semibold`. |
-| Lateral | `bg-sidebar` (carvão quente), separadores `border-white/[0.08]`, marca em SVG a 28–32px. |
+| Lateral | `bg-sidebar` (carvão frio, o mesmo da Gestão de Horas), separadores `border-white/[0.08]`, marca em SVG a 28–32px. |
 | Bolha de conversa | Minha: `border-primary/25 bg-primary/10`. Do outro: `border-border bg-muted`. Mensagens seguidas do mesmo autor se agrupam. |
 
 Fontes canônicas de rótulo e cor, **para importar e nunca recopiar**:
