@@ -331,6 +331,8 @@
     "noRows": "Nothing to show.",
     "rateWarning": "No hourly or monthly rate on file",
     "rateWarningDetail": "Ask an administrator to set your hourly or monthly rate; currency amounts stay at zero until then.",
+    "selfSummaryLabel": "Your total cost this month",
+    "selfSummaryBreakdown": "Incremental {{incremental}} · {{normalHours}}h normal approved",
     "empty": "—",
     "totals": "Totals",
     "col": {

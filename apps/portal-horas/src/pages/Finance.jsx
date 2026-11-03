@@ -70,6 +70,9 @@ export default function Finance() {
     [rows, isAdmin, adminIds]
   );
 
+  // Usuario normal: uma linha so — usamos no card de resumo do custo total.
+  const selfRow = !isAdmin && visibleRows.length === 1 ? visibleRows[0] : null;
+
   const visibleTotals = useMemo(() => {
     if (!isAdmin) return totals;
     if (!visibleRows.length) return null;
@@ -150,6 +153,38 @@ export default function Finance() {
         <p className="text-sm text-ink-muted">{t('finance.noRows')}</p>
       )}
 
+      {/* Resumo em destaque: usuario normal nao precisa caçar a ultima coluna da tabela. */}
+      {!isAdmin && !loading && selfRow && (
+        <div className="rounded-xl border border-gray-200 bg-white px-5 py-4 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted">
+            {t('finance.selfSummaryLabel')}
+          </p>
+          <p className="mt-1 text-sm text-ink-muted">
+            {selfRow.fullName}
+            {selfRow.squad ? ` · ${selfRow.squad}` : ''}
+          </p>
+          <p className="mt-3 text-3xl font-semibold tabular-nums tracking-tight text-ink">
+            {moneyFmt.format(selfRow.totalCost)}
+          </p>
+          <p className="mt-1 text-sm text-ink-muted">
+            {t('finance.selfSummaryBreakdown', {
+              incremental: moneyFmt.format(selfRow.incrementalTotal),
+              normalHours: numFmt.format(selfRow.normalHours),
+            })}
+          </p>
+          {selfRow.pendingIncrementalCost > 0 && (
+            <p className="mt-2 text-xs text-ink-muted">
+              {t('finance.pendingCostNote', {
+                amount: moneyFmt.format(selfRow.pendingIncrementalCost),
+              })}
+            </p>
+          )}
+          {selfRow.hasRateWarning && (
+            <p className="mt-3 text-sm text-amber-800">{t('finance.rateWarningDetail')}</p>
+          )}
+        </div>
+      )}
+
       {!loading && visibleRows.length > 0 && (
         <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
           <table className="min-w-[960px] w-full border-collapse text-sm">
@@ -167,7 +202,9 @@ export default function Finance() {
                 <th className="px-3 py-3 text-right">{t('finance.col.standbyValue')}</th>
                 <th className="px-3 py-3 text-right">{t('finance.col.incrementalHours')}</th>
                 <th className="px-3 py-3 text-right">{t('finance.col.incremental')}</th>
-                <th className="px-3 py-3 text-right">{t('finance.col.totalCost')}</th>
+                <th className="sticky right-0 z-10 bg-gray-50/95 px-3 py-3 text-right shadow-[-6px_0_8px_-6px_rgba(0,0,0,0.12)]">
+                  {t('finance.col.totalCost')}
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -215,7 +252,7 @@ export default function Finance() {
                   <td className="px-3 py-3 text-right tabular-nums font-medium text-ink">
                     {moneyFmt.format(row.incrementalTotal)}
                   </td>
-                  <td className="px-3 py-3 text-right tabular-nums font-semibold text-ink">
+                  <td className="sticky right-0 z-10 bg-white px-3 py-3 text-right tabular-nums font-semibold text-ink shadow-[-6px_0_8px_-6px_rgba(0,0,0,0.12)]">
                     <div>{moneyFmt.format(row.totalCost)}</div>
                     {row.pendingIncrementalCost > 0 && (
                       <div className="mt-0.5 text-xs font-normal text-ink-muted">
@@ -253,7 +290,7 @@ export default function Finance() {
                     {numFmt.format(visibleTotals.incrementalHours)}h
                   </td>
                   <td className="px-3 py-3 text-right tabular-nums">{moneyFmt.format(visibleTotals.incrementalTotal)}</td>
-                  <td className="px-3 py-3 text-right tabular-nums">
+                  <td className="sticky right-0 z-10 bg-gray-50/95 px-3 py-3 text-right tabular-nums shadow-[-6px_0_8px_-6px_rgba(0,0,0,0.12)]">
                     <div>{moneyFmt.format(visibleTotals.totalCost)}</div>
                     {visibleTotals.pendingIncrementalCost > 0 && (
                       <div className="mt-0.5 text-xs font-normal text-ink-muted">
@@ -268,10 +305,6 @@ export default function Finance() {
             )}
           </table>
         </div>
-      )}
-
-      {!isAdmin && !loading && visibleRows.length === 1 && visibleRows[0].hasRateWarning && (
-        <p className="text-sm text-amber-800">{t('finance.rateWarningDetail')}</p>
       )}
     </div>
   );

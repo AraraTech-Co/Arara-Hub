@@ -331,6 +331,8 @@
     "noRows": "Nenhum dado para exibir.",
     "rateWarning": "Sem valor hora ou salario cadastrado",
     "rateWarningDetail": "Peça a um administrador para cadastrar seu valor hora ou salario mensal; os valores em reais ficam zerados ate la.",
+    "selfSummaryLabel": "Seu custo total no mes",
+    "selfSummaryBreakdown": "Incremental {{incremental}} · {{normalHours}}h normais aprovadas",
     "empty": "—",
     "totals": "Totais",
     "col": {
