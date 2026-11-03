@@ -101,7 +101,11 @@ async function bateria(codigo) {
 
 ;(async () => {
   const a = await rodar(NOVO, { user: { id: 'u1' } })
-  ok('TRAVA: o handler leu o perfil do chamador (u1)', a.leituras.perfil.length === 1 && a.leituras.perfil[0] === 'u1', a.leituras)
+  // Duas leituras, as duas do chamador: a barreira do desativado
+  // (scripts/desativado-sem-acesso.py) confere `active` antes, e o handler lê o
+  // perfil que devolve. O que a trava protege é DE QUEM é a leitura.
+  ok('TRAVA: o handler leu o perfil do chamador (u1), e só o dele',
+    a.leituras.perfil.length >= 1 && a.leituras.perfil.every((x) => x === 'u1'), a.leituras)
   ok('com JWT: devolve o perfil dele (id, nome, e-mail, função)', a.status === 200 && a.corpo.id === 'u1' && a.corpo.full_name === 'Alexandre Ferreira' && a.corpo.email === 'alexandre@arara.com' && a.corpo.role === 'support', a.corpo)
   ok('  sem hash de senha nem segredo de MFA', semSegredos(a.corpo), Object.keys(a.corpo))
   ok('  e não lê a tabela de chamados', a.leituras.ticket === 0, a.leituras)
@@ -131,11 +135,18 @@ async function bateria(codigo) {
     ['verificador não conferido', 'if (String(linha.verificador || "") !== partes[1]) return null;', ''],
     ['perfil inexistente devolve 200', 'if (!linha) return ctx.reply.status(404).send({ error: "Perfil não encontrado" });', ''],
   ]
+  // As mutações miram o HANDLER, não a barreira do desativado que vem depois
+  // dele no literal: a barreira repete a leitura de sessão, e uma âncora solta
+  // no literal inteiro acertaria as duas.
+  const corte = NOVO.indexOf('// ── Barreira do desativado')
+  ok('o literal tem a barreira do desativado depois do handler', corte > 0, corte)
+  const doHandler = NOVO.slice(0, corte)
+  const daBarreira = NOVO.slice(corte)
   for (const [nome, de, para] of muts) {
-    const n = NOVO.split(de).length - 1
+    const n = doHandler.split(de).length - 1
     if (n !== 1) { ok(`mutação "${nome}" aplica exatamente uma vez`, false, n); continue }
     let f
-    try { f = await bateria(NOVO.replace(de, () => para)) } catch (err) { ok(`mutação "${nome}" reprova por asserção, não por erro de carga`, false, String(err)); continue }
+    try { f = await bateria(doHandler.replace(de, () => para) + daBarreira) } catch (err) { ok(`mutação "${nome}" reprova por asserção, não por erro de carga`, false, String(err)); continue }
     ok(`mutação "${nome}" é pega (${f.join(',')})`, f.length > 0, 'sobreviveu')
   }
   fim()
