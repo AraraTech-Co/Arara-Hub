@@ -272,7 +272,19 @@
     "adjust": "Adjust",
     "reject": "Reject",
     "justificationRequired": "Justification is required for this action.",
-    "contestMessage": "Contest reason"
+    "contestMessage": "Contest reason",
+    "monthFilter": "Reference month",
+    "allMonths": "All months",
+    "noPendingForMonth": "No pending entries for this month.",
+    "selectionCount": "{{count}} selected",
+    "approveSelected": "Approve selected",
+    "approvingSelected": "Approving...",
+    "selectAllVisible": "Select all visible",
+    "clearSelection": "Clear selection",
+    "approveSelectedConfirm": "Approve the {{count}} selected entry(ies)?",
+    "approveSelectedResult": "{{count}} entry(ies) approved. Failures: {{failed}}.",
+    "selectAllGroup": "Select all for {{name}}",
+    "selectEntry": "Select entry"
   },
   "insights": {
     "title": "Dashboard",
