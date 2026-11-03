@@ -118,7 +118,11 @@ export function SequenciaPlantaoPanel({
             size="sm"
             className="ml-auto"
             onClick={onPrever}
-            disabled={trabalhando || plantao.ordem.length === 0}
+            // Uma fila basta. As duas giram separadas, e com o mês de plantão
+            // já lançado a fila que falta é a de backup: exigir plantão aqui
+            // deixava o botão morto, sem dizer por quê, e a única saída era
+            // abrir os 30 dias um a um.
+            disabled={trabalhando || (plantao.ordem.length === 0 && backup.ordem.length === 0)}
           >
             Ver o que vai entrar
           </Button>

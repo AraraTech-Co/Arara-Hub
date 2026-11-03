@@ -604,6 +604,123 @@ const dia = (date, agent_ids, backup_ids = []) => ({ date, agent_ids, backup_ids
     }
   }
 
+  // ── fila SÓ de backup: o mês de plantão já está lançado ─────────────────
+  //
+  // É o caso do plantão de 03/11/2026: novembro inteiro com plantonista e a
+  // retaguarda faltando. Sem este modo, a única saída era abrir 30 diálogos.
+  {
+    const diasNov = diasDoMes('2026-11-01')
+    const lancados = diasNov.map((d, i) => dia(d, [['joao', 'maria', 'pedro'][i % 3]], []))
+    const p = planejarPreenchimento({
+      dias: diasNov,
+      plantao: seq([], '2026-11-01'),
+      backup: seq(['ana', 'carlos'], '2026-11-01'),
+      lancados,
+    })
+    ok('fila só de backup preenche o mês já lançado', p.dias.length === 30, p.dias.length)
+    ok('  e o plano se declara "só backup"', p.soBackup === true, p.soBackup)
+    ok('  e nenhum dia é tratado como preservado', p.preservados.length === 0, p.preservados.length)
+    ok('  e nenhum dia fica sem sequência', p.semSequencia.length === 0, p.semSequencia.length)
+
+    const primeiro = p.dias[0]
+    ok('o plantonista do dia é o que JÁ estava lançado',
+      primeiro.agentIds.length === 1 && primeiro.agentIds[0] === 'joao', primeiro.agentIds)
+    ok('  e o backup do dia vem da fila de backup',
+      primeiro.backupIds.length === 1 && primeiro.backupIds[0] === 'ana', primeiro.backupIds)
+    ok('todo dia do plano conserva o plantonista lançado',
+      p.dias.every((d, i) => d.agentIds.length === 1 && d.agentIds[0] === ['joao', 'maria', 'pedro'][i % 3]),
+      p.dias.slice(0, 4).map((d) => d.agentIds.join(',')))
+    ok('nenhum dia é marcado como substituição (não havia backup para trocar)',
+      p.dias.every((d) => d.substitui === false), p.dias.filter((d) => d.substitui).length)
+    ok('mas o retrato do dia entra, para a conferência de antes de gravar',
+      p.dias.every((d) => d.substituindo && d.substituindo.agentIds.length === 1), p.dias[0].substituindo)
+  }
+
+  // Dia que já tem backup é preservado: o lote não troca retaguarda combinada.
+  {
+    const p = planejarPreenchimento({
+      dias: ['2026-11-01', '2026-11-02'],
+      plantao: seq([], '2026-11-01'),
+      backup: seq(['ana', 'carlos'], '2026-11-01'),
+      lancados: [dia('2026-11-01', ['joao'], ['willian']), dia('2026-11-02', ['maria'], [])],
+    })
+    ok('dia que já tem backup fica de fora',
+      p.dias.length === 1 && p.dias[0].data === '2026-11-02', p.dias.map((d) => d.data))
+    ok('  e aparece como preservado',
+      p.preservados.length === 1 && p.preservados[0] === '2026-11-01', p.preservados)
+  }
+
+  // Com refazer, o backup já lançado é trocado — e aparece como substituição.
+  {
+    const p = planejarPreenchimento({
+      dias: ['2026-11-01'],
+      plantao: seq([], '2026-11-01'),
+      backup: seq(['ana'], '2026-11-01'),
+      lancados: [dia('2026-11-01', ['joao'], ['willian'])],
+      refazer: true,
+    })
+    ok('refazer troca o backup já lançado',
+      p.dias.length === 1 && p.dias[0].backupIds[0] === 'ana', p.dias[0])
+    ok('  mantendo o plantonista', p.dias[0].agentIds[0] === 'joao', p.dias[0].agentIds)
+    ok('  e marcando que substitui', p.dias[0].substitui === true, p.dias[0].substitui)
+  }
+
+  // Colisão: o backup do dia seria quem já está de plantão naquele dia.
+  {
+    const p = planejarPreenchimento({
+      dias: ['2026-11-01', '2026-11-02'],
+      plantao: seq([], '2026-11-01'),
+      backup: seq(['joao', 'ana'], '2026-11-01'),
+      lancados: [dia('2026-11-01', ['joao'], []), dia('2026-11-02', ['maria'], [])],
+    })
+    const d1 = p.dias.find((d) => d.data === '2026-11-01')
+    ok('o backup anda quando cairia em cima do plantonista lançado',
+      d1.backupIds[0] === 'ana' && d1.desvioBackup === 1, d1)
+  }
+
+  // Fila de backup com uma pessoa só, que é o plantonista: dia sem backup.
+  {
+    const p = planejarPreenchimento({
+      dias: ['2026-11-01'],
+      plantao: seq([], '2026-11-01'),
+      backup: seq(['joao'], '2026-11-01'),
+      lancados: [dia('2026-11-01', ['joao'], [])],
+    })
+    ok('fila de backup que colide inteira deixa o dia sem backup',
+      p.dias[0].backupIds.length === 0 && p.dias[0].semBackupPossivel === true, p.dias[0])
+  }
+
+  // O plantonista mudou entre a prévia e o Gravar: NÃO grava.
+  {
+    const comum = {
+      dias: ['2026-11-01'],
+      plantao: seq([], '2026-11-01'),
+      backup: seq(['ana'], '2026-11-01'),
+    }
+    const plano = planejarPreenchimento({ ...comum, lancados: [dia('2026-11-01', ['joao'], [])] })
+    const d = decidirGravacao({ ...comum, plano, lancados: [dia('2026-11-01', ['pedro'], [])] })
+    ok('plantonista trocado depois da prévia: o lote não grava', d.acao === 'mudou', d.acao)
+    ok('  e a prévia nova já traz o plantonista novo',
+      d.acao === 'mudou' && d.plano.dias[0].agentIds[0] === 'pedro',
+      d.acao === 'mudou' ? d.plano.dias[0].agentIds : d.acao)
+  }
+
+  // Sem regressão: com fila de plantão, o plano é o mesmo de antes.
+  {
+    const comum = {
+      dias: diasDoMes('2026-10-01'),
+      plantao: seq(['joao', 'maria', 'pedro'], '2026-10-01'),
+      backup: seq(['ana', 'carlos'], '2026-10-01'),
+      lancados: [dia('2026-10-05', ['willian'], [])],
+    }
+    const p = planejarPreenchimento(comum)
+    ok('com fila de plantão o modo só-backup não liga', p.soBackup === false, p.soBackup)
+    ok('  e o dia lançado segue preservado',
+      p.preservados.length === 1 && p.preservados[0] === '2026-10-05', p.preservados)
+    ok('  e os demais 30 dias entram com o plantonista calculado',
+      p.dias.length === 30 && p.dias[0].agentIds[0] === 'joao', p.dias.length)
+  }
+
   // ── nome curto ───────────────────────────────────────────────────────────
   ok('nome curto pega primeiro e inicial do último', nomeCurto('Maria Lima Souza', 'u1') === 'Maria S.', nomeCurto('Maria Lima Souza', 'u1'))
   ok('nome de uma palavra fica inteiro', nomeCurto('Maria', 'u1') === 'Maria')

@@ -248,6 +248,47 @@ export interface PlanoDePreenchimento {
   preservados: string[]
   /** Dias que ficariam sem plantonista por falta de sequência. */
   semSequencia: string[]
+  /**
+   * O lote escreve SÓ o backup, mantendo o plantonista que cada dia já tem.
+   *
+   * Sai no plano porque a tela precisa dizer a verdade: "nenhum dia já lançado
+   * será alterado" é falso aqui — o lote escreve justamente sobre dias
+   * lançados, ainda que devolvendo o mesmo plantonista.
+   */
+  soBackup: boolean
+}
+
+/**
+ * Quem é o backup do dia, sem cair em cima de quem está de plantão.
+ *
+ * O servidor recusa a mesma pessoa nos dois papéis no mesmo dia. Em vez de
+ * gerar um dia que será recusado, a fila anda: o primeiro candidato que não
+ * esteja em `evitar` entra, e o quanto ela andou aparece na prévia. Se a fila
+ * inteira colidir, o dia sai sem backup — e isso também aparece.
+ *
+ * Mora numa função só porque os dois modos de preenchimento (com fila de
+ * plantão e só backup) precisam da MESMA conta: em dois lugares, divergiriam.
+ */
+function escolherBackupDoDia(
+  backup: SequenciaDePlantao | undefined,
+  data: string,
+  evitar: string[],
+): { ids: string[]; desvio: number; impossivel: boolean } {
+  const m = backup && backup.ordem.length ? backup.ordem.length : 0
+  if (!m) return { ids: [], desvio: 0, impossivel: false }
+  const base = diasEntre(backup!.ancora, data)
+  // Âncora que não é um dia que existe: não dá para calcular a posição.
+  // Marcar como "sem backup possível" em vez de deixar o dia parecido com um
+  // dia que simplesmente não tem fila de backup.
+  if (base === null) return { ids: [], desvio: 0, impossivel: true }
+  const inicio = ((base % m) + m) % m
+  for (let k = 0; k < m; k++) {
+    const candidato = backup!.ordem[(inicio + k) % m]
+    if (candidato && evitar.indexOf(candidato) === -1) {
+      return { ids: [candidato], desvio: k, impossivel: false }
+    }
+  }
+  return { ids: [], desvio: 0, impossivel: true }
 }
 
 /**
@@ -279,6 +320,12 @@ export function planejarPreenchimento(opcoes: {
   }
   const ocupado = new Set(porData.keys())
 
+  // Só a fila de backup preenchida: o mês de plantão já está lançado e o que
+  // falta é a retaguarda. Aqui o plantonista de cada dia NÃO é calculado — é
+  // o que o dia já tem, reescrito igual. É o que permite acrescentar backup a
+  // um mês inteiro sem passar por cima da escala que já está combinada.
+  const soBackup = !plantao.ordem.length && !!backup && backup.ordem.length > 0
+
   const saida: DiaGerado[] = []
   const preservados: string[] = []
   const semSequencia: string[] = []
@@ -286,45 +333,56 @@ export function planejarPreenchimento(opcoes: {
   for (const data of dias) {
     if (instanteDoDia(data) === null) continue
     const jaTem = ocupado.has(data)
+    const atual = jaTem ? porData.get(data) : undefined
+
+    if (soBackup) {
+      // Preservado aqui é o dia que já tem BACKUP: é esse o papel que o lote
+      // escreve. Dia com plantonista e sem backup é exatamente o que este modo
+      // veio preencher — tratá-lo como preservado seria não fazer nada.
+      const jaTemBackup = ((atual && atual.backup_ids) || []).length > 0
+      if (jaTemBackup && !refazer) { preservados.push(data); continue }
+
+      const deQuem = ((atual && atual.agent_ids) || []).slice()
+      const escolha = escolherBackupDoDia(backup, data, deQuem)
+      saida.push({
+        data,
+        agentIds: deQuem,
+        backupIds: escolha.ids,
+        desvioBackup: escolha.desvio,
+        semBackupPossivel: escolha.impossivel,
+        // Substituir é trocar o que já estava: só quando havia backup.
+        substitui: jaTemBackup,
+        // O retrato do dia entra mesmo sem substituição: é por ele que
+        // `decidirGravacao` nota que o plantonista mudou entre a prévia e o
+        // clique. Sem isto, o lote reescreveria o plantonista velho por cima
+        // de uma troca combinada no meio do caminho.
+        substituindo: atual
+          ? { agentIds: (atual.agent_ids || []).slice(), backupIds: (atual.backup_ids || []).slice() }
+          : null,
+      })
+      continue
+    }
+
     if (jaTem && !refazer) { preservados.push(data); continue }
 
     const plantonista = pessoaDoDia(plantao, data)
     if (!plantonista) { semSequencia.push(data); continue }
 
-    let backupIds: string[] = []
-    let desvioBackup = 0
-    let semBackupPossivel = false
-    const m = backup && backup.ordem.length ? backup.ordem.length : 0
-    if (m) {
-      const base = diasEntre(backup!.ancora, data)
-      // Âncora que não é um dia que existe: não dá para calcular a posição.
-      // Marcar como "sem backup possível" em vez de deixar o dia parecido com
-      // um dia que simplesmente não tem fila de backup.
-      if (base === null) semBackupPossivel = true
-      if (base !== null) {
-        const inicio = ((base % m) + m) % m
-        for (let k = 0; k < m; k++) {
-          const candidato = backup!.ordem[(inicio + k) % m]
-          if (candidato && candidato !== plantonista) {
-            backupIds = [candidato]
-            desvioBackup = k
-            break
-          }
-        }
-        if (!backupIds.length) semBackupPossivel = true
-      }
-    }
-
-    const atual = jaTem ? porData.get(data) : undefined
+    const escolha = escolherBackupDoDia(backup, data, [plantonista])
     saida.push({
-      data, agentIds: [plantonista], backupIds, desvioBackup, semBackupPossivel, substitui: jaTem,
+      data,
+      agentIds: [plantonista],
+      backupIds: escolha.ids,
+      desvioBackup: escolha.desvio,
+      semBackupPossivel: escolha.impossivel,
+      substitui: jaTem,
       substituindo: atual
         ? { agentIds: (atual.agent_ids || []).slice(), backupIds: (atual.backup_ids || []).slice() }
         : null,
     })
   }
 
-  return { dias: saida, preservados, semSequencia }
+  return { dias: saida, preservados, semSequencia, soBackup }
 }
 
 /**

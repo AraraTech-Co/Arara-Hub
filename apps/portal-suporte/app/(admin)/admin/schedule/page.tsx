@@ -35,6 +35,7 @@ import { AlertCircle, ChevronLeft, ChevronRight, Clock, Loader2, Phone, PhoneOff
 import { useToast } from '@/hooks/use-toast'
 import { schedulesApi, type PlantaoDia, type QuemAvisarAgora } from '@/lib/api/schedules'
 import { araraApiFetch } from '@/lib/arara/arara-api-fetch'
+import { ehAgenteAtivo } from '@/lib/arara/auth-storage'
 import { cn } from '@/lib/utils'
 import { DiaDoPlantaoDialog, type AgenteEscolhivel } from '@/components/schedule/dia-do-plantao-dialog'
 import { SequenciaPlantaoPanel } from '@/components/schedule/sequencia-plantao-panel'
@@ -124,14 +125,20 @@ export default function PlantaoPage() {
       // mês, mas a guarda não pode valer só para o primeiro await do corpo.
       if (!souOAtual()) return
       setEquipe(
-        (brutos as Record<string, unknown>[]).map((a) => ({
-          id: String(a.id),
-          nome: (a.full_name as string) ?? (a.name as string) ?? null,
-          email: (a.email as string) ?? null,
-          // A lista de agentes não diz se tem telefone; o plantão do dia diz.
-          // Aqui começa otimista e é corrigido pelo que o servidor devolve.
-          telefone_ok: Boolean(a.phone),
-        })),
+        (brutos as Record<string, unknown>[])
+          // Quem pode ser escalado: equipe, e não desativado. A rota devolve
+          // TODO perfil do portal — cliente inclusive — e quem foi desativado
+          // seguia aparecendo aqui, que é a tela que decide quem é acordado de
+          // madrugada. Mesmo critério de chamados, tarefas e Kanban.
+          .filter((a) => ehAgenteAtivo(a as { role?: unknown; active?: boolean | null }))
+          .map((a) => ({
+            id: String(a.id),
+            nome: (a.full_name as string) ?? (a.name as string) ?? null,
+            email: (a.email as string) ?? null,
+            // A lista de agentes não diz se tem telefone; o plantão do dia diz.
+            // Aqui começa otimista e é corrigido pelo que o servidor devolve.
+            telefone_ok: Boolean(a.phone),
+          })),
       )
     } catch {
       if (!souOAtual()) return
@@ -593,7 +600,12 @@ export default function PlantaoPage() {
                     {' '}· {plano.dias.filter((d) => d.substitui).length} já lançados serão trocados
                   </span>
                 )
-                : <span className="text-muted-foreground"> · nenhum dia já lançado será alterado</span>}
+                // Com fila só de backup o lote ESCREVE em dias já lançados —
+                // devolvendo o mesmo plantonista. Dizer "nenhum dia já lançado
+                // será alterado" ali seria falso.
+                : plano.soBackup
+                  ? <span className="text-muted-foreground"> · só o backup entra; o plantonista de cada dia fica como está</span>
+                  : <span className="text-muted-foreground"> · nenhum dia já lançado será alterado</span>}
               {plano.dias.some((d) => d.desvioBackup > 0) && (
                 <span className="text-muted-foreground">
                   {' '}· em {plano.dias.filter((d) => d.desvioBackup > 0).length} dias o backup andou na fila para não ser a mesma pessoa
@@ -611,7 +623,9 @@ export default function PlantaoPage() {
             <div className="ml-auto flex flex-wrap items-center gap-2">
               {!refazer && plano.preservados.length > 0 && (
                 <Button type="button" variant="ghost" size="sm" disabled={salvando} onClick={() => prever(true)}>
-                  Refazer também os {plano.preservados.length} já lançados
+                  {plano.soBackup
+                    ? `Refazer também os ${plano.preservados.length} que já têm backup`
+                    : `Refazer também os ${plano.preservados.length} já lançados`}
                 </Button>
               )}
               <Button type="button" variant="outline" size="sm" disabled={salvando} onClick={() => { setPlano(null); setRefazer(false) }}>
