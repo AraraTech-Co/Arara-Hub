@@ -16,8 +16,13 @@ function sumMinutes(items) {
   return items.reduce((acc, en) => acc + (en.durationMinutes || 0), 0);
 }
 
+/** Chave de mês "YYYY-MM" a partir da data ISO do lançamento. */
+function monthKey(entry) {
+  return String(entry?.date || '').slice(0, 7);
+}
+
 export default function Approvals() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [entries, setEntries] = useState([]);
   const [error, setError] = useState('');
   const [successInfo, setSuccessInfo] = useState('');
@@ -25,10 +30,38 @@ export default function Approvals() {
   const [justification, setJustification] = useState('');
   const [busyId, setBusyId] = useState(null);
   const [bulkApprovingUserId, setBulkApprovingUserId] = useState(null);
+  const [monthFilter, setMonthFilter] = useState(''); // '' = todos os meses
+  const [selected, setSelected] = useState(() => new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
+
+  function monthLabel(key) {
+    const [y, m] = key.split('-').map(Number);
+    if (!y || !m) return key;
+    const s = new Date(y, m - 1, 1).toLocaleDateString(i18n.language || 'pt-BR', {
+      month: 'long',
+      year: 'numeric',
+    });
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  }
+
+  // Meses presentes nos pendentes, mais recente primeiro.
+  const availableMonths = useMemo(() => {
+    const set = new Set();
+    for (const en of entries) {
+      const k = monthKey(en);
+      if (k) set.add(k);
+    }
+    return Array.from(set).sort().reverse();
+  }, [entries]);
+
+  const visibleEntries = useMemo(
+    () => (monthFilter ? entries.filter((en) => monthKey(en) === monthFilter) : entries),
+    [entries, monthFilter],
+  );
 
   const groups = useMemo(() => {
     const m = new Map();
-    for (const en of entries) {
+    for (const en of visibleEntries) {
       const key = en.userId || en.analystEmail || 'unknown';
       if (!m.has(key)) {
         m.set(key, {
@@ -44,7 +77,7 @@ export default function Approvals() {
         sensitivity: 'base',
       })
     );
-  }, [entries]);
+  }, [visibleEntries]);
 
   const load = async () => {
     try {
@@ -55,6 +88,7 @@ export default function Approvals() {
       const list = Array.isArray(data) ? data : [];
       // Admins não entram nos relatórios/aprovações do time.
       setEntries(list.filter((e) => !adminIds.has(String(e.userId))));
+      setSelected(new Set());
     } catch (err) {
       setError(getErrorMessage(err));
     }
@@ -63,6 +97,68 @@ export default function Approvals() {
   useEffect(() => {
     load();
   }, []);
+
+  // Seleção só vale para o que está visível: trocar o mês limpa a seleção.
+  function changeMonth(value) {
+    setMonthFilter(value);
+    setSelected(new Set());
+  }
+
+  function toggleOne(id) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function setGroupSelected(items, on) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      for (const it of items) {
+        if (on) next.add(it.id);
+        else next.delete(it.id);
+      }
+      return next;
+    });
+  }
+
+  function selectAllVisible() {
+    setSelected(new Set(visibleEntries.map((e) => e.id)));
+  }
+
+  async function approveIds(ids) {
+    let ok = 0;
+    let fail = 0;
+    for (const id of ids) {
+      try {
+        await api.post(`/api/hour-entries/${id}/approve`, { action: 'approve' });
+        ok += 1;
+      } catch {
+        fail += 1;
+      }
+    }
+    return { ok, fail };
+  }
+
+  async function approveSelected() {
+    if (bulkBusy || selected.size === 0) return;
+    setError('');
+    setSuccessInfo('');
+    const ids = [...selected];
+    if (!window.confirm(t('approvals.approveSelectedConfirm', { count: ids.length }))) return;
+    setBulkBusy(true);
+    try {
+      const { ok, fail } = await approveIds(ids);
+      setSuccessInfo(t('approvals.approveSelectedResult', { count: ok, failed: fail }));
+      await load();
+    } catch (err) {
+      setError(getErrorMessage(err));
+    } finally {
+      setBulkBusy(false);
+    }
+  }
 
   async function decide(id, action) {
     if (busyId) return;
@@ -113,15 +209,22 @@ export default function Approvals() {
     }
     try {
       setBulkApprovingUserId(group.userId);
-      const { data } = await api.post('/api/hour-entries/bulk-approve', {
-        userId: group.userId,
-      });
-      setSuccessInfo(
-        t('approvals.bulkApproveSuccess', {
-          count: data.approvedCount,
-          skipped: data.skipped?.length || 0,
-        })
-      );
+      if (monthFilter) {
+        // Com filtro de mês ativo, aprova só os lançamentos visíveis — a rota
+        // bulk-approve por usuário ignoraria o filtro e pegaria outros meses.
+        const { ok, fail } = await approveIds(group.items.map((it) => it.id));
+        setSuccessInfo(t('approvals.approveSelectedResult', { count: ok, failed: fail }));
+      } else {
+        const { data } = await api.post('/api/hour-entries/bulk-approve', {
+          userId: group.userId,
+        });
+        setSuccessInfo(
+          t('approvals.bulkApproveSuccess', {
+            count: data.approvedCount,
+            skipped: data.skipped?.length || 0,
+          })
+        );
+      }
       await load();
     } catch (err) {
       setError(getErrorMessage(err));
@@ -135,6 +238,26 @@ export default function Approvals() {
       <h1 className="text-2xl font-semibold text-ink">{t('approvals.title')}</h1>
       <p className="text-sm text-ink-muted">{t('approvals.subtitle')}</p>
 
+      {/* Filtro por mês de referência */}
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        <label className="text-sm text-ink-muted" htmlFor="approvals-month">
+          {t('approvals.monthFilter', { defaultValue: 'Mês de referência' })}
+        </label>
+        <select
+          id="approvals-month"
+          value={monthFilter}
+          onChange={(e) => changeMonth(e.target.value)}
+          className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-ink"
+        >
+          <option value="">{t('approvals.allMonths', { defaultValue: 'Todos os meses' })}</option>
+          {availableMonths.map((k) => (
+            <option key={k} value={k}>
+              {monthLabel(k)}
+            </option>
+          ))}
+        </select>
+      </div>
+
       {error && (
         <div className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>
       )}
@@ -144,24 +267,81 @@ export default function Approvals() {
         </div>
       )}
 
+      {/* Barra de ação em lote — aparece quando há seleção */}
+      {selected.size > 0 && (
+        <div className="sticky top-0 z-10 mt-4 flex flex-wrap items-center gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2">
+          <span className="text-sm font-medium text-emerald-900">
+            {t('approvals.selectionCount', { defaultValue: '{{count}} selecionado(s)', count: selected.size })}
+          </span>
+          <button
+            type="button"
+            disabled={bulkBusy}
+            onClick={approveSelected}
+            className="rounded-lg bg-emerald-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-800 disabled:opacity-50"
+          >
+            {bulkBusy
+              ? t('approvals.approvingSelected', { defaultValue: 'Aprovando…' })
+              : t('approvals.approveSelected', { defaultValue: 'Aprovar selecionados' })}
+          </button>
+          <button
+            type="button"
+            onClick={selectAllVisible}
+            className="text-sm text-emerald-800 underline-offset-2 hover:underline"
+          >
+            {t('approvals.selectAllVisible', { defaultValue: 'Selecionar todos os visíveis' })}
+          </button>
+          <button
+            type="button"
+            onClick={() => setSelected(new Set())}
+            className="text-sm text-emerald-800 underline-offset-2 hover:underline"
+          >
+            {t('approvals.clearSelection', { defaultValue: 'Limpar seleção' })}
+          </button>
+        </div>
+      )}
+
       <div className="mt-6 space-y-8">
-        {entries.length === 0 ? (
-          <p className="text-ink-muted">{t('approvals.noPending')}</p>
+        {visibleEntries.length === 0 ? (
+          <p className="text-ink-muted">
+            {entries.length === 0
+              ? t('approvals.noPending')
+              : t('approvals.noPendingForMonth', {
+                  defaultValue: 'Nenhum lançamento pendente neste mês.',
+                })}
+          </p>
         ) : (
           groups.map((group) => {
             const totalMin = sumMinutes(group.items);
             const hoursLabel = (totalMin / 60).toFixed(1);
+            const allSelected =
+              group.items.length > 0 && group.items.every((it) => selected.has(it.id));
+            const someSelected = group.items.some((it) => selected.has(it.id));
             return (
               <section key={group.userId || group.analystName} className="space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gray-200 pb-2">
-                  <div>
-                    <h2 className="text-lg font-semibold text-ink">{group.analystName}</h2>
-                    <p className="text-xs text-ink-muted">
-                      {t('approvals.approveAllSummary', {
-                        count: group.items.length,
-                        hours: hoursLabel,
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      checked={allSelected}
+                      ref={(el) => {
+                        if (el) el.indeterminate = someSelected && !allSelected;
+                      }}
+                      onChange={(e) => setGroupSelected(group.items, e.target.checked)}
+                      aria-label={t('approvals.selectAllGroup', {
+                        defaultValue: 'Selecionar todos de {{name}}',
+                        name: group.analystName,
                       })}
-                    </p>
+                      className="h-4 w-4"
+                    />
+                    <div>
+                      <h2 className="text-lg font-semibold text-ink">{group.analystName}</h2>
+                      <p className="text-xs text-ink-muted">
+                        {t('approvals.approveAllSummary', {
+                          count: group.items.length,
+                          hours: hoursLabel,
+                        })}
+                      </p>
+                    </div>
                   </div>
                   <button
                     type="button"
@@ -175,23 +355,37 @@ export default function Approvals() {
                 <div className="space-y-4">
                   {group.items.map((en) => {
                     const contestMsg = getLastContestMessage(en.reviewHistory);
+                    const isSelected = selected.has(en.id);
                     return (
                       <div
                         key={en.id}
-                        className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm"
+                        className={`rounded-xl border bg-white p-4 shadow-sm ${
+                          isSelected ? 'border-emerald-400 ring-1 ring-emerald-200' : 'border-gray-200'
+                        }`}
                       >
                         <div className="flex flex-wrap justify-between gap-2">
-                          <div>
-                            <div className="font-medium text-ink">{en.date}</div>
-                            <div className="text-sm text-ink-muted">
-                              <HourTypeBadge
-                                type={en.hourType}
-                                compact
-                                className="mr-2 align-middle"
-                              />
-                              <span className="align-middle">
-                                {en.startTime}-{en.endTime}
-                              </span>
+                          <div className="flex items-start gap-3">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => toggleOne(en.id)}
+                              aria-label={t('approvals.selectEntry', {
+                                defaultValue: 'Selecionar lançamento',
+                              })}
+                              className="mt-1 h-4 w-4"
+                            />
+                            <div>
+                              <div className="font-medium text-ink">{en.date}</div>
+                              <div className="text-sm text-ink-muted">
+                                <HourTypeBadge
+                                  type={en.hourType}
+                                  compact
+                                  className="mr-2 align-middle"
+                                />
+                                <span className="align-middle">
+                                  {en.startTime}-{en.endTime}
+                                </span>
+                              </div>
                             </div>
                           </div>
                           <div className="flex flex-wrap gap-2">
