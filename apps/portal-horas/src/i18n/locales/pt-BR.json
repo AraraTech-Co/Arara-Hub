@@ -284,7 +284,8 @@
     "approveSelectedConfirm": "Aprovar os {{count}} lancamento(s) selecionado(s)?",
     "approveSelectedResult": "{{count}} lancamento(s) aprovado(s). Falhas: {{failed}}.",
     "selectAllGroup": "Selecionar todos de {{name}}",
-    "selectEntry": "Selecionar lancamento"
+    "selectEntry": "Selecionar lancamento",
+    "failuresTitle": "Nao foi possivel aprovar {{count}} lancamento(s):"
   },
   "insights": {
     "title": "Dashboard",

@@ -33,6 +33,7 @@ export default function Approvals() {
   const [monthFilter, setMonthFilter] = useState(''); // '' = todos os meses
   const [selected, setSelected] = useState(() => new Set());
   const [bulkBusy, setBulkBusy] = useState(false);
+  const [failures, setFailures] = useState([]); // lançamentos que falharam na aprovação em lote
 
   function monthLabel(key) {
     const [y, m] = key.split('-').map(Number);
@@ -53,6 +54,22 @@ export default function Approvals() {
     }
     return Array.from(set).sort().reverse();
   }, [entries]);
+
+  const entriesById = useMemo(() => {
+    const m = new Map();
+    for (const en of entries) m.set(en.id, en);
+    return m;
+  }, [entries]);
+
+  // Rótulo legível de um lançamento para a lista de falhas.
+  function entryLabel(id) {
+    const en = entriesById.get(id);
+    if (!en) return String(id);
+    const who = en.analystName || en.analystEmail || '';
+    const when = en.date || '';
+    const span = en.startTime && en.endTime ? ` (${en.startTime}-${en.endTime})` : '';
+    return [when, who].filter(Boolean).join(' · ') + span;
+  }
 
   const visibleEntries = useMemo(
     () => (monthFilter ? entries.filter((en) => monthKey(en) === monthFilter) : entries),
@@ -130,28 +147,30 @@ export default function Approvals() {
 
   async function approveIds(ids) {
     let ok = 0;
-    let fail = 0;
+    const failed = [];
     for (const id of ids) {
       try {
         await api.post(`/api/hour-entries/${id}/approve`, { action: 'approve' });
         ok += 1;
-      } catch {
-        fail += 1;
+      } catch (err) {
+        failed.push({ id, label: entryLabel(id), reason: getErrorMessage(err) });
       }
     }
-    return { ok, fail };
+    return { ok, fail: failed.length, failed };
   }
 
   async function approveSelected() {
     if (bulkBusy || selected.size === 0) return;
     setError('');
     setSuccessInfo('');
+    setFailures([]);
     const ids = [...selected];
     if (!window.confirm(t('approvals.approveSelectedConfirm', { count: ids.length }))) return;
     setBulkBusy(true);
     try {
-      const { ok, fail } = await approveIds(ids);
+      const { ok, fail, failed } = await approveIds(ids);
       setSuccessInfo(t('approvals.approveSelectedResult', { count: ok, failed: fail }));
+      setFailures(failed);
       await load();
     } catch (err) {
       setError(getErrorMessage(err));
@@ -164,6 +183,7 @@ export default function Approvals() {
     if (busyId) return;
     setError('');
     setSuccessInfo('');
+    setFailures([]);
     if (action === 'adjust' && !justification.trim()) {
       setError(t('approvals.justificationRequired'));
       return;
@@ -190,6 +210,7 @@ export default function Approvals() {
   async function approveAllForGroup(group) {
     setError('');
     setSuccessInfo('');
+    setFailures([]);
     const totalMin = sumMinutes(group.items);
     const hoursLabel = (totalMin / 60).toFixed(1);
     if (
@@ -212,8 +233,9 @@ export default function Approvals() {
       if (monthFilter) {
         // Com filtro de mês ativo, aprova só os lançamentos visíveis — a rota
         // bulk-approve por usuário ignoraria o filtro e pegaria outros meses.
-        const { ok, fail } = await approveIds(group.items.map((it) => it.id));
+        const { ok, fail, failed } = await approveIds(group.items.map((it) => it.id));
         setSuccessInfo(t('approvals.approveSelectedResult', { count: ok, failed: fail }));
+        setFailures(failed);
       } else {
         const { data } = await api.post('/api/hour-entries/bulk-approve', {
           userId: group.userId,
@@ -264,6 +286,24 @@ export default function Approvals() {
       {successInfo && (
         <div className="mt-4 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
           {successInfo}
+        </div>
+      )}
+      {failures.length > 0 && (
+        <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+          <div className="font-medium text-red-900">
+            {t('approvals.failuresTitle', {
+              defaultValue: 'Não foi possível aprovar {{count}} lançamento(s):',
+              count: failures.length,
+            })}
+          </div>
+          <ul className="mt-1 list-disc space-y-1 pl-5">
+            {failures.map((f) => (
+              <li key={f.id}>
+                <span className="font-medium">{f.label}</span>
+                {f.reason ? <span className="text-red-700"> — {f.reason}</span> : null}
+              </li>
+            ))}
+          </ul>
         </div>
       )}
 
