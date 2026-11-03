@@ -50,52 +50,57 @@
   --chart-3: oklch(0.646 0.222 41.116);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.627 0.265 303.9);
-  --sidebar: oklch(0.155 0.012 70);
-  --sidebar-foreground: oklch(0.92 0.009 70);
+  --sidebar: oklch(0.211 0.014 278.7);
+  --sidebar-foreground: oklch(0.935 0.007 286.3);
   --sidebar-primary: oklch(0.43 0.138 231.4);
   --sidebar-primary-foreground: oklch(0.99 0 0);
-  --sidebar-accent: oklch(0.225 0.014 70);
-  --sidebar-accent-foreground: oklch(0.92 0.009 70);
-  --sidebar-border: oklch(0.25 0.013 70);
+  --sidebar-accent: oklch(0.261 0.020 270);
+  --sidebar-accent-foreground: oklch(0.935 0.007 286.3);
+  --sidebar-border: oklch(0.299 0.020 273.1);
   --sidebar-ring: oklch(0.43 0.138 231.4);
-  --sidebar-muted-foreground: oklch(0.63 0.011 70);
+  --sidebar-muted-foreground: oklch(0.705 0.022 267.2);
 }
 
 .dark {
-  --background: oklch(0.185 0.008 70);
-  --foreground: oklch(0.93 0.006 70);
-  --card: oklch(0.225 0.009 70);
-  --card-foreground: oklch(0.93 0.006 70);
-  --popover: oklch(0.225 0.009 70);
-  --popover-foreground: oklch(0.93 0.006 70);
+  /* Neutros frios, os mesmos da Gestão de Horas (portal-horas/src/index.css):
+     fundo #0e1014, cartão #181b22, elevado #20242e, bordas #2b2f3a. Antes o
+     escuro usava matiz 70, um cinza quente que lia como marrom-avermelhado ao
+     lado dos outros apps da Arara. A luminosidade quase não mudou: o que muda
+     é a temperatura. */
+  --background: oklch(0.173 0.009 264.3);
+  --foreground: oklch(0.935 0.007 277.2);
+  --card: oklch(0.222 0.014 266.9);
+  --card-foreground: oklch(0.935 0.007 277.2);
+  --popover: oklch(0.222 0.014 266.9);
+  --popover-foreground: oklch(0.935 0.007 277.2);
   --primary: oklch(0.687 0.138 231.4);
   /* Quase-preto, não branco: branco sobre o azul da marca dá 2,73:1. */
-  --primary-foreground: oklch(0.17 0.010 70);
-  --secondary: oklch(0.27 0.010 70);
+  --primary-foreground: oklch(0.173 0.009 264.3);
+  --secondary: oklch(0.261 0.020 267.9);
   --secondary-foreground: oklch(0.92 0.010 231.4);
-  --muted: oklch(0.265 0.009 70);
-  --muted-foreground: oklch(0.635 0.011 70);
-  --accent: oklch(0.30 0.014 70);
+  --muted: oklch(0.261 0.020 267.9);
+  --muted-foreground: oklch(0.711 0.024 263.2);
+  --accent: oklch(0.306 0.021 269.4);
   --accent-foreground: oklch(0.92 0.010 231.4);
   --destructive: oklch(0.50 0.2 27.325);
   --destructive-foreground: oklch(0.99 0 0);
-  --border: oklch(0.305 0.010 70);
-  --input: oklch(0.27 0.010 70);
+  --border: oklch(0.306 0.021 269.4);
+  --input: oklch(0.261 0.020 267.9);
   --ring: oklch(0.687 0.138 231.4);
   --chart-1: oklch(0.687 0.138 231.4);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.14 0.010 70);
-  --sidebar-foreground: oklch(0.92 0.009 70);
+  --sidebar: oklch(0.211 0.014 278.7);
+  --sidebar-foreground: oklch(0.935 0.007 286.3);
   --sidebar-primary: oklch(0.687 0.138 231.4);
-  --sidebar-primary-foreground: oklch(0.17 0.010 70);
-  --sidebar-accent: oklch(0.215 0.012 70);
-  --sidebar-accent-foreground: oklch(0.92 0.009 70);
-  --sidebar-border: oklch(0.24 0.010 70);
+  --sidebar-primary-foreground: oklch(0.173 0.009 264.3);
+  --sidebar-accent: oklch(0.261 0.020 270);
+  --sidebar-accent-foreground: oklch(0.935 0.007 286.3);
+  --sidebar-border: oklch(0.299 0.020 273.1);
   --sidebar-ring: oklch(0.687 0.138 231.4);
-  --sidebar-muted-foreground: oklch(0.60 0.011 70);
+  --sidebar-muted-foreground: oklch(0.705 0.022 267.2);
 }
 
 @theme inline {
