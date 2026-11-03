@@ -272,7 +272,19 @@
     "adjust": "Ajustar",
     "reject": "Rejeitar",
     "justificationRequired": "Justificativa e obrigatoria para esta acao.",
-    "contestMessage": "Motivo da contestacao"
+    "contestMessage": "Motivo da contestacao",
+    "monthFilter": "Mes de referencia",
+    "allMonths": "Todos os meses",
+    "noPendingForMonth": "Nenhum lancamento pendente neste mes.",
+    "selectionCount": "{{count}} selecionado(s)",
+    "approveSelected": "Aprovar selecionados",
+    "approvingSelected": "Aprovando...",
+    "selectAllVisible": "Selecionar todos os visiveis",
+    "clearSelection": "Limpar selecao",
+    "approveSelectedConfirm": "Aprovar os {{count}} lancamento(s) selecionado(s)?",
+    "approveSelectedResult": "{{count}} lancamento(s) aprovado(s). Falhas: {{failed}}.",
+    "selectAllGroup": "Selecionar todos de {{name}}",
+    "selectEntry": "Selecionar lancamento"
   },
   "insights": {
     "title": "Dashboard",
