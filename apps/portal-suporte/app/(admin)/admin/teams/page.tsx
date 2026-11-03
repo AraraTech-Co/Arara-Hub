@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { araraFetch } from '@/lib/arara/client'
+import { ehAgenteAtivo } from '@/lib/arara/auth-storage'
 import { TeamsClient } from './teams-client'
 
 type Row = Record<string, unknown>
@@ -20,7 +21,9 @@ export default function TeamsPage() {
       araraFetch.get('/api/profiles/agents').catch(() => []),
     ]).then(([t, a]) => {
       setTeams(rows(t))
-      setAgents(rows(a))
+      // Quem pode entrar num time: equipe, e não desativado. A rota devolve
+      // todo perfil do portal, e desativar não tirava a pessoa daqui.
+      setAgents(rows(a).filter((p) => ehAgenteAtivo(p as { role?: unknown; active?: boolean | null })))
       setLoading(false)
     })
   }, [])
