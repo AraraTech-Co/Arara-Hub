@@ -195,9 +195,13 @@ export default function ArquivosPage() {
                 {NIVEIS_DE_ACESSO.map((n) => (
                   <option key={n.valor} value={`nivel:${n.valor}`}>{n.rotulo}</option>
                 ))}
+                {/* "Só quem tem: Projetos" lia-se como um grupo de pessoas, e
+                    Projetos e Planejamento são PERMISSÕES — portas de módulo.
+                    O rótulo passa a dizer isso, e a descrição da permissão vai
+                    no `title`, que é onde se descobre o que cada uma abre. */}
                 {FEATURE_GRANTS.map((g) => (
-                  <option key={g.key} value={`grant:${g.key}`}>
-                    Só quem tem: {g.label}
+                  <option key={g.key} value={`grant:${g.key}`} title={g.description}>
+                    Só quem tem a permissão: {g.label}
                   </option>
                 ))}
                 {contas.map((c) => (
