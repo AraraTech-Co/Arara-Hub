@@ -59,6 +59,10 @@ MUTANTES = [
      "  if (a.soBackup !== b.soBackup) return false\n",
      "",
      'dias iguais em modos diferentes não são o mesmo plano'),
+    ("so-backup-sem-fila-cai-no-modo-de-sempre", LIB,
+     "  if (preencher === 'backup' && !temFilaDeBackup) {\n",
+     "  if (false) {\n",
+     'só backup sem fila de backup: nenhum dia é gravado'),
     # ── o que o lote NÃO pode tocar ─────────────────────────────────────────
     ("o-dia-que-ja-tem-backup-deixa-de-ser-preservado", LIB,
      "      if (jaTemBackup && !refazer) { preservados.push(data); continue }",

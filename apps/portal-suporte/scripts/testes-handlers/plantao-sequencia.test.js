@@ -275,6 +275,30 @@ const d0 = (p) => (p && p.dias && p.dias[0]) || VAZIO
     ok('dias iguais em modos diferentes não são o mesmo plano', mesmoPlano(tudo, soB) === false, 'iguais')
   }
 
+  // "Só backup" escolhido SEM fila de backup: plano vazio. Cair no modo de
+  // sempre reescreveria o plantão com a fila de plantão — o contrário do
+  // escolhido. Fila de plantão montada e todos os dias lançados, com refazer:
+  // o pior caso.
+  {
+    const comum = {
+      dias: ['2026-11-01', '2026-11-02', '2026-11-03'],
+      plantao: seq(['ze', 'ana'], '2026-11-01'),
+      lancados: [dia('2026-11-01', ['joao'], ['willian']), dia('2026-11-02', ['maria'], []), dia('2026-11-03', ['pedro'], [])],
+      refazer: true,
+      preencher: 'backup',
+    }
+    for (const [nome, backup] of [['sem fila de backup', undefined], ['com fila de backup vazia', seq([], '2026-11-01')]]) {
+      const p = planejarPreenchimento({ ...comum, backup })
+      ok(`só backup ${nome}: nenhum dia é gravado`, p.dias.length === 0, p.dias.map((d) => d.data + ':' + d.agentIds.join(',')))
+      ok(`  ${nome}: e o plano segue declarado "só backup"`, p.soBackup === true, p.soBackup)
+    }
+    // A reconferência com o mesmo modo não inventa gravação.
+    const vazio = planejarPreenchimento({ ...comum })
+    const d = decidirGravacao({ ...comum, plano: vazio })
+    ok('só backup sem fila: a reconferência também não grava nada',
+      d.acao === 'gravar' && d.dias.length === 0, d.acao === 'gravar' ? d.dias.length : d.acao)
+  }
+
   // Sem regressão: com fila de plantão, o plano é o mesmo de antes.
   // Primeiro do gerador de propósito: se o modo só-backup ligar com fila de
   // plantão, os casos seguintes esvaziam e alguns estouram — esta asserção
