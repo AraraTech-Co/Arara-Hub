@@ -126,19 +126,20 @@ const diags = (w) => w.eventos.filter((e) => e.kind === 'diag_historico')
     w.chamadas[0] === 'filtro' && !w.chamadas.includes('varredura'), w.chamadas)
   ok('  e não acusa truncamento', hist(r).truncado === false, hist(r))
 
-  // Se o banco não aceitar o filtro, a varredura ainda responde.
-  w = mundo({ criadaEm: iso(AGORA - 3 * HORA), mensagens: [msg('m1', iso(AGORA - HORA))], filtroFunciona: false })
+  // SEM reserva (21/10/2026): conversa sem mensagem não dispara leitura sem filtro. A reserva varria 500
+  // registros de OUTRAS conversas para o filtro em JS descartar todos; a camada não ignora o filtro.
+  w = mundo({ criadaEm: iso(AGORA - 3 * HORA), mensagens: [] })
   r = await handler(ctxDe(w))
-  ok('filtro não aceito: cai na varredura e ainda devolve a mensagem',
-    r.body.data.length === 1 && hist(r).via === 'varredura', { r: r.body.data.length, h: hist(r) })
+  ok('conversa sem mensagem: responde 200 vazia e nenhuma leitura sem filtro',
+    r.status === 200 && r.body.data.length === 0 && w.chamadas.length === 1 && w.chamadas[0] === 'filtro' && !w.chamadas.includes('varredura'), { s: r.status, ch: w.chamadas })
+  ok('  e o histórico diz que está vazia, sem acusar truncamento', hist(r).via === 'filtro' && hist(r).truncado === false && hist(r).lidas === 0, hist(r))
 
-  // Varredura que bate no teto é sinalizada.
+  // O que o filtro não achar não é procurado em outro lugar: a mensagem de outra conversa não vaza.
   const cheio = []
   for (let i = 0; i < 500; i++) cheio.push({ id: 'z' + i, conversation_id: 'c-outra', timestamp: iso(AGORA - i * 1000), body: 'x', direction: 'inbound' })
-  w = mundo({ criadaEm: iso(AGORA - 3 * HORA), mensagens: cheio, filtroFunciona: false })
+  w = mundo({ criadaEm: iso(AGORA - 3 * HORA), mensagens: cheio })
   r = await handler(ctxDe(w))
-  ok('varredura no teto de 500 é marcada como truncada', hist(r).truncado === true, hist(r))
-  ok('  e nenhuma mensagem de outra conversa vaza', r.body.data.length === 0, r.body.data.length)
+  ok('com 500 mensagens de outras conversas e nenhuma desta: continua vazia, sem varredura', r.body.data.length === 0 && !w.chamadas.includes('varredura'), { n: r.body.data.length, ch: w.chamadas })
 
   fim()
 })().catch((e) => { console.error('ERRO NO TESTE:', e); process.exit(1) })
