@@ -28,17 +28,37 @@ NA_TELA = "projetos-porta-na-tela.test.js"
 DESVIO = "projetos-comum-nao-divergiu.test.js"
 
 MARCA_292 = "// 292 projetos GET /projetos"
-# Uma rota do módulo que NÃO é a 292, para o apply parcial: a varredura dos 21
+# Uma rota do módulo que NÃO é a 292, para o apply parcial: a varredura dos 25
 # tem de pegar o handler que ficou para trás mesmo com a rota de listagem certa.
 MARCA_OUTRA = "// 303 projetos POST /projetos/:id/marcos"
+# A rota de card é a única que passa por `_podeMexerNoCard`: sem ela, o piso
+# dessa terceira porta não é medido por ninguém.
+MARCA_CARD = "// 300 projetos POST /projetos/:id/cards"
 
 PORTA_NOVA = (
     "  if (eu.grants.indexOf(\"projetos\") >= 0) return true;\n"
     "  return eu.grants.indexOf(\"planejamento\") >= 0;"
 )
+PISO = "  if (!_daEquipe(eu)) return false;\n"
+PISO_TELA = "  if (!ehDaEquipe(actor)) return false\n"
 
 # (nome, arquivo, teste, de, para, assercao_que_deve_falhar)
 EM_TEXTO = [
+    # O piso de nível, nos dois lados da tela. A linha é a MESMA em duas
+    # funções, então a troca é feita dentro da função pelo nome (`em_funcao`).
+    ("a-tela-perde-o-piso-de-ver", TELA, NA_TELA,
+     ("canVerProjetos", PISO_TELA, ""), None, "tela:user+projetos=false"),
+    ("a-tela-perde-o-piso-de-planejar", TELA, NA_TELA,
+     ("canPlanejar", PISO_TELA, ""), None, "planeja:user+planejamento=false"),
+    ("a-tela-sobe-o-piso-e-tranca-a-equipe", TELA, NA_TELA,
+     ("ehDaEquipe", "hasMinLevel(actor.role, 'support')",
+      "hasMinLevel(actor.role, 'developer')"), None, "tela:support+projetos=true"),
+    ("a-tela-abre-o-piso-para-todo-mundo", TELA, NA_TELA,
+     ("ehDaEquipe", "return hasMinLevel(actor.role, 'support')", "return true"),
+     None, "tela:user+projetos=false"),
+    ("o-gerador-perde-o-piso", COMUM, DESVIO,
+     ("_daEquipe", "return eu.nivel >= _RANK.support;", "return true;"), None,
+     "o-codigo-do-bloco-e-igual-em-todo-handler"),
     ("a-tela-devolve-o-cargo-de-developer", TELA, NA_TELA,
      "  if (hasGrant(actor, 'projetos')) return true",
      "  if (hasGrant(actor, 'projetos')) return true\n"
@@ -56,8 +76,8 @@ EM_TEXTO = [
      "  if (hasGrant(actor, 'projetos')) return true\n", "",
      "tela:developer+projetos=true"),
     ("a-tela-tira-quem-planeja", TELA, NA_TELA,
-     "  return hasGrant(actor, 'planejamento')", "  return false",
-     "tela:support+planejamento=true"),
+     ("canVerProjetos", "  return hasGrant(actor, 'planejamento')", "  return false"),
+     None, "tela:support+planejamento=true"),
     # O bloco comum é a FONTE do que os scripts escrevem no handler. Mexer nele
     # sem reaplicar é o desvio silencioso que o teste do #144 pega.
     ("o-bloco-comum-anda-sozinho", COMUM, DESVIO,
@@ -69,6 +89,21 @@ EM_TEXTO = [
 
 # (nome, marca, teste, de, para, assercao) — no literal DECODIFICADO
 NO_LITERAL = [
+    # O piso em cada uma das TRÊS portas, uma por vez. A linha é idêntica nas
+    # três, então cada mutação é feita dentro da função pelo nome: tirar o piso
+    # de ver não prova nada sobre gravar.
+    ("a-rota-perde-o-piso-de-ver", MARCA_292, SERVIDOR,
+     ("_podeVer", PISO, ""), None, "porta:user+projetos:292=403"),
+    ("a-rota-perde-o-piso-de-planejar", MARCA_OUTRA, SERVIDOR,
+     ("_podePlanejar", PISO, ""), None, "escrita-recusa:user+planejamento:303"),
+    ("a-rota-perde-o-piso-do-card", MARCA_CARD, SERVIDOR,
+     ("_podeMexerNoCard", PISO, ""), None, "escrita-recusa:user+planejamento:300"),
+    ("o-piso-sobe-e-tranca-a-equipe", MARCA_292, SERVIDOR,
+     ("_daEquipe", "return eu.nivel >= _RANK.support;",
+      "return eu.nivel >= _RANK.developer;"), None, "porta:support+projetos:292=200"),
+    ("o-piso-aceita-todo-mundo", MARCA_292, SERVIDOR,
+     ("_daEquipe", "return eu.nivel >= _RANK.support;", "return true;"), None,
+     "porta:user+projetos:292=403"),
     ("uma-rota-fica-para-tras", MARCA_OUTRA, SERVIDOR,
      PORTA_NOVA,
      "  if (eu.grants.indexOf(\"projetos\") >= 0) return true;\n"
@@ -91,13 +126,38 @@ NO_LITERAL = [
      "  if (eu.grants.indexOf(\"projetos\") >= 0) return true;\n", "",
      "porta:developer+projetos:292=200"),
     ("quem-planeja-perde-o-modulo", MARCA_292, SERVIDOR,
-     "  return eu.grants.indexOf(\"planejamento\") >= 0;", "  return false;",
-     "porta:support+planejamento:292=200"),
+     ("_podeVer", "  return eu.grants.indexOf(\"planejamento\") >= 0;",
+      "  return false;"), None, "porta:support+planejamento:292=200"),
     ("a-porta-escancara", MARCA_292, SERVIDOR,
-     "  if (eu.nivel >= _RANK.admin) return true;",
-     "  if (eu.nivel >= 0) return true;",
-     "porta:support:292=403"),
+     ("_podeVer", "  if (eu.nivel >= _RANK.admin) return true;",
+      "  if (eu.nivel >= 0) return true;"), None, "porta:support:292=403"),
 ]
+
+
+def em_funcao(texto, funcao, de, para):
+    """Troca DENTRO do corpo de uma função nomeada.
+
+    O piso é a mesma linha nas três portas: âncora de texto cru casaria nas
+    três de uma vez e a mutação diria só "o piso existe em algum lugar". Aqui
+    o recorte vai da assinatura até o `\\n}` que a fecha, e a âncora tem de ser
+    única DENTRO desse recorte — senão a mutação não aplica e reprova.
+    """
+    marca = "function " + funcao + "("
+    i = texto.index(marca)
+    j = texto.index("\n}", i) + 2
+    corpo = texto[i:j]
+    if corpo.count(de) != 1:
+        return None
+    return texto[:i] + corpo.replace(de, para) + texto[j:]
+
+
+def aplicar(texto, de, para):
+    """Devolve o texto mutado, ou None se a âncora não casar exatamente 1x."""
+    if isinstance(de, tuple):
+        return em_funcao(texto, de[0], de[1], de[2])
+    if texto.count(de) != 1:
+        return None
+    return texto.replace(de, para)
 
 
 def literal(texto, marca):
@@ -133,9 +193,10 @@ def main():
 
     for nome, arq, teste, de, para, esperada in EM_TEXTO:
         texto = bases[arq]
-        if texto.count(de) != 1:
-            pulados.append((nome, f"âncora {texto.count(de)}x")); continue
-        io.open(arq, "w", encoding="utf-8").write(texto.replace(de, para))
+        mutado = aplicar(texto, de, para)
+        if mutado is None:
+            pulados.append((nome, "âncora não casou 1x")); continue
+        io.open(arq, "w", encoding="utf-8").write(mutado)
         try:
             fs = roda(teste)
         finally:
@@ -151,10 +212,11 @@ def main():
     for nome, marca, teste, de, para, esperada in NO_LITERAL:
         base = bases[GER]
         i, j, cod = literal(base, marca)
-        if cod.count(de) != 1:
-            pulados.append((nome, f"âncora {cod.count(de)}x no literal")); continue
+        mutado = aplicar(cod, de, para)
+        if mutado is None:
+            pulados.append((nome, "âncora não casou 1x no literal")); continue
         io.open(GER, "w", encoding="utf-8").write(
-            base[:i] + json.dumps(cod.replace(de, para)) + base[j:])
+            base[:i] + json.dumps(mutado) + base[j:])
         try:
             fs = roda(teste)
         finally:

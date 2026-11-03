@@ -20,6 +20,8 @@ const QUEM = {
   'support+planejamento': { role: 'support', featureGrants: ['planejamento'] },
   'support':            { role: 'support',   featureGrants: [] },
   'user+projetos':      { role: 'user',      featureGrants: ['projetos'] },
+  'support+projetos':   { role: 'support',   featureGrants: ['projetos'] },
+  'user+planejamento':  { role: 'user',      featureGrants: ['planejamento'] },
   'user':               { role: 'user',      featureGrants: [] },
   'sem-grants':         { role: 'user' },
 }
@@ -59,7 +61,9 @@ const G = await importarTela(REL)
 
   const esperado = {
     'master': true, 'admin': true,
-    'user+projetos': true, 'developer+projetos': true,
+    // As caixas valem a partir de `support`: `user` é o nível do CLIENTE no
+    // portal, e projeto interno é coisa da equipe.
+    'user+projetos': false, 'support+projetos': true, 'developer+projetos': true,
     'developer': false, 'support+qa': false,
     // Quem planeja vê sem o campo (decisão de 29/10, que segue valendo).
     'support+planejamento': true,
@@ -83,12 +87,29 @@ const G = await importarTela(REL)
   // O campo "Projetos" NÃO libera planejar, e o grant `planejamento` não é
   // exigido para ver. São duas portas, e trocá-las daria acesso que ninguém pediu.
   ok('campo-projetos-nao-libera-planejar',
-    G.canVerProjetos(QUEM['user+projetos']) === true
-    && G.canPlanejar(QUEM['user+projetos']) === false, {
-      ve: G.canVerProjetos(QUEM['user+projetos']),
-      planeja: G.canPlanejar(QUEM['user+projetos']),
+    G.canVerProjetos(QUEM['support+projetos']) === true
+    && G.canPlanejar(QUEM['support+projetos']) === false, {
+      ve: G.canVerProjetos(QUEM['support+projetos']),
+      planeja: G.canPlanejar(QUEM['support+projetos']),
     })
-  const soPlanejamento = { role: 'user', featureGrants: ['planejamento'] }
+  // Planejar tem o MESMO piso de nível que ver: a caixa de planejamento num
+  // perfil de cliente não deixa criar projeto nem mexer em data. Sem esta
+  // tabela, a tela ofereceria os botões que o servidor recusa.
+  const planeja = {
+    'master': true, 'admin': true, 'support+planejamento': true,
+    'user+planejamento': false,
+    'support+projetos': false, 'developer': false, 'user': false,
+  }
+  for (const quem of Object.keys(planeja)) {
+    ok(`planeja:${quem}=${planeja[quem]}`,
+      G.canPlanejar(QUEM[quem]) === planeja[quem], G.canPlanejar(QUEM[quem]))
+  }
+  // O contraste do nível: a mesma caixa marcada, e só o cargo muda.
+  ok('o-nivel-e-a-causa-da-diferenca-ao-planejar',
+    G.canPlanejar(QUEM['user+planejamento']) === false
+    && G.canPlanejar(QUEM['support+planejamento']) === true, null)
+
+  const soPlanejamento = { role: 'support', featureGrants: ['planejamento'] }
   // MUDOU em 29/10: quem planeja passou a ver. Antes isto afirmava o contrário,
   // e o contrário era o buraco — a pessoa criava atividade e não listava.
   ok('planejamento-agora-da-acesso-ao-modulo',
@@ -105,7 +126,7 @@ const G = await importarTela(REL)
 // conferida contra a função da tela.
 {
   const servidor = {
-    'master': true, 'admin': true, 'user+projetos': true, 'developer+projetos': true,
+    'master': true, 'admin': true, 'user+projetos': false, 'developer+projetos': true,
     'developer': false, 'support+qa': false, 'support': false, 'user': false,
     'support+planejamento': true,
   }

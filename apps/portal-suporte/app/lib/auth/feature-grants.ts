@@ -138,6 +138,20 @@ export function canValidarQa(actor: GrantActor): boolean {
 }
 
 /**
+ * O piso do módulo de Projetos: as caixas valem a partir de `support`.
+ *
+ * `user` é o nível de CLIENTE no portal (e `vendedor` é apelido dele), e
+ * projeto interno é coisa da equipe. Adm e master entram por nível; abaixo de
+ * `support`, nenhuma caixa abre o módulo nem deixa planejar.
+ *
+ * Espelha `_daEquipe` dos handlers do módulo. O piso mora numa função só dos
+ * dois lados: repetido por regra, ficaria em uma delas na próxima correção.
+ */
+function ehDaEquipe(actor: GrantActor): boolean {
+  return hasMinLevel(actor.role, 'support')
+}
+
+/**
  * Pode planejar projetos — criar, definir fases, mexer nas datas do Gantt?
  *
  * admin/master por nível, OU quem tem o grant `planejamento`. Quem planeja o
@@ -145,7 +159,9 @@ export function canValidarQa(actor: GrantActor): boolean {
  * duas coisas evita promover alguém só para deixá-la arrastar uma barra.
  */
 export function canPlanejar(actor: GrantActor): boolean {
-  return hasMinLevel(actor.role, 'admin') || hasGrant(actor, 'planejamento')
+  if (hasMinLevel(actor.role, 'admin')) return true
+  if (!ehDaEquipe(actor)) return false
+  return hasGrant(actor, 'planejamento')
 }
 
 /**
@@ -177,6 +193,7 @@ export function canPlanejar(actor: GrantActor): boolean {
  */
 export function canVerProjetos(actor: GrantActor): boolean {
   if (hasMinLevel(actor.role, 'admin')) return true
+  if (!ehDaEquipe(actor)) return false
   if (hasGrant(actor, 'projetos')) return true
   return hasGrant(actor, 'planejamento')
 }

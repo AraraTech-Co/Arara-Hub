@@ -40,9 +40,22 @@ function modelo(linhas) {
   }
 }
 
+// Conta o que foi GRAVADO. "Recusou" medido só pelo status esconde o caso em
+// que a rota grava e depois devolve 403; a contagem vem do mesmo objeto que o
+// handler recebe, não de um emulador à parte.
+function contado(m, c) {
+  return {
+    findById: m.findById,
+    findMany: m.findMany,
+    create: async (d) => { c.n++; return m.create(d) },
+    update: async (id, d) => { c.n++; return m.update(id, d) },
+    delete: async (id) => { c.n++; return m.delete(id) },
+  }
+}
+
 function montar(perfil, o) {
   o = o || {}
-  return {
+  const ctx = {
     headers: {},
     user: { id: 'u1' },
     params: o.params || { id: 'p1' },
@@ -59,8 +72,19 @@ function montar(perfil, o) {
       ActivityLog: modelo([]),
       ProjetoAtividade: modelo([]),
       ProjetoAtividadeEvento: modelo([]),
+      // Sem estes dois, as rotas de marco e de membro param num 500 antes da
+      // porta, e "não gravou" sairia verdadeiro sem a porta existir.
+      ProjetoMarco: modelo([{ id: 'p1', projeto_id: 'p1', nome: 'Marco' }]),
+      ProjetoMembro: modelo([{ id: 'm1', projeto_id: 'p1', user_id: 'u1', papel: 'participante' }]),
     },
   }
+  if (o.contagem) {
+    for (const nome of Object.keys(ctx.models)) {
+      if (nome === 'Profile' || nome === 'Sessao') continue
+      ctx.models[nome] = contado(ctx.models[nome], o.contagem)
+    }
+  }
+  return ctx
 }
 
 // Quem é quem. `nivel` do servidor vem de `role` pelo _RANK/_APELIDOS: master
@@ -75,7 +99,26 @@ const QUEM = {
   'support+planejamento': { role: 'support',  feature_grants: ['planejamento'] },
   'support':             { role: 'support',   feature_grants: [] },
   'user+projetos':       { role: 'user',      feature_grants: ['projetos'] },
+  'vendedor+planejamento': { role: 'vendedor', feature_grants: ['planejamento'] },
+  'user+planejamento':   { role: 'user',      feature_grants: ['planejamento'] },
+  'vendedor+projetos':   { role: 'vendedor',  feature_grants: ['projetos'] },
   'user':                { role: 'user',      feature_grants: [] },
+  'support+projetos':    { role: 'support',   feature_grants: ['projetos'] },
+}
+
+async function respostaDe(marca, quem, extra) {
+  if (!QUEM[quem]) throw new Error('perfil desconhecido no teste: ' + quem)
+  const contagem = { n: 0 }
+  const { handler } = carregarHandlerEContexto(marca)
+  const ctx = montar(QUEM[quem], Object.assign({ contagem }, extra || {}))
+  let status
+  try {
+    status = (await handler(ctx)).status
+  } catch (e) {
+    // Exceção aqui mataria o arquivo e o caso passaria por omissão.
+    status = 'estouro: ' + e.message
+  }
+  return { status, gravou: contagem.n }
 }
 
 async function statusDe(marca, quem, extra) {
@@ -98,8 +141,13 @@ async function statusDe(marca, quem, extra) {
   {
     const esperado = {
       'master': 200, 'admin': 200,
-      'user+projetos': 200, 'developer+projetos': 200,
+      'developer+projetos': 200, 'support+projetos': 200,
       'developer': 403, 'support+qa': 403,
+      // As caixas não valem abaixo de `support`: `user` é o nível do CLIENTE
+      // no portal, e projeto interno é coisa da equipe.
+      'user+projetos': 403, 'user+planejamento': 403,
+      // `vendedor` é apelido de `user` na régua do servidor, então cai junto.
+      'vendedor+projetos': 403,
       // Quem planeja continua vendo sem o campo: o grant abre o POST e o PATCH
       // de atividade, e sem isto a pessoa criaria atividade sem ver nenhuma.
       'support+planejamento': 200,
@@ -120,6 +168,51 @@ async function statusDe(marca, quem, extra) {
     const comCampo = await statusDe(VER, 'developer+projetos')
     ok('o-campo-e-a-causa-da-diferenca', semCampo === 403 && comCampo === 200,
       { semCampo, comCampo })
+    // E o contraste do NÍVEL: a mesma caixa marcada, e a diferença é só o
+    // cargo. Sem ele, "user+projetos recusa" passaria num handler que
+    // recusasse qualquer um que não fosse admin.
+    const clienteComCampo = await statusDe(VER, 'user+projetos')
+    const equipeComCampo = await statusDe(VER, 'support+projetos')
+    ok('o-nivel-e-a-causa-da-diferenca',
+      clienteComCampo === 403 && equipeComCampo === 200,
+      { clienteComCampo, equipeComCampo })
+  }
+
+  // ── 2. Nenhuma caixa deixa quem está abaixo de `support` GRAVAR ───────────
+  //
+  // Ver é `_podeVer`; gravar passa por `_podePlanejar` e `_podeMexerNoCard`. As
+  // três portas consultam o mesmo piso, e esta varredura é o que prova que
+  // consultam: toda rota de ESCRITA do módulo, com a caixa `planejamento`
+  // marcada num perfil de cliente, recusa E não grava nada.
+  {
+    const texto = fs.readFileSync(ARQ, 'utf8')
+    const re = /\n  \/\/ (\d+[a-z]? projetos (POST|PATCH|DELETE) \S+)/g
+    const escritas = []
+    let m
+    while ((m = re.exec(texto))) escritas.push(m[1])
+    // Se a varredura achar pouca coisa, o resto do bloco passa de graça.
+    ok('achou-as-rotas-de-escrita-do-modulo', escritas.length >= 14, escritas.length)
+
+    const corpo = {
+      params: { id: 'p1', tid: 'p1', fid: 'p1', mid: 'p1', did: 'p1', uid: 'u1', aid: 'p1' },
+      body: {
+        titulo: 'Atividade', descricao: 'Detalhe', nome: 'Projeto', name: 'Projeto',
+        responsavel_id: 'u1', previsao_entrega: '2026-12-01',
+        de_id: 'p1', para_id: 'p1', user_id: 'u1', status: 'backlog',
+      },
+    }
+    for (const marca of escritas) {
+      for (const quem of ['user+planejamento', 'vendedor+planejamento', 'user+projetos']) {
+        const r = await respostaDe(marca, quem, corpo)
+        ok(`escrita-recusa:${quem}:${marca.split(' ')[0]}`, r.status === 403, r)
+        ok(`escrita-nao-grava:${quem}:${marca.split(' ')[0]}`, r.gravou === 0, r)
+      }
+      // O contraste: a MESMA caixa, a mesma rota, e só o cargo muda. Sem ele,
+      // "cliente recusa" passaria num handler que recusasse todo mundo.
+      const equipe = await respostaDe(marca, 'support+planejamento', corpo)
+      ok(`escrita-passa-da-porta:support+planejamento:${marca.split(' ')[0]}`,
+        equipe.status !== 403, equipe)
+    }
   }
 
   // ── 4. O campo dá ACESSO, não escrita ─────────────────────────────────────
@@ -136,8 +229,8 @@ async function statusDe(marca, quem, extra) {
       },
       params: { id: 'p1' },
     }
-    const verUsuario = await statusDe(VER_ATIV, 'user+projetos')
-    const escreverUsuario = await statusDe(ESCREVER_ATIV, 'user+projetos', corpo)
+    const verUsuario = await statusDe(VER_ATIV, 'support+projetos')
+    const escreverUsuario = await statusDe(ESCREVER_ATIV, 'support+projetos', corpo)
     const escreverDev = await statusDe(ESCREVER_ATIV, 'developer', corpo)
     const escreverPlanejador = await statusDe(ESCREVER_ATIV, 'developer+planejamento', corpo)
     ok('campo-projetos-ve-mas-nao-escreve', verUsuario === 200 && escreverUsuario === 403,
@@ -210,6 +303,19 @@ async function statusDe(marca, quem, extra) {
       const faltam = doModulo.filter((e) => !e.corpo.includes(p)).map((e) => e.marca)
       ok('porta-nova-em-todos:' + p.slice(0, 40), faltam.length === 0, faltam)
     }
+
+    // O piso de nível está nas TRÊS portas de cada handler. Contar as três
+    // ocorrências é o que impede o apply parcial em que ver recebe o piso e
+    // gravar fica sem ele.
+    const PISO = 'if (!_daEquipe(eu)) return false;'
+    const semPiso = doModulo
+      .filter((e) => (e.corpo.split(PISO).length - 1) !== 3)
+      .map((e) => e.marca + ':' + (e.corpo.split(PISO).length - 1))
+    ok('o-piso-esta-nas-tres-portas-de-todo-handler', semPiso.length === 0, semPiso)
+    const semFuncao = doModulo
+      .filter((e) => !e.corpo.includes('function _daEquipe(eu) {'))
+      .map((e) => e.marca)
+    ok('todo-handler-do-modulo-tem-a-funcao-do-piso', semFuncao.length === 0, semFuncao)
 
     // NENHUM handler do módulo responde sem PESSOA.
     //
