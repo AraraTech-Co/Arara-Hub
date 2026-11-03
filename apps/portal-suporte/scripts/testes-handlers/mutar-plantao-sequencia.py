@@ -43,6 +43,10 @@ MUTANTES = [
       })
       continue""",
      'mas o retrato do dia entra, para a conferência de antes de gravar'),
+    ("o-dia-sem-plantonista-entra-no-lote", LIB,
+     "      if (!deQuem.length) { semSequencia.push(data); continue }\n",
+     "",
+     'só-backup: nenhum dia do plano sai sem plantonista'),
     # ── o que o lote NÃO pode tocar ─────────────────────────────────────────
     ("o-dia-que-ja-tem-backup-deixa-de-ser-preservado", LIB,
      "      if (jaTemBackup && !refazer) { preservados.push(data); continue }",

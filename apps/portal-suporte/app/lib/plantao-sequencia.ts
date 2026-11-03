@@ -343,6 +343,11 @@ export function planejarPreenchimento(opcoes: {
       if (jaTemBackup && !refazer) { preservados.push(data); continue }
 
       const deQuem = ((atual && atual.agent_ids) || []).slice()
+      // Este modo só ACRESCENTA backup a quem já está de plantão. Dia sem
+      // plantonista lançado fica de fora: gravá-lo criaria um dia de plantão
+      // sem ninguém de plantão — e esse dia passaria a contar como lançado,
+      // preservado depois pelo modo normal, barrando o plantão de verdade.
+      if (!deQuem.length) { semSequencia.push(data); continue }
       const escolha = escolherBackupDoDia(backup, data, deQuem)
       saida.push({
         data,

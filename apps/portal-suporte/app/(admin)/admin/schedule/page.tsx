@@ -617,7 +617,11 @@ export default function PlantaoPage() {
                 </span>
               )}
               {plano.semSequencia.length > 0 && (
-                <span className="text-muted-foreground"> · {plano.semSequencia.length} sem sequência</span>
+                <span className="text-muted-foreground"> · {plano.semSequencia.length} {plano.soBackup
+                  // No modo só-backup, o dia fica de fora por não ter quem
+                  // receba a retaguarda — não por falta de fila.
+                  ? (plano.semSequencia.length === 1 ? 'sem plantonista lançado, fica de fora' : 'sem plantonista lançado, ficam de fora')
+                  : 'sem sequência'}</span>
               )}
             </div>
             <div className="ml-auto flex flex-wrap items-center gap-2">
