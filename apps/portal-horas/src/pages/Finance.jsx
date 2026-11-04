@@ -212,7 +212,14 @@ export default function Finance() {
                 <tr key={row.userId} className="border-b border-gray-100 last:border-0">
                   {isAdmin && (
                     <td className="px-3 py-3">
-                      <div className="font-medium text-ink">{row.fullName}</div>
+                      <div className="font-medium text-ink">
+                        {row.fullName}
+                        {row.contractType === 'CLT' && (
+                          <span className="ml-2 rounded bg-gray-100 px-1.5 py-0.5 align-middle text-[10px] font-semibold text-ink-muted">
+                            CLT
+                          </span>
+                        )}
+                      </div>
                       <div className="text-xs text-ink-muted">{row.email}</div>
                       {row.hasRateWarning && (
                         <div className="mt-1 text-xs text-amber-700">{t('finance.rateWarning')}</div>

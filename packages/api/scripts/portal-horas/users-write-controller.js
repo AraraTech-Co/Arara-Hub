@@ -20,6 +20,18 @@ async function handler(ctx) {
     return String(value || '').trim().toLowerCase();
   }
 
+  // Tipo de contrato: só "PJ" ou "CLT". null/vazio = sem tipo (vale como PJ).
+  function readContractType(obj) {
+    var raw = obj.contract_type !== undefined ? obj.contract_type : obj.contractType;
+    if (raw === undefined) return { present: false, value: null };
+    if (raw === null) return { present: true, value: null };
+    if (typeof raw !== 'string') return { invalid: true };
+    var v = raw.trim().toUpperCase();
+    if (!v) return { present: true, value: null };
+    if (v !== 'PJ' && v !== 'CLT') return { invalid: true };
+    return { present: true, value: v };
+  }
+
   function readPassword(obj) {
     if (!obj) return '';
     if (obj.initial_password != null) return String(obj.initial_password);
@@ -174,6 +186,13 @@ async function handler(ctx) {
   var body = ctx.body || {};
   var now = new Date().toISOString();
 
+  var contrato = readContractType(body);
+  if (contrato.invalid) {
+    return ctx.reply
+      .status(400)
+      .send({ error: 'contract_type deve ser PJ ou CLT', codigo: 'contrato_invalido' });
+  }
+
   if (method === 'POST') {
     var email = normalizeEmail(body.email);
     var fullName = String(body.full_name || body.fullName || '').trim();
@@ -240,6 +259,7 @@ async function handler(ctx) {
       active: body.active !== false,
       squad_id: body.squad_id || body.squadId || null,
       rate_type: body.rate_type || body.rateType || null,
+      contract_type: contrato.value,
       hourly_rate:
         body.hourly_rate != null
           ? Number(body.hourly_rate)
@@ -331,6 +351,7 @@ async function handler(ctx) {
       if (body[snake] !== undefined) patch[snake] = body[snake];
       else if (body[camel] !== undefined) patch[snake] = body[camel];
     }
+    if (contrato.present) patch.contract_type = contrato.value;
     try {
       var updated = await Profile.update(id, patch);
       return ctx.reply.send({ data: updated, passwordSet: passwordSet });

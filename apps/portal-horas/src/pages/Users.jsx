@@ -3,6 +3,19 @@ import { Pencil, Search, UserPlus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { api, getErrorMessage } from '../api/client.js';
 import { cadastrarUsuario, mensagemSucesso } from '../lib/cadastro-usuario.js';
+import {
+  divisorDoContrato,
+  editarValor,
+  normalizarContrato,
+  trocarContrato,
+} from '../lib/valor-hora.js';
+
+/** Valor hora e valor fixo se recalculam um ao outro; contrato muda o divisor. */
+function aplicarCampo(f, key, value) {
+  if (key === 'hourlyRate' || key === 'monthlyRate') return editarValor(f, key, value);
+  if (key === 'contractType') return trocarContrato(f, value);
+  return { ...f, [key]: value };
+}
 
 const defaultForm = () => ({
   email: '',
@@ -13,6 +26,8 @@ const defaultForm = () => ({
   managerRole: false,
   active: true,
   squadId: '',
+  contractType: 'PJ',
+  rateSource: null,
   rateType: '',
   hourlyRate: '',
   monthlyRate: '',
@@ -32,6 +47,8 @@ function userToEditForm(u) {
     managerRole: !!u.managerRole,
     active: !!u.active,
     squadId: u.squadId || '',
+    contractType: normalizarContrato(u.contractType),
+    rateSource: null,
     rateType: u.rateType || '',
     hourlyRate: u.hourlyRate != null && u.hourlyRate !== '' ? String(u.hourlyRate) : '',
     monthlyRate: u.monthlyRate != null && u.monthlyRate !== '' ? String(u.monthlyRate) : '',
@@ -114,11 +131,11 @@ export default function Users() {
   }, [load]);
 
   function updateField(key, value) {
-    setForm((f) => ({ ...f, [key]: value }));
+    setForm((f) => aplicarCampo(f, key, value));
   }
 
   function updateEditField(key, value) {
-    setEditForm((f) => (f ? { ...f, [key]: value } : f));
+    setEditForm((f) => (f ? aplicarCampo(f, key, value) : f));
   }
 
   function setAllLog(value) {
@@ -149,6 +166,7 @@ export default function Users() {
         managerRole: form.managerRole,
         active: form.active,
         squadId: form.squadId || undefined,
+        contractType: form.contractType,
         rateType: form.rateType || undefined,
         hourlyRate: form.hourlyRate === '' ? undefined : Number(form.hourlyRate),
         monthlyRate: form.monthlyRate === '' ? undefined : Number(form.monthlyRate),
@@ -195,6 +213,7 @@ export default function Users() {
         managerRole: editForm.managerRole,
         active: editForm.active,
         squadId: editForm.squadId === '' ? null : editForm.squadId,
+        contractType: editForm.contractType,
         rateType: editForm.rateType || null,
         hourlyRate: editForm.hourlyRate === '' ? null : Number(editForm.hourlyRate),
         monthlyRate: editForm.monthlyRate === '' ? null : Number(editForm.monthlyRate),
@@ -379,6 +398,21 @@ export default function Users() {
             {t('users.active')}
           </label>
           <label className="block text-sm">
+            <span className="text-ink-muted">
+              {t('users.contractType', { defaultValue: 'Contrato' })}
+            </span>
+            <select
+              value={form.contractType}
+              onChange={(e) => updateField('contractType', e.target.value)}
+              className={inputClass}
+            >
+              <option value="PJ">{t('users.contractPJ', { defaultValue: 'PJ' })}</option>
+              <option value="CLT">
+                {t('users.contractCLT', { defaultValue: 'CLT (200 h/mês)' })}
+              </option>
+            </select>
+          </label>
+          <label className="block text-sm">
             <span className="text-ink-muted">{t('users.rateType')}</span>
             <select
               value={form.rateType}
@@ -410,6 +444,13 @@ export default function Users() {
               className={inputClass}
             />
           </label>
+          <p className="text-xs text-ink-muted sm:col-span-2">
+            {t('users.rateAutoHint', {
+              defaultValue:
+                'Valor hora e valor fixo se calculam um a partir do outro: valor fixo ÷ {{horas}} h.',
+              horas: divisorDoContrato(form.contractType),
+            })}
+          </p>
         </div>
         <div className="space-y-2 rounded-lg border border-gray-100 p-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -720,7 +761,22 @@ export default function Users() {
                 {t('users.active')}
               </label>
               <div className="grid gap-3 sm:grid-cols-2">
-                <label className="block text-sm sm:col-span-2">
+                <label className="block text-sm">
+                  <span className="text-ink-muted">
+                    {t('users.contractType', { defaultValue: 'Contrato' })}
+                  </span>
+                  <select
+                    value={editForm.contractType}
+                    onChange={(e) => updateEditField('contractType', e.target.value)}
+                    className={inputClass}
+                  >
+                    <option value="PJ">{t('users.contractPJ', { defaultValue: 'PJ' })}</option>
+                    <option value="CLT">
+                      {t('users.contractCLT', { defaultValue: 'CLT (200 h/mês)' })}
+                    </option>
+                  </select>
+                </label>
+                <label className="block text-sm">
                   <span className="text-ink-muted">{t('users.rateType')}</span>
                   <select
                     value={editForm.rateType}
@@ -752,6 +808,13 @@ export default function Users() {
                     className={inputClass}
                   />
                 </label>
+                <p className="text-xs text-ink-muted sm:col-span-2">
+                  {t('users.rateAutoHint', {
+                    defaultValue:
+                      'Valor hora e valor fixo se calculam um a partir do outro: valor fixo ÷ {{horas}} h.',
+                    horas: divisorDoContrato(editForm.contractType),
+                  })}
+                </p>
               </div>
               <div className="space-y-2 rounded-lg border border-gray-100 p-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">

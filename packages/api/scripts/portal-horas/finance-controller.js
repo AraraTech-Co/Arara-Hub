@@ -12,6 +12,8 @@ async function handler(ctx) {
   };
   const COUNT_STATUSES = ['APPROVED', 'ADJUSTED'];
   const MONTHLY_REFERENCE_HOURS = 168;
+  // CLT: carga fixa de 200 h/mês — é a meta e o divisor do valor hora.
+  const CLT_MONTHLY_HOURS = 200;
 
   function pad2(n) {
     return String(n).padStart(2, '0');
@@ -37,11 +39,14 @@ async function handler(ctx) {
     }
     return count;
   }
+  function isClt(user) {
+    return String(pick(user, 'contract_type', 'contractType') || '').trim().toUpperCase() === 'CLT';
+  }
   function resolveReferenceHourlyRate(user) {
     const hr = Number(pick(user, 'hourly_rate', 'hourlyRate') || 0);
     if (hr > 0) return hr;
     const mr = Number(pick(user, 'monthly_rate', 'monthlyRate') || 0);
-    if (mr > 0) return mr / MONTHLY_REFERENCE_HOURS;
+    if (mr > 0) return mr / (isClt(user) ? CLT_MONTHLY_HOURS : MONTHLY_REFERENCE_HOURS);
     return 0;
   }
   function computeIncremental(byType, hourlyRate) {
@@ -196,6 +201,7 @@ async function handler(ctx) {
       email: u.email,
       squad: pick(u, 'squad', 'squad') || null,
       rateType: pick(u, 'rate_type', 'rateType') || null,
+      contractType: isClt(u) ? 'CLT' : 'PJ',
       monthlyRate:
         pick(u, 'monthly_rate', 'monthlyRate') != null
           ? Number(pick(u, 'monthly_rate', 'monthlyRate'))
@@ -203,7 +209,7 @@ async function handler(ctx) {
       referenceHourlyRate: toMoney(rate),
       hasRateWarning: rate <= 0,
       workingDaysInMonth: workingDays,
-      expectedHours,
+      expectedHours: isClt(u) ? CLT_MONTHLY_HOURS : expectedHours,
       normalHours,
       extraAndAttendanceHours: inc.extraAndAttendanceHours,
       extraAndAttendanceValue: inc.extraAndAttendanceValue,
