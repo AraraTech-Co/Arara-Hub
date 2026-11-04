@@ -284,7 +284,8 @@
     "approveSelectedConfirm": "Approve the {{count}} selected entry(ies)?",
     "approveSelectedResult": "{{count}} entry(ies) approved. Failures: {{failed}}.",
     "selectAllGroup": "Select all for {{name}}",
-    "selectEntry": "Select entry"
+    "selectEntry": "Select entry",
+    "failuresTitle": "Could not approve {{count}} entry(ies):"
   },
   "insights": {
     "title": "Dashboard",
