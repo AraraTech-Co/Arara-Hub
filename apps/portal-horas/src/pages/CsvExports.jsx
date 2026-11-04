@@ -3,21 +3,33 @@ import { Download, FileSpreadsheet, RefreshCw, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { api, getErrorMessage } from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
-import { HOUR_TYPE_ORDER, getHourTypeTranslationKey } from '../config/hourTypes.js';
-import { buildCsv, downloadCsvText, filterHourEntries, formatHours } from '../lib/csv-export.js';
+import { buildCsv, downloadCsvText } from '../lib/csv-export.js';
 
-function todayIso() {
-  return new Date().toISOString().slice(0, 10);
+function currentMonthYm() {
+  return new Date().toISOString().slice(0, 7);
 }
 
-function monthStartIso() {
-  const d = new Date();
-  d.setDate(1);
-  return d.toISOString().slice(0, 10);
+/** Número com 2 casas e vírgula decimal; vazio quando não for número. */
+function num2(value) {
+  if (value === null || value === undefined || value === '') return '';
+  const n = Number(value);
+  if (!Number.isFinite(n)) return '';
+  return n.toFixed(2).replace('.', ',');
 }
+
+const SUM_FIELDS = [
+  'normalHours',
+  'extraAndAttendanceHours',
+  'extraAndAttendanceValue',
+  'standbyAndBackupHours',
+  'standbyAndBackupValue',
+  'incrementalHours',
+  'incrementalTotal',
+  'totalCost',
+];
 
 export default function CsvExports() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const [items, setItems] = useState([]);
   const [users, setUsers] = useState([]);
@@ -26,10 +38,8 @@ export default function CsvExports() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [form, setForm] = useState({
-    fromDate: monthStartIso(),
-    toDate: todayIso(),
+    month: currentMonthYm(),
     employeeIds: [],
-    hourTypes: [...HOUR_TYPE_ORDER],
   });
   const [filters, setFilters] = useState({
     fromDate: '',
@@ -54,66 +64,49 @@ export default function CsvExports() {
     });
   }, [items, filters]);
 
-  const usersById = useMemo(() => {
-    const m = new Map();
-    for (const u of users) m.set(String(u.id), u);
-    return m;
-  }, [users]);
-
-  function employeeName(entry) {
-    const u = usersById.get(String(entry.userId ?? entry.user_id ?? ''));
-    return (
-      u?.fullName ||
-      entry.analystName ||
-      entry.analystEmail ||
-      entry.userId ||
-      entry.user_id ||
-      ''
-    );
+  function monthLabel(ym) {
+    const [y, m] = String(ym || '').split('-').map(Number);
+    if (!y || !m) return ym || '';
+    const locale = i18n.language?.toLowerCase().startsWith('pt') ? 'pt-BR' : 'en-US';
+    const s = new Date(y, m - 1, 1).toLocaleDateString(locale, { month: 'long', year: 'numeric' });
+    return s.charAt(0).toUpperCase() + s.slice(1);
   }
 
-  // Colunas do CSV. Recriadas por render para pegar idioma/colaboradores atuais.
-  function csvColumns() {
+  // Colunas do resumo — mesmas do Financeiro, reaproveitando as traduções finance.col.*.
+  function summaryColumns() {
     return [
-      { header: t('csvExports.col.employee', { defaultValue: 'Colaborador' }), value: employeeName },
-      {
-        header: t('csvExports.col.date', { defaultValue: 'Data' }),
-        value: (e) => String(e.date || '').slice(0, 10),
-      },
-      {
-        header: t('csvExports.col.start', { defaultValue: 'Início' }),
-        value: (e) => e.startTime || e.start_time || '',
-      },
-      {
-        header: t('csvExports.col.end', { defaultValue: 'Fim' }),
-        value: (e) => e.endTime || e.end_time || '',
-      },
-      {
-        header: t('csvExports.col.hours', { defaultValue: 'Duração (h)' }),
-        value: (e) => formatHours(e.durationMinutes ?? e.duration_minutes),
-      },
-      {
-        header: t('csvExports.col.type', { defaultValue: 'Tipo' }),
-        value: (e) =>
-          t(getHourTypeTranslationKey(e.hourType || e.hour_type), {
-            defaultValue: e.hourType || e.hour_type || '',
-          }),
-      },
-      {
-        header: t('csvExports.col.status', { defaultValue: 'Status' }),
-        value: (e) => e.status || '',
-      },
-      {
-        header: t('csvExports.col.description', { defaultValue: 'Descrição' }),
-        value: (e) => e.description || '',
-      },
+      { header: t('finance.col.employee'), value: (r) => r.fullName || '' },
+      { header: t('csvExports.colEmail', { defaultValue: 'E-mail' }), value: (r) => r.email || '' },
+      { header: t('finance.col.squad'), value: (r) => r.squad || '' },
+      { header: t('finance.col.monthlyRate'), value: (r) => num2(r.monthlyRate) },
+      { header: t('finance.col.hourlyRef'), value: (r) => num2(r.referenceHourlyRate) },
+      { header: t('finance.col.expectedHours'), value: (r) => num2(r.expectedHours) },
+      { header: t('finance.col.normalHours'), value: (r) => num2(r.normalHours) },
+      { header: t('finance.col.extraAttH'), value: (r) => num2(r.extraAndAttendanceHours) },
+      { header: t('finance.col.extraAttValue'), value: (r) => num2(r.extraAndAttendanceValue) },
+      { header: t('finance.col.standbyH'), value: (r) => num2(r.standbyAndBackupHours) },
+      { header: t('finance.col.standbyValue'), value: (r) => num2(r.standbyAndBackupValue) },
+      { header: t('finance.col.incrementalHours'), value: (r) => num2(r.incrementalHours) },
+      { header: t('finance.col.incremental'), value: (r) => num2(r.incrementalTotal) },
+      { header: t('finance.col.totalCost'), value: (r) => num2(r.totalCost) },
     ];
   }
 
-  // Busca todos os lançamentos (admin vê o time inteiro). Filtro é feito no cliente.
-  async function fetchAllEntries() {
-    const res = await api.get('/api/hour-entries', { params: { limit: 100000 } });
-    return Array.isArray(res.data) ? res.data : [];
+  // Busca o resumo de custos do mês (mesmo endpoint da tela Financeiro) e aplica
+  // a seleção de colaboradores. Lista vazia = todos. Acrescenta a linha Totais.
+  async function buildSummaryForMonth(month, employeeIds) {
+    const res = await api.get('/api/finance/investment-calculator', { params: { month } });
+    const allRows = Array.isArray(res.data?.rows) ? res.data.rows : [];
+    const sel = Array.isArray(employeeIds) && employeeIds.length
+      ? new Set(employeeIds.map((x) => String(x)))
+      : null;
+    const rows = sel ? allRows.filter((r) => sel.has(String(r.userId))) : allRows;
+    const totals = { fullName: t('finance.totals'), email: '', squad: '' };
+    for (const f of SUM_FIELDS) {
+      totals[f] = rows.reduce((s, r) => s + (Number(r[f]) || 0), 0);
+    }
+    const exportRows = rows.length ? [...rows, totals] : rows;
+    return { rows, exportRows, meta: res.data };
   }
 
   async function load() {
@@ -122,7 +115,7 @@ export default function CsvExports() {
     try {
       const [listRes, usersRes] = await Promise.all([api.get('/api/csv-exports'), api.get('/api/users')]);
       setItems(Array.isArray(listRes.data) ? listRes.data : []);
-      // Admins não entram em relatórios: fora do seletor de colaboradores.
+      // Admins não entram no seletor (o resumo do Financeiro já os trata à parte).
       setUsers(
         (Array.isArray(usersRes.data) ? usersRes.data : []).filter((u) => u.role !== 'admin')
       );
@@ -142,37 +135,25 @@ export default function CsvExports() {
     if (generating) return;
     setError('');
     setSuccess('');
-    if (form.fromDate && form.toDate && form.fromDate > form.toDate) {
-      setError(
-        t('csvExports.invalidRange', {
-          defaultValue: 'A data inicial não pode ser maior que a final.',
-        })
-      );
-      return;
-    }
-    if (form.hourTypes.length === 0) {
-      setError(
-        t('csvExports.noHourTypes', {
-          defaultValue: 'Selecione ao menos um tipo de hora.',
-        })
-      );
+    if (!form.month) {
+      setError(t('csvExports.noMonth', { defaultValue: 'Selecione o mês de referência.' }));
       return;
     }
     setGenerating(true);
     try {
-      const all = await fetchAllEntries();
-      const rows = filterHourEntries(all, form);
-      const fileName = `horas_${form.fromDate || 'inicio'}_a_${form.toDate || 'fim'}.csv`;
-      // Baixa primeiro: o download é o que importa e não pode depender do histórico.
-      downloadCsvText(fileName, buildCsv(rows, csvColumns()));
+      const { rows, exportRows } = await buildSummaryForMonth(form.month, form.employeeIds);
+      if (!rows.length) {
+        setError(t('csvExports.noSummaryRows', { defaultValue: 'Nenhum colaborador no resumo deste mês.' }));
+        return;
+      }
+      const fileName = `resumo_custos_${form.month}.csv`;
+      // Baixa primeiro: o download não pode depender do registro no histórico.
+      downloadCsvText(fileName, buildCsv(exportRows, summaryColumns()));
       setSuccess(t('csvExports.generatedSuccess'));
-      // Registra no histórico (secundário). Guarda os filtros para re-baixar depois.
       try {
         await api.post('/api/csv-exports', {
-          fromDate: form.fromDate,
-          toDate: form.toDate,
+          month: form.month,
           employeeIds: form.employeeIds,
-          hourTypes: form.hourTypes,
           fileName,
           rowCount: rows.length,
           status: 'READY',
@@ -191,31 +172,16 @@ export default function CsvExports() {
     }
   }
 
-  // Re-baixa um item do histórico regerando o CSV a partir dos filtros salvos.
-  // (O servidor não guarda o arquivo, então não há o que buscar por id.)
+  // Re-baixa um item do histórico regerando o resumo a partir do mês/seleção salvos.
   async function downloadExport(item) {
     setError('');
     try {
-      const all = await fetchAllEntries();
-      const rows = filterHourEntries(all, {
-        fromDate: item.fromDate,
-        toDate: item.toDate,
-        employeeIds: item.employeeIds || [],
-        hourTypes: item.hourTypes || [],
-      });
-      downloadCsvText(item.fileName || 'horas-export.csv', buildCsv(rows, csvColumns()));
+      const month = item.month || String(item.fromDate || '').slice(0, 7) || currentMonthYm();
+      const { exportRows } = await buildSummaryForMonth(month, item.employeeIds || []);
+      downloadCsvText(item.fileName || `resumo_custos_${month}.csv`, buildCsv(exportRows, summaryColumns()));
     } catch (err) {
       setError(getErrorMessage(err));
     }
-  }
-
-  function toggleHourType(type) {
-    setForm((f) => ({
-      ...f,
-      hourTypes: f.hourTypes.includes(type)
-        ? f.hourTypes.filter((x) => x !== type)
-        : [...f.hourTypes, type],
-    }));
   }
 
   function toggleEmployee(id) {
@@ -233,14 +199,6 @@ export default function CsvExports() {
 
   function clearEmployees() {
     setForm((f) => ({ ...f, employeeIds: [] }));
-  }
-
-  function selectAllHourTypes() {
-    setForm((f) => ({ ...f, hourTypes: [...HOUR_TYPE_ORDER] }));
-  }
-
-  function clearHourTypes() {
-    setForm((f) => ({ ...f, hourTypes: [] }));
   }
 
   return (
@@ -267,22 +225,16 @@ export default function CsvExports() {
         <h2 className="text-base font-semibold text-ink">{t('csvExports.generate')}</h2>
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="text-sm">
-            <span className="text-ink-muted">{t('csvExports.fromDate')}</span>
+            <span className="text-ink-muted">
+              {t('csvExports.month', { defaultValue: 'Mês de referência' })}
+            </span>
             <input
-              type="date"
-              value={form.fromDate}
-              onChange={(e) => setForm((f) => ({ ...f, fromDate: e.target.value }))}
+              type="month"
+              value={form.month}
+              onChange={(e) => setForm((f) => ({ ...f, month: e.target.value }))}
               className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2"
             />
-          </label>
-          <label className="text-sm">
-            <span className="text-ink-muted">{t('csvExports.toDate')}</span>
-            <input
-              type="date"
-              value={form.toDate}
-              onChange={(e) => setForm((f) => ({ ...f, toDate: e.target.value }))}
-              className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2"
-            />
+            <span className="mt-1 block text-xs text-ink-muted">{monthLabel(form.month)}</span>
           </label>
         </div>
 
@@ -291,7 +243,9 @@ export default function CsvExports() {
             <div className="text-sm font-medium text-ink">
               {t('csvExports.employees')}
               <span className="ml-2 text-xs font-normal text-ink-muted">
-                {form.employeeIds.length}/{users.length}
+                {form.employeeIds.length === 0
+                  ? t('csvExports.allEmployees', { defaultValue: 'Todos' })
+                  : `${form.employeeIds.length}/${users.length}`}
               </span>
             </div>
             <div className="flex items-center gap-3 text-xs">
@@ -314,6 +268,11 @@ export default function CsvExports() {
               </button>
             </div>
           </div>
+          <p className="text-xs text-ink-muted">
+            {t('csvExports.employeesHint', {
+              defaultValue: 'Sem seleção = todos os colaboradores do resumo.',
+            })}
+          </p>
           <div className="relative">
             <Search
               size={15}
@@ -351,66 +310,15 @@ export default function CsvExports() {
           </div>
         </div>
 
-        <div className="space-y-2 border-t border-gray-100 pt-4">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="text-sm font-medium text-ink">
-              {t('csvExports.hourTypes')}
-              <span className="ml-2 text-xs font-normal text-ink-muted">
-                {form.hourTypes.length}/{HOUR_TYPE_ORDER.length}
-              </span>
-            </div>
-            <div className="flex items-center gap-3 text-xs">
-              <button
-                type="button"
-                onClick={selectAllHourTypes}
-                disabled={form.hourTypes.length === HOUR_TYPE_ORDER.length}
-                className="font-medium text-accent hover:underline disabled:opacity-40 disabled:no-underline"
-              >
-                {t('csvExports.selectAll', { defaultValue: 'Selecionar todos' })}
-              </button>
-              <span className="text-gray-300">·</span>
-              <button
-                type="button"
-                onClick={clearHourTypes}
-                disabled={form.hourTypes.length === 0}
-                className="font-medium text-ink-muted hover:underline disabled:opacity-40 disabled:no-underline"
-              >
-                {t('csvExports.clear', { defaultValue: 'Limpar' })}
-              </button>
-            </div>
-          </div>
-          <div className="grid gap-2 sm:grid-cols-2">
-            {HOUR_TYPE_ORDER.map((type) => {
-              const checked = form.hourTypes.includes(type);
-              return (
-                <label
-                  key={type}
-                  className={`flex cursor-pointer items-center gap-2.5 rounded-lg border px-3 py-2 text-sm transition-colors ${
-                    checked ? 'border-accent bg-accent/5' : 'border-gray-200 hover:bg-gray-50'
-                  }`}
-                >
-                  <input
-                    type="checkbox"
-                    className="h-4 w-4 accent-indigo-600"
-                    checked={checked}
-                    onChange={() => toggleHourType(type)}
-                  />
-                  <span className="text-ink">
-                    {t(getHourTypeTranslationKey(type), { defaultValue: type })}
-                  </span>
-                </label>
-              );
-            })}
-          </div>
-        </div>
-
         <button
           type="submit"
           disabled={generating}
           className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-60"
         >
           <FileSpreadsheet size={16} />
-          {t('csvExports.generateButton')}
+          {generating
+            ? t('csvExports.generating', { defaultValue: 'Gerando…' })
+            : t('csvExports.generateButton')}
         </button>
       </form>
 
@@ -467,7 +375,9 @@ export default function CsvExports() {
                   <tr key={item.id} className="border-t border-gray-100">
                     <td className="px-3 py-2">{item.fileName}</td>
                     <td className="px-3 py-2">
-                      {(item.fromDate || '-') + ' - ' + (item.toDate || '-')}
+                      {item.month
+                        ? monthLabel(item.month)
+                        : (item.fromDate || '-') + ' - ' + (item.toDate || '-')}
                     </td>
                     <td className="px-3 py-2">{item.generatedByName}</td>
                     <td className="px-3 py-2">{item.rowCount}</td>
