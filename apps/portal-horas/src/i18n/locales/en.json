@@ -317,7 +317,17 @@
     "actions": "Actions",
     "loading": "Loading exports...",
     "empty": "No generated CSV files found.",
-    "download": "Download"
+    "download": "Download",
+    "col": {
+      "employee": "Employee",
+      "date": "Date",
+      "start": "Start",
+      "end": "End",
+      "hours": "Duration (h)",
+      "type": "Type",
+      "status": "Status",
+      "description": "Description"
+    }
   },
   "finance": {
     "title": "Investment calculator",

@@ -2,7 +2,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { Download, FileSpreadsheet, RefreshCw, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { api, getErrorMessage } from '../api/client.js';
+import { useAuth } from '../context/AuthContext.jsx';
 import { HOUR_TYPE_ORDER, getHourTypeTranslationKey } from '../config/hourTypes.js';
+import { buildCsv, downloadCsvText, filterHourEntries, formatHours } from '../lib/csv-export.js';
 
 function todayIso() {
   return new Date().toISOString().slice(0, 10);
@@ -16,6 +18,7 @@ function monthStartIso() {
 
 export default function CsvExports() {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const [items, setItems] = useState([]);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -50,6 +53,68 @@ export default function CsvExports() {
       return true;
     });
   }, [items, filters]);
+
+  const usersById = useMemo(() => {
+    const m = new Map();
+    for (const u of users) m.set(String(u.id), u);
+    return m;
+  }, [users]);
+
+  function employeeName(entry) {
+    const u = usersById.get(String(entry.userId ?? entry.user_id ?? ''));
+    return (
+      u?.fullName ||
+      entry.analystName ||
+      entry.analystEmail ||
+      entry.userId ||
+      entry.user_id ||
+      ''
+    );
+  }
+
+  // Colunas do CSV. Recriadas por render para pegar idioma/colaboradores atuais.
+  function csvColumns() {
+    return [
+      { header: t('csvExports.col.employee', { defaultValue: 'Colaborador' }), value: employeeName },
+      {
+        header: t('csvExports.col.date', { defaultValue: 'Data' }),
+        value: (e) => String(e.date || '').slice(0, 10),
+      },
+      {
+        header: t('csvExports.col.start', { defaultValue: 'Início' }),
+        value: (e) => e.startTime || e.start_time || '',
+      },
+      {
+        header: t('csvExports.col.end', { defaultValue: 'Fim' }),
+        value: (e) => e.endTime || e.end_time || '',
+      },
+      {
+        header: t('csvExports.col.hours', { defaultValue: 'Duração (h)' }),
+        value: (e) => formatHours(e.durationMinutes ?? e.duration_minutes),
+      },
+      {
+        header: t('csvExports.col.type', { defaultValue: 'Tipo' }),
+        value: (e) =>
+          t(getHourTypeTranslationKey(e.hourType || e.hour_type), {
+            defaultValue: e.hourType || e.hour_type || '',
+          }),
+      },
+      {
+        header: t('csvExports.col.status', { defaultValue: 'Status' }),
+        value: (e) => e.status || '',
+      },
+      {
+        header: t('csvExports.col.description', { defaultValue: 'Descrição' }),
+        value: (e) => e.description || '',
+      },
+    ];
+  }
+
+  // Busca todos os lançamentos (admin vê o time inteiro). Filtro é feito no cliente.
+  async function fetchAllEntries() {
+    const res = await api.get('/api/hour-entries', { params: { limit: 100000 } });
+    return Array.isArray(res.data) ? res.data : [];
+  }
 
   async function load() {
     setLoading(true);
@@ -95,9 +160,30 @@ export default function CsvExports() {
     }
     setGenerating(true);
     try {
-      await api.post('/api/csv-exports', form);
+      const all = await fetchAllEntries();
+      const rows = filterHourEntries(all, form);
+      const fileName = `horas_${form.fromDate || 'inicio'}_a_${form.toDate || 'fim'}.csv`;
+      // Baixa primeiro: o download é o que importa e não pode depender do histórico.
+      downloadCsvText(fileName, buildCsv(rows, csvColumns()));
       setSuccess(t('csvExports.generatedSuccess'));
-      await load();
+      // Registra no histórico (secundário). Guarda os filtros para re-baixar depois.
+      try {
+        await api.post('/api/csv-exports', {
+          fromDate: form.fromDate,
+          toDate: form.toDate,
+          employeeIds: form.employeeIds,
+          hourTypes: form.hourTypes,
+          fileName,
+          rowCount: rows.length,
+          status: 'READY',
+          generatedById: user?.id || '',
+          generatedByName: user?.fullName || '',
+          createdAt: new Date().toISOString(),
+        });
+        await load();
+      } catch {
+        /* histórico é secundário; o CSV já foi baixado */
+      }
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
@@ -105,18 +191,19 @@ export default function CsvExports() {
     }
   }
 
+  // Re-baixa um item do histórico regerando o CSV a partir dos filtros salvos.
+  // (O servidor não guarda o arquivo, então não há o que buscar por id.)
   async function downloadExport(item) {
     setError('');
     try {
-      const response = await api.get(`/api/csv-exports/${item.id}/download`, { responseType: 'blob' });
-      const blobUrl = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = blobUrl;
-      link.download = item.fileName || 'hours-export.csv';
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(blobUrl);
+      const all = await fetchAllEntries();
+      const rows = filterHourEntries(all, {
+        fromDate: item.fromDate,
+        toDate: item.toDate,
+        employeeIds: item.employeeIds || [],
+        hourTypes: item.hourTypes || [],
+      });
+      downloadCsvText(item.fileName || 'horas-export.csv', buildCsv(rows, csvColumns()));
     } catch (err) {
       setError(getErrorMessage(err));
     }

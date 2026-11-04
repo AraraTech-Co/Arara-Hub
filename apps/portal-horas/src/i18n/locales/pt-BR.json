@@ -317,7 +317,17 @@
     "actions": "Acoes",
     "loading": "Carregando exportacoes...",
     "empty": "Nenhum arquivo CSV gerado encontrado.",
-    "download": "Baixar"
+    "download": "Baixar",
+    "col": {
+      "employee": "Colaborador",
+      "date": "Data",
+      "start": "Inicio",
+      "end": "Fim",
+      "hours": "Duracao (h)",
+      "type": "Tipo",
+      "status": "Status",
+      "description": "Descricao"
+    }
   },
   "finance": {
     "title": "Calculadora de investimentos",
