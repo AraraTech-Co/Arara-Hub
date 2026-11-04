@@ -306,6 +306,12 @@
     "generating": "Generating…",
     "noMonth": "Select the reference month.",
     "noSummaryRows": "No employees in this month's summary.",
+    "groupsHint": "Unchecked types are left out of the file and of the incremental and total cost.",
+    "group": {
+      "normal": "Normal",
+      "extraAtt": "Overtime + Attendance",
+      "standbyBackup": "Standby + Backup"
+    },
     "refresh": "Refresh",
     "generatedSuccess": "CSV file generated successfully.",
     "generate": "Generate Export",

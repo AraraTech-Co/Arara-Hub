@@ -3,7 +3,13 @@ import { Download, FileSpreadsheet, RefreshCw, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { api, getErrorMessage } from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
-import { buildCsv, downloadCsvText } from '../lib/csv-export.js';
+import {
+  SUMMARY_GROUPS,
+  applySummaryGroups,
+  buildCsv,
+  downloadCsvText,
+  sumFields,
+} from '../lib/csv-export.js';
 
 function currentMonthYm() {
   return new Date().toISOString().slice(0, 7);
@@ -40,6 +46,7 @@ export default function CsvExports() {
   const [form, setForm] = useState({
     month: currentMonthYm(),
     employeeIds: [],
+    groups: [...SUMMARY_GROUPS],
   });
   const [filters, setFilters] = useState({
     fromDate: '',
@@ -72,8 +79,16 @@ export default function CsvExports() {
     return s.charAt(0).toUpperCase() + s.slice(1);
   }
 
+  const groupLabels = {
+    normal: t('csvExports.group.normal', { defaultValue: 'Normal' }),
+    extraAtt: t('csvExports.group.extraAtt', { defaultValue: 'Extras + Atendimento' }),
+    standbyBackup: t('csvExports.group.standbyBackup', { defaultValue: 'Prontidão + Backup' }),
+  };
+
   // Colunas do resumo — mesmas do Financeiro, reaproveitando as traduções finance.col.*.
-  function summaryColumns() {
+  // As colunas de cada grupo de tipo de hora só entram se o grupo estiver marcado.
+  function summaryColumns(groups) {
+    const has = new Set(groups || SUMMARY_GROUPS);
     return [
       { header: t('finance.col.employee'), value: (r) => r.fullName || '' },
       { header: t('csvExports.colEmail', { defaultValue: 'E-mail' }), value: (r) => r.email || '' },
@@ -81,32 +96,56 @@ export default function CsvExports() {
       { header: t('finance.col.monthlyRate'), value: (r) => num2(r.monthlyRate) },
       { header: t('finance.col.hourlyRef'), value: (r) => num2(r.referenceHourlyRate) },
       { header: t('finance.col.expectedHours'), value: (r) => num2(r.expectedHours) },
-      { header: t('finance.col.normalHours'), value: (r) => num2(r.normalHours) },
-      { header: t('finance.col.extraAttH'), value: (r) => num2(r.extraAndAttendanceHours) },
-      { header: t('finance.col.extraAttValue'), value: (r) => num2(r.extraAndAttendanceValue) },
-      { header: t('finance.col.standbyH'), value: (r) => num2(r.standbyAndBackupHours) },
-      { header: t('finance.col.standbyValue'), value: (r) => num2(r.standbyAndBackupValue) },
+      has.has('normal') && {
+        header: t('finance.col.normalHours'),
+        value: (r) => num2(r.normalHours),
+      },
+      has.has('extraAtt') && {
+        header: t('finance.col.extraAttH'),
+        value: (r) => num2(r.extraAndAttendanceHours),
+      },
+      has.has('extraAtt') && {
+        header: t('finance.col.extraAttValue'),
+        value: (r) => num2(r.extraAndAttendanceValue),
+      },
+      has.has('standbyBackup') && {
+        header: t('finance.col.standbyH'),
+        value: (r) => num2(r.standbyAndBackupHours),
+      },
+      has.has('standbyBackup') && {
+        header: t('finance.col.standbyValue'),
+        value: (r) => num2(r.standbyAndBackupValue),
+      },
       { header: t('finance.col.incrementalHours'), value: (r) => num2(r.incrementalHours) },
       { header: t('finance.col.incremental'), value: (r) => num2(r.incrementalTotal) },
       { header: t('finance.col.totalCost'), value: (r) => num2(r.totalCost) },
-    ];
+    ].filter(Boolean);
   }
 
-  // Busca o resumo de custos do mês (mesmo endpoint da tela Financeiro) e aplica
-  // a seleção de colaboradores. Lista vazia = todos. Acrescenta a linha Totais.
-  async function buildSummaryForMonth(month, employeeIds) {
+  // Busca o resumo de custos do mês (mesmo endpoint da tela Financeiro), aplica
+  // a seleção de colaboradores (vazia = todos) e os grupos de tipo de hora, e
+  // acrescenta a linha Totais.
+  async function buildSummaryForMonth(month, employeeIds, groups) {
     const res = await api.get('/api/finance/investment-calculator', { params: { month } });
     const allRows = Array.isArray(res.data?.rows) ? res.data.rows : [];
     const sel = Array.isArray(employeeIds) && employeeIds.length
       ? new Set(employeeIds.map((x) => String(x)))
       : null;
-    const rows = sel ? allRows.filter((r) => sel.has(String(r.userId))) : allRows;
-    const totals = { fullName: t('finance.totals'), email: '', squad: '' };
-    for (const f of SUM_FIELDS) {
-      totals[f] = rows.reduce((s, r) => s + (Number(r[f]) || 0), 0);
-    }
+    const rows = (sel ? allRows.filter((r) => sel.has(String(r.userId))) : allRows).map((r) =>
+      applySummaryGroups(r, groups)
+    );
+    const totals = { fullName: t('finance.totals'), email: '', squad: '', ...sumFields(rows, SUM_FIELDS) };
     const exportRows = rows.length ? [...rows, totals] : rows;
     return { rows, exportRows, meta: res.data };
+  }
+
+  function toggleGroup(group) {
+    setForm((f) => ({
+      ...f,
+      groups: f.groups.includes(group)
+        ? f.groups.filter((g) => g !== group)
+        : SUMMARY_GROUPS.filter((g) => g === group || f.groups.includes(g)),
+    }));
   }
 
   async function load() {
@@ -139,21 +178,30 @@ export default function CsvExports() {
       setError(t('csvExports.noMonth', { defaultValue: 'Selecione o mês de referência.' }));
       return;
     }
+    if (form.groups.length === 0) {
+      setError(t('csvExports.noHourTypes', { defaultValue: 'Selecione ao menos um tipo de hora.' }));
+      return;
+    }
     setGenerating(true);
     try {
-      const { rows, exportRows } = await buildSummaryForMonth(form.month, form.employeeIds);
+      const { rows, exportRows } = await buildSummaryForMonth(
+        form.month,
+        form.employeeIds,
+        form.groups
+      );
       if (!rows.length) {
         setError(t('csvExports.noSummaryRows', { defaultValue: 'Nenhum colaborador no resumo deste mês.' }));
         return;
       }
       const fileName = `resumo_custos_${form.month}.csv`;
       // Baixa primeiro: o download não pode depender do registro no histórico.
-      downloadCsvText(fileName, buildCsv(exportRows, summaryColumns()));
+      downloadCsvText(fileName, buildCsv(exportRows, summaryColumns(form.groups)));
       setSuccess(t('csvExports.generatedSuccess'));
       try {
         await api.post('/api/csv-exports', {
           month: form.month,
           employeeIds: form.employeeIds,
+          groups: form.groups,
           fileName,
           rowCount: rows.length,
           status: 'READY',
@@ -177,8 +225,14 @@ export default function CsvExports() {
     setError('');
     try {
       const month = item.month || String(item.fromDate || '').slice(0, 7) || currentMonthYm();
-      const { exportRows } = await buildSummaryForMonth(month, item.employeeIds || []);
-      downloadCsvText(item.fileName || `resumo_custos_${month}.csv`, buildCsv(exportRows, summaryColumns()));
+      // Itens antigos não têm grupos salvos: valem todos.
+      const groups =
+        Array.isArray(item.groups) && item.groups.length ? item.groups : [...SUMMARY_GROUPS];
+      const { exportRows } = await buildSummaryForMonth(month, item.employeeIds || [], groups);
+      downloadCsvText(
+        item.fileName || `resumo_custos_${month}.csv`,
+        buildCsv(exportRows, summaryColumns(groups))
+      );
     } catch (err) {
       setError(getErrorMessage(err));
     }
@@ -307,6 +361,63 @@ export default function CsvExports() {
                 </label>
               ))
             )}
+          </div>
+        </div>
+
+        <div className="space-y-2 border-t border-gray-100 pt-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="text-sm font-medium text-ink">
+              {t('csvExports.hourTypes')}
+              <span className="ml-2 text-xs font-normal text-ink-muted">
+                {form.groups.length}/{SUMMARY_GROUPS.length}
+              </span>
+            </div>
+            <div className="flex items-center gap-3 text-xs">
+              <button
+                type="button"
+                onClick={() => setForm((f) => ({ ...f, groups: [...SUMMARY_GROUPS] }))}
+                disabled={form.groups.length === SUMMARY_GROUPS.length}
+                className="font-medium text-accent hover:underline disabled:opacity-40 disabled:no-underline"
+              >
+                {t('csvExports.selectAll', { defaultValue: 'Selecionar todos' })}
+              </button>
+              <span className="text-gray-300">·</span>
+              <button
+                type="button"
+                onClick={() => setForm((f) => ({ ...f, groups: [] }))}
+                disabled={form.groups.length === 0}
+                className="font-medium text-ink-muted hover:underline disabled:opacity-40 disabled:no-underline"
+              >
+                {t('csvExports.clear', { defaultValue: 'Limpar' })}
+              </button>
+            </div>
+          </div>
+          <p className="text-xs text-ink-muted">
+            {t('csvExports.groupsHint', {
+              defaultValue:
+                'Tipos desmarcados saem do arquivo e não entram no custo incremental nem no custo total.',
+            })}
+          </p>
+          <div className="grid gap-2 sm:grid-cols-3">
+            {SUMMARY_GROUPS.map((group) => {
+              const checked = form.groups.includes(group);
+              return (
+                <label
+                  key={group}
+                  className={`flex cursor-pointer items-center gap-2.5 rounded-lg border px-3 py-2 text-sm transition-colors ${
+                    checked ? 'border-accent bg-accent/5' : 'border-gray-200 hover:bg-gray-50'
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 accent-indigo-600"
+                    checked={checked}
+                    onChange={() => toggleGroup(group)}
+                  />
+                  <span className="text-ink">{groupLabels[group]}</span>
+                </label>
+              );
+            })}
           </div>
         </div>
 
