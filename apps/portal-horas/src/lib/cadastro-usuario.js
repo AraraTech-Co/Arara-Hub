@@ -148,6 +148,7 @@ export async function cadastrarUsuario(dados, onStep) {
     managerRole: dados.managerRole,
     active: dados.active,
     squadId: dados.squadId || undefined,
+    contractType: dados.contractType || undefined,
     rateType: dados.rateType || undefined,
     hourlyRate: dados.hourlyRate,
     monthlyRate: dados.monthlyRate,
