@@ -306,6 +306,12 @@
     "generating": "Gerando...",
     "noMonth": "Selecione o mes de referencia.",
     "noSummaryRows": "Nenhum colaborador no resumo deste mes.",
+    "groupsHint": "Tipos desmarcados saem do arquivo e nao entram no custo incremental nem no custo total.",
+    "group": {
+      "normal": "Normal",
+      "extraAtt": "Extras + Atendimento",
+      "standbyBackup": "Prontidao + Backup"
+    },
     "refresh": "Atualizar",
     "generatedSuccess": "Arquivo CSV gerado com sucesso.",
     "generate": "Gerar Exportacao",

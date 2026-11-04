@@ -52,6 +52,45 @@ export function buildCsv(rows, columns) {
   return '﻿' + header + (body ? '\r\n' + body : '') + '\r\n';
 }
 
+// Grupos de tipo de hora do resumo de custos, na mesma divisão que o servidor
+// usa nas colunas do Financeiro.
+export const SUMMARY_GROUPS = Object.freeze(['normal', 'extraAtt', 'standbyBackup']);
+
+const round2 = (n) => Number((Number(n) || 0).toFixed(2));
+
+/**
+ * Ajusta uma linha do resumo aos grupos escolhidos. Com os dois grupos
+ * incrementais marcados a linha volta intacta (idêntica ao Financeiro); sem
+ * algum deles, horas/custo incremental e custo total são refeitos só com o que
+ * ficou marcado. Custo total = salário mensal + incremental, como no servidor.
+ */
+export function applySummaryGroups(row, groups) {
+  const set = new Set(groups || []);
+  const extra = set.has('extraAtt');
+  const standby = set.has('standbyBackup');
+  if (extra && standby) return row;
+  const extraH = extra ? Number(row.extraAndAttendanceHours) || 0 : 0;
+  const extraV = extra ? Number(row.extraAndAttendanceValue) || 0 : 0;
+  const standbyH = standby ? Number(row.standbyAndBackupHours) || 0 : 0;
+  const standbyV = standby ? Number(row.standbyAndBackupValue) || 0 : 0;
+  const incrementalTotal = round2(extraV + standbyV);
+  return {
+    ...row,
+    incrementalHours: round2(extraH + standbyH),
+    incrementalTotal,
+    totalCost: round2((Number(row.monthlyRate) || 0) + incrementalTotal),
+  };
+}
+
+/** Soma os campos numéricos indicados em todas as linhas (para a linha Totais). */
+export function sumFields(rows, fields) {
+  const out = {};
+  for (const f of fields) {
+    out[f] = round2((rows || []).reduce((s, r) => s + (Number(r[f]) || 0), 0));
+  }
+  return out;
+}
+
 /** Dispara o download de um texto como arquivo .csv no navegador. */
 export function downloadCsvText(fileName, text) {
   const blob = new Blob([text], { type: 'text/csv;charset=utf-8;' });
