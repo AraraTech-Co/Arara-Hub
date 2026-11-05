@@ -32,10 +32,11 @@ function fakeFindMany(rows) {
 }
 
 // ── Financeiro ──────────────────────────────────────────────────────────────
-const MES = '2026-11';
+// Setembro/2026: antes da regra CLT 2× (out/2026); aqui se testa o divisor e a meta.
+const MES = '2026-09';
 const lanc = (userId, tipo, minutos, status = 'APPROVED') => ({
   user_id: userId,
-  date: '2026-11-10',
+  date: '2026-09-10',
   hour_type: tipo,
   duration_minutes: minutos,
   status,

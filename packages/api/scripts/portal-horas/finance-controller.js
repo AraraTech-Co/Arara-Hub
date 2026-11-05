@@ -48,11 +48,46 @@ async function handler(ctx) {
   // única vez para centavos (meio para cima). Agregados e totais são somas de
   // rubricas já arredondadas. Nada de float no dinheiro.
   const RUBRICAS = [
-    { key: 'extra', type: HOUR_TYPES.EXTRA, fnum: 1n, fden: 1n },
-    { key: 'attendance', type: HOUR_TYPES.BIP_ATTENDANCE, fnum: 1n, fden: 1n },
-    { key: 'standby', type: HOUR_TYPES.BIP_STANDBY, fnum: 3n, fden: 10n },
-    { key: 'backup', type: HOUR_TYPES.BIP_BACKUP, fnum: 3n, fden: 10n },
+    { key: 'extra', type: HOUR_TYPES.EXTRA },
+    { key: 'attendance', type: HOUR_TYPES.BIP_ATTENDANCE },
+    { key: 'standby', type: HOUR_TYPES.BIP_STANDBY },
+    { key: 'backup', type: HOUR_TYPES.BIP_BACKUP },
   ];
+  // Fatores por rubrica, como fração [numerador, denominador] do valor hora.
+  // Vale, para cada pessoa e mês, a regra do contrato dela com o maior "desde"
+  // <= mês; sem regra, a padrão. Decisão do Leonardo em 05/11/2026: CLT, a
+  // partir de 2026-10, extra e atendimento em 2× (adicional de 100%);
+  // prontidão e backup seguem 0,3× e acumulam com o atendimento.
+  const REGRA_PADRAO = {
+    id: 'padrao',
+    extra: [1n, 1n],
+    attendance: [1n, 1n],
+    standby: [3n, 10n],
+    backup: [3n, 10n],
+  };
+  const REGRAS = [
+    {
+      id: 'clt-2026-10',
+      contrato: 'CLT',
+      desde: '2026-10',
+      extra: [2n, 1n],
+      attendance: [2n, 1n],
+      standby: [3n, 10n],
+      backup: [3n, 10n],
+    },
+  ];
+  function regraVigente(user, mes) {
+    const contrato = isClt(user) ? 'CLT' : 'PJ';
+    let escolhida = REGRA_PADRAO;
+    for (const r of REGRAS) {
+      if (r.contrato !== contrato || mes < r.desde) continue;
+      if (escolhida === REGRA_PADRAO || r.desde > escolhida.desde) escolhida = r;
+    }
+    return escolhida;
+  }
+  function fatorNumero(f) {
+    return Number(f[0]) / Number(f[1]);
+  }
   function toCents(v) {
     const n = Number(v);
     return Number.isFinite(n) && n > 0 ? BigInt(Math.round(n * 100)) : 0n;
@@ -101,13 +136,14 @@ async function handler(ctx) {
     const d = 60n * rate.den * fden;
     return (2n * n + d) / (2n * d); // meio para cima (valores ≥ 0)
   }
-  function computeIncremental(byType, rate) {
+  function computeIncremental(byType, rate, regra) {
     const r = {};
     let incCents = 0n;
     let incMinutes = 0;
     for (const rb of RUBRICAS) {
       const minutes = byType[rb.type] || 0;
-      const cents = rubricaCents(minutes, rate, rb.fnum, rb.fden);
+      const fator = regra[rb.key];
+      const cents = rubricaCents(minutes, rate, fator[0], fator[1]);
       r[rb.key] = { minutes, cents };
       incCents += cents;
       incMinutes += minutes;
@@ -265,8 +301,9 @@ async function handler(ctx) {
     const byType = approvedAgg.byType;
     const normalMinutes = byType[HOUR_TYPES.NORMAL] || 0;
     const rate = resolveRate(u);
-    const inc = computeIncremental(byType, rate);
-    const pendingCents = computeIncremental(pendingAgg.byType, rate).incCents;
+    const regra = regraVigente(u, month);
+    const inc = computeIncremental(byType, rate, regra);
+    const pendingCents = computeIncremental(pendingAgg.byType, rate, regra).incCents;
     const baseCents = toCents(pick(u, 'monthly_rate', 'monthlyRate'));
     const totalCents = baseCents + inc.incCents;
     const rb = inc.rubricas;
@@ -280,6 +317,13 @@ async function handler(ctx) {
       rateOrigin: rate.origin,
       rateOriginPending: rate.pending,
       contractType: isClt(u) ? 'CLT' : 'PJ',
+      ruleId: regra.id,
+      factors: {
+        extra: fatorNumero(regra.extra),
+        attendance: fatorNumero(regra.attendance),
+        standby: fatorNumero(regra.standby),
+        backup: fatorNumero(regra.backup),
+      },
       monthlyRate:
         pick(u, 'monthly_rate', 'monthlyRate') != null
           ? Number(pick(u, 'monthly_rate', 'monthlyRate'))

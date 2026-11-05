@@ -219,6 +219,14 @@ export default function Finance() {
                             CLT
                           </span>
                         )}
+                        {row.factors && row.factors.extra !== 1 && (
+                          <span className="ml-1 align-middle text-[10px] text-ink-muted">
+                            {t('finance.factorBadge', {
+                              defaultValue: 'extras/atend. {{fator}}×',
+                              fator: String(row.factors.extra).replace('.', ','),
+                            })}
+                          </span>
+                        )}
                       </div>
                       <div className="text-xs text-ink-muted">{row.email}</div>
                       {row.hasRateWarning && (

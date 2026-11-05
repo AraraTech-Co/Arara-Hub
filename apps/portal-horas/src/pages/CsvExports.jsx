@@ -93,6 +93,14 @@ export default function CsvExports() {
       { header: t('finance.col.employee'), value: (r) => r.fullName || '' },
       { header: t('csvExports.colEmail', { defaultValue: 'E-mail' }), value: (r) => r.email || '' },
       { header: t('finance.col.squad'), value: (r) => r.squad || '' },
+      {
+        header: t('csvExports.colContract', { defaultValue: 'Contrato' }),
+        value: (r) => r.contractType || '',
+      },
+      {
+        header: t('csvExports.colFactor', { defaultValue: 'Fator extras + atend.' }),
+        value: (r) => (r.factors ? num2(r.factors.extra) : ''),
+      },
       { header: t('finance.col.monthlyRate'), value: (r) => num2(r.monthlyRate) },
       { header: t('finance.col.hourlyRef'), value: (r) => num2(r.referenceHourlyRate) },
       { header: t('finance.col.expectedHours'), value: (r) => num2(r.expectedHours) },

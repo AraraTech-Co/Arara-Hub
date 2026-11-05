@@ -5,13 +5,16 @@
 //   extra 1049 min, atendimento 326, prontidão 6673, backup 94, normal 9587
 //   rubricas (meio para cima, uma vez cada): 571.99 / 177.76 / 1091.57 / 15.38
 //   incremental 1856.70; total 8399.91
-// Regras de fator NÃO mudam nesta fase: extra e atendimento 1×; prontidão e backup 0,3×.
+// Fatores do mês usado (antes da regra CLT 2×): extra e atendimento 1×; prontidão e backup 0,3×.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { carregarHandler } from './_carregar.mjs';
 
 const finance = carregarHandler('GET', '/finance/investment-calculator');
-const MES = '2026-11';
+// Setembro/2026: antes da vigência da regra CLT 2× (out/2026), então os fatores
+// aqui são 1× (extra, atendimento) e 0,3× (prontidão, backup). O 2× tem testes
+// próprios em fatores-fase2.test.mjs.
+const MES = '2026-09';
 
 function fakeFindMany(rows) {
   return async (filtro = {}) => {
@@ -21,7 +24,7 @@ function fakeFindMany(rows) {
       .slice(0, Math.min(500, Number(filtro.limit) || 500));
   };
 }
-const lanc = (userId, tipo, minutos, status = 'APPROVED', date = '2026-11-10') => ({
+const lanc = (userId, tipo, minutos, status = 'APPROVED', date = '2026-09-10') => ({
   user_id: userId,
   date,
   hour_type: tipo,
