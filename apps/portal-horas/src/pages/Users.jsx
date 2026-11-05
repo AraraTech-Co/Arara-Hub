@@ -7,6 +7,7 @@ import {
   divisorDoContrato,
   editarValor,
   normalizarContrato,
+  origemPendente,
   trocarContrato,
 } from '../lib/valor-hora.js';
 
@@ -27,7 +28,6 @@ const defaultForm = () => ({
   active: true,
   squadId: '',
   contractType: 'PJ',
-  rateSource: null,
   rateType: '',
   hourlyRate: '',
   monthlyRate: '',
@@ -48,7 +48,6 @@ function userToEditForm(u) {
     active: !!u.active,
     squadId: u.squadId || '',
     contractType: normalizarContrato(u.contractType),
-    rateSource: null,
     rateType: u.rateType || '',
     hourlyRate: u.hourlyRate != null && u.hourlyRate !== '' ? String(u.hourlyRate) : '',
     monthlyRate: u.monthlyRate != null && u.monthlyRate !== '' ? String(u.monthlyRate) : '',
@@ -451,6 +450,14 @@ export default function Users() {
               horas: divisorDoContrato(form.contractType),
             })}
           </p>
+          {origemPendente(form) && (
+            <p className="text-xs text-amber-700 sm:col-span-2">
+              {t('users.rateOriginPending', {
+                defaultValue:
+                  'Tipo de remuneração não definido: o cálculo usa o valor hora gravado. Escolha Hora ou Mensal.',
+              })}
+            </p>
+          )}
         </div>
         <div className="space-y-2 rounded-lg border border-gray-100 p-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -815,6 +822,14 @@ export default function Users() {
                     horas: divisorDoContrato(editForm.contractType),
                   })}
                 </p>
+                {origemPendente(editForm) && (
+                  <p className="text-xs text-amber-700 sm:col-span-2">
+                    {t('users.rateOriginPending', {
+                      defaultValue:
+                        'Tipo de remuneração não definido: o cálculo usa o valor hora gravado. Escolha Hora ou Mensal.',
+                    })}
+                  </p>
+                )}
               </div>
               <div className="space-y-2 rounded-lg border border-gray-100 p-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
