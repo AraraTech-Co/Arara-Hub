@@ -202,7 +202,7 @@ export default function Finance() {
                 <th className="px-3 py-3 text-right">{t('finance.col.standbyValue')}</th>
                 <th className="px-3 py-3 text-right">{t('finance.col.incrementalHours')}</th>
                 <th className="px-3 py-3 text-right">{t('finance.col.incremental')}</th>
-                <th className="sticky right-0 z-10 bg-gray-50/95 px-3 py-3 text-right shadow-[-6px_0_8px_-6px_rgba(0,0,0,0.12)]">
+                <th className="sticky right-0 z-10 bg-gray-50 px-3 py-3 text-right shadow-[-6px_0_8px_-6px_rgba(0,0,0,0.12)]">
                   {t('finance.col.totalCost')}
                 </th>
               </tr>
@@ -297,7 +297,7 @@ export default function Finance() {
                     {numFmt.format(visibleTotals.incrementalHours)}h
                   </td>
                   <td className="px-3 py-3 text-right tabular-nums">{moneyFmt.format(visibleTotals.incrementalTotal)}</td>
-                  <td className="sticky right-0 z-10 bg-gray-50/95 px-3 py-3 text-right tabular-nums shadow-[-6px_0_8px_-6px_rgba(0,0,0,0.12)]">
+                  <td className="sticky right-0 z-10 bg-gray-50 px-3 py-3 text-right tabular-nums shadow-[-6px_0_8px_-6px_rgba(0,0,0,0.12)]">
                     <div>{moneyFmt.format(visibleTotals.totalCost)}</div>
                     {visibleTotals.pendingIncrementalCost > 0 && (
                       <div className="mt-0.5 text-xs font-normal text-ink-muted">
