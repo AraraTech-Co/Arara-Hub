@@ -42,41 +42,103 @@ async function handler(ctx) {
   function isClt(user) {
     return String(pick(user, 'contract_type', 'contractType') || '').trim().toUpperCase() === 'CLT';
   }
-  function resolveReferenceHourlyRate(user) {
-    const hr = Number(pick(user, 'hourly_rate', 'hourlyRate') || 0);
-    if (hr > 0) return hr;
-    const mr = Number(pick(user, 'monthly_rate', 'monthlyRate') || 0);
-    if (mr > 0) return mr / (isClt(user) ? CLT_MONTHLY_HOURS : MONTHLY_REFERENCE_HOURS);
-    return 0;
+  // ── Aritmética exata ─────────────────────────────────────────────────────
+  // Valor hora como fração (num/den, em reais por hora). Minutos inteiros são
+  // somados por rubrica antes de qualquer conta; cada rubrica é arredondada uma
+  // única vez para centavos (meio para cima). Agregados e totais são somas de
+  // rubricas já arredondadas. Nada de float no dinheiro.
+  const RUBRICAS = [
+    { key: 'extra', type: HOUR_TYPES.EXTRA, fnum: 1n, fden: 1n },
+    { key: 'attendance', type: HOUR_TYPES.BIP_ATTENDANCE, fnum: 1n, fden: 1n },
+    { key: 'standby', type: HOUR_TYPES.BIP_STANDBY, fnum: 3n, fden: 10n },
+    { key: 'backup', type: HOUR_TYPES.BIP_BACKUP, fnum: 3n, fden: 10n },
+  ];
+  function toCents(v) {
+    const n = Number(v);
+    return Number.isFinite(n) && n > 0 ? BigInt(Math.round(n * 100)) : 0n;
   }
-  function computeIncremental(byType, hourlyRate) {
-    const extraM = (byType[HOUR_TYPES.EXTRA] || 0) + (byType[HOUR_TYPES.BIP_ATTENDANCE] || 0);
-    const standbyM = (byType[HOUR_TYPES.BIP_STANDBY] || 0) + (byType[HOUR_TYPES.BIP_BACKUP] || 0);
-    const extraAndAttendanceHours = asHours(extraM);
-    const standbyAndBackupHours = asHours(standbyM);
-    const rate = Number(hourlyRate || 0);
-    const extraAndAttendanceValue = toMoney(extraAndAttendanceHours * rate);
-    const standbyAndBackupValue = toMoney(standbyAndBackupHours * rate * 0.3);
-    const incrementalHours = Number(
-      (extraAndAttendanceHours + standbyAndBackupHours).toFixed(2),
-    );
-    const incrementalTotal = toMoney(extraAndAttendanceValue + standbyAndBackupValue);
+  function centsToNumber(c) {
+    return Number(c) / 100;
+  }
+  // Origem da remuneração = "Tipo de remuneração" do cadastro (rate_type).
+  function rateOrigin(user) {
+    const t = String(pick(user, 'rate_type', 'rateType') || '').trim().toLowerCase();
+    return t === 'monthly' || t === 'hourly' ? t : null;
+  }
+  // { num, den, origin, pending }: valor hora = num/den reais.
+  // monthly → mensal ÷ divisor exato; hourly → hora gravada.
+  // Sem origem (legado): hora gravada prevalece, senão mensal ÷ divisor; com os
+  // dois valores, pending (revisar). Origem sem o valor dela também é pending.
+  function resolveRate(user) {
+    const divisor = BigInt(isClt(user) ? CLT_MONTHLY_HOURS : MONTHLY_REFERENCE_HOURS);
+    const monthlyCents = toCents(pick(user, 'monthly_rate', 'monthlyRate'));
+    const hr = Number(pick(user, 'hourly_rate', 'hourlyRate') || 0);
+    const hourlyMicros = Number.isFinite(hr) && hr > 0 ? BigInt(Math.round(hr * 1e6)) : 0n;
+    const origin = rateOrigin(user);
+    if (origin === 'monthly' && monthlyCents > 0n) {
+      return { num: monthlyCents, den: 100n * divisor, origin, pending: false };
+    }
+    if (origin === 'hourly' && hourlyMicros > 0n) {
+      return { num: hourlyMicros, den: 1000000n, origin, pending: false };
+    }
+    const inconsistent = origin !== null;
+    if (hourlyMicros > 0n) {
+      return {
+        num: hourlyMicros,
+        den: 1000000n,
+        origin,
+        pending: inconsistent || monthlyCents > 0n,
+      };
+    }
+    if (monthlyCents > 0n) {
+      return { num: monthlyCents, den: 100n * divisor, origin, pending: inconsistent };
+    }
+    return { num: 0n, den: 1n, origin, pending: inconsistent };
+  }
+  function rubricaCents(minutes, rate, fnum, fden) {
+    if (minutes <= 0 || rate.num === 0n) return 0n;
+    const n = BigInt(minutes) * rate.num * fnum * 100n;
+    const d = 60n * rate.den * fden;
+    return (2n * n + d) / (2n * d); // meio para cima (valores ≥ 0)
+  }
+  function computeIncremental(byType, rate) {
+    const r = {};
+    let incCents = 0n;
+    let incMinutes = 0;
+    for (const rb of RUBRICAS) {
+      const minutes = byType[rb.type] || 0;
+      const cents = rubricaCents(minutes, rate, rb.fnum, rb.fden);
+      r[rb.key] = { minutes, cents };
+      incCents += cents;
+      incMinutes += minutes;
+    }
+    const eaMinutes = r.extra.minutes + r.attendance.minutes;
+    const sbMinutes = r.standby.minutes + r.backup.minutes;
     return {
-      extraAndAttendanceHours,
-      extraAndAttendanceValue,
-      standbyAndBackupHours,
-      standbyAndBackupValue,
-      incrementalHours,
-      incrementalTotal,
+      rubricas: r,
+      eaMinutes,
+      eaCents: r.extra.cents + r.attendance.cents,
+      sbMinutes,
+      sbCents: r.standby.cents + r.backup.cents,
+      incMinutes,
+      incCents,
     };
   }
+  // Soma minutos inteiros por tipo. Duração negativa, fracionária ou não
+  // numérica fica fora da conta e é contada em `ignored`.
   function aggregateMinutes(entries) {
     const byType = {};
+    let ignored = 0;
     for (const e of entries) {
+      const minutes = Number(pick(e, 'duration_minutes', 'durationMinutes') || 0);
+      if (!Number.isInteger(minutes) || minutes < 0) {
+        ignored += 1;
+        continue;
+      }
       const t = pick(e, 'hour_type', 'hourType');
-      byType[t] = (byType[t] || 0) + Number(pick(e, 'duration_minutes', 'durationMinutes') || 0);
+      byType[t] = (byType[t] || 0) + minutes;
     }
-    return byType;
+    return { byType, ignored };
   }
   function emptyTotals() {
     return {
@@ -167,6 +229,18 @@ async function handler(ctx) {
 
   const rows = [];
   let totals = emptyTotals();
+  const acc = {
+    baseCents: 0n,
+    normalMinutes: 0,
+    eaMinutes: 0,
+    eaCents: 0n,
+    sbMinutes: 0,
+    sbCents: 0n,
+    incMinutes: 0,
+    incCents: 0n,
+    totalCents: 0n,
+    pendingCents: 0n,
+  };
 
   for (const u of profiles) {
     const userId = String(u.id);
@@ -186,14 +260,16 @@ async function handler(ctx) {
     );
     const pending = inMonth.filter((e) => String(pick(e, 'status', 'status') || '') === 'PENDING');
 
-    const byType = aggregateMinutes(approved);
-    const pendingByType = aggregateMinutes(pending);
-    const normalHours = asHours(byType[HOUR_TYPES.NORMAL] || 0);
-    const rate = resolveReferenceHourlyRate(u);
+    const approvedAgg = aggregateMinutes(approved);
+    const pendingAgg = aggregateMinutes(pending);
+    const byType = approvedAgg.byType;
+    const normalMinutes = byType[HOUR_TYPES.NORMAL] || 0;
+    const rate = resolveRate(u);
     const inc = computeIncremental(byType, rate);
-    const pendingInc = rate > 0 ? computeIncremental(pendingByType, rate).incrementalTotal : 0;
-    const basePayment = toMoney(Number(pick(u, 'monthly_rate', 'monthlyRate') || 0));
-    const totalCost = toMoney(basePayment + inc.incrementalTotal);
+    const pendingCents = computeIncremental(pendingAgg.byType, rate).incCents;
+    const baseCents = toCents(pick(u, 'monthly_rate', 'monthlyRate'));
+    const totalCents = baseCents + inc.incCents;
+    const rb = inc.rubricas;
 
     rows.push({
       userId,
@@ -201,46 +277,62 @@ async function handler(ctx) {
       email: u.email,
       squad: pick(u, 'squad', 'squad') || null,
       rateType: pick(u, 'rate_type', 'rateType') || null,
+      rateOrigin: rate.origin,
+      rateOriginPending: rate.pending,
       contractType: isClt(u) ? 'CLT' : 'PJ',
       monthlyRate:
         pick(u, 'monthly_rate', 'monthlyRate') != null
           ? Number(pick(u, 'monthly_rate', 'monthlyRate'))
           : null,
-      referenceHourlyRate: toMoney(rate),
-      hasRateWarning: rate <= 0,
+      referenceHourlyRate: toMoney(Number(rate.num) / Number(rate.den)),
+      hasRateWarning: rate.num === 0n,
       workingDaysInMonth: workingDays,
       expectedHours: isClt(u) ? CLT_MONTHLY_HOURS : expectedHours,
-      normalHours,
-      extraAndAttendanceHours: inc.extraAndAttendanceHours,
-      extraAndAttendanceValue: inc.extraAndAttendanceValue,
-      standbyAndBackupHours: inc.standbyAndBackupHours,
-      standbyAndBackupValue: inc.standbyAndBackupValue,
-      incrementalHours: inc.incrementalHours,
-      incrementalTotal: inc.incrementalTotal,
-      basePayment,
-      totalCost,
-      pendingIncrementalCost: pendingInc,
+      normalHours: asHours(normalMinutes),
+      extraMinutes: rb.extra.minutes,
+      extraValue: centsToNumber(rb.extra.cents),
+      attendanceMinutes: rb.attendance.minutes,
+      attendanceValue: centsToNumber(rb.attendance.cents),
+      standbyMinutes: rb.standby.minutes,
+      standbyValue: centsToNumber(rb.standby.cents),
+      backupMinutes: rb.backup.minutes,
+      backupValue: centsToNumber(rb.backup.cents),
+      extraAndAttendanceHours: asHours(inc.eaMinutes),
+      extraAndAttendanceValue: centsToNumber(inc.eaCents),
+      standbyAndBackupHours: asHours(inc.sbMinutes),
+      standbyAndBackupValue: centsToNumber(inc.sbCents),
+      incrementalHours: asHours(inc.incMinutes),
+      incrementalTotal: centsToNumber(inc.incCents),
+      basePayment: centsToNumber(baseCents),
+      totalCost: centsToNumber(totalCents),
+      pendingIncrementalCost: centsToNumber(pendingCents),
+      ignoredEntries: approvedAgg.ignored + pendingAgg.ignored,
     });
 
-    totals.basePayment = toMoney(totals.basePayment + basePayment);
-    totals.normalHours = toMoney(totals.normalHours + normalHours);
-    totals.extraAndAttendanceHours = toMoney(
-      totals.extraAndAttendanceHours + inc.extraAndAttendanceHours,
-    );
-    totals.extraAndAttendanceValue = toMoney(
-      totals.extraAndAttendanceValue + inc.extraAndAttendanceValue,
-    );
-    totals.standbyAndBackupHours = toMoney(
-      totals.standbyAndBackupHours + inc.standbyAndBackupHours,
-    );
-    totals.standbyAndBackupValue = toMoney(
-      totals.standbyAndBackupValue + inc.standbyAndBackupValue,
-    );
-    totals.incrementalHours = toMoney(totals.incrementalHours + inc.incrementalHours);
-    totals.incrementalTotal = toMoney(totals.incrementalTotal + inc.incrementalTotal);
-    totals.totalCost = toMoney(totals.totalCost + totalCost);
-    totals.pendingIncrementalCost = toMoney(totals.pendingIncrementalCost + pendingInc);
+    acc.baseCents += baseCents;
+    acc.normalMinutes += normalMinutes;
+    acc.eaMinutes += inc.eaMinutes;
+    acc.eaCents += inc.eaCents;
+    acc.sbMinutes += inc.sbMinutes;
+    acc.sbCents += inc.sbCents;
+    acc.incMinutes += inc.incMinutes;
+    acc.incCents += inc.incCents;
+    acc.totalCents += totalCents;
+    acc.pendingCents += pendingCents;
   }
+
+  totals = {
+    basePayment: centsToNumber(acc.baseCents),
+    extraAndAttendanceHours: asHours(acc.eaMinutes),
+    extraAndAttendanceValue: centsToNumber(acc.eaCents),
+    standbyAndBackupHours: asHours(acc.sbMinutes),
+    standbyAndBackupValue: centsToNumber(acc.sbCents),
+    normalHours: asHours(acc.normalMinutes),
+    incrementalHours: asHours(acc.incMinutes),
+    incrementalTotal: centsToNumber(acc.incCents),
+    totalCost: centsToNumber(acc.totalCents),
+    pendingIncrementalCost: centsToNumber(acc.pendingCents),
+  };
 
   rows.sort((a, b) => String(a.fullName).localeCompare(String(b.fullName)));
   return ctx.reply.send(Object.assign({}, baseMeta, { rows, totals }));

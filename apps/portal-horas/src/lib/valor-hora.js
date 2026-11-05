@@ -1,7 +1,8 @@
 // Valor hora × valor fixo (mensal) no cadastro de usuários.
 // Os dois campos se calculam um a partir do outro, com o divisor do contrato:
-// PJ = 168 h (referência de sempre), CLT = 200 h fixas. O servidor usa o mesmo
-// divisor quando o valor hora não está gravado (finance-controller).
+// PJ = 168 h (referência de sempre), CLT = 200 h fixas. O valor calculado tem
+// 2 casas só para exibição; o servidor (finance-controller) usa a origem gravada
+// em rate_type e, na origem mensal, mensal ÷ divisor sem arredondar.
 
 export const HORAS_REFERENCIA = Object.freeze({ PJ: 168, CLT: 200 });
 
@@ -32,8 +33,9 @@ export function fixoDaHora(hora, tipo) {
 }
 
 /**
- * Aplica a digitação num dos campos ('hourlyRate' | 'monthlyRate') e recalcula
- * o outro. Guarda em `rateSource` qual foi digitado por último.
+ * Aplica a digitação num dos campos ('hourlyRate' | 'monthlyRate'), recalcula o
+ * outro para exibição e marca a origem em `rateType` ("Tipo de remuneração"),
+ * que é gravado: o servidor calcula a partir da origem, com precisão integral.
  */
 export function editarValor(form, campo, valor) {
   if (campo === 'monthlyRate') {
@@ -41,30 +43,40 @@ export function editarValor(form, campo, valor) {
       ...form,
       monthlyRate: valor,
       hourlyRate: horaDoFixo(valor, form.contractType),
-      rateSource: 'monthly',
+      rateType: 'monthly',
     };
   }
   return {
     ...form,
     hourlyRate: valor,
     monthlyRate: fixoDaHora(valor, form.contractType),
-    rateSource: 'hourly',
+    rateType: 'hourly',
   };
 }
 
 /**
- * Troca o contrato e recalcula o campo que não é a base. A base é o último
- * digitado; sem digitação, o valor fixo (se houver), senão o valor hora.
+ * Troca o contrato e recalcula, a partir da origem gravada, o campo que não é a
+ * origem. Sem origem (cadastro antigo) só o contrato muda: não se adivinha qual
+ * dos dois valores é o verdadeiro.
  */
 export function trocarContrato(form, tipo) {
   const contractType = normalizarContrato(tipo);
-  const base =
-    form.rateSource || (numeroValido(form.monthlyRate) !== null ? 'monthly' : 'hourly');
   const proximo = { ...form, contractType };
-  if (base === 'monthly') {
-    if (numeroValido(form.monthlyRate) === null) return proximo;
+  if (form.rateType === 'monthly' && numeroValido(form.monthlyRate) !== null) {
     return { ...proximo, hourlyRate: horaDoFixo(form.monthlyRate, contractType) };
   }
-  if (numeroValido(form.hourlyRate) === null) return proximo;
-  return { ...proximo, monthlyRate: fixoDaHora(form.hourlyRate, contractType) };
+  if (form.rateType === 'hourly' && numeroValido(form.hourlyRate) !== null) {
+    return { ...proximo, monthlyRate: fixoDaHora(form.hourlyRate, contractType) };
+  }
+  return proximo;
+}
+
+/** Cadastro sem origem com os dois valores: o cálculo usa a hora gravada; revisar. */
+export function origemPendente(form) {
+  return (
+    form.rateType !== 'monthly' &&
+    form.rateType !== 'hourly' &&
+    numeroValido(form.hourlyRate) !== null &&
+    numeroValido(form.monthlyRate) !== null
+  );
 }

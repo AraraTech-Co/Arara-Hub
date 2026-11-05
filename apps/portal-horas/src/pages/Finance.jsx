@@ -224,6 +224,21 @@ export default function Finance() {
                       {row.hasRateWarning && (
                         <div className="mt-1 text-xs text-amber-700">{t('finance.rateWarning')}</div>
                       )}
+                      {row.rateOriginPending && (
+                        <div className="mt-1 text-xs text-amber-700">
+                          {t('finance.rateOriginPending', {
+                            defaultValue: 'Revisar tipo de remuneração no cadastro',
+                          })}
+                        </div>
+                      )}
+                      {row.ignoredEntries > 0 && (
+                        <div className="mt-1 text-xs text-amber-700">
+                          {t('finance.ignoredEntries', {
+                            defaultValue: '{{count}} lançamento(s) com duração inválida fora da conta',
+                            count: row.ignoredEntries,
+                          })}
+                        </div>
+                      )}
                     </td>
                   )}
                   <td className="px-3 py-3 text-ink-muted">{row.squad || t('finance.empty')}</td>
