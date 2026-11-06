@@ -183,3 +183,18 @@ export function cardAtivoDaPessoa<T extends { id: string; status: string; assign
     c.id !== idDoCard && c.status === 'em_desenvolvimento' && String(c.assignee?.id || '') === quem,
   ) || null
 }
+
+/**
+ * O corpo de `POST /tickets/:id/assign` quando a troca vem do seletor de
+ * responsável do quadro Dev.
+ *
+ * `force: true` porque a troca ali é deliberada: sem ele, a rota recusa com
+ * 409 ("já atribuído a outro atendente") todo card que já tem dono — e trocar
+ * o responsável de um card Dev atribuído não funcionava. A regra de um card em
+ * desenvolvimento por pessoa continua valendo: ela é conferida no servidor
+ * depois do `force`, e não é dispensada por ele.
+ */
+export function corpoDaTrocaDeResponsavel(novo: string | null | undefined): { assignee_id: string | null; force: true } {
+  return { assignee_id: String(novo || '').trim() || null, force: true }
+}
+

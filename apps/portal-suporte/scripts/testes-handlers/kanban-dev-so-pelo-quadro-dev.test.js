@@ -13,6 +13,9 @@
 // Roda com: node kanban-dev-so-pelo-quadro-dev.test.js
 const { carregarHandler, reply, ok, fim } = require('./_carregar.js')
 const { camadaFindMany } = require('./_camada.js')
+const { registrarTS, importarTela } = require('./_tela.js')
+
+registrarTS()
 
 const R = {
   statusPatch: '390 tickets PATCH /tickets/:id/status',
@@ -185,6 +188,28 @@ const ATIVO_U7 = card({ id: 'c1', status: 'em_desenvolvimento', assigned_to: 'u7
       const r = await chamar(rota, [doSuporte, card({ id: 'c2', status: 'em_desenvolvimento', assigned_to: 'u8' })],
         { params: { id: 'c2' }, body: corpo('u7') })
       ok(`${rota}:card-ativo-de-outro-quadro-nao-conta`, r.status === 200 && r.gravou, [r.status, r.body.error])
+    }
+  }
+
+  // ── 4. O seletor de responsável do quadro Dev ──────────────────────────
+  //
+  // A tela manda exatamente o corpo desta função. Sem `force`, a rota recusa
+  // com 409 todo card que já tem dono, e trocar o responsável não funcionava.
+  {
+    const L = await importarTela('lib/kanban-dev.ts')
+    const corpo = L.corpoDaTrocaDeResponsavel('u7')
+    ok('seletor:o-corpo-pede-a-troca-deliberada', corpo.force === true && corpo.assignee_id === 'u7', corpo)
+    ok('seletor:sem-responsavel-vira-null', L.corpoDaTrocaDeResponsavel('').assignee_id === null, L.corpoDaTrocaDeResponsavel(''))
+    {
+      const r = await chamar('assignPost', [card({ id: 'c2', status: 'backlog', assigned_to: 'u8' })],
+        { params: { id: 'c2' }, body: L.corpoDaTrocaDeResponsavel('u7') })
+      ok('seletor:troca-o-dono-de-card-que-ja-tem-responsavel', r.status === 200 && r.gravou, [r.status, r.body.error])
+    }
+    {
+      // O `force` não dispensa a regra de um card em desenvolvimento por pessoa.
+      const r = await chamar('assignPost', [ATIVO_U7, card({ id: 'c2', status: 'em_desenvolvimento', assigned_to: 'u8' })],
+        { params: { id: 'c2' }, body: L.corpoDaTrocaDeResponsavel('u7') })
+      ok('seletor:a-troca-deliberada-ainda-respeita-um-por-vez', r.status === 400 && !r.gravou, [r.status, r.body.error])
     }
   }
 

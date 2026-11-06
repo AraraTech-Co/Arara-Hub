@@ -92,6 +92,11 @@ MUTANTES = [
         '((await ctx.models.Ticket.findMany({ limit: 500 })) || []).filter(function (x) {'
         ' return String(x.assigned_to || "") === quem && String(x.status) === "em_desenvolvimento"; })'), T,
      'assignPatch:acima-de-500-cards-da-pessoa-ainda-acha-o-ativo'),
+    # ── o seletor de responsável do quadro Dev ──────────────────────────────
+    ("o-seletor-volta-a-mandar-sem-force", LIB, no_texto(
+        "  return { assignee_id: String(novo || '').trim() || null, force: true }",
+        "  return { assignee_id: String(novo || '').trim() || null } as never"), T,
+     'seletor:troca-o-dono-de-card-que-ja-tem-responsavel'),
 ]
 
 
@@ -104,7 +109,7 @@ def roda(teste):
     return out
 
 
-bases = {p: io.open(p, encoding="utf-8").read() for p in (ROTAS,)}
+bases = {p: io.open(p, encoding="utf-8").read() for p in (ROTAS, LIB)}
 for t in (T,):
     if roda(t):
         sys.exit("! base ja reprova: " + os.path.basename(t))
