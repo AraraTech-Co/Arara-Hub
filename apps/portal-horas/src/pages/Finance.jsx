@@ -354,10 +354,10 @@ export default function Finance() {
               })}
             </p>
             <ul className="mt-2 list-disc space-y-0.5 pl-5 text-xs text-ink-muted">
-              <li>{t('finance.sim.p1', { defaultValue: 'Dia útil: primeiras 2h de cada bloco seguido a 1,75×; o restante a 2× (condição de força maior pendente).' })}</li>
+              <li>{t('finance.sim.p1', { defaultValue: 'Dia útil: as 2 primeiras horas extras do dia a 1,75× (uma vez por dia, na ordem dos horários); o restante a 2× (condição de força maior pendente).' })}</li>
               <li>{t('finance.sim.p2', { defaultValue: 'Sábado, domingo e feriado: 2× desde o primeiro minuto. Dia compensado não é considerado.' })}</li>
               <li>{t('finance.sim.p3', { defaultValue: 'Sobreaviso (só BIP): 1/3 da hora, que continua durante o atendimento (acumula). Backup não é sobreaviso.' })}</li>
-              <li>{t('finance.sim.p4', { defaultValue: 'Hora extra e atendimento colados contam como um bloco só. Só CLT; PJ não tem simulação.' })}</li>
+              <li>{t('finance.sim.p4', { defaultValue: 'Hora extra é o que é lançado como extra; hora extra e atendimento dividem a mesma faixa do dia. Só CLT; PJ não tem simulação.' })}</li>
             </ul>
           </div>
           <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">

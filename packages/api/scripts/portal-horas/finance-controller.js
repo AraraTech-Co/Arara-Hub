@@ -132,11 +132,12 @@ async function handler(ctx) {
   // Confirmado pelo Leonardo em 06/11/2026: hora extra e atendimento dividem a
   // mesma faixa; o 1/3 do sobreaviso continua durante o atendimento (acumula);
   // backup não é sobreaviso (fica fora); os três CLT seguem a CCT com divisor 200.
+  // Também em 06/11: hora extra é o que é lançado como EXTRA (jornada de 8h sem
+  // horário fixo; almoço não é lançado) e a faixa de 2h conta uma vez por dia.
   const SIM = {
     id: 'sim-cct-sindpd-sp-2026',
     validada: false,
     faixaMinutos: 120,
-    faixa: 'consecutiva', // pendente: 'consecutiva' (por bloco) ou 'agregada' (por dia)
     fatorFaixa: [7n, 4n], // 1,75: primeiras 2 h em dia útil (cláusula 12ª)
     fatorExcedente: [2n, 1n], // 2,0 após 2 h em dia útil — pendente: condição de força maior
     fatorFimDeSemana: [2n, 1n], // 2,0 em sábado, domingo e feriado (cláusula 12ª, §1º)
@@ -238,9 +239,9 @@ async function handler(ctx) {
         fimDeSemana += len;
         continue;
       }
-      // Cada pedaço é um bloco seguido: a união já juntou o que se encosta e o
-      // corte só acontece na meia-noite. Na contagem "agregada", a faixa é do dia.
-      const usado = SIM.faixa === 'agregada' ? usadoNoDia[p.dia] || 0 : 0;
+      // A faixa de 2h conta uma vez por dia, na ordem dos horários (os pedaços
+      // vêm ordenados): o que o dia já usou da faixa sai do pedaço seguinte.
+      const usado = usadoNoDia[p.dia] || 0;
       const naFaixa = Math.max(0, Math.min(len, SIM.faixaMinutos - usado));
       faixa += naFaixa;
       excedente += len - naFaixa;
@@ -262,7 +263,7 @@ async function handler(ctx) {
       validada: SIM.validada,
       parametros: {
         faixaMinutos: SIM.faixaMinutos,
-        faixa: SIM.faixa,
+        faixa: 'por dia',
         fatorFaixa: 1.75,
         fatorExcedente: 2,
         fatorFimDeSemana: 2,

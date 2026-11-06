@@ -113,17 +113,31 @@ test('fronteira exata: 120 min fica todo na faixa; 121 min põe 1 min a 2×', as
   assert.equal(b.trabalhoExcedenteValue, 0.73); // 1/60 × 22 × 2 = 0,7333
 });
 
-test('dois blocos separados no mesmo dia: cada um tem a sua faixa (contagem por bloco)', async () => {
+test('dois blocos no mesmo dia dividem a faixa do dia: 120 a 1,75 e o resto a 2×', async () => {
   const s = (
     await sim([
       lanc('EXTRA', '2026-10-06', '18:00', '19:30'),
       lanc('BIP_ATTENDANCE', '2026-10-06', '22:00', '23:30'),
     ])
   ).simulacao;
-  assert.equal(s.parametros.faixa, 'consecutiva');
+  assert.equal(s.parametros.faixa, 'por dia');
+  assert.equal(s.trabalhoFaixaMinutes, 120); // 90 do 1º bloco + 30 do 2º
+  assert.equal(s.trabalhoFaixaValue, 77);
+  assert.equal(s.trabalhoExcedenteMinutes, 60);
+  assert.equal(s.trabalhoExcedenteValue, 44);
+});
+
+test('faixa por dia de calendário: o que passa da meia-noite abre a faixa do dia seguinte', async () => {
+  // Terça 23:00–quarta 01:00 (60 min em cada dia) + quarta 18:00–20:00.
+  const s = (
+    await sim([
+      lanc('BIP_ATTENDANCE', '2026-10-06', '23:00', '01:00'),
+      lanc('EXTRA', '2026-10-07', '18:00', '20:00'),
+    ])
+  ).simulacao;
+  // Terça: 60 na faixa. Quarta: 60 (madrugada) + 60 (18–19) na faixa, 60 (19–20) a 2×.
   assert.equal(s.trabalhoFaixaMinutes, 180);
-  assert.equal(s.trabalhoExcedenteMinutes, 0);
-  assert.equal(s.trabalhoFaixaValue, 115.5);
+  assert.equal(s.trabalhoExcedenteMinutes, 60);
 });
 
 test('hora extra e atendimento colados formam um bloco só', async () => {

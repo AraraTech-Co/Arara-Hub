@@ -357,10 +357,10 @@
     "sim": {
       "title": "Simulacao: regra do escritorio (CCT SINDPD-SP 2026/2027)",
       "notValidated": "Regra nao validada. Nao e valor devido nem altera o calculo oficial acima.",
-      "p1": "Dia util: primeiras 2h de cada bloco seguido a 1,75x; o restante a 2x (condicao de forca maior pendente).",
+      "p1": "Dia util: as 2 primeiras horas extras do dia a 1,75x (uma vez por dia, na ordem dos horarios); o restante a 2x (condicao de forca maior pendente).",
       "p2": "Sabado, domingo e feriado: 2x desde o primeiro minuto. Dia compensado nao e considerado.",
       "p3": "Sobreaviso (so BIP): 1/3 da hora, que continua durante o atendimento (acumula). Backup nao e sobreaviso.",
-      "p4": "Hora extra e atendimento colados contam como um bloco so. So CLT; PJ nao tem simulacao.",
+      "p4": "Hora extra e o que e lancado como extra; hora extra e atendimento dividem a mesma faixa do dia. So CLT; PJ nao tem simulacao.",
       "avisos": "Avisos: {{semHorario}} sem horario, {{comPausa}} com pausa, {{sobrepostos}} sobrepostos",
       "col": {
         "faixa": "Dia util 1,75x",
