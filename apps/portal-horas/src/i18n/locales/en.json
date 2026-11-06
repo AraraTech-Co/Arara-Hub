@@ -360,6 +360,7 @@
       "p2": "Saturday, Sunday and holidays: 2x from the first minute.",
       "p3": "On-call: 1/3 of the hour, which keeps running during attendance. Backup: 1/3 of the hour, as its own item.",
       "p4": "Applies to CLT from October 2026. Minutes repeated across entries count once; entries without time count on their date.",
+      "p5": "Each column shows the time in hours:minutes and in decimal hours (minutes ÷ 60). In payroll, enter the decimal hours: 0:40 is 0.67 h. With 2 decimals, payroll may differ by a few cents.",
       "semHorario": "{{count}} entry(ies) without time: counted on their date",
       "sobrepostos": "{{tempo}} repeated across entries: counted once",
       "duracaoMaior": "{{count}} entry(ies) with duration longer than the time range: {{tempo}} left out",

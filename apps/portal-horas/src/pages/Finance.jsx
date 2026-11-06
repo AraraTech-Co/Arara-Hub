@@ -21,6 +21,11 @@ function hhmm(minutos) {
   return `${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')}`;
 }
 
+/** Minutos inteiros → hora decimal (minutos ÷ 60), o formato da folha. */
+function horasDecimais(minutos) {
+  return Math.max(0, Math.round(Number(minutos) || 0)) / 60;
+}
+
 export default function Finance() {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
@@ -350,6 +355,7 @@ export default function Finance() {
               <li>{t('finance.cct.p2', { defaultValue: 'Sábado, domingo e feriado: 2× desde o primeiro minuto.' })}</li>
               <li>{t('finance.cct.p3', { defaultValue: 'Sobreaviso: 1/3 da hora, que continua durante o atendimento. Backup: 1/3 da hora, em rubrica própria.' })}</li>
               <li>{t('finance.cct.p4', { defaultValue: 'Vale para CLT a partir de outubro/2026. Minuto repetido entre lançamentos conta uma vez; lançamento sem horário conta no dia da data.' })}</li>
+              <li>{t('finance.cct.p5', { defaultValue: 'Cada coluna mostra o tempo em horas:minutos e em hora decimal (minutos ÷ 60). Na folha, lance a hora decimal: 0:40 vira 0,67 h. Com 2 casas, a folha pode dar alguns centavos de diferença.' })}</li>
             </ul>
           </div>
           <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
@@ -371,7 +377,9 @@ export default function Finance() {
                   const cel = (minutos, valor) => (
                     <>
                       <div className="tabular-nums">{moneyFmt.format(valor)}</div>
-                      <div className="text-xs text-ink-muted tabular-nums">{hhmm(minutos)}</div>
+                      <div className="text-xs text-ink-muted tabular-nums whitespace-nowrap">
+                        {hhmm(minutos)} · {numFmt.format(horasDecimais(minutos))} h
+                      </div>
                     </>
                   );
                   const av = c.avisos || {};
