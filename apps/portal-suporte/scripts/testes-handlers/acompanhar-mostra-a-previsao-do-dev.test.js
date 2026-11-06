@@ -137,8 +137,12 @@ async function bateria(cod = ROTA) {
 // TRAVA DA LISTA DE STATUS DEV. Esta rota publica a data do cliente para todo card Dev que NÃO esteja em
 // `aplicado_no_cliente` ou `descartado` (os únicos terminais, os dois sem transição de saída). Um status novo
 // entraria como "aberto" sozinho, sem ninguém decidir se ele publica data ao cliente: por isso este teste falha
-// quando a união `DevStatus` deixa de ter exatamente estes 10 membros.
-const MEMBROS_DEV_STATUS = ['no_status', 'backlog', 'em_desenvolvimento', 'desenvolvimento_finalizado', 'pronto_para_teste', 'em_testes', 'teste_reprovado', 'teste_aprovado', 'aplicado_no_cliente', 'descartado']
+// quando a união `DevStatus` deixa de ter exatamente estes 11 membros.
+//
+// `pausado` (06/11/2026): decidido pelo Leonardo que PUBLICA a data, como Em
+// Desenvolvimento. Pausar é interno; se a pausa mexer no prazo, o Reestimar
+// troca a data que o cliente vê. Por isso a rota 412 não mudou.
+const MEMBROS_DEV_STATUS = ['no_status', 'backlog', 'em_desenvolvimento', 'pausado', 'desenvolvimento_finalizado', 'pronto_para_teste', 'em_testes', 'teste_reprovado', 'teste_aprovado', 'aplicado_no_cliente', 'descartado']
 function membrosDevStatus(texto) {
   const sem = texto.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
   const m = sem.match(/export type DevStatus =((?:\s*\|\s*'[a-z_]+')+)/)
@@ -162,9 +166,9 @@ function tela(txt) {
   const f0 = await bateria()
   ok('a bateria passa limpa', f0.length === 0, f0)
   const membros = membrosDevStatus(KANBAN_DEV)
-  ok('TRAVA: a união DevStatus tem exatamente os 10 membros conhecidos (' + MENSAGEM_STATUS + ')', !!membros && membros.length === 10 && MEMBROS_DEV_STATUS.every((x) => membros.includes(x)) && membros.every((x) => MEMBROS_DEV_STATUS.includes(x)), membros)
-  ok('mutação "um 11º status entra na união" é pega', (() => { const m = membrosDevStatus(KANBAN_DEV.replace("  | 'descartado'", "  | 'descartado'\n  | 'em_homologacao_cliente'")); return !(m && m.length === 10) })())
-  ok('mutação "um status some da união" é pega', (() => { const m = membrosDevStatus(KANBAN_DEV.replace("  | 'em_testes'\n", '')); return !(m && m.length === 10) })())
+  ok('TRAVA: a união DevStatus tem exatamente os 11 membros conhecidos (' + MENSAGEM_STATUS + ')', !!membros && membros.length === 11 && MEMBROS_DEV_STATUS.every((x) => membros.includes(x)) && membros.every((x) => MEMBROS_DEV_STATUS.includes(x)), membros)
+  ok('mutação "um status a mais entra na união" é pega', (() => { const m = membrosDevStatus(KANBAN_DEV.replace("  | 'descartado'", "  | 'descartado'\n  | 'em_homologacao_cliente'")); return !(m && m.length === 11) })())
+  ok('mutação "um status some da união" é pega', (() => { const m = membrosDevStatus(KANBAN_DEV.replace("  | 'em_testes'\n", '')); return !(m && m.length === 11) })())
   ok('os dois terminais da rota são membros da união', ['aplicado_no_cliente', 'descartado'].every((x) => (membros || []).includes(x)))
   ok('a tela lê `previsao_entrega` com a legenda "previsão de entrega"', tela(paginaSemComentarios).length === 0, tela(paginaSemComentarios))
   ok('mutação "a tela perde a condição" é pega', tela(paginaSemComentarios.replace('dados.previsao_entrega ?', 'true ?')).includes('legenda-ou-condicao'))

@@ -13,7 +13,7 @@
 // veio — a mensagem já diz exatamente o que falta.
 // =============================================================================
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState, type MouseEvent as ReactMouseEvent } from 'react'
 import { useCompanies } from '@/hooks/use-companies'
 import { ANEXO_ACCEPT, ANEXO_MAX_MB, anexarAoChamado, motivoRecusaAnexo } from '@/lib/anexos'
 import { TicketAttachments, type AttachmentItem } from '@/components/tickets/ticket-attachments'
@@ -36,8 +36,11 @@ import { useAuth } from '@/lib/arara/AuthProvider'
 import { hasMinRole } from '@/lib/arara/auth-storage'
 import {
   DEV_COLUNAS, DEV_EXIGE, DEV_LABELS, DEV_MARCADOR, DEV_TRANSICOES,
-  numeroDev, type DevStatus,
+  cardAtivoDaPessoa, numeroDev, type DevStatus,
 } from '@/lib/kanban-dev'
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import {
   ehEscolhaDeHml, ehServidorHml, labelServidorHml, SEM_SERVIDOR_HML, SERVIDORES_HML, travaHml,
 } from '@/lib/servidores-hml'
@@ -71,6 +74,8 @@ type Card = {
   created_at?: string
   description?: string | null
   pull_request_url?: string | null
+  /** A pendência que segura o card em Pausado; limpa quando ele sai de lá. */
+  motivo_pausa?: string | null
   declaracoes?: { etapa: string; texto: string; autor?: string | null; em?: string }[]
   reprovacoes?: (Reprovacao & { autor?: string | null; em?: string })[]
   origem_numero?: string | null
@@ -520,6 +525,11 @@ function CardDev({ card, podeMover, onMover, onAbrir, onReestimar }: {
         <PrazoSelo card={card} />
         {card.assignee?.full_name && <span className="truncate">· {card.assignee.full_name}</span>}
       </div>
+      {card.status === 'pausado' && card.motivo_pausa && (
+        <p className="mt-2 rounded bg-amber-500/10 px-2 py-1 text-[11px] leading-snug text-amber-700 dark:text-amber-400">
+          Pausado: {card.motivo_pausa}
+        </p>
+      )}
       {(podeMover && listaDestinos.length > 0) || reestimavel ? (
         <div className="mt-2 flex flex-wrap gap-1">
           {reestimavel && (
@@ -528,12 +538,29 @@ function CardDev({ card, podeMover, onMover, onAbrir, onReestimar }: {
               Reestimar
             </button>
           )}
-          {podeMover && listaDestinos.map((d) => (
-            <button key={d} onClick={(e) => { e.stopPropagation(); onMover(d) }}
-              className="rounded border px-1.5 py-0.5 text-[11px] text-muted-foreground hover:bg-muted">
-              → {DEV_LABELS[d]}
-            </button>
-          ))}
+          {/* Menu, não uma fileira de botões: com nove destinos à mostra, o
+              clique de quem só queria abrir o card mandava o card para longe.
+              O pointerdown não pode virar arraste, e o clique no item (que
+              sobe pelo portal até o cartão) não pode abrir o detalhe. */}
+          {podeMover && listaDestinos.length > 0 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button type="button"
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onClick={(e) => e.stopPropagation()}
+                  className="rounded border px-1.5 py-0.5 text-[11px] text-muted-foreground hover:bg-muted">
+                  Mover para ▾
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" onClick={(e: ReactMouseEvent) => e.stopPropagation()}>
+                {listaDestinos.map((d) => (
+                  <DropdownMenuItem key={d} onSelect={() => onMover(d)} className="text-xs">
+                    {DEV_LABELS[d]}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
       ) : null}
     </div>
@@ -763,11 +790,19 @@ function DialogoMover({ card, para, cards, devs, euId, onFechar, onFeito }: {
     }
   }
 
+  // Um card em desenvolvimento por pessoa: a tela avisa antes de mandar (o
+  // servidor recusa de qualquer jeito) e diz qual card pausar.
+  const vagaOcupada = para === 'em_desenvolvimento'
+    ? cardAtivoDaPessoa(cards, exige.responsavel ? responsavel : card.assignee?.id, card.id)
+    : null
+
   const pronto =
     (!exige.responsavel || !!responsavel) &&
     (!exige.linkGithub || linkGithub.trim() || card.migrado) &&
     (!exige.declaracao || declarado || card.migrado) &&
-    (!exige.motivo || motivo.trim() || card.migrado) &&
+    // O motivo da pausa vale também para card migrado: o servidor exige.
+    (!exige.motivo || motivo.trim() || (card.migrado && para !== 'pausado')) &&
+    !vagaOcupada &&
     (!exige.versao || versao || novaVersao.trim() || card.migrado) &&
     // `ehEscolhaDeHml`: um servidor OU "sem servidor". A escolha continua
     // obrigatória; o que mudou é que agora existe uma a mais.
@@ -783,6 +818,13 @@ function DialogoMover({ card, para, cards, devs, euId, onFechar, onFeito }: {
           {numeroDev(card.ticket_number, card.dev_ticket_number ?? card.devTicketNumber)} → {DEV_LABELS[para]}
         </h2>
         {exige.qa && <p className="mt-1 text-xs text-muted-foreground">Esta etapa exige a permissão de QA.</p>}
+        {vagaOcupada && (
+          <p className="mt-3 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-400">
+            {vagaOcupada.assignee?.full_name || 'Essa pessoa'} já tem o card{' '}
+            {numeroDev(vagaOcupada.ticket_number, vagaOcupada.dev_ticket_number ?? vagaOcupada.devTicketNumber)}{' '}
+            em desenvolvimento. Pause ou finalize esse antes de começar outro.
+          </p>
+        )}
 
         {exige.esforco && (
           <div className="mt-4">
@@ -897,7 +939,11 @@ function DialogoMover({ card, para, cards, devs, euId, onFechar, onFeito }: {
         )}
         {exige.motivo && (
           <textarea value={motivo} onChange={(e) => setMotivo(e.target.value)} rows={3}
-            placeholder={para === 'descartado' ? 'Motivo — ele volta para o atendente responder ao cliente' : 'O que precisa ser corrigido — é o que o desenvolvedor vai ler'}
+            placeholder={para === 'descartado'
+              ? 'Motivo — ele volta para o atendente responder ao cliente'
+              : para === 'pausado'
+                ? 'Qual pendência está segurando o card — aparece no próprio card'
+                : 'O que precisa ser corrigido — é o que o desenvolvedor vai ler'}
             className="mt-4 w-full rounded-md border bg-background px-3 py-2 text-sm" />
         )}
         {exige.reprovacao && (

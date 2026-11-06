@@ -41,6 +41,9 @@ export const PROGRESSO_POR_STATUS: Record<string, number> = {
   no_status: 0,
   backlog: 0,
   em_desenvolvimento: 25,
+  // Pausado vale o mesmo que em desenvolvimento: o trabalho começado não
+  // regride por estar parado.
+  pausado: 25,
   teste_reprovado: 40,
   desenvolvimento_finalizado: 50,
   pronto_para_teste: 70,
