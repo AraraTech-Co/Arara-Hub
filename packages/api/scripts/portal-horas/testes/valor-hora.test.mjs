@@ -93,7 +93,7 @@ function financeComPerfis(perfis) {
     },
   };
   return finance({
-    query: { month: '2026-11' },
+    query: { month: '2026-09' }, // antes da vigência da CCT: regra padrão
     user: { id: 'adm', roles: ['admin'] },
     models: {
       StaffProfile: {

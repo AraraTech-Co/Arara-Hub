@@ -349,27 +349,26 @@
     "month": "Mes",
     "workingDays": "Dias uteis no mes",
     "expectedHours": "Meta de horas (dias uteis x 8h)",
-    "approvedOnlyHint": "Entram apenas horas com status Aprovado ou Ajustado. Valor hora derivado do mensal = salario / 168 (8h x 21 dias uteis em media); CLT: meta de 200h fixas e valor hora = salario / 200. Prontidao e backup: 30% do valor hora.",
+    "approvedOnlyHint": "Entram apenas horas com status Aprovado ou Ajustado. Valor hora derivado do mensal = salario / 168 (8h x 21 dias uteis em media); CLT: meta de 200h fixas e valor hora = salario / 200. Prontidao e backup: 30% do valor hora. Para CLT, a partir de outubro/2026 vale a regra da CCT (detalhe abaixo da tabela); PJ e meses anteriores seguem esta regra.",
     "pendingCostNote": "+ {{amount}} de custo das horas ainda nao aprovadas",
     "loading": "Carregando...",
     "noRows": "Nenhum dado para exibir.",
     "rateWarning": "Sem valor hora ou salario cadastrado",
-    "sim": {
-      "title": "Simulacao: regra do escritorio (CCT SINDPD-SP 2026/2027)",
-      "notValidated": "Regra nao validada. Nao e valor devido nem altera o calculo oficial acima.",
-      "p1": "Dia util: as 2 primeiras horas extras do dia a 1,75x (uma vez por dia, na ordem dos horarios); o restante a 2x (condicao de forca maior pendente).",
-      "p2": "Sabado, domingo e feriado: 2x desde o primeiro minuto. Dia compensado nao e considerado.",
-      "p3": "Sobreaviso (so BIP): 1/3 da hora, que continua durante o atendimento (acumula). Backup nao e sobreaviso.",
-      "p4": "Hora extra e o que e lancado como extra; hora extra e atendimento dividem a mesma faixa do dia. So CLT; PJ nao tem simulacao.",
-      "avisos": "Avisos: {{semHorario}} sem horario, {{comPausa}} com pausa, {{sobrepostos}} sobrepostos",
+    "cct": {
+      "title": "CLT: regra da CCT SINDPD-SP 2026/2027",
+      "p1": "Dia util: as 2 primeiras horas de trabalho do dia a 1,75x; as demais do mesmo dia a 2x. Hora extra e atendimento dividem a faixa do dia.",
+      "p2": "Sabado, domingo e feriado: 2x desde o primeiro minuto.",
+      "p3": "Sobreaviso: 1/3 da hora, que continua durante o atendimento. Backup: 1/3 da hora, em rubrica propria.",
+      "p4": "Vale para CLT a partir de outubro/2026. Minuto repetido entre lancamentos conta uma vez; lancamento sem horario conta no dia da data.",
+      "semHorario": "{{count}} lancamento(s) sem horario: contados no dia da data",
+      "sobrepostos": "{{tempo}} repetidos entre lancamentos: contados uma vez",
+      "duracaoMaior": "{{count}} lancamento(s) com duracao maior que o horario: {{tempo}} fora",
       "col": {
         "faixa": "Dia util 1,75x",
         "excedente": "Dia util 2x (apos 2h)",
         "fimDeSemana": "Fim de semana/feriado 2x",
         "sobreaviso": "Sobreaviso 1/3",
-          "simulado": "Incremental simulado",
-        "oficial": "Incremental oficial",
-        "diferenca": "Diferenca"
+        "backup": "Backup 1/3"
       }
     },
     "rateOriginPending": "Revisar tipo de remuneracao no cadastro",

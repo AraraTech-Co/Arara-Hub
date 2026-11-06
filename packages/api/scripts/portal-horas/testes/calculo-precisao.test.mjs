@@ -11,7 +11,8 @@ import assert from 'node:assert/strict';
 import { carregarHandler } from './_carregar.mjs';
 
 const finance = carregarHandler('GET', '/finance/investment-calculator');
-const MES = '2026-11';
+// Setembro/2026: antes da vigência da CCT (outubro), testa a regra padrão.
+const MES = '2026-09';
 
 function fakeFindMany(rows) {
   return async (filtro = {}) => {
@@ -21,7 +22,7 @@ function fakeFindMany(rows) {
       .slice(0, Math.min(500, Number(filtro.limit) || 500));
   };
 }
-const lanc = (userId, tipo, minutos, status = 'APPROVED', date = '2026-11-10') => ({
+const lanc = (userId, tipo, minutos, status = 'APPROVED', date = '2026-09-10') => ({
   user_id: userId,
   date,
   hour_type: tipo,
