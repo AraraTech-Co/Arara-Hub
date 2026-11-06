@@ -126,6 +126,175 @@ async function handler(ctx) {
   }
   // Soma minutos inteiros por tipo. Duração negativa, fracionária ou não
   // numérica fica fora da conta e é contada em `ignored`.
+  // ── Simulação: regra do escritório + CCT SINDPD-SP 2026/2027 (NÃO validada) ──
+  // Não altera o cálculo oficial. Parâmetros explícitos; os marcados "pendente"
+  // aguardam confirmação do escritório (desenho 2026-11-06-desenho-horas-simulacao-cct).
+  const SIM = {
+    id: 'sim-cct-sindpd-sp-2026',
+    validada: false,
+    faixaMinutos: 120,
+    faixa: 'consecutiva', // pendente: 'consecutiva' (por bloco) ou 'agregada' (por dia)
+    fatorFaixa: [7n, 4n], // 1,75: primeiras 2 h em dia útil (cláusula 12ª)
+    fatorExcedente: [2n, 1n], // 2,0 após 2 h em dia útil — pendente: condição de força maior
+    fatorFimDeSemana: [2n, 1n], // 2,0 em sábado, domingo e feriado (cláusula 12ª, §1º)
+    fatorSobreaviso: [1n, 3n], // 1/3 exato (cláusula 14ª)
+    politica: 'substitui', // pendente: sobreaviso pausa durante trabalho efetivo
+    backupComoSobreaviso: true, // pendente
+  };
+  function minutoDoDia(hhmm) {
+    const m = /^(\d{1,2}):(\d{2})/.exec(String(hhmm || ''));
+    if (!m) return null;
+    const h = Number(m[1]);
+    const min = Number(m[2]);
+    if (h > 23 || min > 59) return null;
+    return h * 60 + min;
+  }
+  function diaDe(ymd) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(ymd || ''));
+    if (!m) return null;
+    return Math.round(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])) / 86400000);
+  }
+  function ymdDe(dia) {
+    return new Date(dia * 86400000).toISOString().slice(0, 10);
+  }
+  // Intervalo absoluto em minutos (dia × 1440 + minuto). Pausa fica no fim.
+  function intervaloDe(e, avisos) {
+    const dia = diaDe(pick(e, 'date', 'date'));
+    const ini = minutoDoDia(pick(e, 'start_time', 'startTime'));
+    const fim = minutoDoDia(pick(e, 'end_time', 'endTime'));
+    if (dia === null || ini === null || fim === null) {
+      avisos.semHorario += 1;
+      return null;
+    }
+    const bruto = fim > ini ? fim - ini : fim + 1440 - ini;
+    let dur = bruto;
+    const d = Number(pick(e, 'duration_minutes', 'durationMinutes'));
+    if (Number.isInteger(d) && d >= 0 && d < bruto) {
+      dur = d;
+      avisos.comPausa += 1;
+    }
+    const start = dia * 1440 + ini;
+    return { start, end: start + dur };
+  }
+  function uniao(ivs) {
+    const s = ivs.filter((x) => x && x.end > x.start).sort((a, b) => a.start - b.start);
+    const out = [];
+    for (const iv of s) {
+      const ult = out[out.length - 1];
+      if (ult && iv.start <= ult.end) ult.end = Math.max(ult.end, iv.end);
+      else out.push({ start: iv.start, end: iv.end });
+    }
+    return out;
+  }
+  function soma(ivs) {
+    return ivs.reduce((t, iv) => t + (iv.end - iv.start), 0);
+  }
+  function intersecao(a, b) {
+    let i = 0;
+    let j = 0;
+    let total = 0;
+    while (i < a.length && j < b.length) {
+      const ini = Math.max(a[i].start, b[j].start);
+      const fim = Math.min(a[i].end, b[j].end);
+      if (fim > ini) total += fim - ini;
+      if (a[i].end < b[j].end) i += 1;
+      else j += 1;
+    }
+    return total;
+  }
+  // Corta na meia-noite: cada pedaço pertence ao próprio dia.
+  function porDia(ivs) {
+    const out = [];
+    for (const iv of ivs) {
+      let s = iv.start;
+      while (s < iv.end) {
+        const dia = Math.floor(s / 1440);
+        const e = Math.min(iv.end, (dia + 1) * 1440);
+        out.push({ dia, start: s, end: e });
+        s = e;
+      }
+    }
+    return out;
+  }
+  function simular(entries, rate, feriados, baseCents, oficialCents) {
+    const avisos = { comPausa: 0, semHorario: 0, minutosSobrepostosTrabalho: 0 };
+    const tipo = (e) => pick(e, 'hour_type', 'hourType');
+    const trabalhoIvs = [];
+    const sobreavisoIvs = [];
+    for (const e of entries) {
+      const t = tipo(e);
+      const ehTrabalho = t === HOUR_TYPES.EXTRA || t === HOUR_TYPES.BIP_ATTENDANCE;
+      const ehSobreaviso =
+        t === HOUR_TYPES.BIP_STANDBY || (SIM.backupComoSobreaviso && t === HOUR_TYPES.BIP_BACKUP);
+      if (!ehTrabalho && !ehSobreaviso) continue;
+      const iv = intervaloDe(e, avisos);
+      if (!iv) continue;
+      (ehTrabalho ? trabalhoIvs : sobreavisoIvs).push(iv);
+    }
+    const trabalho = uniao(trabalhoIvs);
+    avisos.minutosSobrepostosTrabalho = soma(trabalhoIvs) - soma(trabalho);
+
+    let faixa = 0;
+    let excedente = 0;
+    let fimDeSemana = 0;
+    const pedacos = porDia(trabalho);
+    const usadoNoDia = {};
+    for (const p of pedacos) {
+      const dow = (((p.dia + 4) % 7) + 7) % 7; // 1970-01-01 = quinta; 0 = domingo
+      const len = p.end - p.start;
+      if (dow === 0 || dow === 6 || feriados.has(ymdDe(p.dia))) {
+        fimDeSemana += len;
+        continue;
+      }
+      // Cada pedaço é um bloco seguido: a união já juntou o que se encosta e o
+      // corte só acontece na meia-noite. Na contagem "agregada", a faixa é do dia.
+      const usado = SIM.faixa === 'agregada' ? usadoNoDia[p.dia] || 0 : 0;
+      const naFaixa = Math.max(0, Math.min(len, SIM.faixaMinutos - usado));
+      faixa += naFaixa;
+      excedente += len - naFaixa;
+      usadoNoDia[p.dia] = (usadoNoDia[p.dia] || 0) + len;
+    }
+
+    const sobreaviso = uniao(sobreavisoIvs);
+    const sobreavisoBruto = soma(sobreaviso);
+    const sobreavisoAbatido = SIM.politica === 'substitui' ? intersecao(sobreaviso, trabalho) : 0;
+    const sobreavisoLiquido = sobreavisoBruto - sobreavisoAbatido;
+
+    const c = (min, f) => rubricaCents(min, rate, f[0], f[1]);
+    const cFaixa = c(faixa, SIM.fatorFaixa);
+    const cExcedente = c(excedente, SIM.fatorExcedente);
+    const cFimDeSemana = c(fimDeSemana, SIM.fatorFimDeSemana);
+    const cSobreaviso = c(sobreavisoLiquido, SIM.fatorSobreaviso);
+    const incCents = cFaixa + cExcedente + cFimDeSemana + cSobreaviso;
+    return {
+      regra: SIM.id,
+      validada: SIM.validada,
+      parametros: {
+        faixaMinutos: SIM.faixaMinutos,
+        faixa: SIM.faixa,
+        fatorFaixa: 1.75,
+        fatorExcedente: 2,
+        fatorFimDeSemana: 2,
+        fatorSobreaviso: '1/3',
+        politica: SIM.politica,
+        backupComoSobreaviso: SIM.backupComoSobreaviso,
+      },
+      trabalhoFaixaMinutes: faixa,
+      trabalhoFaixaValue: centsToNumber(cFaixa),
+      trabalhoExcedenteMinutes: excedente,
+      trabalhoExcedenteValue: centsToNumber(cExcedente),
+      trabalhoFimDeSemanaMinutes: fimDeSemana,
+      trabalhoFimDeSemanaValue: centsToNumber(cFimDeSemana),
+      sobreavisoBrutoMinutes: sobreavisoBruto,
+      sobreavisoAbatidoMinutes: sobreavisoAbatido,
+      sobreavisoLiquidoMinutes: sobreavisoLiquido,
+      sobreavisoValue: centsToNumber(cSobreaviso),
+      incrementalTotal: centsToNumber(incCents),
+      totalCost: centsToNumber(baseCents + incCents),
+      diferenca: centsToNumber(incCents - oficialCents),
+      avisos,
+    };
+  }
   function aggregateMinutes(entries) {
     const byType = {};
     let ignored = 0;
@@ -190,6 +359,10 @@ async function handler(ctx) {
   }
 
   const workingDays = countWorkingDays(year, monthNum, holidaySet);
+  // Todos os feriados (a simulação classifica pedaços que passam da virada do mês).
+  const feriados = new Set(
+    allHolidays.map((h) => String(pick(h, 'date', 'date') || '').slice(0, 10)),
+  );
   const expectedHours = Number((workingDays * 8).toFixed(2));
   const baseMeta = {
     month,
@@ -307,6 +480,7 @@ async function handler(ctx) {
       totalCost: centsToNumber(totalCents),
       pendingIncrementalCost: centsToNumber(pendingCents),
       ignoredEntries: approvedAgg.ignored + pendingAgg.ignored,
+      simulacao: isClt(u) ? simular(approved, rate, feriados, baseCents, inc.incCents) : null,
     });
 
     acc.baseCents += baseCents;

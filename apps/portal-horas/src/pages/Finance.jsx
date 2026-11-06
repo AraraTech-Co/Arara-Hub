@@ -15,6 +15,12 @@ function shiftMonthYm(ym, delta) {
   return format(new Date(y, (m || 1) - 1 + delta, 1), 'yyyy-MM');
 }
 
+/** Minutos inteiros → HH:MM (a duração exata, sem hora decimal). */
+function hhmm(minutos) {
+  const m = Math.max(0, Math.round(Number(minutos) || 0));
+  return `${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')}`;
+}
+
 export default function Finance() {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
@@ -89,6 +95,9 @@ export default function Finance() {
       pendingIncrementalCost: sum('pendingIncrementalCost'),
     };
   }, [isAdmin, totals, visibleRows]);
+
+  // Linhas com simulação (CLT); PJ vem sem simulação.
+  const simRows = useMemo(() => visibleRows.filter((r) => r.simulacao), [visibleRows]);
 
   const monthLocale = i18n.language?.toLowerCase().startsWith('pt') ? 'pt-BR' : 'en-US';
   const [monthY, monthM] = String(month).split('-').map(Number);
@@ -327,6 +336,88 @@ export default function Finance() {
             )}
           </table>
         </div>
+      )}
+
+      {/* Simulação da regra do escritório: não altera os valores acima. */}
+      {isAdmin && !loading && simRows.length > 0 && (
+        <section className="space-y-3 rounded-xl border-2 border-amber-300 bg-white p-4">
+          <div>
+            <h2 className="text-base font-semibold text-ink">
+              {t('finance.sim.title', {
+                defaultValue: 'Simulação: regra do escritório (CCT SINDPD-SP 2026/2027)',
+              })}
+            </h2>
+            <p className="mt-1 text-sm font-medium text-amber-800">
+              {t('finance.sim.notValidated', {
+                defaultValue:
+                  'Regra não validada. Não é valor devido nem altera o cálculo oficial acima.',
+              })}
+            </p>
+            <ul className="mt-2 list-disc space-y-0.5 pl-5 text-xs text-ink-muted">
+              <li>{t('finance.sim.p1', { defaultValue: 'Dia útil: primeiras 2h de cada bloco seguido a 1,75×; o restante a 2× (condição de força maior pendente).' })}</li>
+              <li>{t('finance.sim.p2', { defaultValue: 'Sábado, domingo e feriado: 2× desde o primeiro minuto. Dia compensado não é considerado.' })}</li>
+              <li>{t('finance.sim.p3', { defaultValue: 'Sobreaviso (BIP e backup): 1/3 da hora; o sobreaviso pausa durante o trabalho (minutos abatidos).' })}</li>
+              <li>{t('finance.sim.p4', { defaultValue: 'Hora extra e atendimento colados contam como um bloco só. Só CLT; PJ não tem simulação.' })}</li>
+            </ul>
+          </div>
+          <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
+            <table className="min-w-[900px] w-full border-collapse text-sm">
+              <thead>
+                <tr className="border-b border-gray-200 bg-gray-50 text-left text-xs font-semibold uppercase tracking-wide text-ink-muted">
+                  <th className="px-3 py-3">{t('finance.col.employee')}</th>
+                  <th className="px-3 py-3 text-right">{t('finance.sim.col.faixa', { defaultValue: 'Dia útil 1,75×' })}</th>
+                  <th className="px-3 py-3 text-right">{t('finance.sim.col.excedente', { defaultValue: 'Dia útil 2× (após 2h)' })}</th>
+                  <th className="px-3 py-3 text-right">{t('finance.sim.col.fimDeSemana', { defaultValue: 'Fim de semana/feriado 2×' })}</th>
+                  <th className="px-3 py-3 text-right">{t('finance.sim.col.sobreaviso', { defaultValue: 'Sobreaviso 1/3' })}</th>
+                  <th className="px-3 py-3 text-right">{t('finance.sim.col.abatido', { defaultValue: 'Sobreaviso abatido' })}</th>
+                  <th className="px-3 py-3 text-right">{t('finance.sim.col.simulado', { defaultValue: 'Incremental simulado' })}</th>
+                  <th className="px-3 py-3 text-right">{t('finance.sim.col.oficial', { defaultValue: 'Incremental oficial' })}</th>
+                  <th className="px-3 py-3 text-right">{t('finance.sim.col.diferenca', { defaultValue: 'Diferença' })}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {simRows.map((row) => {
+                  const s = row.simulacao;
+                  const cel = (minutos, valor) => (
+                    <>
+                      <div className="tabular-nums">{moneyFmt.format(valor)}</div>
+                      <div className="text-xs text-ink-muted tabular-nums">{hhmm(minutos)}</div>
+                    </>
+                  );
+                  const av = s.avisos || {};
+                  return (
+                    <tr key={row.userId} className="border-b border-gray-100 last:border-0">
+                      <td className="px-3 py-3">
+                        <div className="font-medium text-ink">{row.fullName}</div>
+                        {(av.semHorario > 0 || av.comPausa > 0 || av.minutosSobrepostosTrabalho > 0) && (
+                          <div className="mt-1 text-xs text-amber-700">
+                            {t('finance.sim.avisos', {
+                              defaultValue:
+                                'Avisos: {{semHorario}} sem horário, {{comPausa}} com pausa, {{sobrepostos}} sobrepostos',
+                              semHorario: av.semHorario || 0,
+                              comPausa: av.comPausa || 0,
+                              sobrepostos: hhmm(av.minutosSobrepostosTrabalho || 0),
+                            })}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-3 py-3 text-right">{cel(s.trabalhoFaixaMinutes, s.trabalhoFaixaValue)}</td>
+                      <td className="px-3 py-3 text-right">{cel(s.trabalhoExcedenteMinutes, s.trabalhoExcedenteValue)}</td>
+                      <td className="px-3 py-3 text-right">{cel(s.trabalhoFimDeSemanaMinutes, s.trabalhoFimDeSemanaValue)}</td>
+                      <td className="px-3 py-3 text-right">{cel(s.sobreavisoLiquidoMinutes, s.sobreavisoValue)}</td>
+                      <td className="px-3 py-3 text-right tabular-nums text-ink-muted">{hhmm(s.sobreavisoAbatidoMinutes)}</td>
+                      <td className="px-3 py-3 text-right font-semibold tabular-nums">{moneyFmt.format(s.incrementalTotal)}</td>
+                      <td className="px-3 py-3 text-right tabular-nums">{moneyFmt.format(row.incrementalTotal)}</td>
+                      <td className={`px-3 py-3 text-right font-medium tabular-nums ${s.diferenca >= 0 ? 'text-emerald-700' : 'text-red-700'}`}>
+                        {(s.diferenca > 0 ? '+' : '') + moneyFmt.format(s.diferenca)}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </section>
       )}
     </div>
   );

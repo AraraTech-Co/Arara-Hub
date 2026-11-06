@@ -169,7 +169,10 @@ test('fracionamento: 30 + 30 + 60 min = 120 min numa entrada só', async () => {
   );
   const b = linha(await rodar([ADMIN, p], [lanc('s1', 'EXTRA', 120)]));
   assert.equal(a.extraValue, 65.43);
-  assert.deepEqual(a, b);
+  // Compara o cálculo oficial; a simulação conta avisos por lançamento (sem horário).
+  const { simulacao: _sa, ...oficialA } = a;
+  const { simulacao: _sb, ...oficialB } = b;
+  assert.deepEqual(oficialA, oficialB);
 });
 
 test('status: APPROVED e ADJUSTED entram; PENDING à parte; REJECTED fora', async () => {
