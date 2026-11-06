@@ -359,7 +359,7 @@
       "notValidated": "Regra nao validada. Nao e valor devido nem altera o calculo oficial acima.",
       "p1": "Dia util: primeiras 2h de cada bloco seguido a 1,75x; o restante a 2x (condicao de forca maior pendente).",
       "p2": "Sabado, domingo e feriado: 2x desde o primeiro minuto. Dia compensado nao e considerado.",
-      "p3": "Sobreaviso (BIP e backup): 1/3 da hora; o sobreaviso pausa durante o trabalho (minutos abatidos).",
+      "p3": "Sobreaviso (so BIP): 1/3 da hora, que continua durante o atendimento (acumula). Backup nao e sobreaviso.",
       "p4": "Hora extra e atendimento colados contam como um bloco so. So CLT; PJ nao tem simulacao.",
       "avisos": "Avisos: {{semHorario}} sem horario, {{comPausa}} com pausa, {{sobrepostos}} sobrepostos",
       "col": {
@@ -367,8 +367,7 @@
         "excedente": "Dia util 2x (apos 2h)",
         "fimDeSemana": "Fim de semana/feriado 2x",
         "sobreaviso": "Sobreaviso 1/3",
-        "abatido": "Sobreaviso abatido",
-        "simulado": "Incremental simulado",
+          "simulado": "Incremental simulado",
         "oficial": "Incremental oficial",
         "diferenca": "Diferenca"
       }

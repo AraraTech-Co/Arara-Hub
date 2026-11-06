@@ -72,7 +72,7 @@ async function sim(lancamentos, { hora = 22, perfil = {}, feriados = [] } = {}) 
   return res.body.rows.find((r) => r.userId === 'c');
 }
 
-test('exemplo do escritório: domingo, escala 12h, atendimento 2h, H = 30 → 100 + 120 = 220', async () => {
+test('domingo, escala 12h, atendimento 2h, H = 30 → 1/3 nas 12h (120) + 2× no atendimento (120) = 240', async () => {
   const r = await sim(
     [
       lanc('BIP_STANDBY', '2026-10-04', '08:00', '20:00'),
@@ -83,16 +83,15 @@ test('exemplo do escritório: domingo, escala 12h, atendimento 2h, H = 30 → 10
   const s = r.simulacao;
   assert.equal(s.validada, false);
   assert.equal(s.regra, 'sim-cct-sindpd-sp-2026');
-  assert.equal(s.sobreavisoBrutoMinutes, 720);
-  assert.equal(s.sobreavisoAbatidoMinutes, 120);
-  assert.equal(s.sobreavisoLiquidoMinutes, 600);
-  assert.equal(s.sobreavisoValue, 100);
+  assert.equal(s.parametros.politica, 'acumula');
+  assert.equal(s.sobreavisoMinutes, 720); // acumula: não abate as 2h atendidas
+  assert.equal(s.sobreavisoValue, 120);
   assert.equal(s.trabalhoFimDeSemanaMinutes, 120);
   assert.equal(s.trabalhoFimDeSemanaValue, 120);
-  assert.equal(s.incrementalTotal, 220);
+  assert.equal(s.incrementalTotal, 240);
   // O oficial não muda: 720 min × 30 × 0,3 + 120 min × 30 × 1 = 108 + 60.
   assert.equal(r.incrementalTotal, 168);
-  assert.equal(s.diferenca, 52);
+  assert.equal(s.diferenca, 72);
 });
 
 test('dia útil: 3h seguidas → 120 min a 1,75 (77,00) + 60 min a 2 (44,00)', async () => {
@@ -166,20 +165,19 @@ test('sobreaviso a 1/3 exato: 3h = H; 1h = 7,33', async () => {
   assert.equal(uma.sobreavisoValue, 7.33);
 });
 
-test('interseção parcial: escala 10–12, atendimento 11:30–12:30 → abate 30 min', async () => {
+test('acumula: atendimento dentro da escala não tira minutos do 1/3', async () => {
   const s = (
     await sim([
       lanc('BIP_STANDBY', '2026-10-06', '10:00', '12:00'),
       lanc('BIP_ATTENDANCE', '2026-10-06', '11:30', '12:30'),
     ])
   ).simulacao;
-  assert.equal(s.sobreavisoAbatidoMinutes, 30);
-  assert.equal(s.sobreavisoLiquidoMinutes, 90);
-  assert.equal(s.sobreavisoValue, 11);
-  assert.equal(s.trabalhoFaixaValue, 38.5);
+  assert.equal(s.sobreavisoMinutes, 120);
+  assert.equal(s.sobreavisoValue, 14.67); // 120 min × 22 ÷ 3 = 14,666…
+  assert.equal(s.trabalhoFaixaValue, 38.5); // 60 min × 22 × 1,75
 });
 
-test('atendimentos sobrepostos: abate a união (90 min), não 120; sobreposição sinalizada', async () => {
+test('atendimentos sobrepostos contam uma vez (90 min, não 120) e são sinalizados', async () => {
   const s = (
     await sim([
       lanc('BIP_STANDBY', '2026-10-06', '10:00', '12:00'),
@@ -187,17 +185,33 @@ test('atendimentos sobrepostos: abate a união (90 min), não 120; sobreposiçã
       lanc('BIP_ATTENDANCE', '2026-10-06', '11:00', '12:00'),
     ])
   ).simulacao;
-  assert.equal(s.sobreavisoAbatidoMinutes, 90);
-  assert.equal(s.sobreavisoValue, 3.67); // 30 min × 22 ÷ 3
+  assert.equal(s.sobreavisoValue, 14.67);
   assert.equal(s.trabalhoFaixaMinutes, 90);
   assert.equal(s.trabalhoFaixaValue, 57.75);
   assert.equal(s.avisos.minutosSobrepostosTrabalho, 30);
 });
 
-test('backup conta como sobreaviso (premissa pendente)', async () => {
-  const s = (await sim([lanc('BIP_BACKUP', '2026-10-06', '09:00', '12:00')])).simulacao;
-  assert.equal(s.parametros.backupComoSobreaviso, true);
+test('sobreaviso sobreposto conta uma vez e é sinalizado', async () => {
+  const s = (
+    await sim([
+      lanc('BIP_STANDBY', '2026-10-06', '09:00', '11:00'),
+      lanc('BIP_STANDBY', '2026-10-06', '10:00', '12:00'),
+    ])
+  ).simulacao;
+  assert.equal(s.sobreavisoMinutes, 180);
   assert.equal(s.sobreavisoValue, 22);
+  assert.equal(s.avisos.minutosSobrepostosSobreaviso, 60);
+});
+
+test('backup não é sobreaviso: fica fora da simulação (o oficial continua contando)', async () => {
+  const r = await sim([lanc('BIP_BACKUP', '2026-10-06', '09:00', '12:00')]);
+  assert.equal(r.simulacao.parametros.backup, 'fora');
+  assert.equal(r.simulacao.sobreavisoMinutes, 0);
+  assert.equal(r.simulacao.incrementalTotal, 0);
+  // Contraste: o mesmo período como BIP vira 1/3 na simulação.
+  const bip = (await sim([lanc('BIP_STANDBY', '2026-10-06', '09:00', '12:00')])).simulacao;
+  assert.equal(bip.sobreavisoValue, 22);
+  assert.equal(r.backupValue, 19.8); // oficial: 3 h × 22 × 0,3
 });
 
 test('pausa: intervalo encurtado pela duração gravada e sinalizado', async () => {
