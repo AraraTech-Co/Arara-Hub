@@ -34,6 +34,7 @@ export type DevStatus =
   | 'no_status'
   | 'backlog'
   | 'em_desenvolvimento'
+  | 'pausado'
   | 'desenvolvimento_finalizado'
   | 'pronto_para_teste'
   | 'em_testes'
@@ -48,6 +49,7 @@ export const DEV_LABELS: Record<DevStatus, string> = {
   no_status: 'Backlog',
   backlog: 'Aguardando Início',
   em_desenvolvimento: 'Em Desenvolvimento',
+  pausado: 'Pausado',
   desenvolvimento_finalizado: 'Dev Finalizado',
   pronto_para_teste: 'Pronto para Teste',
   em_testes: 'Em Testes',
@@ -62,6 +64,9 @@ export const DEV_COLUNAS: { id: string; titulo: string; statuses: DevStatus[] }[
   { id: 'no_status', titulo: 'Backlog', statuses: ['no_status'] },
   { id: 'backlog', titulo: 'Aguardando Início', statuses: ['backlog'] },
   { id: 'em_desenvolvimento', titulo: 'Em Desenvolvimento', statuses: ['em_desenvolvimento'] },
+  // Trabalho começado que parou por uma pendência. Fica ao lado de Em
+  // Desenvolvimento porque é dali que o card sai e é para lá que ele volta.
+  { id: 'pausado', titulo: 'Pausado', statuses: ['pausado'] },
   { id: 'dev_finalizado', titulo: 'Dev Finalizado', statuses: ['desenvolvimento_finalizado'] },
   { id: 'pronto_para_teste', titulo: 'Pronto p/ Teste', statuses: ['pronto_para_teste'] },
   { id: 'em_testes', titulo: 'Em Testes', statuses: ['em_testes'] },
@@ -83,7 +88,8 @@ export const DEV_MARCADOR: Partial<Record<DevStatus, { texto: string; classe: st
 export const DEV_TRANSICOES: Record<DevStatus, DevStatus[]> = {
   no_status: ['backlog', 'descartado'],
   backlog: ['em_desenvolvimento', 'descartado'],
-  em_desenvolvimento: ['desenvolvimento_finalizado', 'descartado'],
+  em_desenvolvimento: ['desenvolvimento_finalizado', 'pausado', 'descartado'],
+  pausado: ['em_desenvolvimento', 'descartado'],
   desenvolvimento_finalizado: ['pronto_para_teste', 'em_desenvolvimento'],
   pronto_para_teste: ['em_testes', 'em_desenvolvimento'],
   em_testes: ['teste_aprovado', 'teste_reprovado'],
@@ -113,6 +119,9 @@ export const DEV_EXIGE: Partial<Record<DevStatus, {
   backlog: { esforco: true },
   // Quadro é de PUXAR trabalho: quem move assume, salvo escolha explícita.
   em_desenvolvimento: { responsavel: true },
+  // A pendência que segura o card: fica no cartão e no histórico. O servidor
+  // exige mesmo em card migrado (a coluna nasceu depois da virada).
+  pausado: { motivo: true },
   // O link do PR entra ao finalizar o desenvolvimento — é o artefato da entrega,
   // não um campo da fila de revisão.
   desenvolvimento_finalizado: {
@@ -153,4 +162,24 @@ export function numeroDev(
   if (n.startsWith('DEV-')) return n
   const m = n.match(/(\d+)\s*$/)
   return m ? `DEV-${String(parseInt(m[1], 10)).padStart(5, '0')}` : n || 'DEV-?'
+}
+
+/**
+ * O card que já ocupa a vaga da pessoa em Em Desenvolvimento, ou null.
+ *
+ * Um card em desenvolvimento por pessoa (06/11/2026). A regra mora no servidor
+ * (`POST /dev/tickets/:id/mover`); esta é a cortesia da tela, para avisar antes
+ * de mandar e dizer qual card pausar. Mesma conta do servidor: mesmo
+ * responsável, status `em_desenvolvimento`, outro card.
+ */
+export function cardAtivoDaPessoa<T extends { id: string; status: string; assignee?: { id: string } | null }>(
+  cards: T[],
+  responsavel: string | null | undefined,
+  idDoCard: string,
+): T | null {
+  const quem = String(responsavel || '').trim()
+  if (!quem) return null
+  return cards.find((c) =>
+    c.id !== idDoCard && c.status === 'em_desenvolvimento' && String(c.assignee?.id || '') === quem,
+  ) || null
 }

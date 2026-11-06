@@ -337,7 +337,13 @@ async function roda() {
 
     const { contexto } = carregar('293 projetos GET /projetos/:id')
     const chavesServidor = Object.keys(contexto._PCT).sort()
-    ok('servidor-expoe-o-mapa', chavesServidor.length === 10, chavesServidor)
+    // 11 desde 06/11/2026: `pausado` entrou valendo o mesmo que em
+    // desenvolvimento (scripts/kanban-dev-um-por-vez.py).
+    ok('servidor-expoe-o-mapa', chavesServidor.length === 11, chavesServidor)
+    const pctTela = Number((bloco.match(/^\s{2}pausado:\s*(\d+)/m) || [])[1])
+    ok('pausado-vale-o-mesmo-que-em-desenvolvimento-nos-dois-lados',
+      contexto._PCT.pausado === contexto._PCT.em_desenvolvimento && pctTela === contexto._PCT.em_desenvolvimento,
+      { servidor: contexto._PCT.pausado, tela: pctTela })
 
     const faltando = chavesServidor.filter((k) => !chavesTela.includes(k))
     ok('atual conhecido: tela-nao-tem-em-revisao', faltando.length === 1 && faltando[0] === 'em_revisao', { faltando, chavesTela })
