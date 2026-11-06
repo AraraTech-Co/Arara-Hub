@@ -130,6 +130,8 @@ async function handler(ctx) {
   // e as demais do mesmo dia a 2×; sábado, domingo e feriado a 2×; hora extra e
   // atendimento dividem a faixa do dia; sobreaviso (BIP) a 1/3, acumulando com
   // o atendimento; backup não é sobreaviso e mantém 1/3 em rubrica própria.
+  // O sobreaviso usa o coeficiente 0,333 da rubrica da folha (o campo aceita
+  // 3 casas), para o valor daqui bater com o holerite.
   // PJ e meses anteriores à vigência seguem as RUBRICAS acima.
   const CCT = {
     id: 'cct-sindpd-sp-2026',
@@ -138,7 +140,7 @@ async function handler(ctx) {
     fatorFaixa: [7n, 4n], // 1,75
     fatorExcedente: [2n, 1n], // 2,0
     fatorFimDeSemana: [2n, 1n], // 2,0
-    fatorSobreaviso: [1n, 3n], // 1/3 exato
+    fatorSobreaviso: [333n, 1000n], // 0,333, o coeficiente da folha
     fatorBackup: [1n, 3n], // 1/3 exato
   };
   function usaCct(user, ym) {

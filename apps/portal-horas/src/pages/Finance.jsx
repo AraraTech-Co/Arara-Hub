@@ -353,7 +353,7 @@ export default function Finance() {
             <ul className="mt-2 list-disc space-y-0.5 pl-5 text-xs text-ink-muted">
               <li>{t('finance.cct.p1', { defaultValue: 'Dia útil: as 2 primeiras horas de trabalho do dia a 1,75×; as demais do mesmo dia a 2×. Hora extra e atendimento dividem a faixa do dia.' })}</li>
               <li>{t('finance.cct.p2', { defaultValue: 'Sábado, domingo e feriado: 2× desde o primeiro minuto.' })}</li>
-              <li>{t('finance.cct.p3', { defaultValue: 'Sobreaviso: 1/3 da hora, que continua durante o atendimento. Backup: 1/3 da hora, em rubrica própria.' })}</li>
+              <li>{t('finance.cct.p3', { defaultValue: 'Sobreaviso: 0,333 da hora (o coeficiente da folha), que continua durante o atendimento. Backup: 1/3 da hora, em rubrica própria.' })}</li>
               <li>{t('finance.cct.p4', { defaultValue: 'Vale para CLT a partir de outubro/2026. Minuto repetido entre lançamentos conta uma vez; lançamento sem horário conta no dia da data.' })}</li>
               <li>{t('finance.cct.p5', { defaultValue: 'Cada coluna mostra o tempo em horas:minutos e em hora decimal (minutos ÷ 60). Na folha, lance a hora decimal: 0:40 vira 0,67 h. Com 2 casas, a folha pode dar alguns centavos de diferença.' })}</li>
             </ul>
@@ -366,7 +366,7 @@ export default function Finance() {
                   <th className="px-3 py-3 text-right">{t('finance.cct.col.faixa', { defaultValue: 'Dia útil 1,75×' })}</th>
                   <th className="px-3 py-3 text-right">{t('finance.cct.col.excedente', { defaultValue: 'Dia útil 2× (após 2h)' })}</th>
                   <th className="px-3 py-3 text-right">{t('finance.cct.col.fimDeSemana', { defaultValue: 'Fim de semana/feriado 2×' })}</th>
-                  <th className="px-3 py-3 text-right">{t('finance.cct.col.sobreaviso', { defaultValue: 'Sobreaviso 1/3' })}</th>
+                  <th className="px-3 py-3 text-right">{t('finance.cct.col.sobreaviso', { defaultValue: 'Sobreaviso 0,333' })}</th>
                   <th className="px-3 py-3 text-right">{t('finance.cct.col.backup', { defaultValue: 'Backup 1/3' })}</th>
                   <th className="px-3 py-3 text-right">{t('finance.col.incremental')}</th>
                 </tr>

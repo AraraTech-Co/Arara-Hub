@@ -358,7 +358,7 @@
       "title": "CLT: regra da CCT SINDPD-SP 2026/2027",
       "p1": "Dia util: as 2 primeiras horas de trabalho do dia a 1,75x; as demais do mesmo dia a 2x. Hora extra e atendimento dividem a faixa do dia.",
       "p2": "Sabado, domingo e feriado: 2x desde o primeiro minuto.",
-      "p3": "Sobreaviso: 1/3 da hora, que continua durante o atendimento. Backup: 1/3 da hora, em rubrica propria.",
+      "p3": "Sobreaviso: 0,333 da hora (o coeficiente da folha), que continua durante o atendimento. Backup: 1/3 da hora, em rubrica propria.",
       "p4": "Vale para CLT a partir de outubro/2026. Minuto repetido entre lancamentos conta uma vez; lancamento sem horario conta no dia da data.",
       "p5": "Cada coluna mostra o tempo em horas:minutos e em hora decimal (minutos ÷ 60). Na folha, lance a hora decimal: 0:40 vira 0,67 h. Com 2 casas, a folha pode dar alguns centavos de diferenca.",
       "semHorario": "{{count}} lancamento(s) sem horario: contados no dia da data",
@@ -368,7 +368,7 @@
         "faixa": "Dia util 1,75x",
         "excedente": "Dia util 2x (apos 2h)",
         "fimDeSemana": "Fim de semana/feriado 2x",
-        "sobreaviso": "Sobreaviso 1/3",
+        "sobreaviso": "Sobreaviso 0,333",
         "backup": "Backup 1/3"
       }
     },

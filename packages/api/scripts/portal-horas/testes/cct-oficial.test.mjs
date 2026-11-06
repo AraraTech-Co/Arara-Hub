@@ -76,7 +76,7 @@ async function calc(lancamentos, { hora = 22, perfil = {}, feriados = [], mes = 
   return Object.assign(row, { _totals: res.body.totals });
 }
 
-test('domingo, escala 12h, atendimento 2h, H = 30 → 1/3 nas 12h (120) + 2× no atendimento (120) = 240', async () => {
+test('domingo, escala 12h, atendimento 2h, H = 30 → 0,333 nas 12h (119,88) + 2× no atendimento (120) = 239,88', async () => {
   const r = await calc(
     [
       lanc('BIP_STANDBY', '2026-10-04', '08:00', '20:00'),
@@ -87,16 +87,16 @@ test('domingo, escala 12h, atendimento 2h, H = 30 → 1/3 nas 12h (120) + 2× no
   assert.equal(r.regraCalculo, REGRA);
   assert.equal(r.cct.regra, REGRA);
   assert.equal(r.cct.sobreavisoMinutes, 720); // acumula: não abate as 2h atendidas
-  assert.equal(r.cct.sobreavisoValue, 120);
+  assert.equal(r.cct.sobreavisoValue, 119.88); // 12h × 30 × 0,333
   assert.equal(r.cct.fimDeSemanaMinutes, 120);
   assert.equal(r.cct.fimDeSemanaValue, 120);
   assert.equal(r.extraAndAttendanceValue, 120);
-  assert.equal(r.standbyAndBackupValue, 120);
-  assert.equal(r.incrementalTotal, 240);
-  assert.equal(r.totalCost, 6240); // 6.000 + 240
+  assert.equal(r.standbyAndBackupValue, 119.88);
+  assert.equal(r.incrementalTotal, 239.88);
+  assert.equal(r.totalCost, 6239.88); // 6.000 + 239,88
   assert.equal(r.attendanceValue, null); // a faixa é do dia, não do tipo
   assert.equal(r.attendanceMinutes, 120);
-  assert.equal(r.standbyValue, 120);
+  assert.equal(r.standbyValue, 119.88);
   assert.equal(r.simulacao, undefined);
 });
 
@@ -169,12 +169,16 @@ test('atravessa a meia-noite de sexta para sábado: cada pedaço no seu dia', as
   assert.equal(c.fimDeSemanaValue, 44);
 });
 
-test('sobreaviso a 1/3 exato: 3h = H; 1h = 7,33', async () => {
+test('sobreaviso com o coeficiente 0,333 da folha: 3h = 21,98 (não 22); 1h = 7,33', async () => {
   const tres = await calc([lanc('BIP_STANDBY', '2026-10-06', '09:00', '12:00')]);
-  assert.equal(tres.cct.sobreavisoValue, 22);
-  assert.equal(tres.standbyAndBackupValue, 22);
+  assert.equal(tres.cct.sobreavisoValue, 21.98); // 3 × 22 × 0,333 = 21,978
+  assert.equal(tres.standbyAndBackupValue, 21.98);
   const uma = (await calc([lanc('BIP_STANDBY', '2026-10-06', '09:00', '10:00')])).cct;
-  assert.equal(uma.sobreavisoValue, 7.33);
+  assert.equal(uma.sobreavisoValue, 7.33); // 7,326
+  // 100h a H = 15: 0,333 dá 499,50; 1/3 daria 500,00.
+  const cem = (await calc([semHora('BIP_STANDBY', '2026-10-05', 6000)], { hora: 15 })).cct;
+  assert.equal(cem.sobreavisoMinutes, 6000);
+  assert.equal(cem.sobreavisoValue, 499.5);
 });
 
 test('acumula: atendimento dentro da escala não tira minutos do 1/3', async () => {
@@ -185,7 +189,7 @@ test('acumula: atendimento dentro da escala não tira minutos do 1/3', async () 
     ])
   ).cct;
   assert.equal(c.sobreavisoMinutes, 120);
-  assert.equal(c.sobreavisoValue, 14.67); // 120 min × 22 ÷ 3 = 14,666…
+  assert.equal(c.sobreavisoValue, 14.65); // 2h × 22 × 0,333 = 14,652
   assert.equal(c.faixaValue, 38.5);
 });
 
@@ -200,7 +204,7 @@ test('backup mantém 1/3 em rubrica própria e soma com o sobreaviso', async () 
     lanc('BIP_BACKUP', '2026-10-06', '09:00', '12:00'),
     lanc('BIP_STANDBY', '2026-10-06', '09:00', '12:00'),
   ]);
-  assert.equal(ambos.standbyAndBackupValue, 44);
+  assert.equal(ambos.standbyAndBackupValue, 43.98); // backup 22 (1/3) + sobreaviso 21,98 (0,333)
   assert.equal(ambos.cct.avisos.minutosSobrepostos, 0); // grupos diferentes não se cruzam
 });
 
@@ -216,7 +220,7 @@ test('sobreposição no mesmo grupo conta uma vez e aparece no aviso', async () 
   assert.equal(c.faixaMinutes, 90);
   assert.equal(c.faixaValue, 57.75);
   assert.equal(c.sobreavisoMinutes, 180);
-  assert.equal(c.sobreavisoValue, 22);
+  assert.equal(c.sobreavisoValue, 21.98);
   assert.equal(c.avisos.minutosSobrepostos, 30 + 60);
 });
 
