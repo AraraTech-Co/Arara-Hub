@@ -124,25 +124,26 @@ async function handler(ctx) {
       incCents,
     };
   }
-  // Soma minutos inteiros por tipo. Duração negativa, fracionária ou não
-  // numérica fica fora da conta e é contada em `ignored`.
-  // ── Simulação: regra do escritório + CCT SINDPD-SP 2026/2027 (NÃO validada) ──
-  // Não altera o cálculo oficial. Parâmetros explícitos; os marcados "pendente"
-  // aguardam confirmação (desenho 2026-11-06-desenho-horas-simulacao-cct).
-  // Confirmado pelo Leonardo em 06/11/2026: hora extra e atendimento dividem a
-  // mesma faixa; o 1/3 do sobreaviso continua durante o atendimento (acumula);
-  // backup não é sobreaviso (fica fora); os três CLT seguem a CCT com divisor 200.
-  // Também em 06/11: hora extra é o que é lançado como EXTRA (jornada de 8h sem
-  // horário fixo; almoço não é lançado) e a faixa de 2h conta uma vez por dia.
-  const SIM = {
-    id: 'sim-cct-sindpd-sp-2026',
-    validada: false,
+  // ── Regra da CCT SINDPD-SP 2026/2027 (CLT, a partir de outubro/2026) ──────
+  // Desenho: 2026-11-06-desenho-horas-cct-oficial. Confirmado com o escritório
+  // em 06/11/2026: em dia útil, as 2 primeiras horas de trabalho do dia a 1,75×
+  // e as demais do mesmo dia a 2×; sábado, domingo e feriado a 2×; hora extra e
+  // atendimento dividem a faixa do dia; sobreaviso (BIP) a 1/3, acumulando com
+  // o atendimento; backup não é sobreaviso e mantém 1/3 em rubrica própria.
+  // PJ e meses anteriores à vigência seguem as RUBRICAS acima.
+  const CCT = {
+    id: 'cct-sindpd-sp-2026',
+    vigencia: '2026-10',
     faixaMinutos: 120,
-    fatorFaixa: [7n, 4n], // 1,75: primeiras 2 h em dia útil (cláusula 12ª)
-    fatorExcedente: [2n, 1n], // 2,0 após 2 h em dia útil — pendente: condição de força maior
-    fatorFimDeSemana: [2n, 1n], // 2,0 em sábado, domingo e feriado (cláusula 12ª, §1º)
-    fatorSobreaviso: [1n, 3n], // 1/3 exato (cláusula 14ª), só BIP; acumula com o atendimento
+    fatorFaixa: [7n, 4n], // 1,75
+    fatorExcedente: [2n, 1n], // 2,0
+    fatorFimDeSemana: [2n, 1n], // 2,0
+    fatorSobreaviso: [1n, 3n], // 1/3 exato
+    fatorBackup: [1n, 3n], // 1/3 exato
   };
+  function usaCct(user, ym) {
+    return isClt(user) && ym >= CCT.vigencia;
+  }
   function minutoDoDia(hhmm) {
     const m = /^(\d{1,2}):(\d{2})/.exec(String(hhmm || ''));
     if (!m) return null;
@@ -159,27 +160,8 @@ async function handler(ctx) {
   function ymdDe(dia) {
     return new Date(dia * 86400000).toISOString().slice(0, 10);
   }
-  // Intervalo absoluto em minutos (dia × 1440 + minuto). Pausa fica no fim.
-  function intervaloDe(e, avisos) {
-    const dia = diaDe(pick(e, 'date', 'date'));
-    const ini = minutoDoDia(pick(e, 'start_time', 'startTime'));
-    const fim = minutoDoDia(pick(e, 'end_time', 'endTime'));
-    if (dia === null || ini === null || fim === null) {
-      avisos.semHorario += 1;
-      return null;
-    }
-    const bruto = fim > ini ? fim - ini : fim + 1440 - ini;
-    let dur = bruto;
-    const d = Number(pick(e, 'duration_minutes', 'durationMinutes'));
-    if (Number.isInteger(d) && d >= 0 && d < bruto) {
-      dur = d;
-      avisos.comPausa += 1;
-    }
-    const start = dia * 1440 + ini;
-    return { start, end: start + dur };
-  }
   function uniao(ivs) {
-    const s = ivs.filter((x) => x && x.end > x.start).sort((a, b) => a.start - b.start);
+    const s = ivs.filter((x) => x.end > x.start).sort((a, b) => a.start - b.start);
     const out = [];
     for (const iv of s) {
       const ult = out[out.length - 1];
@@ -199,94 +181,120 @@ async function handler(ctx) {
       while (s < iv.end) {
         const dia = Math.floor(s / 1440);
         const e = Math.min(iv.end, (dia + 1) * 1440);
-        out.push({ dia, start: s, end: e });
+        out.push({ dia, len: e - s });
         s = e;
       }
     }
     return out;
   }
-  function simular(entries, rate, feriados, baseCents, oficialCents) {
-    const avisos = {
-      comPausa: 0,
-      semHorario: 0,
-      minutosSobrepostosTrabalho: 0,
-      minutosSobrepostosSobreaviso: 0,
-    };
-    const tipo = (e) => pick(e, 'hour_type', 'hourType');
-    const trabalhoIvs = [];
-    const sobreavisoIvs = [];
+  // Lançamentos de um grupo → minutos por dia. Com horário válido, vira
+  // intervalo absoluto (dia × 1440 + minuto; a pausa sai do fim) e entra na
+  // união do grupo (minuto repetido conta uma vez). Sem horário válido, a
+  // duração inteira fica no dia da data. Duração inválida já foi descartada.
+  function minutosDoGrupo(entries, avisos) {
+    const ivs = [];
+    const soltos = [];
     for (const e of entries) {
-      const t = tipo(e);
-      const ehTrabalho = t === HOUR_TYPES.EXTRA || t === HOUR_TYPES.BIP_ATTENDANCE;
-      const ehSobreaviso = t === HOUR_TYPES.BIP_STANDBY; // backup não é sobreaviso
-      if (!ehTrabalho && !ehSobreaviso) continue;
-      const iv = intervaloDe(e, avisos);
-      if (!iv) continue;
-      (ehTrabalho ? trabalhoIvs : sobreavisoIvs).push(iv);
-    }
-    const trabalho = uniao(trabalhoIvs);
-    avisos.minutosSobrepostosTrabalho = soma(trabalhoIvs) - soma(trabalho);
-
-    let faixa = 0;
-    let excedente = 0;
-    let fimDeSemana = 0;
-    const pedacos = porDia(trabalho);
-    const usadoNoDia = {};
-    for (const p of pedacos) {
-      const dow = (((p.dia + 4) % 7) + 7) % 7; // 1970-01-01 = quinta; 0 = domingo
-      const len = p.end - p.start;
-      if (dow === 0 || dow === 6 || feriados.has(ymdDe(p.dia))) {
-        fimDeSemana += len;
+      const dur = Number(pick(e, 'duration_minutes', 'durationMinutes') || 0);
+      const dia = diaDe(pick(e, 'date', 'date'));
+      if (dia === null || dur === 0) continue;
+      const ini = minutoDoDia(pick(e, 'start_time', 'startTime'));
+      const fim = minutoDoDia(pick(e, 'end_time', 'endTime'));
+      if (ini === null || fim === null || ini === fim) {
+        avisos.semHorario += 1;
+        soltos.push({ dia, len: dur });
         continue;
       }
-      // A faixa de 2h conta uma vez por dia, na ordem dos horários (os pedaços
-      // vêm ordenados): o que o dia já usou da faixa sai do pedaço seguinte.
-      const usado = usadoNoDia[p.dia] || 0;
-      const naFaixa = Math.max(0, Math.min(len, SIM.faixaMinutos - usado));
-      faixa += naFaixa;
-      excedente += len - naFaixa;
-      usadoNoDia[p.dia] = (usadoNoDia[p.dia] || 0) + len;
+      const bruto = fim > ini ? fim - ini : fim + 1440 - ini;
+      if (dur < bruto) avisos.comPausa += 1;
+      if (dur > bruto) {
+        avisos.duracaoMaiorQueHorario += 1;
+        avisos.minutosForaPorHorario += dur - bruto;
+      }
+      const start = dia * 1440 + ini;
+      ivs.push({ start, end: start + Math.min(dur, bruto) });
     }
+    const unidos = uniao(ivs);
+    avisos.minutosSobrepostos += soma(ivs) - soma(unidos);
+    return porDia(unidos).concat(soltos);
+  }
+  // entries já filtrados por status e com duração válida (ver aggregateMinutes).
+  function computeCct(entries, rate, feriados) {
+    const avisos = {
+      semHorario: 0,
+      comPausa: 0,
+      duracaoMaiorQueHorario: 0,
+      minutosForaPorHorario: 0,
+      minutosSobrepostos: 0,
+    };
+    const grupos = { trabalho: [], sobreaviso: [], backup: [] };
+    for (const e of entries) {
+      const t = pick(e, 'hour_type', 'hourType');
+      if (t === HOUR_TYPES.EXTRA || t === HOUR_TYPES.BIP_ATTENDANCE) grupos.trabalho.push(e);
+      else if (t === HOUR_TYPES.BIP_STANDBY) grupos.sobreaviso.push(e);
+      else if (t === HOUR_TYPES.BIP_BACKUP) grupos.backup.push(e);
+    }
+    // Trabalho: soma por dia; em dia útil a faixa de 2h é do dia inteiro.
+    const diaUtil = {};
+    let fimDeSemana = 0;
+    for (const p of minutosDoGrupo(grupos.trabalho, avisos)) {
+      const dow = (((p.dia + 4) % 7) + 7) % 7; // 1970-01-01 = quinta; 0 = domingo
+      if (dow === 0 || dow === 6 || feriados.has(ymdDe(p.dia))) fimDeSemana += p.len;
+      else diaUtil[p.dia] = (diaUtil[p.dia] || 0) + p.len;
+    }
+    let faixa = 0;
+    let excedente = 0;
+    for (const dia of Object.keys(diaUtil)) {
+      const naFaixa = Math.min(diaUtil[dia], CCT.faixaMinutos);
+      faixa += naFaixa;
+      excedente += diaUtil[dia] - naFaixa;
+    }
+    const total = (ps) => ps.reduce((t, p) => t + p.len, 0);
+    const sobreaviso = total(minutosDoGrupo(grupos.sobreaviso, avisos));
+    const backup = total(minutosDoGrupo(grupos.backup, avisos));
 
-    // Acumula: o sobreaviso inteiro vale 1/3, mesmo nas horas de atendimento.
-    const sobreavisoMin = soma(uniao(sobreavisoIvs));
-    avisos.minutosSobrepostosSobreaviso = soma(sobreavisoIvs) - sobreavisoMin;
-
-    const c = (min, f) => rubricaCents(min, rate, f[0], f[1]);
-    const cFaixa = c(faixa, SIM.fatorFaixa);
-    const cExcedente = c(excedente, SIM.fatorExcedente);
-    const cFimDeSemana = c(fimDeSemana, SIM.fatorFimDeSemana);
-    const cSobreaviso = c(sobreavisoMin, SIM.fatorSobreaviso);
-    const incCents = cFaixa + cExcedente + cFimDeSemana + cSobreaviso;
+    const r = {};
+    const pares = [
+      ['faixa', faixa, CCT.fatorFaixa],
+      ['excedente', excedente, CCT.fatorExcedente],
+      ['fimDeSemana', fimDeSemana, CCT.fatorFimDeSemana],
+      ['sobreaviso', sobreaviso, CCT.fatorSobreaviso],
+      ['backup', backup, CCT.fatorBackup],
+    ];
+    for (const [k, minutes, f] of pares) {
+      r[k] = { minutes, cents: rubricaCents(minutes, rate, f[0], f[1]) };
+    }
+    const eaMinutes = faixa + excedente + fimDeSemana;
+    const eaCents = r.faixa.cents + r.excedente.cents + r.fimDeSemana.cents;
+    const sbMinutes = sobreaviso + backup;
+    const sbCents = r.sobreaviso.cents + r.backup.cents;
     return {
-      regra: SIM.id,
-      validada: SIM.validada,
-      parametros: {
-        faixaMinutos: SIM.faixaMinutos,
-        faixa: 'por dia',
-        fatorFaixa: 1.75,
-        fatorExcedente: 2,
-        fatorFimDeSemana: 2,
-        fatorSobreaviso: '1/3',
-        politica: 'acumula',
-        backup: 'fora',
-      },
-      trabalhoFaixaMinutes: faixa,
-      trabalhoFaixaValue: centsToNumber(cFaixa),
-      trabalhoExcedenteMinutes: excedente,
-      trabalhoExcedenteValue: centsToNumber(cExcedente),
-      trabalhoFimDeSemanaMinutes: fimDeSemana,
-      trabalhoFimDeSemanaValue: centsToNumber(cFimDeSemana),
-      sobreavisoMinutes: sobreavisoMin,
-      sobreavisoValue: centsToNumber(cSobreaviso),
-      incrementalTotal: centsToNumber(incCents),
-      totalCost: centsToNumber(baseCents + incCents),
-      diferenca: centsToNumber(incCents - oficialCents),
+      rubricas: r,
+      eaMinutes,
+      eaCents,
+      sbMinutes,
+      sbCents,
+      incMinutes: eaMinutes + sbMinutes,
+      incCents: eaCents + sbCents,
       avisos,
     };
   }
+  function cctResposta(c) {
+    const r = c.rubricas;
+    const out = { regra: CCT.id };
+    for (const k of ['faixa', 'excedente', 'fimDeSemana', 'sobreaviso', 'backup']) {
+      out[k + 'Minutes'] = r[k].minutes;
+      out[k + 'Value'] = centsToNumber(r[k].cents);
+    }
+    out.avisos = c.avisos;
+    return out;
+  }
+  // Soma minutos inteiros por tipo. Duração negativa, fracionária ou não
+  // numérica fica fora da conta e é contada em `ignored`; `valid` são os
+  // lançamentos que entram (a regra da CCT parte deles).
   function aggregateMinutes(entries) {
     const byType = {};
+    const valid = [];
     let ignored = 0;
     for (const e of entries) {
       const minutes = Number(pick(e, 'duration_minutes', 'durationMinutes') || 0);
@@ -294,10 +302,11 @@ async function handler(ctx) {
         ignored += 1;
         continue;
       }
+      valid.push(e);
       const t = pick(e, 'hour_type', 'hourType');
       byType[t] = (byType[t] || 0) + minutes;
     }
-    return { byType, ignored };
+    return { byType, valid, ignored };
   }
   function emptyTotals() {
     return {
@@ -349,7 +358,7 @@ async function handler(ctx) {
   }
 
   const workingDays = countWorkingDays(year, monthNum, holidaySet);
-  // Todos os feriados (a simulação classifica pedaços que passam da virada do mês).
+  // Todos os feriados (a regra da CCT classifica pedaços que passam da virada do mês).
   const feriados = new Set(
     allHolidays.map((h) => String(pick(h, 'date', 'date') || '').slice(0, 10)),
   );
@@ -428,8 +437,13 @@ async function handler(ctx) {
     const byType = approvedAgg.byType;
     const normalMinutes = byType[HOUR_TYPES.NORMAL] || 0;
     const rate = resolveRate(u);
-    const inc = computeIncremental(byType, rate);
-    const pendingCents = computeIncremental(pendingAgg.byType, rate).incCents;
+    const cct = usaCct(u, month);
+    const inc = cct
+      ? computeCct(approvedAgg.valid, rate, feriados)
+      : computeIncremental(byType, rate);
+    const pendingCents = cct
+      ? computeCct(pendingAgg.valid, rate, feriados).incCents
+      : computeIncremental(pendingAgg.byType, rate).incCents;
     const baseCents = toCents(pick(u, 'monthly_rate', 'monthlyRate'));
     const totalCents = baseCents + inc.incCents;
     const rb = inc.rubricas;
@@ -443,6 +457,7 @@ async function handler(ctx) {
       rateOrigin: rate.origin,
       rateOriginPending: rate.pending,
       contractType: isClt(u) ? 'CLT' : 'PJ',
+      regraCalculo: cct ? CCT.id : 'padrao',
       monthlyRate:
         pick(u, 'monthly_rate', 'monthlyRate') != null
           ? Number(pick(u, 'monthly_rate', 'monthlyRate'))
@@ -452,12 +467,14 @@ async function handler(ctx) {
       workingDaysInMonth: workingDays,
       expectedHours: isClt(u) ? CLT_MONTHLY_HOURS : expectedHours,
       normalHours: asHours(normalMinutes),
-      extraMinutes: rb.extra.minutes,
-      extraValue: centsToNumber(rb.extra.cents),
-      attendanceMinutes: rb.attendance.minutes,
-      attendanceValue: centsToNumber(rb.attendance.cents),
-      standbyMinutes: rb.standby.minutes,
-      standbyValue: centsToNumber(rb.standby.cents),
+      // Na CCT a faixa é do dia, não do tipo: hora extra e atendimento não têm
+      // valor separado (os minutos lançados continuam aqui).
+      extraMinutes: byType[HOUR_TYPES.EXTRA] || 0,
+      extraValue: cct ? null : centsToNumber(rb.extra.cents),
+      attendanceMinutes: byType[HOUR_TYPES.BIP_ATTENDANCE] || 0,
+      attendanceValue: cct ? null : centsToNumber(rb.attendance.cents),
+      standbyMinutes: cct ? rb.sobreaviso.minutes : rb.standby.minutes,
+      standbyValue: centsToNumber(cct ? rb.sobreaviso.cents : rb.standby.cents),
       backupMinutes: rb.backup.minutes,
       backupValue: centsToNumber(rb.backup.cents),
       extraAndAttendanceHours: asHours(inc.eaMinutes),
@@ -470,7 +487,7 @@ async function handler(ctx) {
       totalCost: centsToNumber(totalCents),
       pendingIncrementalCost: centsToNumber(pendingCents),
       ignoredEntries: approvedAgg.ignored + pendingAgg.ignored,
-      simulacao: isClt(u) ? simular(approved, rate, feriados, baseCents, inc.incCents) : null,
+      cct: cct ? cctResposta(inc) : null,
     });
 
     acc.baseCents += baseCents;

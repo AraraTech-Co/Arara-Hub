@@ -349,27 +349,26 @@
     "month": "Month",
     "workingDays": "Working days in month",
     "expectedHours": "Expected hours (working days × 8h)",
-    "approvedOnlyHint": "Only Approved or Adjusted entries count. Monthly-derived hourly rate = salary ÷ 168 (8h × 21 average working days); CLT: fixed 200h target and hourly rate = salary ÷ 200. Standby and backup pay at 30% of the hourly rate.",
+    "approvedOnlyHint": "Only Approved or Adjusted entries count. Monthly-derived hourly rate = salary ÷ 168 (8h × 21 average working days); CLT: fixed 200h target and hourly rate = salary ÷ 200. Standby and backup pay at 30% of the hourly rate. For CLT, from October 2026 the CCT rule applies (detail below the table); PJ and earlier months follow this rule.",
     "pendingCostNote": "+ {{amount}} from hours not yet approved",
     "loading": "Loading...",
     "noRows": "Nothing to show.",
     "rateWarning": "No hourly or monthly rate on file",
-    "sim": {
-      "title": "Simulation: accounting firm rule (CCT SINDPD-SP 2026/2027)",
-      "notValidated": "Rule not validated. Not an amount owed and does not change the official calculation above.",
-      "p1": "Weekday: the first 2 overtime hours of the day at 1.75x (once per day, in time order); the rest at 2x (force majeure condition pending).",
-      "p2": "Saturday, Sunday and holidays: 2x from the first minute. Compensated days are not considered.",
-      "p3": "On-call (BIP only): 1/3 of the hour, which keeps running during attendance (accumulates). Backup is not on-call.",
-      "p4": "Overtime is what is logged as overtime; overtime and attendance share the same daily band. CLT only; PJ has no simulation.",
-      "avisos": "Warnings: {{semHorario}} without time, {{comPausa}} with break, {{sobrepostos}} overlapping",
+    "cct": {
+      "title": "CLT: CCT SINDPD-SP 2026/2027 rule",
+      "p1": "Weekday: the first 2 work hours of the day at 1.75x; the rest of the same day at 2x. Overtime and attendance share the daily band.",
+      "p2": "Saturday, Sunday and holidays: 2x from the first minute.",
+      "p3": "On-call: 1/3 of the hour, which keeps running during attendance. Backup: 1/3 of the hour, as its own item.",
+      "p4": "Applies to CLT from October 2026. Minutes repeated across entries count once; entries without time count on their date.",
+      "semHorario": "{{count}} entry(ies) without time: counted on their date",
+      "sobrepostos": "{{tempo}} repeated across entries: counted once",
+      "duracaoMaior": "{{count}} entry(ies) with duration longer than the time range: {{tempo}} left out",
       "col": {
         "faixa": "Weekday 1.75x",
         "excedente": "Weekday 2x (after 2h)",
         "fimDeSemana": "Weekend/holiday 2x",
         "sobreaviso": "On-call 1/3",
-          "simulado": "Simulated incremental",
-        "oficial": "Official incremental",
-        "diferenca": "Difference"
+        "backup": "Backup 1/3"
       }
     },
     "rateOriginPending": "Review the pay type on the profile",
