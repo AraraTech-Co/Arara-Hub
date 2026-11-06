@@ -16,6 +16,7 @@ AQUI = os.path.dirname(os.path.abspath(__file__))
 PS = os.path.dirname(os.path.dirname(AQUI))
 ROTAS = os.path.abspath(os.path.join(PS, "..", "..", "packages", "api", "src", "apps", "portal-suporte", "routes.generated.ts"))
 LIB = os.path.join(PS, "app", "lib", "kanban-dev.ts")
+PAGINA = os.path.join(PS, "app", "(admin)", "admin", "kanban-dev", "page.tsx")
 T = os.path.join(AQUI, "kanban-dev-so-pelo-quadro-dev.test.js")
 TP = os.path.join(AQUI, "projetos-comportamento-atual.test.js")
 RE_ENTRADA = re.compile(
@@ -97,6 +98,11 @@ MUTANTES = [
         "  return { assignee_id: String(novo || '').trim() || null, force: true }",
         "  return { assignee_id: String(novo || '').trim() || null } as never"), T,
      'seletor:troca-o-dono-de-card-que-ja-tem-responsavel'),
+    # A mutação do revisor: a TELA volta ao corpo sem `force`, com a lib intacta.
+    ("a-tela-volta-a-mandar-sem-force", PAGINA, no_texto(
+        "      await araraFetch.post(`/api/tickets/${card.id}/assign`, corpoDaTrocaDeResponsavel(novo))",
+        "      await araraFetch.post(`/api/tickets/${card.id}/assign`, { assignee_id: novo || null })"), T,
+     'seletor:a-tela-manda-o-corpo-da-lib'),
 ]
 
 
@@ -109,7 +115,7 @@ def roda(teste):
     return out
 
 
-bases = {p: io.open(p, encoding="utf-8").read() for p in (ROTAS, LIB)}
+bases = {p: io.open(p, encoding="utf-8").read() for p in (ROTAS, LIB, PAGINA)}
 for t in (T,):
     if roda(t):
         sys.exit("! base ja reprova: " + os.path.basename(t))

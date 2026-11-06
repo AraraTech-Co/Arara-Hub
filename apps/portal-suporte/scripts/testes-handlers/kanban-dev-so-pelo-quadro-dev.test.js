@@ -13,7 +13,7 @@
 // Roda com: node kanban-dev-so-pelo-quadro-dev.test.js
 const { carregarHandler, reply, ok, fim } = require('./_carregar.js')
 const { camadaFindMany } = require('./_camada.js')
-const { registrarTS, importarTela } = require('./_tela.js')
+const { registrarTS, importarTela, semComentarios } = require('./_tela.js')
 
 registrarTS()
 
@@ -199,6 +199,16 @@ const ATIVO_U7 = card({ id: 'c1', status: 'em_desenvolvimento', assigned_to: 'u7
     const L = await importarTela('lib/kanban-dev.ts')
     const corpo = L.corpoDaTrocaDeResponsavel('u7')
     ok('seletor:o-corpo-pede-a-troca-deliberada', corpo.force === true && corpo.assignee_id === 'u7', corpo)
+    // A TELA usa a função: o defeito que este conserto fecha estava no
+    // `trocarResponsavel` da página, não na lib. Lido sem comentários, e
+    // afirmado sobre ocorrência única no arquivo.
+    {
+      const pagina = semComentarios('(admin)/admin/kanban-dev/page.tsx')
+      const chamadas = pagina.match(/araraFetch\.post\(`\/api\/tickets\/\$\{card\.id\}\/assign`,\s*([^)]*\))\)/g) || []
+      ok('seletor:a-tela-chama-assign-uma-vez', chamadas.length === 1, chamadas)
+      ok('seletor:a-tela-manda-o-corpo-da-lib',
+        chamadas.length === 1 && /,\s*corpoDaTrocaDeResponsavel\(novo\)\)$/.test(chamadas[0]), chamadas)
+    }
     ok('seletor:sem-responsavel-vira-null', L.corpoDaTrocaDeResponsavel('').assignee_id === null, L.corpoDaTrocaDeResponsavel(''))
     {
       const r = await chamar('assignPost', [card({ id: 'c2', status: 'backlog', assigned_to: 'u8' })],
