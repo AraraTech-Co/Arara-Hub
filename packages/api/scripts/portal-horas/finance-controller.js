@@ -128,18 +128,20 @@ async function handler(ctx) {
   // numérica fica fora da conta e é contada em `ignored`.
   // ── Simulação: regra do escritório + CCT SINDPD-SP 2026/2027 (NÃO validada) ──
   // Não altera o cálculo oficial. Parâmetros explícitos; os marcados "pendente"
-  // aguardam confirmação do escritório (desenho 2026-11-06-desenho-horas-simulacao-cct).
+  // aguardam confirmação (desenho 2026-11-06-desenho-horas-simulacao-cct).
+  // Confirmado pelo Leonardo em 06/11/2026: hora extra e atendimento dividem a
+  // mesma faixa; o 1/3 do sobreaviso continua durante o atendimento (acumula);
+  // backup não é sobreaviso (fica fora); os três CLT seguem a CCT com divisor 200.
+  // Também em 06/11: hora extra é o que é lançado como EXTRA (jornada de 8h sem
+  // horário fixo; almoço não é lançado) e a faixa de 2h conta uma vez por dia.
   const SIM = {
     id: 'sim-cct-sindpd-sp-2026',
     validada: false,
     faixaMinutos: 120,
-    faixa: 'consecutiva', // pendente: 'consecutiva' (por bloco) ou 'agregada' (por dia)
     fatorFaixa: [7n, 4n], // 1,75: primeiras 2 h em dia útil (cláusula 12ª)
     fatorExcedente: [2n, 1n], // 2,0 após 2 h em dia útil — pendente: condição de força maior
     fatorFimDeSemana: [2n, 1n], // 2,0 em sábado, domingo e feriado (cláusula 12ª, §1º)
-    fatorSobreaviso: [1n, 3n], // 1/3 exato (cláusula 14ª)
-    politica: 'substitui', // pendente: sobreaviso pausa durante trabalho efetivo
-    backupComoSobreaviso: true, // pendente
+    fatorSobreaviso: [1n, 3n], // 1/3 exato (cláusula 14ª), só BIP; acumula com o atendimento
   };
   function minutoDoDia(hhmm) {
     const m = /^(\d{1,2}):(\d{2})/.exec(String(hhmm || ''));
@@ -189,19 +191,6 @@ async function handler(ctx) {
   function soma(ivs) {
     return ivs.reduce((t, iv) => t + (iv.end - iv.start), 0);
   }
-  function intersecao(a, b) {
-    let i = 0;
-    let j = 0;
-    let total = 0;
-    while (i < a.length && j < b.length) {
-      const ini = Math.max(a[i].start, b[j].start);
-      const fim = Math.min(a[i].end, b[j].end);
-      if (fim > ini) total += fim - ini;
-      if (a[i].end < b[j].end) i += 1;
-      else j += 1;
-    }
-    return total;
-  }
   // Corta na meia-noite: cada pedaço pertence ao próprio dia.
   function porDia(ivs) {
     const out = [];
@@ -217,15 +206,19 @@ async function handler(ctx) {
     return out;
   }
   function simular(entries, rate, feriados, baseCents, oficialCents) {
-    const avisos = { comPausa: 0, semHorario: 0, minutosSobrepostosTrabalho: 0 };
+    const avisos = {
+      comPausa: 0,
+      semHorario: 0,
+      minutosSobrepostosTrabalho: 0,
+      minutosSobrepostosSobreaviso: 0,
+    };
     const tipo = (e) => pick(e, 'hour_type', 'hourType');
     const trabalhoIvs = [];
     const sobreavisoIvs = [];
     for (const e of entries) {
       const t = tipo(e);
       const ehTrabalho = t === HOUR_TYPES.EXTRA || t === HOUR_TYPES.BIP_ATTENDANCE;
-      const ehSobreaviso =
-        t === HOUR_TYPES.BIP_STANDBY || (SIM.backupComoSobreaviso && t === HOUR_TYPES.BIP_BACKUP);
+      const ehSobreaviso = t === HOUR_TYPES.BIP_STANDBY; // backup não é sobreaviso
       if (!ehTrabalho && !ehSobreaviso) continue;
       const iv = intervaloDe(e, avisos);
       if (!iv) continue;
@@ -246,38 +239,37 @@ async function handler(ctx) {
         fimDeSemana += len;
         continue;
       }
-      // Cada pedaço é um bloco seguido: a união já juntou o que se encosta e o
-      // corte só acontece na meia-noite. Na contagem "agregada", a faixa é do dia.
-      const usado = SIM.faixa === 'agregada' ? usadoNoDia[p.dia] || 0 : 0;
+      // A faixa de 2h conta uma vez por dia, na ordem dos horários (os pedaços
+      // vêm ordenados): o que o dia já usou da faixa sai do pedaço seguinte.
+      const usado = usadoNoDia[p.dia] || 0;
       const naFaixa = Math.max(0, Math.min(len, SIM.faixaMinutos - usado));
       faixa += naFaixa;
       excedente += len - naFaixa;
       usadoNoDia[p.dia] = (usadoNoDia[p.dia] || 0) + len;
     }
 
-    const sobreaviso = uniao(sobreavisoIvs);
-    const sobreavisoBruto = soma(sobreaviso);
-    const sobreavisoAbatido = SIM.politica === 'substitui' ? intersecao(sobreaviso, trabalho) : 0;
-    const sobreavisoLiquido = sobreavisoBruto - sobreavisoAbatido;
+    // Acumula: o sobreaviso inteiro vale 1/3, mesmo nas horas de atendimento.
+    const sobreavisoMin = soma(uniao(sobreavisoIvs));
+    avisos.minutosSobrepostosSobreaviso = soma(sobreavisoIvs) - sobreavisoMin;
 
     const c = (min, f) => rubricaCents(min, rate, f[0], f[1]);
     const cFaixa = c(faixa, SIM.fatorFaixa);
     const cExcedente = c(excedente, SIM.fatorExcedente);
     const cFimDeSemana = c(fimDeSemana, SIM.fatorFimDeSemana);
-    const cSobreaviso = c(sobreavisoLiquido, SIM.fatorSobreaviso);
+    const cSobreaviso = c(sobreavisoMin, SIM.fatorSobreaviso);
     const incCents = cFaixa + cExcedente + cFimDeSemana + cSobreaviso;
     return {
       regra: SIM.id,
       validada: SIM.validada,
       parametros: {
         faixaMinutos: SIM.faixaMinutos,
-        faixa: SIM.faixa,
+        faixa: 'por dia',
         fatorFaixa: 1.75,
         fatorExcedente: 2,
         fatorFimDeSemana: 2,
         fatorSobreaviso: '1/3',
-        politica: SIM.politica,
-        backupComoSobreaviso: SIM.backupComoSobreaviso,
+        politica: 'acumula',
+        backup: 'fora',
       },
       trabalhoFaixaMinutes: faixa,
       trabalhoFaixaValue: centsToNumber(cFaixa),
@@ -285,9 +277,7 @@ async function handler(ctx) {
       trabalhoExcedenteValue: centsToNumber(cExcedente),
       trabalhoFimDeSemanaMinutes: fimDeSemana,
       trabalhoFimDeSemanaValue: centsToNumber(cFimDeSemana),
-      sobreavisoBrutoMinutes: sobreavisoBruto,
-      sobreavisoAbatidoMinutes: sobreavisoAbatido,
-      sobreavisoLiquidoMinutes: sobreavisoLiquido,
+      sobreavisoMinutes: sobreavisoMin,
       sobreavisoValue: centsToNumber(cSobreaviso),
       incrementalTotal: centsToNumber(incCents),
       totalCost: centsToNumber(baseCents + incCents),
