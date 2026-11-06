@@ -13,7 +13,7 @@
 // veio — a mensagem já diz exatamente o que falta.
 // =============================================================================
 
-import { useCallback, useEffect, useMemo, useState, type MouseEvent as ReactMouseEvent } from 'react'
+import { useCallback, useEffect, useMemo, useState, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from 'react'
 import { useCompanies } from '@/hooks/use-companies'
 import { ANEXO_ACCEPT, ANEXO_MAX_MB, anexarAoChamado, motivoRecusaAnexo } from '@/lib/anexos'
 import { TicketAttachments, type AttachmentItem } from '@/components/tickets/ticket-attachments'
@@ -552,7 +552,12 @@ function CardDev({ card, podeMover, onMover, onAbrir, onReestimar }: {
                   Mover para ▾
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" onClick={(e: ReactMouseEvent) => e.stopPropagation()}>
+              {/* O conteúdo mora num portal, mas o evento React sobe até o
+                  cartão: sem barrar o pointerdown aqui, apertar num item e
+                  deslizar mais de 6px pela lista arrastava o card embaixo. */}
+              <DropdownMenuContent align="start"
+                onPointerDown={(e: ReactPointerEvent) => e.stopPropagation()}
+                onClick={(e: ReactMouseEvent) => e.stopPropagation()}>
                 {listaDestinos.map((d) => (
                   <DropdownMenuItem key={d} onSelect={() => onMover(d)} className="text-xs">
                     {DEV_LABELS[d]}
