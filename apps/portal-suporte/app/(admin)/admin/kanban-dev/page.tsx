@@ -36,7 +36,7 @@ import { useAuth } from '@/lib/arara/AuthProvider'
 import { hasMinRole } from '@/lib/arara/auth-storage'
 import {
   DEV_COLUNAS, DEV_EXIGE, DEV_LABELS, DEV_MARCADOR, DEV_TRANSICOES,
-  cardAtivoDaPessoa, numeroDev, type DevStatus,
+  cardAtivoDaPessoa, corpoDaTrocaDeResponsavel, numeroDev, type DevStatus,
 } from '@/lib/kanban-dev'
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
@@ -1255,7 +1255,7 @@ function PainelDetalhe({ card, cards, devs, onFechar, onAtualizado, onReestimar 
     setSalvandoResp(true)
     setErroResp('')
     try {
-      await araraFetch.post(`/api/tickets/${card.id}/assign`, { assignee_id: novo || null })
+      await araraFetch.post(`/api/tickets/${card.id}/assign`, corpoDaTrocaDeResponsavel(novo))
       const achado = opcoes.find((d) => d.id === novo)
       card.assignee = novo ? { id: novo, full_name: achado?.nome ?? null } : null
       onAtualizado()
