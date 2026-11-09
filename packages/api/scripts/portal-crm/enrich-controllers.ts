@@ -114,6 +114,7 @@ module.exports = { handler };`,
   if (!Array.isArray(body.tags)) body.tags = body.tags ? [String(body.tags)] : [];
   body.createdAt = body.createdAt || now;
   body.updatedAt = now;
+  if (body.id === undefined) body.id = ctx.randomUUID();
   try {
     var row = await Client.create(body);
     return ctx.reply.status(201).send(row);
