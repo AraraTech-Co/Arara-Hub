@@ -145,6 +145,20 @@ export const arara = {
       body: JSON.stringify(body),
     }),
 
+  moverEtapa: (id: string, body: { etapa: string; toque?: string; motivoPerda?: string }) =>
+    request<{ data: Record<string, unknown>; negociacao: Record<string, unknown> | null }>(
+      `/clients/${encodeURIComponent(id)}/etapa`,
+      { method: 'POST', body: JSON.stringify(body) },
+    ),
+
+  funilResumo: () =>
+    request<{
+      total: number
+      porEtapa: Record<string, number>
+      porMotivo: Record<string, number>
+      perdidoSemMotivo: number
+    }>('/funil/resumo'),
+
   leads: (q?: string) =>
     request<{ data: Record<string, unknown>[]; count: number }>(
       `/leads${q ? `?q=${encodeURIComponent(q)}` : ''}`,

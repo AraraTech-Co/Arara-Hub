@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { arara, useAuth } from '@/lib/arara'
 import { mascararCnpj, rotuloPorte } from '@/lib/cnpj'
+import { FunilCard } from './funil-card'
 import { formatBRL } from '@/lib/format'
 import {
   clientTypeLabels,
@@ -19,6 +20,7 @@ function ClienteDetalheInner() {
   const { profile, role } = useAuth()
   const id = searchParams.get('id') || ''
   const [client, setClient] = useState<Record<string, unknown> | null>(null)
+  const [matriz, setMatriz] = useState<Record<string, unknown> | null>(null)
   const [deals, setDeals] = useState<Record<string, unknown>[]>([])
   const [activities, setActivities] = useState<Record<string, unknown>[]>([])
   const [stages, setStages] = useState<Record<string, unknown>[]>([])
@@ -36,6 +38,15 @@ function ClienteDetalheInner() {
       .then(([c, d, a, s]) => {
         if (cancelled) return
         setClient(c)
+        // Filial mostra a etapa da matriz.
+        if (c && c.parentId) {
+          arara
+            .client(String(c.parentId))
+            .then((m) => {
+              if (!cancelled) setMatriz(m)
+            })
+            .catch(() => {})
+        }
         setDeals((d.data || []).filter((x) => String(x.clientId) === id))
         setActivities((a.data || []).filter((x) => String(x.clientId) === id).slice(0, 10))
         setStages(s.data || [])
@@ -65,6 +76,11 @@ function ClienteDetalheInner() {
   const stageById = Object.fromEntries(stages.map((s) => [String(s.id), s]))
   // O servidor confere de novo; aqui só decide se mostra o botão.
   const podeEditar = role === 'admin' || (!!profile?.id && String(client.ownerId || '') === String(profile.id))
+  const ehFilial = !!client.parentId
+  const registroDoFunil = ehFilial ? matriz : client
+  const podeMover =
+    !!registroDoFunil &&
+    (role === 'admin' || (!!profile?.id && String(registroDoFunil.ownerId || '') === String(profile.id)))
 
   return (
     <div className="max-w-3xl space-y-6">
@@ -111,6 +127,18 @@ function ClienteDetalheInner() {
           </div>
         ) : null}
       </div>
+
+      {registroDoFunil ? (
+        <FunilCard
+          key={String(registroDoFunil.id)}
+          matriz={registroDoFunil}
+          daFilial={ehFilial}
+          podeMover={podeMover}
+          aoMover={(_, negociacao) => {
+            if (negociacao) setDeals((d) => [negociacao, ...d])
+          }}
+        />
+      ) : null}
 
       <div className="bg-white rounded-xl border border-gray-200 p-5">
         <div className="flex items-center justify-between mb-4">
