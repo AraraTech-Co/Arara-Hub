@@ -116,7 +116,11 @@ export const arara = {
     )
   },
 
-  client: (id: string) => request<Record<string, unknown>>(`/Client/${id}`),
+  // A rota responde { data: row }; as telas consomem o registro.
+  client: (id: string) =>
+    request<{ data?: Record<string, unknown> } & Record<string, unknown>>(
+      `/Client/${encodeURIComponent(id)}`,
+    ).then((r) => (r && typeof r.data === 'object' && r.data !== null ? r.data : r)),
 
   createClient: (body: Record<string, unknown>) =>
     request<Record<string, unknown>>('/clients', {
