@@ -3,7 +3,8 @@
 import { Suspense, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
-import { arara } from '@/lib/arara'
+import { arara, useAuth } from '@/lib/arara'
+import { mascararCnpj, rotuloPorte } from '@/lib/cnpj'
 import { formatBRL } from '@/lib/format'
 import {
   clientTypeLabels,
@@ -15,6 +16,7 @@ import {
 
 function ClienteDetalheInner() {
   const searchParams = useSearchParams()
+  const { profile, role } = useAuth()
   const id = searchParams.get('id') || ''
   const [client, setClient] = useState<Record<string, unknown> | null>(null)
   const [deals, setDeals] = useState<Record<string, unknown>[]>([])
@@ -61,6 +63,8 @@ function ClienteDetalheInner() {
   const type = String(client.type || 'lead') as 'lead' | 'cliente'
   const tags = Array.isArray(client.tags) ? (client.tags as string[]) : []
   const stageById = Object.fromEntries(stages.map((s) => [String(s.id), s]))
+  // O servidor confere de novo; aqui só decide se mostra o botão.
+  const podeEditar = role === 'admin' || (!!profile?.id && String(client.ownerId || '') === String(profile.id))
 
   return (
     <div className="max-w-3xl space-y-6">
@@ -76,14 +80,29 @@ function ClienteDetalheInner() {
           <h1 className="text-xl font-semibold text-gray-900">{String(client.name)}</h1>
           {client.company ? <p className="text-gray-500 text-sm">{String(client.company)}</p> : null}
         </div>
-        <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${clientTypeBadgeClass[type]}`}>
-          {clientTypeLabels[type]}
-        </span>
+        <div className="flex items-center gap-3">
+          {podeEditar ? (
+            <Link
+              href={`/clientes/editar?id=${encodeURIComponent(id)}`}
+              className="text-indigo-600 hover:text-indigo-800 text-sm font-medium"
+            >
+              Editar
+            </Link>
+          ) : null}
+          <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${clientTypeBadgeClass[type]}`}>
+            {clientTypeLabels[type]}
+          </span>
+        </div>
       </div>
 
       <div className="bg-white rounded-xl border border-gray-200 p-5 grid grid-cols-2 gap-4">
         <Info label="E-mail" value={client.email ? String(client.email) : null} />
         <Info label="Telefone" value={client.phone ? String(client.phone) : null} />
+        <Info label="CNPJ" value={client.cnpj ? mascararCnpj(client.cnpj) : null} />
+        <Info label="Porte" value={rotuloPorte(client.porte)} />
+        <Info label="Nº de lojas" value={client.qtdLojas != null && client.qtdLojas !== '' ? String(client.qtdLojas) : null} />
+        <LinkInfo label="LinkedIn da empresa" href={client.linkedinEmpresa} />
+        <LinkInfo label="LinkedIn do decisor" href={client.linkedinDecisor} />
         <Info label="Tags" value={tags.join(', ') || '—'} />
         <Info label="Origem" value={client.source ? String(client.source) : '—'} />
         {client.notes ? (
@@ -164,6 +183,22 @@ function Info({ label, value }: { label: string; value: string | null }) {
     <div>
       <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">{label}</p>
       <p className="text-sm text-gray-900">{value || '—'}</p>
+    </div>
+  )
+}
+
+function LinkInfo({ label, href }: { label: string; href: unknown }) {
+  const url = typeof href === 'string' && /^https?:\/\//i.test(href) ? href : null
+  return (
+    <div>
+      <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">{label}</p>
+      {url ? (
+        <a href={url} target="_blank" rel="noopener noreferrer" className="text-sm text-indigo-600 hover:text-indigo-800 break-all">
+          {url}
+        </a>
+      ) : (
+        <p className="text-sm text-gray-900">—</p>
+      )}
     </div>
   )
 }

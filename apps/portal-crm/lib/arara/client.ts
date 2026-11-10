@@ -17,10 +17,12 @@ export const ARARA_SLUG = process.env.NEXT_PUBLIC_ARARA_APP_SLUG || 'portal-crm'
 
 export class AraraError extends Error {
   status: number
-  constructor(status: number, message: string) {
+  body: Record<string, unknown>
+  constructor(status: number, message: string, body: Record<string, unknown> = {}) {
     super(message)
     this.name = 'AraraError'
     this.status = status
+    this.body = body
   }
 }
 
@@ -68,7 +70,7 @@ async function request<T>(path: string, init?: RequestInit & { auth?: AuthMode }
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
     if (res.status === 401 && sentJwt) expireSession()
-    throw new AraraError(res.status, body.error || body.message || `HTTP ${res.status}`)
+    throw new AraraError(res.status, body.error || body.message || `HTTP ${res.status}`, body)
   }
   if (res.status === 204) return undefined as T
   return res.json() as Promise<T>

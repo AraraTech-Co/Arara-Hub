@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation'
 import { arara, useAuth } from '@/lib/arara'
 import { clientTypeLabels as typeLabels, clientTypeBadgeClass } from '@/lib/labels'
 import { ClientesFilters } from './clientes-filters'
+import { mascararCnpj } from '@/lib/cnpj'
 
 export default function ClientesPageInner() {
   const { user, role } = useAuth()
@@ -96,6 +97,9 @@ export default function ClientesPageInner() {
                   <p className="text-sm text-gray-500 truncate">
                     {String(c.company || c.email || '—')}
                   </p>
+                  {c.cnpj ? (
+                    <p className="text-xs text-gray-400 tabular-nums">CNPJ {mascararCnpj(c.cnpj)}</p>
+                  ) : null}
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   {tags.slice(0, 2).map((t) => (
