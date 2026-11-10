@@ -6,6 +6,8 @@ import { useSearchParams } from 'next/navigation'
 import { arara, useAuth } from '@/lib/arara'
 import { clientTypeLabels as typeLabels, clientTypeBadgeClass } from '@/lib/labels'
 import { ClientesFilters } from './clientes-filters'
+import { mascararCnpj } from '@/lib/cnpj'
+import { rotuloEtapa } from '@/lib/funil'
 
 export default function ClientesPageInner() {
   const { user, role } = useAuth()
@@ -96,8 +98,14 @@ export default function ClientesPageInner() {
                   <p className="text-sm text-gray-500 truncate">
                     {String(c.company || c.email || '—')}
                   </p>
+                  {c.cnpj ? (
+                    <p className="text-xs text-gray-400 tabular-nums">CNPJ {mascararCnpj(c.cnpj)}</p>
+                  ) : null}
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
+                  {!c.parentId ? (
+                    <span className="bg-indigo-50 text-indigo-700 text-xs px-2 py-0.5 rounded-full">{rotuloEtapa(c)}</span>
+                  ) : null}
                   {tags.slice(0, 2).map((t) => (
                     <span key={t} className="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full">
                       {t}

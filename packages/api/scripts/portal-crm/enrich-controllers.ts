@@ -104,11 +104,58 @@ module.exports = { handler };`,
     code: `async function handler(ctx) {
   var Client = ctx.models.Client;
   if (!Client) return ctx.reply.status(500).send({ error: "Model Client missing" });
+  function soDigitos(v){ return String(v==null?'':v).replace(/\\D/g,''); }
+  function cnpjValido(d){
+    if(!/^\\d{14}$/.test(d) || /^(\\d)\\1{13}$/.test(d)) return false;
+    function dv(base){ var pesos=base.length===12?[5,4,3,2,9,8,7,6,5,4,3,2]:[6,5,4,3,2,9,8,7,6,5,4,3,2]; var s=0; for(var i=0;i<base.length;i++) s+=Number(base[i])*pesos[i]; var r=s%11; return r<2?0:11-r; }
+    var d1=dv(d.slice(0,12)); var d2=dv(d.slice(0,12)+d1);
+    return d[12]===String(d1) && d[13]===String(d2);
+  }
+  var PORTES=['ME','EPP','Medio','Grande'];
+  // Normaliza e valida os campos do item 2. Devolve { erro } ou { valores } so com as chaves presentes no corpo.
+  function camposDoProspect(b){
+    var v={};
+    if(b.cnpj!==undefined){
+      var d=soDigitos(b.cnpj);
+      if(d==='') v.cnpj=null;
+      else if(!cnpjValido(d)) return { erro:'CNPJ inválido' };
+      else v.cnpj=d;
+    }
+    var links=['linkedinEmpresa','linkedinDecisor'];
+    for(var i=0;i<links.length;i++){
+      var k=links[i];
+      if(b[k]===undefined) continue;
+      var u=String(b[k]==null?'':b[k]).trim();
+      if(u==='') { v[k]=null; continue; }
+      if(!/^https?:\\/\\/\\S+$/i.test(u)) return { erro:'Link do LinkedIn inválido' };
+      v[k]=u;
+    }
+    if(b.porte!==undefined){
+      if(b.porte===null||b.porte==='') v.porte=null;
+      else if(PORTES.indexOf(b.porte)<0) return { erro:'Porte inválido' };
+      else v.porte=b.porte;
+    }
+    if(b.qtdLojas!==undefined){
+      if(b.qtdLojas===null||b.qtdLojas==='') v.qtdLojas=null;
+      else { var n=Number(b.qtdLojas); if(!Number.isInteger(n)||n<0) return { erro:'Nº de lojas inválido' }; v.qtdLojas=n; }
+    }
+    return { valores:v };
+  }
+  async function duplicadoDe(Client, cnpj){
+    var achados=await Client.findMany({ cnpj:cnpj, limit:1 });
+    return achados[0] || null;
+  }
   var user = ctx.user || {};
   var uid = user.id || user.userId;
   var body = Object.assign({}, ctx.body || {});
   var now = new Date().toISOString();
   if (!body.name) return ctx.reply.status(400).send({ error: "name required" });
+  var confirmar = body.confirmarDuplicado === true;
+  delete body.confirmarDuplicado;
+  var campos = camposDoProspect(body);
+  if (campos.erro) return ctx.reply.status(400).send({ error: campos.erro });
+  Object.assign(body, campos.valores);
+  if (body.cnpj === null) delete body.cnpj;
   if (!body.type) body.type = "lead";
   if (body.ownerId === undefined) body.ownerId = uid || null;
   if (!Array.isArray(body.tags)) body.tags = body.tags ? [String(body.tags)] : [];
@@ -116,6 +163,10 @@ module.exports = { handler };`,
   body.updatedAt = now;
   if (body.id === undefined) body.id = ctx.randomUUID();
   try {
+    if (body.cnpj && !confirmar) {
+      var dup = await duplicadoDe(Client, body.cnpj);
+      if (dup) return ctx.reply.status(409).send({ error: "Já existe um cadastro com este CNPJ", duplicado: { id: dup.id, name: dup.name } });
+    }
     var row = await Client.create(body);
     return ctx.reply.status(201).send(row);
   } catch (e) {
@@ -130,11 +181,85 @@ module.exports = { handler };`,
     code: `async function handler(ctx) {
   var Client = ctx.models.Client;
   if (!Client) return ctx.reply.status(500).send({ error: "Model Client missing" });
+  function soDigitos(v){ return String(v==null?'':v).replace(/\\D/g,''); }
+  function cnpjValido(d){
+    if(!/^\\d{14}$/.test(d) || /^(\\d)\\1{13}$/.test(d)) return false;
+    function dv(base){ var pesos=base.length===12?[5,4,3,2,9,8,7,6,5,4,3,2]:[6,5,4,3,2,9,8,7,6,5,4,3,2]; var s=0; for(var i=0;i<base.length;i++) s+=Number(base[i])*pesos[i]; var r=s%11; return r<2?0:11-r; }
+    var d1=dv(d.slice(0,12)); var d2=dv(d.slice(0,12)+d1);
+    return d[12]===String(d1) && d[13]===String(d2);
+  }
+  var PORTES=['ME','EPP','Medio','Grande'];
+  // Normaliza e valida os campos do item 2. Devolve { erro } ou { valores } so com as chaves presentes no corpo.
+  function camposDoProspect(b){
+    var v={};
+    if(b.cnpj!==undefined){
+      var d=soDigitos(b.cnpj);
+      if(d==='') v.cnpj=null;
+      else if(!cnpjValido(d)) return { erro:'CNPJ inválido' };
+      else v.cnpj=d;
+    }
+    var links=['linkedinEmpresa','linkedinDecisor'];
+    for(var i=0;i<links.length;i++){
+      var k=links[i];
+      if(b[k]===undefined) continue;
+      var u=String(b[k]==null?'':b[k]).trim();
+      if(u==='') { v[k]=null; continue; }
+      if(!/^https?:\\/\\/\\S+$/i.test(u)) return { erro:'Link do LinkedIn inválido' };
+      v[k]=u;
+    }
+    if(b.porte!==undefined){
+      if(b.porte===null||b.porte==='') v.porte=null;
+      else if(PORTES.indexOf(b.porte)<0) return { erro:'Porte inválido' };
+      else v.porte=b.porte;
+    }
+    if(b.qtdLojas!==undefined){
+      if(b.qtdLojas===null||b.qtdLojas==='') v.qtdLojas=null;
+      else { var n=Number(b.qtdLojas); if(!Number.isInteger(n)||n<0) return { erro:'Nº de lojas inválido' }; v.qtdLojas=n; }
+    }
+    return { valores:v };
+  }
+  async function duplicadoDe(Client, cnpj){
+    var achados=await Client.findMany({ cnpj:cnpj, limit:1 });
+    return achados[0] || null;
+  }
+  var uid = ctx.user && ctx.user.id;
+  if (!uid) return ctx.reply.status(401).send({ error: "Auth necessaria" });
   var id = String((ctx.params && ctx.params.id) || "");
-  var body = Object.assign({}, ctx.body || {});
-  body.updatedAt = new Date().toISOString();
+  var b = ctx.body || {};
   try {
-    var row = await Client.update(id, body);
+    var atual = await Client.findById(id);
+    if (!atual) return ctx.reply.status(404).send({ error: "Not found" });
+    var perfil = ctx.models.Profile ? await ctx.models.Profile.findById(uid) : null;
+    var gestor = !!perfil && (perfil.role === "gerente" || perfil.role === "admin");
+    if (!gestor && String(atual.ownerId || "") !== String(uid)) {
+      return ctx.reply.status(403).send({ error: "Só o dono do lead ou o gestor pode editar" });
+    }
+    // Monta o que grava campo a campo; o resto do corpo é ignorado.
+    var patch = {};
+    var textos = ["name", "company", "email", "phone", "notes"];
+    for (var i = 0; i < textos.length; i++) {
+      var k = textos[i];
+      if (b[k] === undefined) continue;
+      var t = b[k] == null ? "" : String(b[k]).trim();
+      patch[k] = t === "" ? null : t;
+    }
+    if (patch.name === null) return ctx.reply.status(400).send({ error: "name required" });
+    if (b.type !== undefined) {
+      if (b.type !== "lead" && b.type !== "cliente") return ctx.reply.status(400).send({ error: "Tipo inválido" });
+      patch.type = b.type;
+    }
+    if (b.tags !== undefined) {
+      patch.tags = Array.isArray(b.tags) ? b.tags.map(function (x) { return String(x).trim(); }).filter(Boolean) : [];
+    }
+    var campos = camposDoProspect(b);
+    if (campos.erro) return ctx.reply.status(400).send({ error: campos.erro });
+    Object.assign(patch, campos.valores);
+    if (patch.cnpj && patch.cnpj !== atual.cnpj && b.confirmarDuplicado !== true) {
+      var dup = await duplicadoDe(Client, patch.cnpj);
+      if (dup) return ctx.reply.status(409).send({ error: "Já existe um cadastro com este CNPJ", duplicado: { id: dup.id, name: dup.name } });
+    }
+    patch.updatedAt = new Date().toISOString();
+    var row = await Client.update(id, patch);
     if (!row) return ctx.reply.status(404).send({ error: "Not found" });
     return ctx.reply.send(row);
   } catch (e) {
