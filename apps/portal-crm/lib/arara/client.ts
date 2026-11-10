@@ -1,4 +1,5 @@
 import {
+  clearAuth,
   getAppApiKey,
   getJwt,
   setAppApiKey,
@@ -32,6 +33,13 @@ function rewrite(path: string): string {
 
 type AuthMode = 'auto' | 'jwt' | 'appKey' | 'none'
 
+/** Sessão vencida ou inválida: limpa e volta ao login. */
+function expireSession() {
+  if (typeof window === 'undefined') return
+  clearAuth()
+  if (!window.location.pathname.startsWith('/login')) window.location.assign('/login/')
+}
+
 async function request<T>(path: string, init?: RequestInit & { auth?: AuthMode }): Promise<T> {
   const { auth = 'auto', headers: initHeaders, ...rest } = init || {}
   const headers = new Headers(initHeaders)
@@ -41,17 +49,17 @@ async function request<T>(path: string, init?: RequestInit & { auth?: AuthMode }
 
   const jwt = getJwt()
   const appKey = getAppApiKey(ARARA_SLUG)
-  const isRuntime = path.startsWith('/') && !path.startsWith('/v1/')
 
+  // A sessão da pessoa vai em toda chamada: as rotas do app leem quem está
+  // agindo. A chave do app só entra quando pedida ou quando não há sessão.
+  let sentJwt = false
   if (auth === 'none') {
     // no credentials
-  } else if (auth === 'jwt' || (auth === 'auto' && jwt && !isRuntime)) {
-    if (jwt) headers.set('Authorization', `Bearer ${jwt}`)
-  } else if (auth === 'appKey' || (auth === 'auto' && isRuntime && appKey)) {
+  } else if (auth === 'appKey') {
     if (appKey) headers.set('x-api-key', appKey)
-    else if (jwt) headers.set('Authorization', `Bearer ${jwt}`)
-  } else if (auth === 'auto' && jwt) {
+  } else if (jwt) {
     headers.set('Authorization', `Bearer ${jwt}`)
+    sentJwt = true
   } else if (auth === 'auto' && appKey) {
     headers.set('x-api-key', appKey)
   }
@@ -59,6 +67,7 @@ async function request<T>(path: string, init?: RequestInit & { auth?: AuthMode }
   const res = await fetch(rewrite(path), { ...rest, headers })
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
+    if (res.status === 401 && sentJwt) expireSession()
     throw new AraraError(res.status, body.error || body.message || `HTTP ${res.status}`)
   }
   if (res.status === 204) return undefined as T
