@@ -23,6 +23,8 @@ export default function DashboardPage() {
   const [activities, setActivities] = useState<Record<string, unknown>[]>([])
   const [goal, setGoal] = useState<Record<string, unknown> | null>(null)
   const [loading, setLoading] = useState(true)
+  // Falha de leitura NÃO pode virar R$ 0,00: guarda o erro e a tela mostra.
+  const [erro, setErro] = useState<{ status?: number; mensagem: string } | null>(null)
 
   useEffect(() => {
     if (!userId) return
@@ -42,7 +44,9 @@ export default function DashboardPage() {
         setActivities(a.data || [])
         setGoal((g.data || [])[0] || null)
       })
-      .catch(() => {})
+      .catch((e: { status?: number; message?: string }) => {
+        if (!cancelled) setErro({ status: e?.status, mensagem: e?.message || 'Erro ao carregar' })
+      })
       .finally(() => {
         if (!cancelled) setLoading(false)
       })
@@ -78,6 +82,17 @@ export default function DashboardPage() {
 
   if (loading) {
     return <p className="text-sm text-gray-500">Carregando dashboard…</p>
+  }
+
+  if (erro) {
+    const semPermissao = erro.status === 401 || erro.status === 403
+    return (
+      <div role="alert" className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        {semPermissao
+          ? 'Você não tem permissão para ver os dados do dashboard.'
+          : `Não foi possível carregar o dashboard: ${erro.mensagem}`}
+      </div>
+    )
   }
 
   return (
