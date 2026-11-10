@@ -1,6 +1,9 @@
 server {
     listen 80;
     server_name _;
+    # Redirect de pasta (/login -> /login/) com Location relativo: o host que
+    # chega aqui é o do proxy da frente, não o domínio público.
+    absolute_redirect off;
     root /usr/share/nginx/html;
     index index.html;
 
