@@ -300,14 +300,24 @@ async function chamar(marca, o) {
     ok('enviar:base64-invalido-nao-grava', base64Ruim.m.reg.create.length === 0,
       base64Ruim.m.reg.create)
 
-    // O teto é medido no conteúdo, não no que a tela declara.
-    const grande = 'data:application/pdf;base64,' + 'A'.repeat(14 * 1024 * 1024)
+    // O teto é medido no conteúdo, não no que a tela declara. 100 MB desde
+    // 11/11/2026: base64 de 100 MB + 1 byte tem ~133,4 milhões de caracteres.
+    const MB = 1024 * 1024
+    const base64De = (bytes) => 'A'.repeat(Math.ceil(bytes / 3) * 4)
     const acimaDoTeto = await chamar(ENVIAR, Object.assign({}, base, {
-      body: { nome: 'grande.pdf', conteudo: grande, tamanho: 1 },
+      body: { nome: 'grande.pdf', conteudo: 'data:application/pdf;base64,' + base64De(100 * MB + 3), tamanho: 1 },
     }))
-    ok('enviar:acima-de-10mb-recusa', acimaDoTeto.r.status === 400, acimaDoTeto.r.body)
-    ok('enviar:acima-de-10mb-nao-grava', acimaDoTeto.m.reg.create.length === 0,
-      acimaDoTeto.m.reg.create)
+    ok('enviar:acima-de-100mb-recusa', acimaDoTeto.r.status === 400, acimaDoTeto.r.body)
+    ok('enviar:acima-de-100mb-nao-grava', acimaDoTeto.m.reg.create.length === 0,
+      acimaDoTeto.m.reg.create.length)
+    ok('enviar:a-recusa-diz-o-teto-de-100mb',
+      String((acimaDoTeto.r.body || {}).error || '').includes('limite de 100 MB'), acimaDoTeto.r.body)
+    // O que era recusado até 10/11 (acima de 10 MB) agora entra.
+    const quatorze = await chamar(ENVIAR, Object.assign({}, base, {
+      body: { nome: 'prd.pdf', conteudo: 'data:application/pdf;base64,' + base64De(14 * MB) },
+    }))
+    ok('enviar:14mb-agora-entra', quatorze.r.status !== 400 && quatorze.m.reg.create.length > 0,
+      [quatorze.r.status, quatorze.r.body && quatorze.r.body.error])
 
     // O nome vira `download="..."` no navegador: barra e `..` saem.
     const nomeSujo = await chamar(ENVIAR, Object.assign({}, base, {

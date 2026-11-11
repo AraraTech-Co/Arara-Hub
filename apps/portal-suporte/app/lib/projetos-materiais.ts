@@ -7,8 +7,15 @@
  */
 import type { MaterialDoProjeto } from '@/lib/api/projetos'
 
-/** Teto do conteúdo, igual ao do servidor e ao dos anexos de chamado. */
-export const MAX_BYTES = 10 * 1024 * 1024
+/**
+ * Teto do conteúdo, igual ao do servidor (`POST /projetos/:id/materiais`).
+ *
+ * 100 MB desde 11/11/2026, pedido do Leonardo: material de projeto é PRD,
+ * leiaute e manual, e passava dos 10 MB do acervo geral. O acervo e os anexos
+ * de chamado continuam em 10 MB. O transporte comporta: o limite de corpo da
+ * API é 150 MB, para caber 100 MB em base64 (~133 MB).
+ */
+export const MAX_BYTES = 100 * 1024 * 1024
 
 /**
  * Lê a resposta da listagem SEM nunca estourar.
@@ -177,7 +184,7 @@ export function mensagemDeErroNoEnvio(resposta: unknown): string {
  */
 export function recusaAntesDeLer(arquivo: { size: number }): string {
   if (Number(arquivo.size) > MAX_BYTES) {
-    return `Material acima do limite de 10 MB (este tem ${tamanhoLegivel(arquivo.size)}).`
+    return `Material acima do limite de ${Math.round(MAX_BYTES / (1024 * 1024))} MB (este tem ${tamanhoLegivel(arquivo.size)}).`
   }
   return ''
 }

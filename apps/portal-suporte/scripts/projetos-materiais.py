@@ -87,7 +87,16 @@ def tipos_e_teto(texto):
         raise SystemExit(f"! o recorte de tipos/teto não confere:\n{bloco}")
     if bloco.count("var TIPOS") != 1 or bloco.count("var MAX_BYTES") != 1:
         raise SystemExit("! o recorte de tipos/teto pegou mais do que devia")
-    return bloco
+    # Os TIPOS vêm do acervo; o TETO dos materiais é próprio (100 MB desde
+    # 11/11/2026). O acervo geral e os anexos de chamado seguem em 10 MB.
+    return bloco.replace("var MAX_BYTES = 10 * 1024 * 1024;", TETO_MATERIAIS, 1)
+
+
+TETO_MATERIAIS = (
+    "// Teto dos materiais do projeto: 100 MB (11/11/2026). Próprio, não o do\n"
+    "// acervo (10 MB): material de projeto é PRD, leiaute e manual.\n"
+    "var MAX_BYTES = 100 * 1024 * 1024;"
+)
 
 
 FONTE_GUARDA = "// 507 projetos GET /projetos/:id/atividades"

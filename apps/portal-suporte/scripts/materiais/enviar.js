@@ -39,7 +39,7 @@ async function handler(ctx) {
   var bytes = Math.floor((base64.length * 3) / 4) - padding;
   if (bytes > MAX_BYTES) {
     return ctx.reply.status(400).send({
-      error: "Material acima do limite de 10 MB (este tem " + (Math.round(bytes / 104857.6) / 10) + " MB).",
+      error: "Material acima do limite de " + Math.round(MAX_BYTES / 1048576) + " MB (este tem " + (Math.round(bytes / 104857.6) / 10) + " MB).",
     });
   }
 
