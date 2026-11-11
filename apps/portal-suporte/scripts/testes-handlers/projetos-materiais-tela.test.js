@@ -6,7 +6,7 @@
 // esperava um array.
 //
 // Roda com: node projetos-materiais-tela.test.js
-const { carregarHandler, reply, ok, fim } = require('./_carregar.js')
+const { carregarHandler, carregarContexto, reply, ok, fim } = require('./_carregar.js')
 const { registrarTS, importarTela, semComentarios } = require('./_tela.js')
 
 const LISTAR = '512 projetos GET /projetos/:id/materiais'
@@ -138,11 +138,14 @@ function montar(o) {
     ok('recusa:no-limite-passa', L.recusaAntesDeLer({ size: L.MAX_BYTES }) === '',
       L.recusaAntesDeLer({ size: L.MAX_BYTES }))
     ok('recusa:acima-do-limite-avisa-antes-de-ler',
-      L.recusaAntesDeLer({ size: L.MAX_BYTES + 1 }).includes('10 MB'),
+      L.recusaAntesDeLer({ size: L.MAX_BYTES + 1 }).includes('limite de 100 MB'),
       L.recusaAntesDeLer({ size: L.MAX_BYTES + 1 }))
     // O teto da tela é o MESMO do servidor: dois tetos diferentes dariam um
     // arquivo aceito aqui e recusado lá, depois de o usuário esperar o upload.
-    ok('recusa:o-teto-da-tela-e-o-do-servidor', L.MAX_BYTES === 10 * 1024 * 1024, L.MAX_BYTES)
+    // Comparado com o valor que o HANDLER carrega, não com um número escrito aqui.
+    const tetoDoServidor = carregarContexto('projetos POST /projetos/:id/materiais').MAX_BYTES
+    ok('recusa:o-teto-da-tela-e-o-do-servidor',
+      L.MAX_BYTES === tetoDoServidor && L.MAX_BYTES === 100 * 1024 * 1024, [L.MAX_BYTES, tetoDoServidor])
 
     ok('erro:a-mensagem-do-servidor-vence',
       L.mensagemDeErroNoEnvio({ error: 'Tipo de arquivo não aceito: x' })
