@@ -501,7 +501,10 @@ function a(o) {
 
     const quadro = semComentarios('_components/projetos/kanban-de-atividades.tsx')
     ok('ver:o-cartao-abre-ao-clicar', (quadro.match(/onClick=\{\(\) => aoAbrir\(a\)\}/g) || []).length === 1, null)
-    ok('ver:o-cartao-abre-no-enter', (quadro.match(/e\.key === 'Enter'\) aoAbrir\(a\)/g) || []).length === 1, null)
+    ok('ver:o-cartao-abre-no-enter-e-no-espaco',
+      (quadro.match(/if \(e\.key === 'Enter' \|\| e\.key === ' '\) aoAbrir\(a\)/g) || []).length === 1, null)
+    ok('ver:o-espaco-nao-rola-a-pagina',
+      (quadro.match(/if \(e\.key === ' '\) e\.preventDefault\(\)/g) || []).length === 1, null)
     ok('ver:o-quadro-liga-o-cartao-a-visao', (quadro.match(/aoAbrir=\{setVendo\}/g) || []).length === 1, null)
     ok('ver:o-quadro-renderiza-a-visao', (quadro.match(/<VerAtividade\b/g) || []).length === 1, null)
     const visao = semComentarios('_components/projetos/ver-atividade.tsx')

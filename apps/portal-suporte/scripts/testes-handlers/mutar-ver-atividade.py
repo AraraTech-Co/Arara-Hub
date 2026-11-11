@@ -20,7 +20,9 @@ T = os.path.join(AQUI, "projetos-kanban-de-atividades.test.js")
 
 MUTANTES = [
     ("o-cartao-volta-a-nao-abrir", QUADRO, "        onClick={() => aoAbrir(a)}\n", "", 'ver:o-cartao-abre-ao-clicar'),
-    ("o-enter-nao-abre", QUADRO, "        onKeyDown={(e) => { if (e.key === 'Enter') aoAbrir(a) }}\n", "", 'ver:o-cartao-abre-no-enter'),
+    ("o-espaco-nao-abre", QUADRO, "          if (e.key === 'Enter' || e.key === ' ') aoAbrir(a)\n",
+     "          if (e.key === 'Enter') aoAbrir(a)\n", 'ver:o-cartao-abre-no-enter-e-no-espaco'),
+    ("o-espaco-rola-a-pagina", QUADRO, "          if (e.key === ' ') e.preventDefault()\n", "", 'ver:o-espaco-nao-rola-a-pagina'),
     ("o-quadro-nao-liga-a-visao", QUADRO, "                    aoAbrir={setVendo}\n", "                    aoAbrir={() => {}}\n",
      'ver:o-quadro-liga-o-cartao-a-visao'),
     ("a-visao-nao-e-renderizada", QUADRO, "        <VerAtividade\n", "        <EditarAtividade\n", 'ver:o-quadro-renderiza-a-visao'),
