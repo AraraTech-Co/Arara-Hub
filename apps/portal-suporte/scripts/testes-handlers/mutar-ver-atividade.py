@@ -16,6 +16,7 @@ APP = os.path.join(os.path.dirname(os.path.dirname(AQUI)), "app")
 LIB = os.path.join(APP, "lib", "projetos-atividades.ts")
 QUADRO = os.path.join(APP, "_components", "projetos", "kanban-de-atividades.tsx")
 VISAO = os.path.join(APP, "_components", "projetos", "ver-atividade.tsx")
+EDITOR = os.path.join(APP, "_components", "projetos", "editar-atividade.tsx")
 T = os.path.join(AQUI, "projetos-kanban-de-atividades.test.js")
 
 MUTANTES = [
@@ -34,6 +35,11 @@ MUTANTES = [
     ("a-data-vazia-chama-o-formatador", LIB,
      "  const data = (v: unknown) => (String(v ?? '').trim() ? ctx.formatarData(v) : '—')",
      "  const data = (v: unknown) => ctx.formatarData(v)", 'ver:campo-vazio-vira-traco-e-nao-chama-o-formatador'),
+    ("o-editor-volta-a-ser-bloco", EDITOR, '    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">\n',
+     '    <div>\n', 'editar:o-editor-e-uma-janela-por-cima'),
+    ("clicar-fora-fecha-o-editor", EDITOR, '    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">\n',
+     '    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onFechar}>\n',
+     'editar:clicar-fora-nao-joga-a-edicao-fora'),
 ]
 
 
@@ -46,7 +52,7 @@ def roda():
     return out
 
 
-bases = {p: io.open(p, encoding="utf-8").read() for p in (LIB, QUADRO, VISAO)}
+bases = {p: io.open(p, encoding="utf-8").read() for p in (LIB, QUADRO, VISAO, EDITOR)}
 if roda():
     sys.exit("! base ja reprova")
 print("base limpa\n")
