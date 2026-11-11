@@ -39,12 +39,13 @@ import {
 } from '@/lib/projetos-atividades'
 import { NovaAtividade } from '@/components/projetos/nova-atividade'
 import { EditarAtividade } from '@/components/projetos/editar-atividade'
+import { VerAtividade } from '@/components/projetos/ver-atividade'
 import { dataBR } from '@/lib/projetos'
 
 type Pessoa = { id: string; nome: string }
 
 function Cartao({
-  a, hoje, podeMexer, salvando, pessoas, aoMover, aoEditar,
+  a, hoje, podeMexer, salvando, pessoas, aoMover, aoEditar, aoAbrir,
 }: {
   a: Atividade
   hoje: string
@@ -53,6 +54,7 @@ function Cartao({
   pessoas: Pessoa[]
   aoMover: (a: Atividade, destino: AtividadeStatus) => void
   aoEditar: (a: Atividade) => void
+  aoAbrir: (a: Atividade) => void
 }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: a.id, disabled: !podeMexer || salvando,
@@ -69,7 +71,16 @@ function Cartao({
         tarde ? 'border-red-500/40' : 'border-border'
       }`}
     >
-      <div {...listeners} {...attributes} className={podeMexer ? 'cursor-grab active:cursor-grabbing' : ''}>
+      {/* Clicar no cartão abre a atividade para leitura, para qualquer pessoa.
+          Não disputa com o arraste: ele só começa depois de 6px de movimento.
+          Enter faz o mesmo pelo teclado (os atributos do arraste já dão foco). */}
+      <div
+        {...listeners} {...attributes}
+        onClick={() => aoAbrir(a)}
+        onKeyDown={(e) => { if (e.key === 'Enter') aoAbrir(a) }}
+        aria-label={`Abrir "${a.titulo}"`}
+        className={podeMexer ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'}
+      >
         <p className="text-sm text-foreground break-words">{a.titulo}</p>
         <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
           {!!dono && <span className="truncate max-w-[12rem]">{dono.nome}</span>}
@@ -157,6 +168,7 @@ export function KanbanDeAtividades({
   const [salvando, setSalvando] = useState<string | null>(null)
   const [erroDeMover, setErroDeMover] = useState('')
   const [editando, setEditando] = useState<Atividade | null>(null)
+  const [vendo, setVendo] = useState<Atividade | null>(null)
   const hoje = useMemo(() => new Date().toISOString().slice(0, 10), [])
 
   // Arraste só com uma distância mínima: sem isso, um toque para ler o cartão
@@ -307,6 +319,7 @@ export function KanbanDeAtividades({
                     key={a.id} a={a} hoje={hoje} pessoas={pessoas}
                     podeMexer={podeMover(a, { podePlanejar, meuId })}
                     salvando={salvando === a.id} aoMover={mover} aoEditar={setEditando}
+                    aoAbrir={setVendo}
                   />
                 ))
               )}
@@ -322,9 +335,11 @@ export function KanbanDeAtividades({
           </p>
           <div className="flex flex-wrap gap-2">
             {canceladas.map((a) => (
-              <span key={a.id} className="rounded-md border border-border px-2 py-1 text-xs text-muted-foreground line-through">
+              <button key={a.id} type="button" onClick={() => setVendo(a)}
+                aria-label={`Abrir "${a.titulo}"`}
+                className="rounded-md border border-border px-2 py-1 text-xs text-muted-foreground line-through hover:bg-muted">
                 {a.titulo}
-              </span>
+              </button>
             ))}
           </div>
         </div>
@@ -340,6 +355,17 @@ export function KanbanDeAtividades({
             {' '}{[...new Set(foraDasColunas.map((a) => a.status))].join(', ')}.
           </p>
         </div>
+      )}
+
+      {vendo && (
+        <VerAtividade
+          atividade={vendo}
+          fases={fases}
+          pessoas={pessoas}
+          podeEditar={podeMover(vendo, { podePlanejar, meuId })}
+          onFechar={() => setVendo(null)}
+          onEditar={() => { setEditando(vendo); setVendo(null) }}
+        />
       )}
 
       {editando && (
