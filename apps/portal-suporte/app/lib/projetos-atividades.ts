@@ -331,3 +331,35 @@ export function atrasada(a: Atividade, hoje: string): boolean {
   if (a.status === ST_PRONTO || a.status === 'cancelada') return false
   return p < hoje.slice(0, 10)
 }
+
+/**
+ * O que a visão de leitura de uma atividade mostra, na ordem, com "—" no que
+ * está vazio. Ninguém precisa poder editar para LER a atividade: o lápis do
+ * cartão só aparece para quem pode mexer, e até 11/11/2026 era o único jeito
+ * de ver a descrição.
+ *
+ * A data vem formatada por quem chama (`dataBR`, na tela): a regra do formato
+ * mora num lugar só.
+ */
+export function detalhesDaAtividade(
+  a: Atividade,
+  ctx: {
+    pessoas: { id: string; nome: string }[]
+    fases: { id: string; nome: string }[]
+    formatarData: (v: unknown) => string
+  },
+): { rotulo: string; valor: string }[] {
+  const nada = (v: unknown) => String(v ?? '').trim() || '—'
+  const dono = ctx.pessoas.find((p) => p.id === String(a.responsavel_id || ''))
+  const fase = ctx.fases.find((f) => f.id === String(a.fase_id || ''))
+  const data = (v: unknown) => (String(v ?? '').trim() ? ctx.formatarData(v) : '—')
+  return [
+    { rotulo: 'Etapa', valor: STATUS_LABELS[a.status] || nada(a.status) },
+    { rotulo: 'Responsável', valor: dono ? dono.nome : '—' },
+    { rotulo: 'Fase', valor: fase ? fase.nome : '—' },
+    { rotulo: 'Início planejado', valor: data(a.inicio_planejado) },
+    { rotulo: 'Prazo', valor: data(a.previsao_entrega) },
+    { rotulo: 'Descrição', valor: nada(a.descricao) },
+  ]
+}
+

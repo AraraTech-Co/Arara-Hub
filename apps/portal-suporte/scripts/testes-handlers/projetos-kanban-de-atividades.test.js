@@ -474,5 +474,39 @@ function a(o) {
       /podeCadastrarEmpresa: canCadastrarEmpresa\(\{/.test(hook), null)
   }
 
+  // ── Abrir a atividade para LER ─────────────────────────────────────────
+  //
+  // O cartão não abria: o conteúdo só aparecia pelo lápis, e o lápis só para
+  // quem pode mexer (11/11/2026). A regra do que mostrar é executada; a ligação
+  // na tela é lida sem comentários, afirmando sobre ocorrência única.
+  {
+    const D = L.detalhesDaAtividade
+    const fmt = (v) => 'D:' + String(v).slice(0, 10)
+    const ctx = { pessoas: [{ id: 'u7', nome: 'Hefler' }], fases: [{ id: 'f1', nome: 'Entendimento' }], formatarData: fmt }
+    const cheia = D({
+      id: 'x', projeto_id: 'p1', titulo: 'T', status: 'em_desenvolvimento', responsavel_id: 'u7',
+      fase_id: 'f1', inicio_planejado: '2026-11-01', previsao_entrega: '2026-11-30',
+      descricao: 'linha 1\nlinha 2',
+    }, ctx)
+    const por = Object.fromEntries(cheia.map((l) => [l.rotulo, l.valor]))
+    ok('ver:mostra-a-descricao-inteira', por['Descrição'] === 'linha 1\nlinha 2', por['Descrição'])
+    ok('ver:mostra-o-nome-do-responsavel', por['Responsável'] === 'Hefler', por['Responsável'])
+    ok('ver:mostra-a-fase-pelo-nome', por['Fase'] === 'Entendimento', por['Fase'])
+    ok('ver:datas-pelo-formatador-de-quem-chama',
+      por['Início planejado'] === 'D:2026-11-01' && por['Prazo'] === 'D:2026-11-30', por)
+    ok('ver:etapa-pelo-rotulo', por['Etapa'] === L.STATUS_LABELS.em_desenvolvimento, por['Etapa'])
+    const vazia = Object.fromEntries(D({ id: 'y', projeto_id: 'p1', titulo: 'T', status: 'backlog' }, ctx).map((l) => [l.rotulo, l.valor]))
+    ok('ver:campo-vazio-vira-traco-e-nao-chama-o-formatador',
+      ['Responsável', 'Fase', 'Início planejado', 'Prazo', 'Descrição'].every((k) => vazia[k] === '—'), vazia)
+
+    const quadro = semComentarios('_components/projetos/kanban-de-atividades.tsx')
+    ok('ver:o-cartao-abre-ao-clicar', (quadro.match(/onClick=\{\(\) => aoAbrir\(a\)\}/g) || []).length === 1, null)
+    ok('ver:o-cartao-abre-no-enter', (quadro.match(/e\.key === 'Enter'\) aoAbrir\(a\)/g) || []).length === 1, null)
+    ok('ver:o-quadro-liga-o-cartao-a-visao', (quadro.match(/aoAbrir=\{setVendo\}/g) || []).length === 1, null)
+    ok('ver:o-quadro-renderiza-a-visao', (quadro.match(/<VerAtividade\b/g) || []).length === 1, null)
+    const visao = semComentarios('_components/projetos/ver-atividade.tsx')
+    ok('ver:a-visao-usa-a-regra-da-lib', (visao.match(/detalhesDaAtividade\(atividade,/g) || []).length === 1, null)
+  }
+
   fim()
 })()
