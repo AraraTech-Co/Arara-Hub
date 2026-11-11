@@ -73,11 +73,16 @@ function Cartao({
     >
       {/* Clicar no cartão abre a atividade para leitura, para qualquer pessoa.
           Não disputa com o arraste: ele só começa depois de 6px de movimento.
-          Enter faz o mesmo pelo teclado (os atributos do arraste já dão foco). */}
+          Enter e Espaço fazem o mesmo pelo teclado, como em todo botão (os
+          atributos do arraste já dão foco e `role="button"`). O Espaço não
+          pode rolar a página. */}
       <div
         {...listeners} {...attributes}
         onClick={() => aoAbrir(a)}
-        onKeyDown={(e) => { if (e.key === 'Enter') aoAbrir(a) }}
+        onKeyDown={(e) => {
+          if (e.key === ' ') e.preventDefault()
+          if (e.key === 'Enter' || e.key === ' ') aoAbrir(a)
+        }}
         aria-label={`Abrir "${a.titulo}"`}
         className={podeMexer ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'}
       >
