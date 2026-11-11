@@ -508,6 +508,13 @@ function a(o) {
     ok('ver:o-quadro-liga-o-cartao-a-visao', (quadro.match(/aoAbrir=\{setVendo\}/g) || []).length === 1, null)
     ok('ver:o-quadro-renderiza-a-visao', (quadro.match(/<VerAtividade\b/g) || []).length === 1, null)
     const visao = semComentarios('_components/projetos/ver-atividade.tsx')
+    // O editor abre NA FRENTE do quadro. Como bloco no fim dele, ficava fora
+    // da tela com uma dúzia de cartões, e o lápis parecia não funcionar.
+    const editor = semComentarios('_components/projetos/editar-atividade.tsx')
+    ok('editar:o-editor-e-uma-janela-por-cima',
+      (editor.match(/className="fixed inset-0 z-50 /g) || []).length === 1
+      && (editor.match(/role="dialog"/g) || []).length === 1, null)
+    ok('editar:clicar-fora-nao-joga-a-edicao-fora', !/inset-0[^>]*onClick=/.test(editor), null)
     ok('ver:a-visao-usa-a-regra-da-lib', (visao.match(/detalhesDaAtividade\(atividade,/g) || []).length === 1, null)
   }
 

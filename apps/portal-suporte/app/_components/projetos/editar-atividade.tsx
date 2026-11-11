@@ -75,7 +75,18 @@ export function EditarAtividade({
   }
 
   return (
-    <div className="rounded-xl border border-border bg-card p-4 space-y-3">
+    // Janela por cima do quadro, não um bloco no fim dele. Como bloco, o editor
+    // abria depois de todas as colunas e das canceladas: com uma dúzia de
+    // cartões empilhados ficava fora da tela, e o lápis parecia não fazer nada.
+    // Clicar fora NÃO fecha: é um formulário, e um clique perdido jogaria a
+    // edição fora. Fecha pelo X ou pelo Cancelar.
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Editar atividade"
+      className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl border border-border bg-card p-4 space-y-3 shadow-xl"
+    >
       <div className="flex items-center justify-between">
         <p className="text-sm font-medium text-foreground">Editar atividade</p>
         <button onClick={onFechar} aria-label="Fechar" className="text-muted-foreground hover:text-foreground">
@@ -95,7 +106,7 @@ export function EditarAtividade({
         <label htmlFor="ed-desc" className="block text-xs text-muted-foreground">
           Descrição{CAMPOS_OBRIGATORIOS.includes('descricao') && <span aria-hidden="true"> *</span>}
         </label>
-        <textarea id="ed-desc" value={r.descricao} onChange={campo('descricao')} rows={2}
+        <textarea id="ed-desc" value={r.descricao} onChange={campo('descricao')} rows={6}
           className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" />
       </div>
 
@@ -191,6 +202,7 @@ export function EditarAtividade({
           </span>
         )}
       </div>
+    </div>
     </div>
   )
 }
