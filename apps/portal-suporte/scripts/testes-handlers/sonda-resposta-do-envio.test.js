@@ -66,7 +66,8 @@ function cenario(codigo, { cheios = 0, falhaLeitura = false, falhaCriar = false,
         if (falhaLeitura) throw new Error('banco indisponível')
         return eventos.filter((e) => !f || !f.kind || e.kind === f.kind)
       },
-      create: async (e) => { if (falhaCriar) throw new Error('falha ao gravar'); criados.push(e); eventos.push(e); return e },
+      // Só os registros DESTA sonda: a sonda de tempo (diag_tempo) grava no mesmo modelo.
+      create: async (e) => { if (falhaCriar) throw new Error('falha ao gravar'); if (e.kind === 'diag_tempo') return e; criados.push(e); eventos.push(e); return e },
     },
     Profile: { findById: async () => ({ id: 'u1', role: 'support', full_name: 'Alexandre Ferreira' }), findMany: async () => [] },
     Sessao: vazio, SystemSettings: { findMany: async () => [{}] }, SupportSchedule: vazio, WaFlows: vazio, Company: vazio, Contact: vazio, Ticket: vazio, Unit: vazio, ClientUser: vazio, WaConta: vazio,

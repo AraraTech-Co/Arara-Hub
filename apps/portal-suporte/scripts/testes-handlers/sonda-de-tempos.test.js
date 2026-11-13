@@ -61,7 +61,8 @@ async function rodar(codigo, rota, { passoMs = 1, cheios = 0, falhaLeitura = fal
     WhatsAppMessage: { findMany: async (f) => { tica(); return camadaFindMany(MSGS, f) }, findById: async () => null },
     WaConversationEvents: {
       findMany: async (f) => { lidosEventos.push(Object.keys(f || {}).join('+') || 'TUDO'); if (atrasoEventosMs) await new Promise((res) => setTimeout(res, atrasoEventosMs)); if (falhaLeitura) throw new Error('banco'); return eventos.filter((e) => !f || !f.kind || e.kind === f.kind) },
-      create: async (e) => { criados.push(e); eventos.push(e); return e },
+      // A sonda de tempo do WhatsApp (diag_tempo) grava no mesmo modelo: fora da conta desta.
+      create: async (e) => { if (e.kind === 'diag_tempo') return e; criados.push(e); eventos.push(e); return e },
     },
     SystemSettings: vazio, CompanyContact: vazio, WaDepartment: vazio, Company: vazio, Ticket: vazio, WaCloseReason: vazio, WaTag: vazio, WaConversationTag: vazio,
   }
