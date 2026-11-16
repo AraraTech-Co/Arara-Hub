@@ -3,7 +3,10 @@
 // Roda com: node lista-conversas.test.js
 const { carregarHandler, reply, ok, fim } = require('./_carregar.js')
 
-const handler = carregarHandler('432 whatsapp GET /whatsapp')
+// Cada chamada usa um handler recém-carregado: os cenários são bancos diferentes, e a
+// lista guarda entre consultas a prévia das conversas fora da janela
+// (lista-guarda-previa.test.js).
+const handler = (ctx) => carregarHandler('432 whatsapp GET /whatsapp')(ctx)
 
 // A borda da janela é relativa ao relógio: datas fixas envelhecem e um dia
 // passam a mascarar o caso (foi o que aconteceu no teste de histórico).

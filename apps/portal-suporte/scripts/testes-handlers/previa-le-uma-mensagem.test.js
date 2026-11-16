@@ -64,7 +64,9 @@ function ctxDe(msgs, leituras, ignorarFiltro) {
       WhatsAppMessage: {
         findMany: async (f) => {
           if (f && f.conversation_id) leituras.push(f)
-          return camadaFindMany(msgs, ignorarFiltro && f ? { ...f, conversation_id: undefined, limit: f.limit } : f)
+          // filtro ignorado: a camada devolve as mais recentes de QUALQUER conversa
+          if (ignorarFiltro && f) { const g = { ...f }; delete g.conversation_id; return camadaFindMany(msgs, g) }
+          return camadaFindMany(msgs, f)
         },
         findById: async () => null,
       },
@@ -89,11 +91,13 @@ const textoDe = (corpo, id) => {
   const depois = await rodar(COD)
   const antes = await rodar(ANTES)
   const fA = depois.leituras.filter((f) => f.conversation_id === 'cA')
-  ok(fA.length === 1 && fA[0].limit === 1, 'leitura da conversa que ficou de fora sai com limit: 1')
-  ok(antes.leituras.every((f) => f.limit === undefined), 'controle: o código de antes lia sem limite')
-  ok(depois.corpo === antes.corpo, 'a resposta é idêntica à de antes, byte a byte')
-  ok(textoDe(depois.corpo, 'cA') === true, 'a prévia de cA é a mensagem mais recente')
+  ok('leitura da conversa que ficou de fora sai com limit: 1', fA.length === 1 && fA[0].limit === 1)
+  ok('controle: o código de antes lia sem limite', antes.leituras.every((f) => f.limit === undefined))
+  ok('a resposta é idêntica à de antes, byte a byte', depois.corpo === antes.corpo)
+  ok('a prévia de cA é a mensagem mais recente', textoDe(depois.corpo, 'cA') === true)
   const semFiltro = await rodar(COD, { ignorarFiltro: true })
-  ok(textoDe(semFiltro.corpo, 'cA') !== true, 'filtro ignorado: nunca prévia errada de outra conversa')
+  const cASemFiltro = (JSON.parse(semFiltro.corpo).data || []).find((x) => x.id === 'cA')
+  ok('filtro ignorado: nunca prévia errada de outra conversa',
+    cASemFiltro && (!cASemFiltro.last_message || /de A$/.test(cASemFiltro.last_message.body)), cASemFiltro && cASemFiltro.last_message)
   fim()
 })()
