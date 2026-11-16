@@ -73,10 +73,20 @@ function compilar(codigo) {
   return c.module.exports.handler
 }
 
+// 16/11/2026: o GET deixou de buscar a última mensagem e o auxiliar saiu do literal dele. A variante
+// antiga precisa do auxiliar, e leva a cópia que ficou no PATCH.
+const AUX_DO_PATCH = (() => {
+  const s = codigoDe('459 whatsapp PATCH /whatsapp/:id')
+  const i = s.indexOf('async function lastMessagesByConv')
+  if (i < 0) throw new Error('auxiliar ausente do PATCH')
+  return s.slice(i, s.indexOf('function serializeMsg', i))
+})()
+
 function variantes(marca, chamadaNova, chamadaAntiga) {
   const novo = codigoDe(marca)
   if (!novo.includes(chamadaNova)) throw new Error('chamada nova não achada em ' + marca)
-  const antigo = novo.replace(chamadaNova, () => chamadaAntiga) + '\n' + LOAD_DEPS_ANTIGO
+  const aux = novo.includes('async function lastMessagesByConv') ? '' : '\n' + AUX_DO_PATCH
+  const antigo = novo.replace(chamadaNova, () => chamadaAntiga) + '\n' + LOAD_DEPS_ANTIGO + aux
   return { novo: compilar(novo), antigo: compilar(antigo), codigoNovo: novo }
 }
 
@@ -274,11 +284,10 @@ async function main() {
     if (novo && novo.status === 200 && novo.body && novo.body.data) respostasNovas.push(novo.body.data)
     const antigo = await (R433.antigo(ctxDe(B.M, id)))
     if (semUlt(novo) !== semUlt(antigo)) { todasIguais = false; primeiraDif = primeiraDif || { id, novo, antigo } }
+    // 16/11/2026: o detalhe não busca mais a última mensagem (o painel não a lê): vem null.
     if (id !== 'nao-existe') {
-      const gravadas = A.M.WhatsAppMessage.linhas.filter((l) => l.data.conversation_id === id).sort((x, y) => y.createdAt - x.createdAt || y.ordem - x.ordem)
-      const esperada = gravadas[0] ? gravadas[0].data.id : null
-      const veio = novo && novo.body && novo.body.data && novo.body.data.last_message ? novo.body.data.last_message.id : null
-      if (esperada !== veio) ultimaErrada.push({ id, esperada, veio })
+      const veio = novo && novo.body && novo.body.data ? novo.body.data.last_message : undefined
+      if (veio !== null) ultimaErrada.push({ id, veio })
     }
     // TRAVA CONTRA VERDE FALSO: duas negativas iguais (403, 500) também são
     // "idênticas". Só conta como conversa real a resposta 200 com o id pedido.
@@ -309,10 +318,9 @@ async function main() {
       contagem('departamento', (d) => !!d.department),
       contagem('responsável', (d) => !!d.assigned_to),
       contagem('motivo de fechamento', (d) => !!d.close_reason),
-      contagem('última mensagem', (d) => !!d.last_message),
     ]
     const furos = RAMOS.filter((r) => r.com < 1 || r.sem < 1).map((r) => `${r.rotulo}: com=${r.com} sem=${r.sem}`)
-    ok('TRAVA DE MASSA — cada ramo (etiqueta, chamado, empresa, contato, depto, responsável, motivo, última mensagem) tem conversas COM e SEM o dado',
+    ok('TRAVA DE MASSA — cada ramo (etiqueta, chamado, empresa, contato, depto, responsável, motivo) tem conversas COM e SEM o dado',
       respostasNovas.length === 20 && furos.length === 0, { total: respostasNovas.length, furos })
     // Referência pendente é o caso que mais engana: o id existe na conversa, o
     // registro não. A resposta tem de trazer a conversa sem o objeto.
@@ -320,7 +328,7 @@ async function main() {
     ok('TRAVA DE MASSA — há conversa com responsável PENDENTE (id sem registro): o ramo "não achou" é exercitado', pendente >= 1, pendente)
   }
   ok('GET /whatsapp/:id — JSON idêntico (fora a última mensagem), 20 conversas + 1 inexistente', todasIguais, primeiraDif)
-  ok('GET /whatsapp/:id — a última mensagem é a gravada por último pela grafia de sempre, nas 20 conversas', ultimaErrada.length === 0, ultimaErrada)
+  ok('GET /whatsapp/:id — não busca a última mensagem: last_message null nas 20 conversas', ultimaErrada.length === 0, ultimaErrada)
 }
 
 // ═══ 2. PATCH: idêntico (resposta E conversa gravada) ═══════════════════════
@@ -388,7 +396,7 @@ async function main() {
   const novo = await (R433.novo(ctxDe(A.M, 'cv1')))
   const antigo = await (R433.antigo(ctxDe(B.M, 'cv1')))
   ok('mensagem fora da janela: a antiga devolvia last_message null', antigo.body.data.last_message === null, antigo.body.data.last_message)
-  ok('mensagem fora da janela: a nova devolve a última de verdade', !!(novo.body.data.last_message && novo.body.data.last_message.id), novo.body.data.last_message)
+  ok('mensagem fora da janela: o detalhe não busca a última (null)', novo.body.data.last_message === null, novo.body.data.last_message)
   const semUltima = (d) => json({ ...d, last_message: undefined })
   ok('e tudo o MAIS é idêntico (a diferença é só `last_message`)', semUltima(novo.body.data) === semUltima(antigo.body.data), { n: novo.body.data, a: antigo.body.data })
 }

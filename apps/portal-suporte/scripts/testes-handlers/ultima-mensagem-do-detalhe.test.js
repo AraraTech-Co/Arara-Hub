@@ -2,14 +2,18 @@
 // lê UMA mensagem, e não a conversa inteira: o auxiliar `lastMessagesByConv` tinha a própria cópia
 // em cada handler e a correção do `limit: 1` (#103) só entrou na da lista.
 //
-// O QUE SE GARANTE (rota 433, com a camada de modelos emulada):
+// 16/11/2026: o GET (433) deixou de buscar a última mensagem — o painel lateral não a lê — e o
+// auxiliar saiu do literal dele (ver detalhe-sem-ultima-mensagem.test.js). As garantias abaixo valem
+// para o PATCH, que devolve a prévia para a lista da inbox.
+//
+// O QUE SE GARANTE (PATCH /whatsapp/:id, com a camada de modelos emulada):
 //   - a leitura pelo campo `conversation_id` sai com `limit: 1`;
 //   - a leitura em camelCase (`conversationId`) NÃO acontece quando a primeira achou mensagem, e
 //     acontece (com `limit: 1`) quando não achou;
 //   - a resposta é IDÊNTICA à de antes quando a ordem de gravação e a do carimbo coincidem;
 //   - CRITÉRIO: a última é a mais recente por ORDEM DE GRAVAÇÃO (`created_at`, a da camada), não o
 //     maior `timestamp`. Com os dois em ordens contrárias o teste fixa quem vence, antes e agora;
-//   - as duas cópias do auxiliar (433 e PATCH) são idênticas.
+//   - o GET não tem mais o auxiliar; o PATCH tem, com o `limit: 1`.
 // MUTAÇÕES: cada uma aplicada uma vez e reprovada por asserção.
 //
 // Roda com: node ultima-mensagem-do-detalhe.test.js
@@ -40,7 +44,7 @@ const R433 = codigoDe('433 whatsapp GET /whatsapp/:id')
 const RPATCH = codigoDe('whatsapp PATCH /whatsapp/:id (')
 const NOVO_TRECHO = '    all = await Msg.findMany({ conversation_id: conversaId, limit: 1 });\n    if (!all.length) all = await Msg.findMany({ conversationId: conversaId, limit: 1 });\n'
 const ANTIGO_TRECHO = '    all = _juntarPorRecencia(await Msg.findMany({ conversation_id: conversaId }), await Msg.findMany({ conversationId: conversaId }));\n'
-const ANTES = (() => { if (R433.split(NOVO_TRECHO).length - 1 !== 1) throw new Error('âncora'); return R433.replace(NOVO_TRECHO, ANTIGO_TRECHO) })()
+const ANTES = (() => { if (RPATCH.split(NOVO_TRECHO).length - 1 !== 1) throw new Error('âncora'); return RPATCH.replace(NOVO_TRECHO, ANTIGO_TRECHO) })()
 
 const CONV = { id: 'c1', remote_jid: '5511999990001@s.whatsapp.net', conta_id: 'default', status: 'open', phase: 'em_atendimento', assigned_to_id: 'u1', updated_at: '2026-01-01T00:00:00Z', created_at: '2026-01-01T00:00:00Z' }
 const msg = (id, corpo, ts, extra = {}) => ({ id, conversation_id: 'c1', from_me: false, body: corpo, timestamp: ts, created_at: ts, ...extra })
@@ -49,7 +53,7 @@ async function rodar(cod, linhas) {
   const leituras = []
   const vazio = { findMany: async () => [], findById: async () => null }
   const models = {
-    WhatsAppConversation: { findById: async () => ({ ...CONV }), findMany: async () => [{ ...CONV }] },
+    WhatsAppConversation: { findById: async () => ({ ...CONV }), findMany: async () => [{ ...CONV }], update: async (id, p) => ({ ...CONV, ...p }) },
     WhatsAppMessage: { findMany: async (f) => { leituras.push(JSON.parse(JSON.stringify(f || {}))); return camadaFindMany(linhas, f) }, findById: async () => null },
     Profile: { findById: async () => ({ id: 'u1', role: 'support', full_name: 'Ana' }), findMany: async () => [] },
     Sessao: vazio, SystemSettings: { findMany: async () => [{}] }, ClientUser: vazio, CompanyContact: vazio, Company: vazio, Unit: vazio,
@@ -59,7 +63,7 @@ async function rodar(cod, linhas) {
   return { status: r.status, corpo: JSON.stringify(r.body), leituras, ultima: r.body && r.body.data && r.body.data.last_message }
 }
 
-async function bateria(cod = R433) {
+async function bateria(cod = RPATCH) {
   const falhas = []
   const t = (nome, cond, det) => { if (!cond) falhas.push(nome + (det !== undefined ? ' ' + JSON.stringify(det).slice(0, 220) : '')) }
   const normal = [msg('m1', 'primeira', '2026-01-01T10:00:00Z'), msg('m2', 'segunda', '2026-01-01T11:00:00Z'), msg('m3', 'ultima', '2026-01-01T12:00:00Z', { media_data: 'AAAA'.repeat(50) })]
@@ -91,7 +95,7 @@ async function bateria(cod = R433) {
   const f0 = await bateria()
   ok('a bateria passa limpa', f0.length === 0, f0)
   const aux = (s) => { const i = s.indexOf('async function lastMessagesByConv'); return s.slice(i, s.indexOf('function serializeMsg', i)) }
-  ok('as duas cópias do auxiliar (433 e PATCH) são idênticas e têm o limit', aux(R433) === aux(RPATCH) && aux(R433).includes('limit: 1'), [aux(R433).length, aux(RPATCH).length])
+  ok('o GET não tem mais o auxiliar; o PATCH tem, com o limit', !R433.includes('async function lastMessagesByConv') && aux(RPATCH).includes('limit: 1'), aux(RPATCH).length)
   const muts = [
     ['sem limit na leitura principal', 'conversation_id: conversaId, limit: 1 }', 'conversation_id: conversaId }'],
     ['camelCase sempre lido', 'if (!all.length) all = await Msg.findMany({ conversationId: conversaId, limit: 1 });', 'all = all.concat(await Msg.findMany({ conversationId: conversaId, limit: 1 }));'],
@@ -99,10 +103,10 @@ async function bateria(cod = R433) {
     ['sem a reserva em camelCase', '    if (!all.length) all = await Msg.findMany({ conversationId: conversaId, limit: 1 });\n', ''],
   ]
   for (const [nome, de, para] of muts) {
-    const n = R433.split(de).length - 1
+    const n = RPATCH.split(de).length - 1
     if (n !== 1) { ok(`mutação "${nome}" aplica exatamente uma vez`, false, n); continue }
     let fm
-    try { fm = await bateria(R433.replace(de, () => para)) } catch (e) { fm = ['erro: ' + e.message] }
+    try { fm = await bateria(RPATCH.replace(de, () => para)) } catch (e) { fm = ['erro: ' + e.message] }
     ok(`mutação "${nome}" é pega (${fm.slice(0, 1).join('').slice(0, 70)})`, fm.length > 0, 'sobreviveu')
   }
   fim()
