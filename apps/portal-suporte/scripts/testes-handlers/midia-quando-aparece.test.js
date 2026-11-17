@@ -128,9 +128,9 @@ async function bateria(variante) {
   // Função nova a cada render, como um componente que não a memoriza.
   const novaBusca = () => async (id) => { pedidos.push(id); if (falhar) throw new Error('x'); return 'data:image/png;base64,AAA' }
   let saida = null
-  const render = (id = 'wam_1') => {
+  const render = (id = 'wam_1', opcoes) => {
     reagir.i = 0
-    saida = useMidiaQuandoAparece(id, novaBusca())
+    saida = useMidiaQuandoAparece(id, novaBusca(), opcoes)
     saida.ref.current = EL
     aplicarEfeitos()
   }
@@ -176,6 +176,20 @@ async function bateria(variante) {
   andar(500); await esperar()
   if (!(pedidos.length === 0 && semEspera && desligado)) f.push('desmontar no meio da espera cancela')
 
+  // ── sob clique (vídeo, documento): nada sozinho, pede no carregar() ───────
+  zerar()
+  const SOB = { automatico: false }
+  render('wam_9', SOB); render('wam_9', SOB); andar(1000); await esperar()
+  if (!(observadores.length === 0 && pedidos.length === 0 && saida.pedida === false)) f.push('sob clique: não observa nem pede ao montar')
+  saida.carregar(); render('wam_9', SOB); await esperar(); render('wam_9', SOB)
+  if (!(pedidos.length === 1 && pedidos[0] === 'wam_9' && saida.pedida === true && saida.url)) f.push('sob clique: carregar() pede a mídia uma vez')
+  render('wam_9', SOB); await esperar()
+  if (pedidos.length !== 1) f.push('sob clique: depois de carregar, não pede de novo')
+
+  // quais tipos carregam sozinhos
+  const tipos = ['image', 'sticker', 'audio', 'video', 'document', null].map((t) => mod.carregaSozinha(t))
+  if (JSON.stringify(tipos) !== JSON.stringify([true, true, true, false, false, false])) f.push('imagem, figurinha e áudio carregam sozinhos; vídeo, documento e desconhecido esperam o clique')
+
   // ── sem IntersectionObserver: pede na hora ────────────────────────────────
   delete globalThis.IntersectionObserver
   zerar()
@@ -197,6 +211,10 @@ const NOMES = [
   'erro na busca vira erro',
   'desmontar no meio da espera cancela',
   'sem IntersectionObserver, pede na hora',
+  'sob clique: não observa nem pede ao montar',
+  'sob clique: carregar() pede a mídia uma vez',
+  'sob clique: depois de carregar, não pede de novo',
+  'imagem, figurinha e áudio carregam sozinhos; vídeo, documento e desconhecido esperam o clique',
 ]
 
 ;(async () => {
@@ -209,7 +227,9 @@ const NOMES = [
   const ini = lista.indexOf('function MediaSobDemanda(')
   const corpo = ini >= 0 ? lista.slice(ini, lista.indexOf('\n}\n', ini)) : ''
   ok('MediaSobDemanda usa o hook e põe o ref no elemento',
-    corpo.includes('useMidiaQuandoAparece') && /<div ref=\{ref\}>/.test(corpo) && !corpo.includes('useEffect'), corpo.slice(0, 300))
+    corpo.includes('useMidiaQuandoAparece') && /<div ref=\{ref\}>/.test(corpo) && !corpo.includes('whatsappApi.midia('), corpo.slice(0, 300))
+  ok('MediaSobDemanda decide pelo tipo e o botão chama carregar()',
+    /carregaSozinha\(type\)/.test(corpo) && corpo.includes('{ automatico }') && /onClick=\{[^}]*carregar\(\)/.test(corpo), corpo.slice(0, 400))
 
   const MUTS = [
     ['pede ao montar', 'if (!visivel) return\n    let vivo', 'let vivo', 'montar a bolha não pede a mídia'],
@@ -219,6 +239,9 @@ const NOMES = [
     ['busca nas dependências', '  }, [id, visivel])\n\n  return', '  }, [id, visivel, buscar])\n\n  return', 're-render com função de busca nova não pede de novo'],
     ['desmontar não limpa o timer', '      if (timer !== null) clearTimeout(timer)\n', '', 'desmontar no meio da espera cancela'],
     ['sem margem', "MARGEM = '400px 0px'", "MARGEM = '0px'", 'começa a carregar 400px antes da bolha entrar'],
+    ['sob clique observa mesmo assim', 'if (visivel || !automatico) return', 'if (visivel) return', 'sob clique: não observa nem pede ao montar'],
+    ['carregar não faz nada', 'carregar: () => setVisivel(true)', 'carregar: () => {}', 'sob clique: carregar() pede a mídia uma vez'],
+    ['vídeo carrega sozinho', "type === 'audio'\n", "type === 'audio' || type === 'video'\n", 'imagem, figurinha e áudio carregam sozinhos; vídeo, documento e desconhecido esperam o clique'],
     ['sem reserva para navegador antigo', '      setVisivel(true)\n      return\n', '      return\n', 'sem IntersectionObserver, pede na hora'],
   ]
   for (const [nome, de, para, assercao] of MUTS) {

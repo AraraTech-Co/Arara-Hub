@@ -13,8 +13,17 @@ import { useEffect, useRef, useState } from 'react'
 // carregar um pouco antes da bolha entrar, para a mídia já estar lá ao rolar.
 //
 // Sem IntersectionObserver (navegador antigo), pede na hora, como antes.
+//
+// `automatico: false` (vídeo e documento, os arquivos grandes): não observa nada
+// e só pede quando `carregar()` é chamado, por um clique de quem atende.
 
 export const PERMANENCIA_MS = 200
+
+/** Imagem, figurinha e áudio (dezenas a centenas de KB) carregam ao aparecer.
+ *  Vídeo, documento e tipo desconhecido esperam um clique. */
+export function carregaSozinha(type: string | null): boolean {
+  return type === 'image' || type === 'sticker' || type === 'audio'
+}
 export const MARGEM = '400px 0px'
 
 export interface MidiaQuandoAparece<E> {
@@ -22,11 +31,16 @@ export interface MidiaQuandoAparece<E> {
   ref: { current: E | null }
   url: string | null
   erro: boolean
+  /** A mídia já foi pedida (apareceu, ou alguém clicou em carregar). */
+  pedida: boolean
+  /** Pede a mídia agora. É o caminho de quem tem `automatico: false`. */
+  carregar: () => void
 }
 
 export function useMidiaQuandoAparece<E extends Element = HTMLDivElement>(
   id: string,
   buscar: (id: string) => Promise<string>,
+  { automatico = true }: { automatico?: boolean } = {},
 ): MidiaQuandoAparece<E> {
   const ref = useRef<E | null>(null)
   const [visivel, setVisivel] = useState(false)
@@ -35,7 +49,7 @@ export function useMidiaQuandoAparece<E extends Element = HTMLDivElement>(
 
   // Observa a bolha até ela ficar visível por PERMANENCIA_MS; depois, para.
   useEffect(() => {
-    if (visivel) return
+    if (visivel || !automatico) return
     if (typeof IntersectionObserver === 'undefined') {
       setVisivel(true)
       return
@@ -57,7 +71,7 @@ export function useMidiaQuandoAparece<E extends Element = HTMLDivElement>(
       if (timer !== null) clearTimeout(timer)
       obs.disconnect()
     }
-  }, [id, visivel])
+  }, [id, visivel, automatico])
 
   // Pede a mídia uma vez, quando a bolha apareceu.
   useEffect(() => {
@@ -72,5 +86,5 @@ export function useMidiaQuandoAparece<E extends Element = HTMLDivElement>(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, visivel])
 
-  return { ref, url, erro }
+  return { ref, url, erro, pedida: visivel, carregar: () => setVisivel(true) }
 }
