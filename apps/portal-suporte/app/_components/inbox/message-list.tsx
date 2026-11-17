@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Paperclip } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
-import { useMidiaQuandoAparece } from '@/hooks/use-midia-quando-aparece'
+import { carregaSozinha, useMidiaQuandoAparece } from '@/hooks/use-midia-quando-aparece'
 import { TextoFormatado } from '@/components/inbox/texto-formatado'
 import { Citacao, MessageActions, Reacoes } from './message-actions'
 import { whatsappApi, type WAThreadMessage } from '@/lib/api/whatsapp'
@@ -216,13 +216,35 @@ export function MessageList({
 // Não vem na lista — pesaria MB a cada consulta —, é pedida quando a bolha
 // aparece na tela (useMidiaQuandoAparece). Enquanto carrega, o rótulo do corpo
 // ("[imagem recebida]") já diz que há algo; se falhar, o rótulo fica e a bolha avisa.
+//
+// Vídeo e documento são os arquivos grandes (vários MB): não carregam sozinhos.
+// A bolha mostra um botão; o documento, ao chegar, já é baixado.
 const buscarMidia = (id: string) => whatsappApi.midia(id).then((r) => r.data.data_uri)
 function MediaSobDemanda({ id, type, nome }: { id: string; type: string | null; nome?: string | null }) {
-  const { ref, url, erro } = useMidiaQuandoAparece<HTMLDivElement>(id, buscarMidia)
+  const automatico = carregaSozinha(type)
+  const { ref, url, erro, pedida, carregar } = useMidiaQuandoAparece<HTMLDivElement>(id, buscarMidia, { automatico })
+  const [baixarAoChegar, setBaixarAoChegar] = useState(false)
+  useEffect(() => {
+    if (url && baixarAoChegar) {
+      setBaixarAoChegar(false)
+      baixar(url, nome?.replace(/\.[^.]+$/, '') || 'arquivo-whatsapp')
+    }
+  }, [url, baixarAoChegar, nome])
+  const ehVideo = type === 'video'
   return (
     <div ref={ref}>
       {url ? <MessageMedia url={url} type={type} nome={nome} />
         : erro ? <p className="mt-1 text-xs text-foreground/65">Não foi possível carregar a mídia.</p>
+        : !automatico && !pedida ? (
+          <button
+            type="button"
+            onClick={() => { if (!ehVideo) setBaixarAoChegar(true); carregar() }}
+            className="mt-1 inline-flex max-w-full items-center gap-1.5 rounded-md border border-border bg-background/60 px-2 py-1.5 text-left hover:bg-muted"
+          >
+            <Paperclip className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
+            <span className="truncate text-xs">{ehVideo ? 'Carregar vídeo' : (nome || 'Baixar arquivo')}</span>
+          </button>
+        )
         : <p className="mt-1 text-xs text-foreground/65">Carregando mídia…</p>}
     </div>
   )
