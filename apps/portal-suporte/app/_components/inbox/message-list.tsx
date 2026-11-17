@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Paperclip } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
+import { useMidiaQuandoAparece } from '@/hooks/use-midia-quando-aparece'
 import { TextoFormatado } from '@/components/inbox/texto-formatado'
 import { Citacao, MessageActions, Reacoes } from './message-actions'
 import { whatsappApi, type WAThreadMessage } from '@/lib/api/whatsapp'
@@ -213,21 +214,18 @@ export function MessageList({
 /** Renderiza a mídia baixada (imagem/vídeo/áudio/documento) na bolha. */
 // Mídia guardada no servidor (foto, áudio, vídeo decifrados do WhatsApp).
 // Não vem na lista — pesaria MB a cada consulta —, é pedida quando a bolha
-// aparece. Enquanto carrega, o rótulo do corpo ("[imagem recebida]") já diz
-// que há algo; se falhar, o rótulo fica e a bolha avisa.
+// aparece na tela (useMidiaQuandoAparece). Enquanto carrega, o rótulo do corpo
+// ("[imagem recebida]") já diz que há algo; se falhar, o rótulo fica e a bolha avisa.
+const buscarMidia = (id: string) => whatsappApi.midia(id).then((r) => r.data.data_uri)
 function MediaSobDemanda({ id, type, nome }: { id: string; type: string | null; nome?: string | null }) {
-  const [url, setUrl] = useState<string | null>(null)
-  const [erro, setErro] = useState(false)
-  useEffect(() => {
-    let vivo = true
-    whatsappApi.midia(id)
-      .then((r) => { if (vivo) setUrl(r.data.data_uri) })
-      .catch(() => { if (vivo) setErro(true) })
-    return () => { vivo = false }
-  }, [id])
-  if (url) return <MessageMedia url={url} type={type} nome={nome} />
-  if (erro) return <p className="mt-1 text-xs text-foreground/65">Não foi possível carregar a mídia.</p>
-  return <p className="mt-1 text-xs text-foreground/65">Carregando mídia…</p>
+  const { ref, url, erro } = useMidiaQuandoAparece<HTMLDivElement>(id, buscarMidia)
+  return (
+    <div ref={ref}>
+      {url ? <MessageMedia url={url} type={type} nome={nome} />
+        : erro ? <p className="mt-1 text-xs text-foreground/65">Não foi possível carregar a mídia.</p>
+        : <p className="mt-1 text-xs text-foreground/65">Carregando mídia…</p>}
+    </div>
+  )
 }
 
 // Abrir/baixar conteúdo embutido (data: URI). O Chrome BLOQUEIA navegar para
