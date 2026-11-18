@@ -1,10 +1,11 @@
-// As quatro sondas de diagnóstico da entrada (rota 485) param no teto e não
+// As três sondas de diagnóstico da entrada (rota 485) param no teto e não
 // leem a tabela de eventos inteira.
 //
 //   diag_shape      (formato desconhecido)      teto 6
 //   diag_midia      (mapa de campos do anexo)   teto 5
 //   diag_grupo_nome (nome de grupo não achado)  teto 6
-//   diag_eco        (eco de mensagem nossa)     teto 30   (coberta também em sonda-eco-sem-conteudo.test.js)
+//
+// A quarta, diag_eco, saiu em 17/11 (ver sondas-de-outubro-fora.test.js).
 //
 // O QUE SE GARANTE, para cada sonda:
 //   - com a tabela vazia, grava (TRAVA: o caminho acontece);
