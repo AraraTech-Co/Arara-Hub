@@ -1,0 +1,59 @@
+[
+  {
+    "name": "Profile",
+    "schema": {
+      "type": "object",
+      "required": ["id", "active"],
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "role": { "type": "string" },
+        "active": { "type": "boolean" }
+      }
+    }
+  },
+  {
+    "name": "Cartao",
+    "schema": {
+      "type": "object",
+      "required": ["id", "chave_criacao", "titulo", "status", "arquivado", "versao"],
+      "properties": {
+        "id": { "type": "string" },
+        "chave_criacao": { "type": "string" },
+        "titulo": { "type": "string" },
+        "descricao": { "type": "string" },
+        "status": { "type": "string" },
+        "responsavel_id": { "type": "string" },
+        "prazo": { "type": "string" },
+        "origem_tipo": { "type": "string" },
+        "origem_texto": { "type": "string" },
+        "referencia_url": { "type": "string" },
+        "decisao": { "type": "string" },
+        "criado_por": { "type": "string" },
+        "criado_em": { "type": "string" },
+        "alterado_por": { "type": "string" },
+        "alterado_em": { "type": "string" },
+        "concluido_em": { "type": "string" },
+        "arquivado": { "type": "boolean" },
+        "arquivado_em": { "type": "string" },
+        "versao": { "type": "integer" }
+      }
+    }
+  },
+  {
+    "name": "CartaoEvento",
+    "schema": {
+      "type": "object",
+      "required": ["id", "cartao_id", "tipo", "autor_id", "em"],
+      "properties": {
+        "id": { "type": "string" },
+        "cartao_id": { "type": "string" },
+        "tipo": { "type": "string" },
+        "antes": { "type": "object" },
+        "depois": { "type": "object" },
+        "autor_id": { "type": "string" },
+        "em": { "type": "string" }
+      }
+    }
+  }
+]
