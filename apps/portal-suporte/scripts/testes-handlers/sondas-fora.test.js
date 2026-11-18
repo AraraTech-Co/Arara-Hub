@@ -1,20 +1,20 @@
-// As três sondas provisórias de outubro saíram (17/11/2026):
+// As sondas de diagnóstico do WhatsApp saíram:
 //
-//   diag_eco    → 485 POST /whatsapp/inbound   (eco de mensagem nossa)
-//   diag_envio  → 464 POST /whatsapp           (resposta do envio)
-//   diag_tempo  → 432 GET /whatsapp e 434 GET /whatsapp/:id/messages (chamada lenta)
+//   17/11  diag_eco    → 485 POST /whatsapp/inbound   (eco de mensagem nossa)
+//          diag_envio  → 464 POST /whatsapp           (resposta do envio)
+//          diag_tempo  → 432 GET /whatsapp e 434 GET /whatsapp/:id/messages (chamada lenta)
+//   18/11  diag_midia, diag_shape, diag_grupo_nome → 485 (anexo, mensagem sem texto,
+//          nome de grupo não achado); diag_pagina_conversas em entrada-pagina.test.js
 //
-// e a leitura delas na 448 (`eco`, `envio`, `tempos`).
+// e a leitura delas na 448. Ali fica só a contagem dos avisos ao plantonista.
 //
-// O QUE SE GARANTE: cada rota passa pelo caminho que acionava a sonda (eco nosso,
-// envio aceito, chamada lenta) e responde como sempre, sem ler nem gravar evento
-// de diagnóstico dessas sondas. A 448 continua devolvendo `capturas` e
-// `avisos_plantao`.
+// O QUE SE GARANTE: cada rota passa pelo caminho que acionava a sonda e responde
+// como sempre, sem ler nem gravar evento `diag_*`.
 //
 // O CONTROLE: em cada rota, uma leitura de evento recolocada no ponto onde a sonda
 // ficava é pega pelo teste. Isso prova que o caminho é percorrido de verdade.
 //
-// Roda com: node sondas-de-outubro-fora.test.js
+// Roda com: node sondas-fora.test.js
 const fs = require('fs')
 const vm = require('vm')
 const { reply, ok, fim, ARQ } = require('./_carregar.js')
@@ -46,7 +46,7 @@ const R434 = codigoDe('434 whatsapp GET /whatsapp/:id/messages')
 const R448 = codigoDe('448 whatsapp GET /whatsapp/diagnostico/midia')
 const R464 = codigoDe('464 whatsapp POST /whatsapp')
 const R485 = codigoDe('485 whatsapp POST /whatsapp/inbound')
-const DAS_SONDAS = /^diag_(eco|envio|tempo)/
+const DAS_SONDAS = /^diag_/
 
 /** Eventos que registram cada leitura (`kind` pedido) e cada gravação. */
 function eventos(iniciais = []) {
@@ -66,17 +66,22 @@ function eventos(iniciais = []) {
 // ── 485: eco de mensagem nossa ──────────────────────────────────────────────
 const SEGREDO = 'segredo-da-rota'
 const JID_CLIENTE = '5519999990001@s.whatsapp.net'
-function corpoEco(deNos) {
+const MENSAGENS = {
+  texto: { conversation: 'mensagem de teste' },
+  imagem: { imageMessage: { mimetype: 'image/jpeg', fileLength: 1000, URL: 'https://mmg.whatsapp.net/x', mediaKey: 'AAAA', caption: 'foto' } },
+  desconhecida: { coisaDesconhecida: { x: 1 } },
+}
+function corpoEco(deNos, tipo = 'texto') {
   return {
     jsonData: JSON.stringify({
       event: {
-        Info: { Chat: JID_CLIENTE, Sender: deNos ? '5519333330001@s.whatsapp.net' : JID_CLIENTE, PushName: 'Cliente', ID: 'WAID' + deNos, IsFromMe: deNos },
-        Message: { conversation: 'mensagem de teste' },
+        Info: { Chat: JID_CLIENTE, Sender: deNos ? '5519333330001@s.whatsapp.net' : JID_CLIENTE, PushName: 'Cliente', ID: 'WAID' + deNos + tipo, IsFromMe: deNos },
+        Message: MENSAGENS[tipo],
       },
     }),
   }
 }
-async function rodar485(codigo, deNos) {
+async function rodar485(codigo, deNos, tipo = 'texto') {
   const conversa = { id: 'c1', remote_jid: JID_CLIENTE, conta_id: 'default', phase: 'em_atendimento', assigned_to_id: 'u1', menu_node: null }
   const criadas = []
   const ev = eventos()
@@ -90,11 +95,31 @@ async function rodar485(codigo, deNos) {
     SupportSchedule: vazio, WaFlows: vazio, Sessao: vazio, Company: vazio, Contact: vazio, Ticket: vazio, Unit: vazio, ClientUser: vazio, WaConta: vazio,
   }
   const r = await compilar(codigo)({
-    params: {}, headers: {}, query: { token: SEGREDO }, body: corpoEco(deNos), models,
+    params: {}, headers: {}, query: { token: SEGREDO }, body: corpoEco(deNos, tipo), models,
     secrets: { get: async (n) => (n === 'avisa_webhook_secret' ? SEGREDO : 'tok') },
     fetch: async () => ({ status: 200, body: '{}' }), reply: reply(),
   })
-  return { status: r.status, criadas, ev }
+  return { status: r.status, corpo: r.body, criadas, ev }
+}
+
+// Nome de grupo não achado na Avisa: a função roda fora do caminho da mensagem.
+async function rodarNomeDoGrupo(codigo) {
+  const c = {
+    console, Date, JSON, String, Number, Object, Array, Math, Promise, parseInt, parseFloat, isNaN, isFinite,
+    RegExp, Buffer, Error, TypeError, encodeURIComponent, decodeURIComponent, Intl, URL, URLSearchParams,
+    setTimeout, clearTimeout, setInterval, clearInterval, module: { exports: {} },
+  }
+  c.exports = c.module.exports; c.globalThis = c
+  vm.createContext(c); vm.runInContext(codigo, c)
+  const ev = eventos()
+  const chamadas = []
+  const ctx = {
+    models: { WaConversationEvents: ev, WaConta: { findById: async () => null, findMany: async () => [] }, SystemSettings: { findMany: async () => [{}] } },
+    secrets: { get: async () => 'TOKEN' },
+    fetch: async (url) => { chamadas.push(String(url)); return { status: 200, body: '{"success":true,"data":[]}' } },
+  }
+  const nome = await c._nomeDoGrupoAvisa(ctx, '120363000000000001@g.us', 'default')
+  return { nome, chamadas, ev }
 }
 
 // ── 464: envio aceito pelo provedor ─────────────────────────────────────────
@@ -161,6 +186,17 @@ async function bateria(c) {
     if (r.criadas.length !== 1) f.push('485:mensagem-gravada')
     if (r.ev.dasSondas().length) f.push('485:sonda' + (deNos ? '-eco' : '-cliente'))
   }
+  {
+    const r = await rodar485(c[485], false, 'imagem')
+    if ((r.status !== 200 && r.status !== 201) || r.criadas.length !== 1) f.push('485:imagem-gravada')
+    if (r.ev.dasSondas().length) f.push('485:sonda-midia')
+    const s = await rodar485(c[485], false, 'desconhecida')
+    if (!s.corpo || !s.corpo.data || s.corpo.data.ignorado !== 'sem texto') f.push('485:sem-texto-ignorado')
+    if (s.ev.dasSondas().length) f.push('485:sonda-shape')
+    const g = await rodarNomeDoGrupo(c[485])
+    if (g.nome !== null || g.chamadas.length < 2) f.push('485:busca-do-grupo')
+    if (g.ev.dasSondas().length) f.push('485:sonda-grupo')
+  }
   for (const destino of ['5512992446758@s.whatsapp.net', '120363000000000001@g.us']) {
     const r = await rodar464(c[464], destino)
     if (r.status !== 201 || !r.dados || r.dados.entregue !== true || !r.enviados.length) f.push('464:envio')
@@ -172,9 +208,9 @@ async function bateria(c) {
     if (r.ev.dasSondas().length) f.push(n + ':sonda')
   }
   const d = await rodar448(c[448])
-  if (d.status !== 200 || !d.dados || d.dados.total !== 1 || d.dados.capturas.length !== 1 || d.dados.avisos_plantao.enviado !== 1) f.push('448:resto')
-  if (d.dados && Object.keys(d.dados).sort().join(',') !== 'avisos_plantao,capturas,total') f.push('448:campos')
-  if (d.ev.dasSondas().length) f.push('448:leitura')
+  if (d.status !== 200 || !d.dados || !d.dados.avisos_plantao || d.dados.avisos_plantao.enviado !== 1) f.push('448:avisos')
+  if (d.dados && Object.keys(d.dados).join(',') !== 'avisos_plantao') f.push('448:campos')
+  if (d.ev.lidos.join(',') !== 'aviso_plantao') f.push('448:leitura')
   return f
 }
 
@@ -185,6 +221,17 @@ async function bateria(c) {
     const r = await rodar485(R485, deNos)
     ok(`485 ${deNos ? 'eco nosso' : 'mensagem do cliente'}: TRAVA, a mensagem é gravada (${r.status})`, (r.status === 200 || r.status === 201) && r.criadas.length === 1, [r.status, r.criadas.length])
     ok(`485 ${deNos ? 'eco nosso' : 'mensagem do cliente'}: nenhuma leitura nem gravação de diag_eco`, r.ev.dasSondas().length === 0, r.ev.lidos)
+  }
+  {
+    const r = await rodar485(R485, false, 'imagem')
+    ok('485 imagem do cliente: TRAVA, a mensagem é gravada', (r.status === 200 || r.status === 201) && r.criadas.length === 1, [r.status, r.criadas.length])
+    ok('485 imagem do cliente: nenhuma leitura nem gravação de diag_midia', r.ev.dasSondas().length === 0, r.ev.lidos)
+    const s = await rodar485(R485, false, 'desconhecida')
+    ok('485 mensagem sem texto reconhecido: TRAVA, é ignorada como sempre', s.corpo && s.corpo.data && s.corpo.data.ignorado === 'sem texto', s.corpo)
+    ok('485 mensagem sem texto reconhecido: nenhuma leitura nem gravação de diag_shape', s.ev.dasSondas().length === 0, s.ev.lidos)
+    const g = await rodarNomeDoGrupo(R485)
+    ok('485 nome de grupo não achado: TRAVA, consulta a Avisa duas vezes e devolve null', g.nome === null && g.chamadas.length === 2, g.chamadas)
+    ok('485 nome de grupo não achado: nenhuma leitura nem gravação de diag_grupo_nome', g.ev.dasSondas().length === 0 && g.ev.criados.length === 0, g.ev.lidos)
   }
   for (const destino of ['5512992446758@s.whatsapp.net', '120363000000000001@g.us']) {
     const r = await rodar464(R464, destino)
@@ -198,12 +245,12 @@ async function bateria(c) {
     ok(`${n}: chamada lenta não lê nem grava diag_tempo`, r.ev.dasSondas().length === 0 && r.ev.criados.length === 0, [r.ev.lidos, r.ev.criados.length])
   }
   const d = await rodar448(R448)
-  ok('448: continua devolvendo `capturas` (diag_midia) e `avisos_plantao`', d.status === 200 && d.dados.total === 1 && d.dados.capturas[0].id === 'a' && d.dados.avisos_plantao.enviado === 1, d.dados)
-  ok('448: não devolve mais `eco`, `envio` nem `tempos`', Object.keys(d.dados).sort().join(',') === 'avisos_plantao,capturas,total', Object.keys(d.dados))
-  ok('448: não lê eventos das sondas tiradas', d.ev.dasSondas().length === 0, d.ev.lidos)
+  ok('448: continua devolvendo a contagem dos avisos ao plantonista', d.status === 200 && d.dados.avisos_plantao.total === 1 && d.dados.avisos_plantao.enviado === 1, d.dados)
+  ok('448: devolve só `avisos_plantao`', Object.keys(d.dados).join(',') === 'avisos_plantao', Object.keys(d.dados))
+  ok('448: lê só os avisos (nem a tabela inteira, nem eventos das sondas)', d.ev.lidos.join(',') === 'aviso_plantao', d.ev.lidos)
 
   const texto = fs.readFileSync(ARQ, 'utf8')
-  for (const nome of ['_sondaTempos', '_sondaEnvio', '_diagTempoCompleto', '_diagEnvioCompleto', '_formaDoValor', 'diag_eco', 'diag_envio', 'diag_tempo']) {
+  for (const nome of ['_sondaTempos', '_sondaEnvio', '_diagTempoCompleto', '_diagEnvioCompleto', '_formaDoValor', 'diag_eco', 'diag_envio', 'diag_tempo', 'diag_midia', 'diag_shape', 'diag_grupo_nome', 'diag_pagina_conversas', '_diagPaginaConversas']) {
     ok(`nenhuma rota tem mais \`${nome}\``, !texto.includes(nome), texto.split(nome).length - 1)
   }
 
@@ -216,7 +263,11 @@ async function bateria(c) {
     ['464: lê diag_envio no envio aceito', 464, 'if (r && r.status >= 200 && r.status < 300) return { ok: true };', '{ if (r && r.status >= 200 && r.status < 300) { ' + LER('diag_envio') + 'return { ok: true }; } }', '464:sonda'],
     ['432: lê diag_tempo antes de responder', 432, '  return ok(ctx, data);\n', '  ' + LER('diag_tempo_lista') + '\n  return ok(ctx, data);\n', '432:sonda'],
     ['434: lê diag_tempo antes de responder', 434, '  return ok(ctx, rows, undefined, naoLidasAoAbrir, _hist);', '  ' + LER('diag_tempo_conversa') + '\n  return ok(ctx, rows, undefined, naoLidasAoAbrir, _hist);', '434:sonda'],
-    ['448: volta a devolver `eco`', 448, '    capturas: meus.slice(0, 5),\n', '    capturas: meus.slice(0, 5),\n    eco: [],\n', '448:campos'],
+    ['485: lê diag_midia ao receber anexo', 485, '    // ── Reação do cliente (17/09/2026) ──\n', '    if (_mid) ' + LER('diag_midia') + '\n    // ── Reação do cliente (17/09/2026) ──\n', '485:sonda-midia'],
+    ['485: lê diag_shape antes de ignorar', 485, '      return ok(ctx, { ignorado: "sem texto" });', '      ' + LER('diag_shape') + '\n      return ok(ctx, { ignorado: "sem texto" });', '485:sonda-shape'],
+    ['485: lê diag_grupo_nome quando não acha o nome', 485, '  } catch (e) {}\n  return null;\n}\n// A busca do nome do grupo', '  } catch (e) {}\n  ' + LER('diag_grupo_nome') + '\n  return null;\n}\n// A busca do nome do grupo', '485:sonda-grupo'],
+    ['448: volta a ler a tabela inteira', 448, '  var Ev = ctx.models.WaConversationEvents;\n', '  var Ev = ctx.models.WaConversationEvents;\n  await Ev.findMany({});\n', '448:leitura'],
+    ['448: volta a devolver `capturas`', 448, '    avisos_plantao: _avp,\n', '    avisos_plantao: _avp,\n    capturas: [],\n', '448:campos'],
   ]
   for (const [nome, rota, de, para, esperado] of muts) {
     const base = ATUAL[rota]
