@@ -13,7 +13,7 @@
 //   PROVA  - as duas rotas fazem ZERO leituras e ZERO gravações em eventos;
 //   PROVA  - a resposta é IDÊNTICA com e sem a sonda (a remoção não muda o que o
 //            operador vê, inclusive a lacuna de histórico);
-//   PROVA  - as sondas que ficam (diag_eco, diag_midia, diag_shape e a do nome de
+//   PROVA  - as sondas que ficam (diag_midia, diag_shape e a do nome de
 //            grupo na entrada) continuam onde estavam;
 //   PROVA  - o que já foi capturado segue legível pela 446;
 //   NÃO PROVA nada sobre tempo: aqui a camada é emulada e não há banco. Quanto a
@@ -193,12 +193,12 @@ const cheioDeOutros = () => Array.from({ length: 600 }, (_, i) => ({ id: 'o' + i
     const dentro = (cod, k) => (cod.match(new RegExp(k, 'g')) || []).length
     const c485 = codigoDe('485 whatsapp POST /whatsapp/inbound')
     const c448 = codigoDe('448 whatsapp GET /whatsapp/diagnostico/midia')
-    ok('485 mantém diag_eco', dentro(c485, 'diag_eco') === 3, dentro(c485, 'diag_eco'))
     // pelo ponto de GRAVAÇÃO de cada sonda (`kind: "…",`), que não depende de quantas vezes o nome é lido
     ok('485 mantém diag_midia', dentro(c485, 'kind: "diag_midia",') === 1, dentro(c485, 'kind: "diag_midia",'))
     ok('485 mantém diag_shape', dentro(c485, 'kind: "diag_shape",') === 1, dentro(c485, 'kind: "diag_shape",'))
     ok('485 mantém a sonda do nome de grupo (a da entrada)', dentro(c485, 'kind: "diag_grupo_nome",') === 1, dentro(c485, 'kind: "diag_grupo_nome",'))
-    ok('448 mantém a leitura de diag_eco e diag_midia', dentro(c448, 'diag_eco') === 3 && dentro(c448, 'diag_midia') === 1, [dentro(c448, 'diag_eco'), dentro(c448, 'diag_midia')])
+    // A diag_eco saiu em 17/11 (ver sondas-de-outubro-fora.test.js).
+    ok('448 mantém a leitura de diag_midia', dentro(c448, 'diag_midia') === 1, dentro(c448, 'diag_midia'))
     ok('as duas sondas removidas não existem mais em nenhuma rota',
       !cod434.includes('diag_historico') && !cod432.includes('diag_grupo_nome'), 0)
   }
