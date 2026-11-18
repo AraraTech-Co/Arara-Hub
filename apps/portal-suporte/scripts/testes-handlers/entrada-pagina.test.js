@@ -12,8 +12,7 @@
 //     e nenhuma conversa nova é criada;
 //   - a mesma conversa FECHADA há 1 dia, na mesma posição, é REABERTA, e também sem criar outra;
 //   - varredura incompleta NÃO derruba o webhook: página que falha e teto de páginas seguem com o
-//     que foi lido, a mensagem é gravada de todo jeito, e a falha vira evento `diag_pagina_conversas`
-//     com a MESMA trava das outras sondas da rota (no máximo 6; contagem que falha não grava).
+//     que foi lido, e a mensagem é gravada de todo jeito. Nada é lido nem gravado em eventos.
 // MUTAÇÕES: aplicadas uma vez cada, reprovadas por asserção.
 //
 // Roda com: node entrada-pagina.test.js
@@ -180,7 +179,7 @@ function mundo({ ruido = 519, alvo = {}, falhaNaPagina, eventos = [], rodizio = 
 
 const folga = () => new Promise((r) => setTimeout(r, 25))
 const daAlvo = (w) => w.msgs.filter((m) => String(m.conversation_id || m.conversationId) === 'alvo').length
-const diag = (w) => w.eventos.filter((e) => e.kind === 'diag_pagina_conversas').length
+const diag = (w) => w.eventos.filter((e) => /^diag_/.test(String(e.kind))).length
 
 async function bateria(h) {
   const f = []
@@ -218,37 +217,24 @@ async function bateria(h) {
     if (String(alvo.ticket_id) !== 'tck_1') f.push('fechada:perdeu-o-chamado')
   }
 
-  // ── Página que falha: a mensagem é gravada de todo jeito, e fica registrada ─
+  // ── Página que falha: a mensagem é gravada de todo jeito, sem evento ─────
   {
     const w = mundo({ falhaNaPagina: 1 })
     const r = await h(w.ctx('WA_FALHA'))
     await folga()
     if ((r && r.status ? r.status : 200) >= 500) f.push('falha:status=' + r.status)
     if (w.msgs.length !== 1) f.push('falha:mensagens=' + w.msgs.length)
-    if (diag(w) !== 1) f.push('falha:diagnostico=' + diag(w))
+    if (diag(w)) f.push('falha:diagnostico=' + diag(w))
   }
 
-  // ── Teto de páginas: também segue em frente, também registra ──────────────
+  // ── Teto de páginas: também segue em frente, sem evento ───────────────────
   {
     const w = mundo({ ruido: 9999 })
     const r = await h(w.ctx('WA_TETO'))
     await folga()
     if ((r && r.status ? r.status : 200) >= 500) f.push('teto:status=' + r.status)
     if (w.msgs.length !== 1) f.push('teto:mensagens=' + w.msgs.length)
-    if (diag(w) !== 1) f.push('teto:diagnostico=' + diag(w))
-  }
-
-  // ── A sonda não grava sem limite: com 6 já registrados, não escreve o 7º ──
-  {
-    const cheios = []
-    for (let i = 0; i < 6; i++) {
-      cheios.push({ id: 'dpc_' + i, conversation_id: 'diagnostico', kind: 'diag_pagina_conversas', created_at: '2026-10-01T00:00:00Z' })
-    }
-    const w = mundo({ falhaNaPagina: 1, eventos: cheios })
-    await h(w.ctx('WA_SONDA_CHEIA'))
-    await folga()
-    if (diag(w) !== 6) f.push('sonda-cheia:diagnostico=' + diag(w))
-    if (w.msgs.length !== 1) f.push('sonda-cheia:mensagens=' + w.msgs.length)
+    if (diag(w)) f.push('teto:diagnostico=' + diag(w))
   }
 
   // ── A PRIMEIRA página não tolera falha no caminho da mensagem ────────────
@@ -323,14 +309,12 @@ const MUTACOES = [
     [['offset: _pk * _PAG_CONV }', 'offset: _pk }']]],
   // Mensagem de cliente perdida é pior que varredura curta.
   ['falha de página derruba o webhook',
-    [['      _pgFalhou = { pagina: _pk, erro: String((_pe && _pe.message) || _pe) };\n      break;',
+    [['      if (_pk === 0 && !_toleraPrimeira) throw _pe;\n      break;',
       '      throw _pe;']]],
-  ['falha de página não registra nada',
-    [['  if (_pgFalhou) await _diagPaginaConversas(ctx, _pgFalhou, _acc.length);', '']]],
-  ['teto de páginas em silêncio',
-    [['    if (_pk === _MAX_PAG_CONV - 1) _pgFalhou = { pagina: _pk, erro: "teto de paginas" };\n', '']]],
-  // Sonda sem trava vira carga justamente quando o banco está pior.
-  ['sonda grava sem limite', [['    if (_qtdP >= 6) return;\n', '']]],
+  // O registro da falha voltando (a sonda que saiu em 18/11).
+  ['falha de página volta a gravar evento',
+    [['      if (_pk === 0 && !_toleraPrimeira) throw _pe;\n      break;',
+      '      if (_pk === 0 && !_toleraPrimeira) throw _pe;\n      await ctx.models.WaConversationEvents.create({ id: "dpc_x", conversation_id: "diagnostico", kind: "diag_pagina_conversas", created_at: new Date().toISOString() });\n      break;']]],
 ]
 
 // ─── O arquivo inteiro: a edição por script não pode ter mexido no resto ───
