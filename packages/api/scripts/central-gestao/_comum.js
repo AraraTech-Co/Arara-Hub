@@ -58,17 +58,22 @@ function _agora() {
   return new Date().toISOString();
 }
 
-// Data de hoje no fuso da operação, AAAA-MM-DD.
-function _hojeSP() {
+// Data local (fuso da operação) de um instante, AAAA-MM-DD.
+function _dataSP(instante) {
   var partes = new Intl.DateTimeFormat('en-US', {
     timeZone: 'America/Sao_Paulo',
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
-  }).formatToParts(new Date());
+  }).formatToParts(instante);
   var d = {};
   for (var i = 0; i < partes.length; i++) d[partes[i].type] = partes[i].value;
   return d.year + '-' + d.month + '-' + d.day;
+}
+
+// Data de hoje no fuso da operação, AAAA-MM-DD.
+function _hojeSP() {
+  return _dataSP(new Date());
 }
 
 function _corpo(ctx) {

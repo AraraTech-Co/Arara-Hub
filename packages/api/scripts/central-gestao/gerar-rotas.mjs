@@ -20,6 +20,7 @@ export const ROTAS = [
   { arquivo: 'cartoes-arquivar-controller.js', module: 'kanban', method: 'POST', path: '/cartoes/:id/arquivar' },
   { arquivo: 'cartoes-restaurar-controller.js', module: 'kanban', method: 'POST', path: '/cartoes/:id/restaurar' },
   { arquivo: 'cartoes-eventos-controller.js', module: 'kanban', method: 'GET', path: '/cartoes/:id/eventos' },
+  { arquivo: 'resumo-controller.js', module: 'resumo', method: 'GET', path: '/resumo' },
 ];
 
 export function codigoDaRota(arquivo) {

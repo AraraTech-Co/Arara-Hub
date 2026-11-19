@@ -107,8 +107,30 @@ export type Filtros = {
   arquivados?: boolean
 }
 
+export type Indicador = {
+  metric_key: string
+  label: string
+  unit: string
+  value: number | null
+  tipo: 'agora' | 'periodo'
+  source_key: string
+  source_label: string
+  universe: string
+  period_start: string | null
+  period_end: string | null
+  timezone: string
+  snapshot_at: string | null
+  last_success_at: string | null
+  fetched_at: string
+  state: string
+  reason_code: string | null
+}
+export type Area = { area_key: string; label: string; state: string; reason_code: string | null; indicadores: Indicador[] }
+export type Resumo = { gerado_em: string; timezone: string; periodo: { inicio: string; fim: string; mes: string }; areas: Area[] }
+
 export const api = {
   eu: () => chamar<Eu>('/me'),
+  resumo: (mes?: string) => chamar<Resumo>(`/resumo${mes ? `?mes=${encodeURIComponent(mes)}` : ''}`),
   membros: () => chamar<Membro[]>('/membros'),
   async cartoes(f: Filtros): Promise<{ itens: Cartao[]; total: number; incompleto: boolean }> {
     const itens: Cartao[] = []
