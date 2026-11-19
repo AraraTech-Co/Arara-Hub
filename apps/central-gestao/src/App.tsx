@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { api, type Cartao, dataBr, ErroApi, type Eu, type Filtros, HUB_URL, type Membro, sair, STATUS, type Status, token } from './lib/api'
 import { CartaoPainel } from './CartaoPainel'
 import { Resumo } from './Resumo'
+import { Marketing } from './Marketing'
 
 type Estado =
   | { tipo: 'carregando' }
@@ -65,7 +66,7 @@ export default function App() {
   )
 }
 
-type Aba = 'resumo' | 'kanban'
+type Aba = 'resumo' | 'kanban' | 'marketing'
 
 function Topo({ eu, aba, onAba }: { eu?: Eu; aba?: Aba; onAba?: (a: Aba) => void }) {
   return (
@@ -78,6 +79,7 @@ function Topo({ eu, aba, onAba }: { eu?: Eu; aba?: Aba; onAba?: (a: Aba) => void
         <nav className="abas" aria-label="Seções">
           <button type="button" className={aba === 'resumo' ? 'ativa' : ''} aria-current={aba === 'resumo' ? 'page' : undefined} onClick={() => onAba('resumo')}>Resumo</button>
           <button type="button" className={aba === 'kanban' ? 'ativa' : ''} aria-current={aba === 'kanban' ? 'page' : undefined} onClick={() => onAba('kanban')}>Kanban</button>
+          <button type="button" className={aba === 'marketing' ? 'ativa' : ''} aria-current={aba === 'marketing' ? 'page' : undefined} onClick={() => onAba('marketing')}>Marketing</button>
         </nav>
       )}
       <nav className="topo-dir">
@@ -94,6 +96,15 @@ function Principal({ eu, onSessaoPerdida }: { eu: Eu; onSessaoPerdida: () => voi
   const [aba, setAba] = useState<Aba>('resumo')
   const [filtroInicial, setFiltroInicial] = useState<Filtros>(FILTRO_VAZIO)
   const [versao, setVersao] = useState(0) // remonta o quadro ao vir do resumo com outro filtro
+  const [membros, setMembros] = useState<Membro[]>([])
+  useEffect(() => {
+    api.membros().then(setMembros).catch(() => setMembros([]))
+  }, [])
+  const nomes = useMemo(() => new Map(membros.map((m) => [m.id, m.name])), [membros])
+  const nomeDe = useCallback(
+    (id: string | null) => (!id ? 'Sem responsável' : nomes.get(id) || (id === eu.id ? eu.name : 'Pessoa sem acesso ativo')),
+    [nomes, eu],
+  )
   return (
     <div className="casca">
       <Topo eu={eu} aba={aba} onAba={(a) => { if (a === 'kanban') setFiltroInicial(FILTRO_VAZIO); setVersao((v) => v + 1); setAba(a) }} />
@@ -102,7 +113,10 @@ function Principal({ eu, onSessaoPerdida }: { eu: Eu; onSessaoPerdida: () => voi
           <Resumo
             onSessaoPerdida={onSessaoPerdida}
             onAbrirKanban={(f) => { setFiltroInicial({ ...FILTRO_VAZIO, ...f }); setVersao((v) => v + 1); setAba('kanban') }}
+            onAbrirMarketing={() => setAba('marketing')}
           />
+        ) : aba === 'marketing' ? (
+          <Marketing membros={membros} nomeDe={nomeDe} onSessaoPerdida={onSessaoPerdida} />
         ) : (
           <Quadro key={versao} eu={eu} filtroInicial={filtroInicial} onSessaoPerdida={onSessaoPerdida} />
         )}

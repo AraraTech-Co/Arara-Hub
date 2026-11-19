@@ -154,3 +154,12 @@ input[type='checkbox'] { width: 18px; height: 18px; accent-color: var(--acento);
   .topo { flex-wrap: wrap; }
   .abas { order: 3; margin: 0; width: 100%; }
 }
+
+.lista-mkt { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.mkt-item { all: unset; box-sizing: border-box; width: 100%; display: grid; gap: 6px; padding: 12px; background: var(--superficie); border: 1px solid var(--linha); border-radius: 8px; cursor: pointer; }
+.mkt-item:hover { border-color: var(--acento); }
+.mkt-item:focus-visible { outline: 2px solid var(--foco); outline-offset: 2px; }
+.mkt-titulo { font-weight: 600; overflow-wrap: anywhere; }
+.selo-mkt-planejado, .selo-mkt-em_andamento { background: var(--superficie-2); color: var(--tinta); border: 1px solid var(--linha); }
+.selo-mkt-concluido { background: var(--verde); color: var(--superficie); }
+.selo-mkt-cancelado { background: transparent; color: var(--mudo); border: 1px dashed var(--linha); text-decoration: line-through; }

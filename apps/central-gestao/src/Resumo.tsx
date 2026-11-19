@@ -18,9 +18,9 @@ function fimInclusivo(fimExclusivo: string): string {
   return d.toISOString().slice(0, 10)
 }
 
-type Props = { onAbrirKanban: (filtro?: { status?: string; vencidos?: boolean }) => void; onSessaoPerdida: () => void }
+type Props = { onAbrirKanban: (filtro?: { status?: string; vencidos?: boolean }) => void; onAbrirMarketing: () => void; onSessaoPerdida: () => void }
 
-export function Resumo({ onAbrirKanban, onSessaoPerdida }: Props) {
+export function Resumo({ onAbrirKanban, onAbrirMarketing, onSessaoPerdida }: Props) {
   const [mes, setMes] = useState('')
   const [dados, setDados] = useState<TResumo | null>(null)
   const [carregando, setCarregando] = useState(true)
@@ -75,7 +75,7 @@ export function Resumo({ onAbrirKanban, onSessaoPerdida }: Props) {
       )}
 
       <div className="areas" aria-busy={carregando}>
-        {dados?.areas.map((a) => <AreaCartao key={a.area_key} area={a} onAbrirKanban={onAbrirKanban} />)}
+        {dados?.areas.map((a) => <AreaCartao key={a.area_key} area={a} onAbrirKanban={onAbrirKanban} onAbrirMarketing={onAbrirMarketing} />)}
         {!dados && carregando && <p className="mudo">Carregando áreas…</p>}
       </div>
     </>
@@ -90,7 +90,8 @@ const FILTRO_DO_INDICADOR: Record<string, { status?: string; vencidos?: boolean 
   'kanban.vencidos': { vencidos: true },
 }
 
-function AreaCartao({ area, onAbrirKanban }: { area: Area; onAbrirKanban: Props['onAbrirKanban'] }) {
+function AreaCartao({ area, onAbrirKanban, onAbrirMarketing }: { area: Area; onAbrirKanban: Props['onAbrirKanban']; onAbrirMarketing: () => void }) {
+  const abrir = (k: string) => (area.area_key === 'kanban' ? onAbrirKanban(FILTRO_DO_INDICADOR[k]) : area.area_key === 'marketing' ? onAbrirMarketing() : undefined)
   const semNumero = area.indicadores.length === 0 || area.state !== 'ok'
   return (
     <section className={`area area-${area.area_key}`} aria-labelledby={`area-${area.area_key}`}>
@@ -98,6 +99,9 @@ function AreaCartao({ area, onAbrirKanban }: { area: Area; onAbrirKanban: Props[
         <h2 id={`area-${area.area_key}`}>{area.label}</h2>
         {area.area_key === 'kanban' && (
           <button type="button" className="link" onClick={() => onAbrirKanban()}>Abrir o quadro</button>
+        )}
+        {area.area_key === 'marketing' && (
+          <button type="button" className="link" onClick={onAbrirMarketing}>Abrir marketing</button>
         )}
       </header>
       {semNumero && (
@@ -110,9 +114,12 @@ function AreaCartao({ area, onAbrirKanban }: { area: Area; onAbrirKanban: Props[
         <>
           <ul className="indicadores">
             {area.indicadores.map((i) => (
-              <IndicadorItem key={i.metric_key} i={i} onAbrir={() => onAbrirKanban(FILTRO_DO_INDICADOR[i.metric_key])} />
+              <IndicadorItem key={i.metric_key} i={i} onAbrir={() => abrir(i.metric_key)} />
             ))}
           </ul>
+          {area.indicadores[0] && (
+            <p className="mudo nota">Fonte: {area.indicadores[0].source_label}. Passe o mouse sobre um número para ver o universo.</p>
+          )}
           {area.area_key === 'kanban' && (
             <p className="mudo nota">
               Fonte: Kanban da gestão · cartões não arquivados. “Vencidos” também aparecem na coluna de status: não somar.

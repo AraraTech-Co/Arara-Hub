@@ -105,7 +105,7 @@ export const ESTRANHO = 'usr-x-0009';
 
 // Um "mundo": os 3 models com dois membros ativos e um inativo.
 export function mundo({ semModel = [] } = {}) {
-  const models = { Profile: criarModel('Profile'), Cartao: criarModel('Cartao'), CartaoEvento: criarModel('CartaoEvento') };
+  const models = { Profile: criarModel('Profile'), Cartao: criarModel('Cartao'), CartaoEvento: criarModel('CartaoEvento'), RegistroMarketing: criarModel('RegistroMarketing') };
   models.Profile.inserirCru('pkA', { id: A, name: 'Pessoa A', role: 'admin', active: true });
   models.Profile.inserirCru('pkB', { id: B, name: 'Pessoa B', role: 'membro', active: true });
   models.Profile.inserirCru('pkC', { id: INATIVO, name: 'Pessoa C', role: 'membro', active: false });

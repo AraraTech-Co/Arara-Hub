@@ -91,13 +91,65 @@ async function _rota(ctx) {
     });
   }
 
+  // Marketing (base própria da Central). Sem o model: "base ainda não cadastrada", sem número.
+  var areaMkt;
+  if (!ctx.models.RegistroMarketing) {
+    areaMkt = semFonte('marketing', 'Marketing', 'sem_configuracao', 'base_nao_cadastrada');
+  } else {
+    var mv = null;
+    var mEstado = 'ok';
+    var mMotivo = null;
+    try {
+      var rm = await _lerTodos(ctx.models.RegistroMarketing, {});
+      if (!rm.completo) {
+        mEstado = 'erro';
+        mMotivo = 'leitura_incompleta';
+      } else {
+        mv = { criados: 0, abertos: 0 };
+        for (var x = 0; x < rm.itens.length; x++) {
+          var reg = rm.itens[x];
+          if (typeof reg.titulo !== 'string') continue;
+          if (reg.status === 'planejado' || reg.status === 'em_andamento') mv.abertos += 1;
+          var dc = new Date(reg.criado_em);
+          if (!isNaN(dc.getTime())) {
+            var diaC = _dataSP(dc);
+            if (diaC >= inicio && diaC < fim) mv.criados += 1;
+          }
+        }
+      }
+    } catch (e) {
+      mEstado = 'erro';
+      mMotivo = 'falha_leitura';
+      mv = null;
+    }
+    function indMkt(key, label, tipo, universo, valor) {
+      var per = tipo === 'periodo';
+      return {
+        metric_key: key, label: label, unit: 'registros', value: mv ? valor : null, tipo: tipo,
+        source_key: 'central-gestao.marketing', source_label: 'Marketing (base da Central)', universe: universo,
+        period_start: per ? inicio : null, period_end: per ? fim : null, timezone: TZ,
+        snapshot_at: per || !mv ? null : agora, last_success_at: mv ? agora : null, fetched_at: agora,
+        state: mEstado, reason_code: mMotivo,
+      };
+    }
+    areaMkt = {
+      area_key: 'marketing', label: 'Marketing', state: mEstado, reason_code: mMotivo,
+      indicadores: [
+        indMkt('marketing.criados_periodo', 'Registros criados no período', 'periodo',
+          'Registros de marketing da Central com data de criação (fuso de São Paulo) no período, em qualquer status', mv && mv.criados),
+        indMkt('marketing.nao_concluidos', 'Não concluídos', 'agora',
+          'Registros de marketing da Central com status Planejado ou Em andamento', mv && mv.abertos),
+      ],
+    };
+  }
+
   return ctx.reply.status(200).send({
     gerado_em: agora,
     timezone: TZ,
     periodo: { inicio: inicio, fim: fim, mes: mes },
     areas: [
       semFonte('tickets', 'Tickets', 'definicao_pendente', 'universo_a_definir'),
-      semFonte('marketing', 'Marketing', 'sem_configuracao', 'base_nao_cadastrada'),
+      areaMkt,
       semFonte('vendas', 'Vendas', 'sem_configuracao', 'fonte_nao_configurada'),
       semFonte('horas', 'Horas e custo', 'sem_configuracao', 'fonte_nao_configurada'),
       { area_key: 'kanban', label: 'Kanban da gestão', state: estado, reason_code: motivo, indicadores: indicadores },

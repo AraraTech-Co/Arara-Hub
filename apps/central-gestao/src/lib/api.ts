@@ -128,8 +128,52 @@ export type Indicador = {
 export type Area = { area_key: string; label: string; state: string; reason_code: string | null; indicadores: Indicador[] }
 export type Resumo = { gerado_em: string; timezone: string; periodo: { inicio: string; fim: string; mes: string }; areas: Area[] }
 
+export type StatusMkt = 'planejado' | 'em_andamento' | 'concluido' | 'cancelado'
+export const STATUS_MKT: { id: StatusMkt; nome: string }[] = [
+  { id: 'planejado', nome: 'Planejado' },
+  { id: 'em_andamento', nome: 'Em andamento' },
+  { id: 'concluido', nome: 'Concluído' },
+  { id: 'cancelado', nome: 'Cancelado' },
+]
+export type RegistroMkt = {
+  id: string
+  titulo: string
+  descricao: string | null
+  status: StatusMkt
+  responsavel_id: string | null
+  data_referencia: string | null
+  criado_por: string
+  criado_em: string
+  alterado_por: string
+  alterado_em: string
+  versao: number
+}
+
 export const api = {
   eu: () => chamar<Eu>('/me'),
+  async marketing(f: { status?: string; q?: string }): Promise<{ itens: RegistroMkt[]; total: number; incompleto: boolean }> {
+    const itens: RegistroMkt[] = []
+    let offset: number | null = 0
+    let total = 0
+    let incompleto = false
+    while (offset !== null) {
+      const qs = new URLSearchParams()
+      if (f.status) qs.set('status', f.status)
+      if (f.q?.trim()) qs.set('q', f.q.trim())
+      if (offset) qs.set('offset', String(offset))
+      const r: { itens: RegistroMkt[]; total: number; proximo_offset: number | null; incompleto?: boolean } =
+        await chamar(`/marketing?${qs.toString()}`)
+      itens.push(...r.itens)
+      total = r.total
+      incompleto = incompleto || !!r.incompleto
+      offset = r.proximo_offset
+    }
+    return { itens, total, incompleto }
+  },
+  criarMkt: (dados: Record<string, unknown>) =>
+    chamar<{ registro: RegistroMkt }>('/marketing', { method: 'POST', body: JSON.stringify(dados) }),
+  editarMkt: (id: string, dados: Record<string, unknown>) =>
+    chamar<{ registro: RegistroMkt }>(`/marketing/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(dados) }),
   resumo: (mes?: string) => chamar<Resumo>(`/resumo${mes ? `?mes=${encodeURIComponent(mes)}` : ''}`),
   membros: () => chamar<Membro[]>('/membros'),
   async cartoes(f: Filtros): Promise<{ itens: Cartao[]; total: number; incompleto: boolean }> {

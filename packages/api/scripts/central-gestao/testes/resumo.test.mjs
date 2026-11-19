@@ -17,7 +17,7 @@ function cru(w, id, campos) {
 }
 
 test('resumo: formato, ordem das áreas e áreas sem fonte sem número', async () => {
-  const w = mundo();
+  const w = mundo({ semModel: ['RegistroMarketing'] });
   const r = await resumo(w);
   assert.equal(r.status, 200);
   assert.deepEqual(Object.keys(r.body).sort(), ['areas', 'gerado_em', 'periodo', 'timezone']);
