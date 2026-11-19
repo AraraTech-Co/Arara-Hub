@@ -2,9 +2,10 @@
 import { registerAppRoutes } from '../../lib/static-registry.js'
 import { aplicarGuardaDeLeitura } from './guarda-leitura.js'
 import { rotasDoFunil } from './funil.js'
+import { rotasDoResumoGestao } from './resumo-gestao.js'
 import { PortalCrmRoutes as rotasGeradas } from './routes.generated.js'
 
-const PortalCrmRoutes = aplicarGuardaDeLeitura([...rotasGeradas, ...rotasDoFunil])
+const PortalCrmRoutes = aplicarGuardaDeLeitura([...rotasGeradas, ...rotasDoFunil, ...rotasDoResumoGestao])
 
 export function loadPortalCrmRoutes() {
   registerAppRoutes('portal-crm', PortalCrmRoutes)

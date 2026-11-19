@@ -7,6 +7,23 @@ const MENSAGEM: Record<string, string> = {
   fonte_nao_configurada: 'Fonte ainda não configurada.',
   falha_leitura: 'Não foi possível consultar a fonte.',
   leitura_incompleta: 'A leitura não terminou; nenhum número foi publicado.',
+  sem_permissao: 'Você não tem acesso a este indicador.',
+  meta_nao_cadastrada: 'Meta não cadastrada.',
+  custo_a_validar: 'Acesso ao custo agregado a validar.',
+  resolucao_sem_data_confiavel: 'A definir: a data de resolução não é gravada em todas as mudanças.',
+  sem_analistas: 'Sem analistas no período.',
+}
+
+function formatar(i: Indicador): string {
+  if (i.value === null) return '—'
+  if (i.unit === 'minutos') {
+    const h = Math.floor(i.value / 60)
+    const m = Math.round(i.value % 60)
+    return `${h}h ${String(m).padStart(2, '0')}m`
+  }
+  if (i.unit === 'BRL') return i.value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+  if (i.unit === '%') return `${i.value.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`
+  return i.value.toLocaleString('pt-BR')
 }
 
 const MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro']
@@ -104,10 +121,17 @@ function AreaCartao({ area, onAbrirKanban, onAbrirMarketing }: { area: Area; onA
           <button type="button" className="link" onClick={onAbrirMarketing}>Abrir marketing</button>
         )}
       </header>
-      {semNumero && (
+      {semNumero && area.indicadores.length === 0 && (
         <p className={`estado ${area.state === 'erro' ? 'estado-erro' : ''}`}>
           {area.state === 'erro' ? '⚠ ' : 'ⓘ '}
           {MENSAGEM[area.reason_code ?? ''] ?? 'Indisponível.'}
+        </p>
+      )}
+      {semNumero && area.indicadores.length > 0 && (
+        <p className={`estado ${area.state === 'erro' ? 'estado-erro' : ''}`}>
+          {area.state === 'erro' ? '⚠ ' : 'ⓘ '}
+          {MENSAGEM[area.reason_code ?? area.state] ?? 'Indisponível.'}
+          {area.state === 'erro' && ' Use “Atualizar dados” para tentar de novo.'}
         </p>
       )}
       {area.state === 'ok' && area.indicadores.length > 0 && (
@@ -117,7 +141,7 @@ function AreaCartao({ area, onAbrirKanban, onAbrirMarketing }: { area: Area; onA
               <IndicadorItem key={i.metric_key} i={i} onAbrir={() => abrir(i.metric_key)} />
             ))}
           </ul>
-          {area.indicadores[0] && (
+          {area.indicadores[0] && area.area_key !== 'kanban' && (
             <p className="mudo nota">Fonte: {area.indicadores[0].source_label}. Passe o mouse sobre um número para ver o universo.</p>
           )}
           {area.area_key === 'kanban' && (
@@ -139,8 +163,9 @@ function IndicadorItem({ i, onAbrir }: { i: Indicador; onAbrir: () => void }) {
   return (
     <li className="indicador">
       <button type="button" className="indicador-botao" onClick={onAbrir} title={i.universe}>
-        <span className="indicador-valor">{i.value === null ? '—' : i.value.toLocaleString('pt-BR')}</span>
+        <span className="indicador-valor">{formatar(i)}</span>
         <span className="indicador-nome">{i.label}</span>
+        {i.value === null && i.reason_code && <span className="indicador-motivo">{MENSAGEM[i.reason_code] ?? 'Indisponível.'}</span>}
         <span className="indicador-ref">
           <span className={`selo selo-${i.tipo}`}>{i.tipo === 'periodo' ? nomeMes(i.period_start!.slice(0, 7)) : 'Agora'}</span>
           <span className="sr"> {ref}. {i.unit}. {i.universe}.</span>

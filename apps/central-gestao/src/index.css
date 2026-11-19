@@ -128,7 +128,7 @@ input[type='checkbox'] { width: 18px; height: 18px; accent-color: var(--acento);
 .abas button { background: none; border: 0; border-bottom: 2px solid transparent; padding: 6px 10px; cursor: pointer; color: var(--mudo); font-weight: 600; }
 .abas button.ativa { color: var(--tinta); border-bottom-color: var(--acento); }
 .nota-periodo { margin: 0; font-size: 0.85rem; max-width: 420px; padding-bottom: 8px; }
-.areas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.areas { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
 .area { background: var(--superficie); border: 1px solid var(--linha); border-radius: var(--raio); padding: 14px 16px; display: grid; gap: 10px; align-content: start; box-shadow: var(--sombra); }
 .area-kanban { grid-column: 1 / -1; }
 .area-topo { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
@@ -163,3 +163,12 @@ input[type='checkbox'] { width: 18px; height: 18px; accent-color: var(--acento);
 .selo-mkt-planejado, .selo-mkt-em_andamento { background: var(--superficie-2); color: var(--tinta); border: 1px solid var(--linha); }
 .selo-mkt-concluido { background: var(--verde); color: var(--superficie); }
 .selo-mkt-cancelado { background: transparent; color: var(--mudo); border: 1px dashed var(--linha); text-decoration: line-through; }
+.indicador-motivo { font-size: 0.78rem; color: var(--mudo); }
+.area-tickets, .area-vendas, .area-horas { grid-column: 1 / -1; }
+.area-vendas .indicadores, .area-tickets .indicadores { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@media (max-width: 900px) {
+  .area-vendas .indicadores, .area-tickets .indicadores { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 600px) {
+  .area-vendas .indicadores, .area-tickets .indicadores { grid-template-columns: 1fr 1fr; }
+}

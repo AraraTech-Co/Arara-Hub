@@ -7,6 +7,11 @@ import { fileURLToPath } from 'node:url';
 
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
 export const GEN = process.env.CG_GEN || path.resolve(AQUI, '../../../src/apps/central-gestao/routes.generated.ts');
+// Arquivos das fontes (o mutacao.mjs aponta para cópias mutadas por estas variáveis).
+export function arqGerado(app) {
+  return process.env['CG_GEN_' + app.replace(/-/g, '_').toUpperCase()] || path.resolve(AQUI, '../../../src/apps', app, 'routes.generated.ts');
+}
+export const CRM_TS = process.env.CG_CRM_TS || path.resolve(AQUI, '../../../src/apps/portal-crm/resumo-gestao.ts');
 
 export function todosHandlers(texto = fs.readFileSync(GEN, 'utf8')) {
   const out = [];
