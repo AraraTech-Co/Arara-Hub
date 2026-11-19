@@ -123,3 +123,34 @@ input[type='checkbox'] { width: 18px; height: 18px; accent-color: var(--acento);
   .filtros label:not(.check) { flex: 1 1 100%; }
   .cabeca .botao { width: 100%; justify-content: center; }
 }
+
+.abas { display: flex; gap: 4px; margin-right: auto; margin-left: 16px; }
+.abas button { background: none; border: 0; border-bottom: 2px solid transparent; padding: 6px 10px; cursor: pointer; color: var(--mudo); font-weight: 600; }
+.abas button.ativa { color: var(--tinta); border-bottom-color: var(--acento); }
+.nota-periodo { margin: 0; font-size: 0.85rem; max-width: 420px; padding-bottom: 8px; }
+.areas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.area { background: var(--superficie); border: 1px solid var(--linha); border-radius: var(--raio); padding: 14px 16px; display: grid; gap: 10px; align-content: start; box-shadow: var(--sombra); }
+.area-kanban { grid-column: 1 / -1; }
+.area-topo { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.area-topo h2 { font-size: 1rem; }
+.estado { margin: 0; color: var(--mudo); font-size: 0.92rem; }
+.estado-erro { color: var(--perigo); font-weight: 600; }
+.indicadores { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+.indicador-botao { all: unset; box-sizing: border-box; width: 100%; display: grid; gap: 2px; padding: 10px; border-radius: 8px; background: var(--superficie-2); cursor: pointer; }
+.indicador-botao:hover { outline: 1px solid var(--linha); }
+.indicador-botao:focus-visible { outline: 2px solid var(--foco); outline-offset: 2px; }
+.indicador-valor { font-size: 1.6rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.indicador-nome { font-size: 0.88rem; }
+.selo { display: inline-block; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; padding: 1px 6px; border-radius: 4px; }
+.selo-agora { background: var(--superficie); color: var(--mudo); border: 1px solid var(--linha); }
+.selo-periodo { background: var(--acento); color: var(--acento-tinta); }
+.nota { margin: 0; font-size: 0.82rem; }
+@media (max-width: 900px) {
+  .indicadores { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 600px) {
+  .areas { grid-template-columns: 1fr; }
+  .indicadores { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .topo { flex-wrap: wrap; }
+  .abas { order: 3; margin: 0; width: 100%; }
+}

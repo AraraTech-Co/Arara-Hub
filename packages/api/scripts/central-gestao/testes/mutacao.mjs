@@ -18,6 +18,9 @@ const ORIGINAL = fs.readFileSync(GEN, 'utf8');
 //   `if (p.active !== true) continue;`: a leitura já filtra por igualdade EXATA
 //   (`{ arquivado: <bool> }`, `{ active: true }`), então a condição é sempre falsa.
 //   Ficam como defesa caso a leitura mude.
+// - GET /resumo: a leitura `{ arquivado: false }` e o `if (c.arquivado === true) continue;`
+//   são o mesmo recorte duas vezes; tirar um só não muda nenhuma contagem (o outro garante).
+//   A leitura filtrada fica pelo custo; a checagem em memória, como defesa.
 const MUTANTES = [
   ['guarda: aceita chave sem pessoa', "if (!u || typeof u.id !== 'string' || !u.id) {", 'if (false) {'],
   ['guarda: ignora Profile inativo', "if (!p || p.active !== true || String(p.id) !== u.id) {", 'if (!p || String(p.id) !== u.id) {'],
@@ -36,6 +39,14 @@ const MUTANTES = [
   ['url: aceita protocolo qualquer', "if (u.protocol !== 'https:' || !u.hostname)", 'if (!u.hostname)'],
   ['url: aceita usuário/senha', 'if (u.username || u.password) return', 'if (false) return'],
   ['idempotência: devolve cartão alheio', 'if (existentes[0].criado_por !== g.pessoa.id) {', 'if (false) {'],
+  ['resumo: período inclui o fim', 'dia >= inicio && dia < fim', 'dia >= inicio && dia <= fim'],
+  ['resumo: período em UTC', 'var dia = _dataSP(dt);', 'var dia = dt.toISOString().slice(0, 10);'],
+  ['resumo: concluído sem status concluído', "if (c.status === 'concluido' && c.concluido_em) {", 'if (c.concluido_em) {'],
+  ['resumo: publica número parcial', "      estado = 'erro';\n      motivo = 'leitura_incompleta';\n    } else {", "      estado = 'erro';\n      motivo = 'leitura_incompleta';\n    }\n    {"],
+  ['resumo: falha vira zero', '    valores = null;\n  }\n\n  var indicadores', "    valores = { 'kanban.para_decidir': 0, 'kanban.em_andamento': 0, 'kanban.aguardando': 0, 'kanban.concluidos_periodo': 0, 'kanban.vencidos': 0 };\n  }\n\n  var indicadores"],
+  ['resumo: dezembro não vira o ano', "(m === 12 ? ano + 1 + '-01' :", "(m === 12 ? ano + '-13' :"],
+  ['resumo: aceita mês 13', 'mm < 1 || mm > 12', 'mm < 1'],
+  ['resumo: snapshot no período', 'snapshot_at: porPeriodo || !valores ? null : agora,', 'snapshot_at: agora,'],
   ['url: aceita espaço', "if (/\\s/.test(t.valor)) return", 'if (false) return'],
   ['prazo: aceita data inexistente', 'if (dt.getUTCFullYear() !== a || dt.getUTCMonth() !== m - 1 || dt.getUTCDate() !== d) {', 'if (false) {'],
   ['vencido: inclui hoje', 'c.prazo < hoje', 'c.prazo <= hoje'],

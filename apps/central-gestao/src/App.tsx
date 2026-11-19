@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { api, type Cartao, dataBr, ErroApi, type Eu, type Filtros, HUB_URL, type Membro, sair, STATUS, type Status, token } from './lib/api'
 import { CartaoPainel } from './CartaoPainel'
+import { Resumo } from './Resumo'
 
 type Estado =
   | { tipo: 'carregando' }
@@ -31,7 +32,7 @@ export default function App() {
     if (token()) entrar()
   }, [entrar])
 
-  if (estado.tipo === 'ok') return <Quadro eu={estado.eu} onSessaoPerdida={() => { sair(); setEstado({ tipo: 'sem_sessao' }) }} />
+  if (estado.tipo === 'ok') return <Principal eu={estado.eu} onSessaoPerdida={() => { sair(); setEstado({ tipo: 'sem_sessao' }) }} />
 
   return (
     <div className="casca">
@@ -64,13 +65,21 @@ export default function App() {
   )
 }
 
-function Topo({ eu }: { eu?: Eu }) {
+type Aba = 'resumo' | 'kanban'
+
+function Topo({ eu, aba, onAba }: { eu?: Eu; aba?: Aba; onAba?: (a: Aba) => void }) {
   return (
     <header className="topo">
       <div className="marca">
         <span className="marca-ponto" aria-hidden="true" />
         Central de Gestão
       </div>
+      {aba && onAba && (
+        <nav className="abas" aria-label="Seções">
+          <button type="button" className={aba === 'resumo' ? 'ativa' : ''} aria-current={aba === 'resumo' ? 'page' : undefined} onClick={() => onAba('resumo')}>Resumo</button>
+          <button type="button" className={aba === 'kanban' ? 'ativa' : ''} aria-current={aba === 'kanban' ? 'page' : undefined} onClick={() => onAba('kanban')}>Kanban</button>
+        </nav>
+      )}
       <nav className="topo-dir">
         {eu && <span className="mudo">{eu.name}</span>}
         <a href={HUB_URL}>← Hub</a>
@@ -81,9 +90,30 @@ function Topo({ eu }: { eu?: Eu }) {
 
 const FILTRO_VAZIO: Filtros = { status: '', responsavel: '', vencidos: false, q: '', arquivados: false }
 
-function Quadro({ eu, onSessaoPerdida }: { eu: Eu; onSessaoPerdida: () => void }) {
+function Principal({ eu, onSessaoPerdida }: { eu: Eu; onSessaoPerdida: () => void }) {
+  const [aba, setAba] = useState<Aba>('resumo')
+  const [filtroInicial, setFiltroInicial] = useState<Filtros>(FILTRO_VAZIO)
+  const [versao, setVersao] = useState(0) // remonta o quadro ao vir do resumo com outro filtro
+  return (
+    <div className="casca">
+      <Topo eu={eu} aba={aba} onAba={(a) => { if (a === 'kanban') setFiltroInicial(FILTRO_VAZIO); setVersao((v) => v + 1); setAba(a) }} />
+      <main>
+        {aba === 'resumo' ? (
+          <Resumo
+            onSessaoPerdida={onSessaoPerdida}
+            onAbrirKanban={(f) => { setFiltroInicial({ ...FILTRO_VAZIO, ...f }); setVersao((v) => v + 1); setAba('kanban') }}
+          />
+        ) : (
+          <Quadro key={versao} eu={eu} filtroInicial={filtroInicial} onSessaoPerdida={onSessaoPerdida} />
+        )}
+      </main>
+    </div>
+  )
+}
+
+function Quadro({ eu, filtroInicial, onSessaoPerdida }: { eu: Eu; filtroInicial: Filtros; onSessaoPerdida: () => void }) {
   const [membros, setMembros] = useState<Membro[]>([])
-  const [filtros, setFiltros] = useState<Filtros>(FILTRO_VAZIO)
+  const [filtros, setFiltros] = useState<Filtros>(filtroInicial)
   const [busca, setBusca] = useState('')
   const [dados, setDados] = useState<{ itens: Cartao[]; total: number; incompleto: boolean } | null>(null)
   const [erro, setErro] = useState<string | null>(null)
@@ -151,9 +181,7 @@ function Quadro({ eu, onSessaoPerdida }: { eu: Eu; onSessaoPerdida: () => void }
   const colunas = filtros.arquivados ? null : STATUS
 
   return (
-    <div className="casca">
-      <Topo eu={eu} />
-      <main>
+    <>
         <div className="cabeca">
           <div>
             <h1>Kanban da gestão</h1>
@@ -253,8 +281,6 @@ function Quadro({ eu, onSessaoPerdida }: { eu: Eu; onSessaoPerdida: () => void }
             ))}
           </div>
         )}
-      </main>
-
       {aberto && (
         <CartaoPainel
           cartao={aberto === 'novo' ? null : aberto}
@@ -264,7 +290,7 @@ function Quadro({ eu, onSessaoPerdida }: { eu: Eu; onSessaoPerdida: () => void }
           onSalvo={salvo}
         />
       )}
-    </div>
+    </>
   )
 }
 
