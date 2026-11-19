@@ -34,6 +34,8 @@ const MUTANTES = [
   ['texto: não aplica teto', 'if (s.length > max) return', 'if (false) return'],
   ['multilinha: não limpa controle', "s = s.replace(/[\\u0000-\\u0008\\u000B\\u000C\\u000E-\\u001F\\u007F]/g, '');", ''],
   ['url: aceita protocolo qualquer', "if (u.protocol !== 'https:' || !u.hostname)", 'if (!u.hostname)'],
+  ['url: aceita usuário/senha', 'if (u.username || u.password) return', 'if (false) return'],
+  ['idempotência: devolve cartão alheio', 'if (existentes[0].criado_por !== g.pessoa.id) {', 'if (false) {'],
   ['url: aceita espaço', "if (/\\s/.test(t.valor)) return", 'if (false) return'],
   ['prazo: aceita data inexistente', 'if (dt.getUTCFullYear() !== a || dt.getUTCMonth() !== m - 1 || dt.getUTCDate() !== d) {', 'if (false) {'],
   ['vencido: inclui hoje', 'c.prazo < hoje', 'c.prazo <= hoje'],

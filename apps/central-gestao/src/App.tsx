@@ -48,7 +48,7 @@ export default function App() {
         {estado.tipo === 'sem_acesso' && (
           <div className="cartao-msg">
             <h1>Sem acesso</h1>
-            <p>Sua conta ainda não tem acesso à Central de Gestão. Peça a liberação ao Leonardo.</p>
+            <p>Sua conta ainda não tem acesso à Central de Gestão. Peça a liberação ao administrador da Central.</p>
             <a className="botao" href={HUB_URL}>Voltar ao Hub</a>
           </div>
         )}

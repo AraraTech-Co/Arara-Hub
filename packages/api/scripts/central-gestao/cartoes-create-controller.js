@@ -14,6 +14,9 @@ async function _rota(ctx) {
   var hoje = _hojeSP();
   var existentes = (await ctx.models.Cartao.findMany({ chave_criacao: chave, limit: 1 })) || [];
   if (existentes.length > 0) {
+    if (existentes[0].criado_por !== g.pessoa.id) {
+      return _erro(ctx, 409, 'chave_em_uso', 'Esta chave de criação já foi usada. Gere outra e tente de novo.');
+    }
     return ctx.reply.status(200).send({ cartao: _publico(existentes[0], hoje), repetido: true });
   }
 

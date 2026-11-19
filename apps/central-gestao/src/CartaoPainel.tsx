@@ -140,6 +140,7 @@ export function CartaoPainel({ cartao, membros, nomeDe, onFechar, onSalvo }: Pro
       if (err instanceof ErroApi && err.status === 409 && err.corpo.atual) {
         setConflito(err.corpo.atual as Cartao)
       } else if (err instanceof ErroApi) {
+        if (err.codigo === 'chave_em_uso') chave.current = novaChave()
         setErro({ msg: err.message, campo: typeof err.corpo.campo === 'string' ? err.corpo.campo : undefined })
       } else {
         setErro({ msg: 'Não foi possível salvar. Tente de novo.' })
@@ -270,7 +271,7 @@ export function CartaoPainel({ cartao, membros, nomeDe, onFechar, onSalvo }: Pro
               <input type="url" inputMode="url" value={form.referencia_url} onChange={set('referencia_url')}
                 placeholder="https://…" aria-invalid={!!erroDe('referencia_url')} />
               {erroDe('referencia_url') && <span className="erro-campo">{erroDe('referencia_url')}</span>}
-              {base?.referencia_url && (
+              {base?.referencia_url && /^https:\/\//i.test(base.referencia_url) && (
                 <a className="link-ref" href={base.referencia_url} target="_blank" rel="noopener noreferrer">
                   Abrir referência ↗
                 </a>
