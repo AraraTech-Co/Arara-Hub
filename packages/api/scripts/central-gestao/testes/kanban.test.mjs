@@ -285,3 +285,27 @@ test('evento falhou → cartão salvo e historico_incompleto: true', async () =>
   const ok = await patch(w, m.body.cartao, { status: 'em_andamento' });
   assert.equal(ok.body.historico_incompleto, undefined, 'contraste');
 });
+
+test('CT-20: chave de criação usada por outra pessoa → 409 e não devolve o cartão alheio', async () => {
+  const w = mundo();
+  const body = { chave_criacao: 'chave-alheia-0001', titulo: 'De A' };
+  const r1 = await w.chamar('POST', '/cartoes', { body });
+  assert.equal(r1.status, 201);
+  const r2 = await w.chamar('POST', '/cartoes', { body: { ...body, titulo: 'De B' }, user: { id: B, roles: [] } });
+  assert.equal(r2.status, 409);
+  assert.equal(r2.body.erro, 'chave_em_uso');
+  assert.equal(r2.body.cartao, undefined, 'não devolve o cartão de A');
+  assert.equal(w.models.Cartao.linhas.length, 1);
+  const r3 = await w.chamar('POST', '/cartoes', { body });
+  assert.equal(r3.status, 200, 'contraste: o próprio autor repete e recebe o seu');
+});
+
+test('CT-25: referência com usuário ou senha no endereço é recusada', async () => {
+  const w = mundo();
+  for (const referencia_url of ['https://intranet.exemplo.test@outro.exemplo.test/x', 'https://u:s@exemplo.test/']) {
+    const r = await w.chamar('POST', '/cartoes', { body: { chave_criacao: 'chave-cred-00001', titulo: 'T', referencia_url } });
+    assert.equal(r.status, 400, referencia_url);
+    assert.equal(r.body.campo, 'referencia_url');
+  }
+  assert.equal(w.gravacoes(), 0);
+});

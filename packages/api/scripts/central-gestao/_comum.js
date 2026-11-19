@@ -118,6 +118,8 @@ function _url(v) {
     return { erro: 'Referência não é um endereço válido.' };
   }
   if (u.protocol !== 'https:' || !u.hostname) return { erro: 'Referência deve ser um endereço https://.' };
+  if (u.username || u.password) return { erro: 'Referência não pode ter usuário ou senha no endereço.' };
+  if (u.href.length > LIMITE.referencia_url) return { erro: 'Referência passa de ' + LIMITE.referencia_url + ' caracteres.' };
   return { valor: u.href };
 }
 
