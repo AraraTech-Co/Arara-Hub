@@ -17,18 +17,21 @@ function cru(w, id, campos) {
 }
 
 test('resumo: formato, ordem das áreas e áreas sem fonte sem número', async () => {
-  const w = mundo();
+  const w = mundo({ semModel: ['RegistroMarketing'] });
   const r = await resumo(w);
   assert.equal(r.status, 200);
   assert.deepEqual(Object.keys(r.body).sort(), ['areas', 'gerado_em', 'periodo', 'timezone']);
   assert.equal(r.body.timezone, 'America/Sao_Paulo');
   assert.deepEqual(r.body.areas.map((a) => a.area_key), ['tickets', 'marketing', 'vendas', 'horas', 'kanban']);
-  assert.deepEqual(r.body.areas.slice(0, 4).map((a) => [a.state, a.reason_code, a.indicadores.length]), [
-    ['definicao_pendente', 'universo_a_definir', 0],
-    ['sem_configuracao', 'base_nao_cadastrada', 0],
-    ['sem_configuracao', 'fonte_nao_configurada', 0],
-    ['sem_configuracao', 'fonte_nao_configurada', 0],
+  assert.deepEqual(r.body.areas.slice(0, 4).map((a) => [a.state, a.reason_code]), [
+    ['sem_configuracao', 'fonte_nao_configurada'],
+    ['sem_configuracao', 'base_nao_cadastrada'],
+    ['sem_configuracao', 'fonte_nao_configurada'],
+    ['sem_configuracao', 'fonte_nao_configurada'],
   ]);
+  for (const a of r.body.areas.slice(0, 4)) {
+    assert.ok(a.indicadores.every((i) => i.value === null), a.area_key + ': sem fonte, sem número');
+  }
   const k = kanban(r);
   assert.equal(k.state, 'ok');
   assert.deepEqual(k.indicadores.map((i) => i.metric_key), [

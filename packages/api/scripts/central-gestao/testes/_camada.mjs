@@ -104,8 +104,8 @@ export const INATIVO = 'usr-c-0003';
 export const ESTRANHO = 'usr-x-0009';
 
 // Um "mundo": os 3 models com dois membros ativos e um inativo.
-export function mundo({ semModel = [] } = {}) {
-  const models = { Profile: criarModel('Profile'), Cartao: criarModel('Cartao'), CartaoEvento: criarModel('CartaoEvento') };
+export function mundo({ semModel = [], fetch } = {}) {
+  const models = { Profile: criarModel('Profile'), Cartao: criarModel('Cartao'), CartaoEvento: criarModel('CartaoEvento'), RegistroMarketing: criarModel('RegistroMarketing') };
   models.Profile.inserirCru('pkA', { id: A, name: 'Pessoa A', role: 'admin', active: true });
   models.Profile.inserirCru('pkB', { id: B, name: 'Pessoa B', role: 'membro', active: true });
   models.Profile.inserirCru('pkC', { id: INATIVO, name: 'Pessoa C', role: 'membro', active: false });
@@ -115,7 +115,8 @@ export function mundo({ semModel = [] } = {}) {
     gravacoes: () => Object.values(models).reduce((s, m) => s + m.gravacoes(), 0),
     async chamar(method, rota, { user = { id: A, email: 'a@exemplo.test', roles: [] }, params = {}, query = {}, body } = {}) {
       const h = handler(method, rota);
-      return h({ method, params, query, body, user, models, randomUUID: () => crypto.randomUUID() });
+      const headers = user && user.id ? { authorization: 'Bearer ' + user.id } : {};
+      return h({ method, params, query, body, user, models, headers, fetch, randomUUID: () => crypto.randomUUID() });
     },
     async criar(campos = {}, user) {
       const r = await w.chamar('POST', '/cartoes', { user, body: { chave_criacao: crypto.randomUUID(), titulo: 'Cartão', ...campos } });

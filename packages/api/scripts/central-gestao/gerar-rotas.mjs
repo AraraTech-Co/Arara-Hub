@@ -21,6 +21,9 @@ export const ROTAS = [
   { arquivo: 'cartoes-restaurar-controller.js', module: 'kanban', method: 'POST', path: '/cartoes/:id/restaurar' },
   { arquivo: 'cartoes-eventos-controller.js', module: 'kanban', method: 'GET', path: '/cartoes/:id/eventos' },
   { arquivo: 'resumo-controller.js', module: 'resumo', method: 'GET', path: '/resumo' },
+  { arquivo: 'marketing-list-controller.js', module: 'marketing', method: 'GET', path: '/marketing' },
+  { arquivo: 'marketing-create-controller.js', module: 'marketing', method: 'POST', path: '/marketing' },
+  { arquivo: 'marketing-patch-controller.js', module: 'marketing', method: 'PATCH', path: '/marketing/:id' },
 ];
 
 export function codigoDaRota(arquivo) {

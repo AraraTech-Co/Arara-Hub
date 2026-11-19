@@ -7,6 +7,23 @@ const MENSAGEM: Record<string, string> = {
   fonte_nao_configurada: 'Fonte ainda não configurada.',
   falha_leitura: 'Não foi possível consultar a fonte.',
   leitura_incompleta: 'A leitura não terminou; nenhum número foi publicado.',
+  sem_permissao: 'Você não tem acesso a este indicador.',
+  meta_nao_cadastrada: 'Meta não cadastrada.',
+  custo_a_validar: 'Acesso ao custo agregado a validar.',
+  resolucao_sem_data_confiavel: 'A definir: a data de resolução não é gravada em todas as mudanças.',
+  sem_analistas: 'Sem analistas no período.',
+}
+
+function formatar(i: Indicador): string {
+  if (i.value === null) return '—'
+  if (i.unit === 'minutos') {
+    const h = Math.floor(i.value / 60)
+    const m = Math.round(i.value % 60)
+    return `${h}h ${String(m).padStart(2, '0')}m`
+  }
+  if (i.unit === 'BRL') return i.value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+  if (i.unit === '%') return `${i.value.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`
+  return i.value.toLocaleString('pt-BR')
 }
 
 const MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro']
@@ -18,9 +35,9 @@ function fimInclusivo(fimExclusivo: string): string {
   return d.toISOString().slice(0, 10)
 }
 
-type Props = { onAbrirKanban: (filtro?: { status?: string; vencidos?: boolean }) => void; onSessaoPerdida: () => void }
+type Props = { onAbrirKanban: (filtro?: { status?: string; vencidos?: boolean }) => void; onAbrirMarketing: () => void; onSessaoPerdida: () => void }
 
-export function Resumo({ onAbrirKanban, onSessaoPerdida }: Props) {
+export function Resumo({ onAbrirKanban, onAbrirMarketing, onSessaoPerdida }: Props) {
   const [mes, setMes] = useState('')
   const [dados, setDados] = useState<TResumo | null>(null)
   const [carregando, setCarregando] = useState(true)
@@ -75,7 +92,7 @@ export function Resumo({ onAbrirKanban, onSessaoPerdida }: Props) {
       )}
 
       <div className="areas" aria-busy={carregando}>
-        {dados?.areas.map((a) => <AreaCartao key={a.area_key} area={a} onAbrirKanban={onAbrirKanban} />)}
+        {dados?.areas.map((a) => <AreaCartao key={a.area_key} area={a} onAbrirKanban={onAbrirKanban} onAbrirMarketing={onAbrirMarketing} />)}
         {!dados && carregando && <p className="mudo">Carregando áreas…</p>}
       </div>
     </>
@@ -90,7 +107,8 @@ const FILTRO_DO_INDICADOR: Record<string, { status?: string; vencidos?: boolean 
   'kanban.vencidos': { vencidos: true },
 }
 
-function AreaCartao({ area, onAbrirKanban }: { area: Area; onAbrirKanban: Props['onAbrirKanban'] }) {
+function AreaCartao({ area, onAbrirKanban, onAbrirMarketing }: { area: Area; onAbrirKanban: Props['onAbrirKanban']; onAbrirMarketing: () => void }) {
+  const abrir = (k: string) => (area.area_key === 'kanban' ? onAbrirKanban(FILTRO_DO_INDICADOR[k]) : area.area_key === 'marketing' ? onAbrirMarketing() : undefined)
   const semNumero = area.indicadores.length === 0 || area.state !== 'ok'
   return (
     <section className={`area area-${area.area_key}`} aria-labelledby={`area-${area.area_key}`}>
@@ -99,20 +117,33 @@ function AreaCartao({ area, onAbrirKanban }: { area: Area; onAbrirKanban: Props[
         {area.area_key === 'kanban' && (
           <button type="button" className="link" onClick={() => onAbrirKanban()}>Abrir o quadro</button>
         )}
+        {area.area_key === 'marketing' && (
+          <button type="button" className="link" onClick={onAbrirMarketing}>Abrir marketing</button>
+        )}
       </header>
-      {semNumero && (
+      {semNumero && area.indicadores.length === 0 && (
         <p className={`estado ${area.state === 'erro' ? 'estado-erro' : ''}`}>
           {area.state === 'erro' ? '⚠ ' : 'ⓘ '}
           {MENSAGEM[area.reason_code ?? ''] ?? 'Indisponível.'}
+        </p>
+      )}
+      {semNumero && area.indicadores.length > 0 && (
+        <p className={`estado ${area.state === 'erro' ? 'estado-erro' : ''}`}>
+          {area.state === 'erro' ? '⚠ ' : 'ⓘ '}
+          {MENSAGEM[area.reason_code ?? area.state] ?? 'Indisponível.'}
+          {area.state === 'erro' && ' Use “Atualizar dados” para tentar de novo.'}
         </p>
       )}
       {area.state === 'ok' && area.indicadores.length > 0 && (
         <>
           <ul className="indicadores">
             {area.indicadores.map((i) => (
-              <IndicadorItem key={i.metric_key} i={i} onAbrir={() => onAbrirKanban(FILTRO_DO_INDICADOR[i.metric_key])} />
+              <IndicadorItem key={i.metric_key} i={i} onAbrir={() => abrir(i.metric_key)} />
             ))}
           </ul>
+          {area.indicadores[0] && area.area_key !== 'kanban' && (
+            <p className="mudo nota">Fonte: {area.indicadores[0].source_label}. Passe o mouse sobre um número para ver o universo.</p>
+          )}
           {area.area_key === 'kanban' && (
             <p className="mudo nota">
               Fonte: Kanban da gestão · cartões não arquivados. “Vencidos” também aparecem na coluna de status: não somar.
@@ -132,8 +163,9 @@ function IndicadorItem({ i, onAbrir }: { i: Indicador; onAbrir: () => void }) {
   return (
     <li className="indicador">
       <button type="button" className="indicador-botao" onClick={onAbrir} title={i.universe}>
-        <span className="indicador-valor">{i.value === null ? '—' : i.value.toLocaleString('pt-BR')}</span>
+        <span className="indicador-valor">{formatar(i)}</span>
         <span className="indicador-nome">{i.label}</span>
+        {i.value === null && i.reason_code && <span className="indicador-motivo">{MENSAGEM[i.reason_code] ?? 'Indisponível.'}</span>}
         <span className="indicador-ref">
           <span className={`selo selo-${i.tipo}`}>{i.tipo === 'periodo' ? nomeMes(i.period_start!.slice(0, 7)) : 'Agora'}</span>
           <span className="sr"> {ref}. {i.unit}. {i.universe}.</span>

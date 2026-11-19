@@ -9,6 +9,7 @@
 
 var STATUS = ['para_decidir', 'em_andamento', 'aguardando', 'concluido'];
 var ORIGENS = ['reuniao', 'area', 'outro'];
+var STATUS_MKT = ['planejado', 'em_andamento', 'concluido', 'cancelado'];
 var LIMITE = { titulo: 200, descricao: 5000, decisao: 5000, origem_texto: 200, referencia_url: 2000, q: 200 };
 var PAGINA = 200;
 var LOTE = 500;
@@ -219,6 +220,29 @@ async function _evento(ctx, cartaoId, tipo, antes, depois, autorId, em) {
 function _idParam(ctx) {
   var id = ctx.params && ctx.params.id;
   return typeof id === 'string' && id.length > 0 && id.length <= 100 ? id : null;
+}
+
+// Registro de marketing, campo a campo (o que a tela recebe).
+function _mktPublico(r) {
+  return {
+    id: r.id,
+    titulo: r.titulo,
+    descricao: r.descricao == null ? null : r.descricao,
+    status: r.status,
+    responsavel_id: r.responsavel_id == null ? null : r.responsavel_id,
+    data_referencia: r.data_referencia == null ? null : r.data_referencia,
+    criado_por: r.criado_por,
+    criado_em: r.criado_em,
+    alterado_por: r.alterado_por,
+    alterado_em: r.alterado_em,
+    versao: r.versao,
+  };
+}
+
+async function _mktOuNada(ctx, id) {
+  var r = await ctx.models.RegistroMarketing.findById(id);
+  if (!r || String(r.id) !== id || typeof r.titulo !== 'string') return null;
+  return r;
 }
 
 async function _cartaoOuNada(ctx, id) {
