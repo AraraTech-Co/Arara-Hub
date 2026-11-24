@@ -14,7 +14,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { ARARA_URL, ARARA_SLUG, arara } from '@/lib/arara/client'
+import { ARARA_URL, arara } from '@/lib/arara/client'
 import { setJwt, setStoredUser, setMemberships } from '@/lib/arara/auth-storage'
 
 const HUB = 'https://hub.arara-tech.com'
@@ -63,7 +63,7 @@ export default function SsoClient() {
       }
 
       // Deixa a sessão no MESMO estado do login normal: JWT, usuário,
-      // memberships e a app key cunhada (telas de runtime usam x-api-key).
+      // memberships (as chamadas do app vão com o JWT da pessoa).
       setJwt(token)
       try {
         const me = await arara.me()
@@ -71,12 +71,6 @@ export default function SsoClient() {
         if (me.memberships) setMemberships(me.memberships)
       } catch {
         /* segue: o AuthProvider re-hidrata pelo JWT no destino */
-      }
-      try {
-        const criada = await arara.createAppKey(ARARA_SLUG, 'crm-ui-sso')
-        arara.bindAppKey(ARARA_SLUG, criada.apiKey.key)
-      } catch {
-        /* app key é cunhada sob demanda quando alguma tela precisar */
       }
 
       // replace (não push): o endereço com o código não fica no histórico.
