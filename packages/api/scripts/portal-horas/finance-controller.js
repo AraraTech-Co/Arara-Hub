@@ -406,6 +406,49 @@ async function handler(ctx) {
   const isAdmin =
     roles.indexOf('admin') >= 0 || selfRole === 'admin' || selfRole === 'master';
 
+  // Mês fechado (desenho 2026-11-24-desenho-horas-fechamento-mes, fatia 2): o
+  // resultado congelado no fechamento é servido sem recalcular. Quem não é
+  // admin recebe só a própria linha. Sem o model, nenhum mês está fechado;
+  // falha na leitura responde 503 (não dá para saber qual valor vale).
+  const Closures = ctx.models.MonthClosures;
+  if (Closures) {
+    let fechamento;
+    try {
+      fechamento = await Closures.findById(month);
+    } catch (e) {
+      return ctx.reply.status(503).send({ error: 'leitura_fechamento' });
+    }
+    const snap = fechamento && fechamento.snapshot;
+    if (fechamento && String(fechamento.status || '') === 'fechado' && snap && Array.isArray(snap.rows)) {
+      const congelado = {
+        closedAt: fechamento.closed_at || null,
+        closedByName: fechamento.closed_by_name || null,
+      };
+      if (isAdmin) {
+        return ctx.reply.send(Object.assign({}, snap, { congelado: congelado }));
+      }
+      const mine = snap.rows.filter((r) => String(r.userId) === String(requester.id));
+      const own = mine[0];
+      const ownTotals = own
+        ? {
+            basePayment: own.basePayment,
+            extraAndAttendanceHours: own.extraAndAttendanceHours,
+            extraAndAttendanceValue: own.extraAndAttendanceValue,
+            standbyAndBackupHours: own.standbyAndBackupHours,
+            standbyAndBackupValue: own.standbyAndBackupValue,
+            normalHours: own.normalHours,
+            incrementalHours: own.incrementalHours,
+            incrementalTotal: own.incrementalTotal,
+            totalCost: own.totalCost,
+            pendingIncrementalCost: own.pendingIncrementalCost,
+          }
+        : emptyTotals();
+      return ctx.reply.send(
+        Object.assign({}, snap, { rows: mine.slice(0, 1), totals: ownTotals, congelado: congelado }),
+      );
+    }
+  }
+
   function isFinanceStaff(u) {
     if (pick(u, 'active', 'active') === false) return false;
     const r = String(pick(u, 'role', 'role') || '').toLowerCase();
@@ -425,7 +468,7 @@ async function handler(ctx) {
   }
 
   if (!profiles.length) {
-    return ctx.reply.send(Object.assign({}, baseMeta, { rows: [], totals: emptyTotals() }));
+    return ctx.reply.send(Object.assign({}, baseMeta, { rows: [], totals: emptyTotals(), congelado: null }));
   }
 
   const rows = [];
@@ -547,6 +590,6 @@ async function handler(ctx) {
   };
 
   rows.sort((a, b) => String(a.fullName).localeCompare(String(b.fullName)));
-  return ctx.reply.send(Object.assign({}, baseMeta, { rows, totals }));
+  return ctx.reply.send(Object.assign({}, baseMeta, { rows, totals, congelado: null }));
 }
 module.exports = { handler };

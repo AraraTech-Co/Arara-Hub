@@ -6,7 +6,13 @@
  * Fechar e reabrir: só admin. Fechar: só mês que já terminou e sem lançamento
  * pendente no mês. Reabrir: motivo obrigatório. O registro nunca é apagado; a
  * trilha (history) só cresce. Um registro por mês, com id = 'AAAA-MM'.
+ * Fechar congela o resultado do Financeiro em `snapshot` (fatia 2); reabrir
+ * move o congelado para a entrada REABRIR da trilha (`snapshotAnterior`).
+ * A linha "<financeiro/>" é trocada pelo sync por uma cópia exata de
+ * finance-controller.js embrulhada na função `financeiro(ctx)`.
  */
+// <financeiro/>
+
 async function handler(ctx) {
   var requester = ctx.user;
   if (!requester || !requester.id) {
@@ -24,7 +30,17 @@ async function handler(ctx) {
       closedAt: r.closed_at || null,
       closedBy: r.closed_by || null,
       closedByName: r.closed_by_name || null,
-      history: Array.isArray(r.history) ? r.history : [],
+      // A trilha é lida por qualquer pessoa logada: sai só quem, quando, o quê
+      // e o motivo. Valores (o congelado anterior) nunca saem por aqui.
+      history: (Array.isArray(r.history) ? r.history : []).map(function (h) {
+        return {
+          action: h && h.action ? h.action : null,
+          at: h && h.at ? h.at : null,
+          actorId: h && h.actorId ? h.actorId : null,
+          actorName: h && h.actorName ? h.actorName : null,
+          reason: h && h.reason ? h.reason : null,
+        };
+      }),
     };
   }
   function mesValido(m) {
@@ -140,13 +156,52 @@ async function handler(ctx) {
     if (!completo) return ctx.reply.status(503).send({ error: 'leitura_incompleta' });
     if (pendentes > 0) return ctx.reply.status(409).send({ error: 'pendentes', count: pendentes });
 
-    trilha.push({ action: 'FECHAR', at: agora, actorId: String(requester.id), actorName: nome, reason: motivo });
+    // Congela o resultado do Financeiro: o mesmo handler da tela (cópia exata
+    // de finance-controller.js injetada pelo sync), chamado como admin.
+    var calc = { s: 200, b: null };
+    try {
+      await financeiro({
+        method: 'GET',
+        params: {},
+        query: { month: mes },
+        body: {},
+        user: requester,
+        models: ctx.models,
+        users: ctx.users,
+        reply: {
+          status: function (c) {
+            calc.s = c;
+            return this;
+          },
+          send: function (b) {
+            calc.b = b;
+            return { status: calc.s, body: b };
+          },
+        },
+      });
+    } catch (e5) {
+      calc.s = 500;
+    }
+    if (calc.s !== 200 || !calc.b || !Array.isArray(calc.b.rows)) {
+      return ctx.reply.status(503).send({ error: 'calculo_indisponivel' });
+    }
+    var snapshot = Object.assign({}, calc.b);
+    delete snapshot.congelado;
+
+    trilha.push({
+      action: 'FECHAR',
+      at: agora,
+      actorId: String(requester.id),
+      actorName: nome,
+      reason: motivo,
+    });
     var dadosFechar = {
       month: mes,
       status: 'fechado',
       closed_at: agora,
       closed_by: String(requester.id),
       closed_by_name: nome,
+      snapshot: snapshot,
       history: trilha,
     };
     try {
@@ -162,9 +217,18 @@ async function handler(ctx) {
   // reopen
   if (!motivo) return ctx.reply.status(400).send({ error: 'motivo_obrigatorio' });
   if (!fechado) return ctx.reply.status(409).send({ error: 'nao_fechado' });
-  trilha.push({ action: 'REABRIR', at: agora, actorId: String(requester.id), actorName: nome, reason: motivo });
+  // O congelado sai do registro e fica guardado na trilha, para saber o que
+  // valia antes da reabertura.
+  trilha.push({
+    action: 'REABRIR',
+    at: agora,
+    actorId: String(requester.id),
+    actorName: nome,
+    reason: motivo,
+    snapshotAnterior: existente.snapshot || null,
+  });
   try {
-    var reaberto = await M.update(mes, { status: 'aberto', history: trilha });
+    var reaberto = await M.update(mes, { status: 'aberto', snapshot: null, history: trilha });
     return ctx.reply.send({ data: view(reaberto, mes) });
   } catch (e4) {
     return ctx.reply.status(400).send({ error: String(e4.message || e4) });

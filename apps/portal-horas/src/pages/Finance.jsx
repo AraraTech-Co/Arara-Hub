@@ -36,6 +36,7 @@ export default function Finance() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [adminIds, setAdminIds] = useState(() => new Set());
+  const [recarga, setRecarga] = useState(0);
 
   const moneyFmt = useMemo(() => {
     const locale = i18n.language?.toLowerCase().startsWith('pt') ? 'pt-BR' : 'en-US';
@@ -71,7 +72,7 @@ export default function Finance() {
     return () => {
       cancelled = true;
     };
-  }, [month, isAdmin]);
+  }, [month, isAdmin, recarga]);
 
   const rows = data?.rows ?? [];
   const totals = data?.totals;
@@ -143,7 +144,7 @@ export default function Finance() {
         </div>
       </div>
 
-      <FechamentoMes month={month} isAdmin={isAdmin} />
+      <FechamentoMes month={month} isAdmin={isAdmin} onMudou={() => setRecarga((n) => n + 1)} />
 
       {data && !loading && (
         <div className="rounded-lg border border-gray-200 bg-gray-50/60 px-4 py-3 text-sm text-ink-muted">
@@ -155,6 +156,14 @@ export default function Finance() {
             <span className="font-medium text-ink">{numFmt.format(data.expectedHoursDefault)}h</span>
           </p>
           <p className="mt-1 text-xs">{t('finance.approvedOnlyHint')}</p>
+          {data.congelado && (
+            <p className="mt-1 text-xs font-medium text-ink">
+              {t('finance.congelado', {
+                defaultValue:
+                  'Valores congelados no fechamento do mês: mudanças posteriores de salário, valor hora, feriado ou lançamento não alteram este resultado.',
+              })}
+            </p>
+          )}
         </div>
       )}
 
