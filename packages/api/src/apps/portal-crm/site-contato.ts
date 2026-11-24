@@ -31,6 +31,22 @@ export function normalizarCnpj(v: unknown): string | null {
   return c[12] === String(d1) && c[13] === String(d2) ? c : null
 }
 
+/** Valores do select "Tipo de negócio" do site → nome que a equipe lê. Valor desconhecido fica como veio. */
+export const SEGMENTOS_DO_SITE: Record<string, string> = {
+  utilidades: 'Utilidades e bazar',
+  'calcados-epi': 'Calçados e EPI',
+  construcao: 'Materiais de construção',
+  pet: 'Pet shop',
+  farmacias: 'Farmácias',
+  'outro-varejo': 'Outro tipo de loja',
+  industria: 'Indústria',
+  outro: 'Outro',
+}
+
+function nomeDoSegmento(valor: string): string {
+  return SEGMENTOS_DO_SITE[valor] ?? valor
+}
+
 function consentiu(v: unknown): boolean {
   const t = texto(v, 20).toLowerCase()
   return t !== '' && t !== 'false' && t !== 'nao' && t !== 'não' && t !== '0'
@@ -58,7 +74,7 @@ async function receberContato(ctx: HandlerCtx) {
   const cnpjInformado = texto(d.cnpj, 40)
   const cnpj = normalizarCnpj(cnpjInformado)
   const cidade = texto(d.cidade, 120)
-  const segmento = texto(d.segmento, 80)
+  const segmento = nomeDoSegmento(texto(d.segmento, 80))
   const caixas = texto(d.caixas, 40)
   const sistemaAtual = texto(d.sistema_atual, 200)
   const mensagem = texto(d.mensagem, 4000)
