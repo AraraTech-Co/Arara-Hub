@@ -24,6 +24,28 @@ export const ROTAS_SO_GESTOR: ReadonlyArray<readonly [string, string]> = [
   ['DELETE', '/Stage/:id'],
   ['POST', '/termo/reset'],
   ['POST', '/termo/publish'],
+  // Perfis (papel), usuários, equipes, metas e configurações: só o gestor (aprovado em 24/11).
+  ['POST', '/Profile'],
+  ['PATCH', '/Profile/:id'],
+  ['PUT', '/Profile/:id'],
+  ['DELETE', '/Profile/:id'],
+  ['POST', '/User'],
+  ['PATCH', '/User/:id'],
+  ['PUT', '/User/:id'],
+  ['DELETE', '/User/:id'],
+  ['POST', '/Team'],
+  ['PATCH', '/Team/:id'],
+  ['PUT', '/Team/:id'],
+  ['DELETE', '/Team/:id'],
+  ['POST', '/Goal'],
+  ['PATCH', '/Goal/:id'],
+  ['PUT', '/Goal/:id'],
+  ['DELETE', '/Goal/:id'],
+  ['POST', '/AppConfig'],
+  ['PATCH', '/AppConfig/:id'],
+  ['PUT', '/AppConfig/:id'],
+  ['DELETE', '/AppConfig/:id'],
+  ['POST', '/goals'],
 ]
 
 const chave = (metodo: string, caminho: string) => `${metodo.toUpperCase()} ${caminho}`
