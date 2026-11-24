@@ -17,7 +17,6 @@ import {
   getCrmProfile,
   getJwt,
   getStoredUser,
-  hasAppAccess,
   setAppApiKey,
   setCrmProfile,
   setMemberships,
@@ -107,15 +106,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(data.user)
     setJwtState(data.token)
     if (data.memberships) setMemberships(data.memberships)
-    if (hasAppAccess(ARARA_SLUG, data.user)) {
-      try {
-        const created = await arara.createAppKey(ARARA_SLUG, `crm-ui-${data.user.email}`)
-        arara.bindAppKey(ARARA_SLUG, created.apiKey.key)
-        setAppKeyState(created.apiKey.key)
-      } catch {
-        // JWT membership may still allow /v1/r
-      }
-    }
     try {
       const p = await arara.myProfile()
       const normalized: CrmProfile = {

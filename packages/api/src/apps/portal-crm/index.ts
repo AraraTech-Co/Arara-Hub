@@ -1,12 +1,15 @@
 /** Static routes for portal-crm */
 import { registerAppRoutes } from '../../lib/static-registry.js'
 import { aplicarGuardaDeLeitura } from './guarda-leitura.js'
+import { aplicarGuardasDePermissao } from './guarda-permissoes.js'
 import { rotasDoFunil } from './funil.js'
 import { rotasDoResumoGestao } from './resumo-gestao.js'
 import { rotasDoSiteContato } from './site-contato.js'
 import { PortalCrmRoutes as rotasGeradas } from './routes.generated.js'
 
-const PortalCrmRoutes = aplicarGuardaDeLeitura([...rotasGeradas, ...rotasDoFunil, ...rotasDoResumoGestao, ...rotasDoSiteContato])
+const PortalCrmRoutes = aplicarGuardaDeLeitura(
+  aplicarGuardasDePermissao([...rotasGeradas, ...rotasDoFunil, ...rotasDoResumoGestao, ...rotasDoSiteContato]),
+)
 
 export function loadPortalCrmRoutes() {
   registerAppRoutes('portal-crm', PortalCrmRoutes)
