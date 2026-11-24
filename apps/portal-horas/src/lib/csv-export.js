@@ -5,9 +5,18 @@
 
 const CSV_SEP = ';';
 
-/** Escapa uma célula: aspas quando houver separador, aspas ou quebra de linha. */
+// Texto que começa com = + - @ (ou tabulação/retorno) é lido como fórmula pelo
+// Excel e pelo LibreOffice. Número puro (ex.: "-1,50") continua número.
+const INICIO_DE_FORMULA = /^[=+\-@\t\r]/;
+const NUMERO = /^[+-]?\d+([.,]\d+)?$/;
+
+/**
+ * Escapa uma célula: apóstrofo na frente de texto que seria lido como fórmula;
+ * aspas quando houver separador, aspas ou quebra de linha.
+ */
 export function csvCell(value) {
-  const s = value === null || value === undefined ? '' : String(value);
+  let s = value === null || value === undefined ? '' : String(value);
+  if (INICIO_DE_FORMULA.test(s) && !NUMERO.test(s)) s = "'" + s;
   if (/[";\n\r]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
   return s;
 }
