@@ -27,6 +27,31 @@ async function handler(ctx) {
   function pick(obj, snake, camel) {
     return obj[snake] != null ? obj[snake] : obj[camel];
   }
+  // A camada devolve no máximo 500 registros por chamada (os mais recentes
+  // primeiro). Lê página a página até vir uma página incompleta. Registro que
+  // aparece em duas páginas (inserção durante a leitura) conta uma vez. Acima
+  // de PAGINAS_MAX devolve null: quem chama responde 503 em vez de calcular
+  // com dado faltando.
+  const PAGINA = 500;
+  const PAGINAS_MAX = 40;
+  async function lerTudo(model, filtro) {
+    const vistos = new Set();
+    const out = [];
+    for (let p = 0; p < PAGINAS_MAX; p += 1) {
+      const pagina = await model.findMany(Object.assign({}, filtro, { limit: PAGINA, offset: p * PAGINA }));
+      const lista = Array.isArray(pagina) ? pagina : [];
+      for (const r of lista) {
+        const id = r && r.id != null ? String(r.id) : null;
+        if (id !== null) {
+          if (vistos.has(id)) continue;
+          vistos.add(id);
+        }
+        out.push(r);
+      }
+      if (lista.length < PAGINA) return out;
+    }
+    return null;
+  }
   function countWorkingDays(year, monthNum, holidaySet) {
     const lastDay = new Date(year, monthNum, 0).getDate();
     let count = 0;
@@ -352,7 +377,8 @@ async function handler(ctx) {
     return ctx.reply.status(401).send({ error: 'Login required for finance data' });
   }
 
-  const allHolidays = await Holidays.findMany({ limit: 500 });
+  const allHolidays = await lerTudo(Holidays, {});
+  if (!allHolidays) return ctx.reply.status(503).send({ error: 'leitura_incompleta' });
   const holidaySet = new Set();
   for (const h of allHolidays) {
     const d = String(pick(h, 'date', 'date') || '').slice(0, 10);
@@ -390,7 +416,8 @@ async function handler(ctx) {
 
   let profiles;
   if (isAdmin) {
-    const all = await Profile.findMany({ limit: 500 });
+    const all = await lerTudo(Profile, {});
+    if (!all) return ctx.reply.status(503).send({ error: 'leitura_incompleta' });
     profiles = all.filter(isFinanceStaff);
   } else {
     if (!self) return ctx.reply.status(403).send({ error: 'No finance data for this user' });
@@ -418,11 +445,13 @@ async function handler(ctx) {
 
   for (const u of profiles) {
     const userId = String(u.id);
-    // Prefer snake filter; also accept camel if storage uses it. Cap high enough for month rollups.
-    let allEntries = await HourEntries.findMany({ user_id: userId, limit: 2000 });
-    if (!allEntries.length) {
-      allEntries = await HourEntries.findMany({ userId: userId, limit: 2000 });
+    // Prefer snake filter; also accept camel if storage uses it. Todas as
+    // páginas: o mês pedido pode estar além dos 500 lançamentos mais recentes.
+    let allEntries = await lerTudo(HourEntries, { user_id: userId });
+    if (allEntries && !allEntries.length) {
+      allEntries = await lerTudo(HourEntries, { userId: userId });
     }
+    if (!allEntries) return ctx.reply.status(503).send({ error: 'leitura_incompleta' });
     const inMonth = allEntries.filter((e) => {
       const d = String(pick(e, 'date', 'date') || '').slice(0, 10);
       const uid = String(pick(e, 'user_id', 'userId') || '');
