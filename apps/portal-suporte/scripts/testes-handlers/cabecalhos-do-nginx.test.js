@@ -29,6 +29,10 @@ const TEMPLATE = fs.readFileSync(p('deploy/nginx/spa.conf.template'), 'utf8')
 const ENTRYPOINT = fs.readFileSync(p('deploy/nginx/docker-entrypoint.sh'), 'utf8')
 const DOCKER_NEXT = fs.readFileSync(p('deploy/Dockerfile.next-export'), 'utf8')
 const DOCKER_VITE = fs.readFileSync(p('deploy/Dockerfile.vite-spa'), 'utf8')
+// Locations próprias de um front (`extra-<slug>.conf`), incluídas no template pelo
+// entrypoint. A mesma regra do template vale para elas.
+const EXTRAS = fs.readdirSync(p('deploy/nginx')).filter((n) => /^extra-.+\.conf$/.test(n))
+  .map((n) => fs.readFileSync(p('deploy/nginx', n), 'utf8')).join('\n')
 
 const INCLUDE = 'include /etc/nginx/security-headers.conf;'
 const ESPERADOS = [
@@ -66,7 +70,7 @@ function locations(texto) {
   return out
 }
 
-function bateria(cabecalhos, template, entrypoint, dockerNext, dockerVite) {
+function bateria(cabecalhos, template, entrypoint, dockerNext, dockerVite, extras) {
   const f = []
 
   // ── O arquivo de cabeçalhos ───────────────────────────────────────────────
@@ -91,10 +95,14 @@ function bateria(cabecalhos, template, entrypoint, dockerNext, dockerVite) {
   else if (primeiraLocation >= 0 && !(iInclude < primeiraLocation)) f.push('include-nao-esta-no-nivel-do-server')
 
   // REGRA ESTRUTURAL: location com `add_header` próprio perde os herdados.
-  for (const loc of locations(tpl)) {
+  for (const loc of locations(tpl).concat(locations(semComentarios(extras)))) {
     if (!/add_header/.test(loc.corpo)) continue
     if (!loc.corpo.includes(INCLUDE)) f.push('location-com-add_header-sem-include:' + loc.nome)
   }
+  // O template inclui o extra.conf, e o entrypoint SEMPRE o cria (vazio quando o
+  // front não tem extra): `include` de arquivo que falta impede o nginx de subir.
+  if (!tpl.includes('include /etc/nginx/extra.conf;')) f.push('template-sem-include-do-extra')
+  if (!/:\s*>\s*\/etc\/nginx\/extra\.conf/.test(entrypoint)) f.push('entrypoint-sem-extra-vazio')
 
   // ── O entrypoint e as duas imagens ────────────────────────────────────────
   if (!/cp\s+\/etc\/nginx\/templates\/security-headers\.conf\s+\/etc\/nginx\/security-headers\.conf/.test(entrypoint)) {
@@ -109,14 +117,23 @@ function bateria(cabecalhos, template, entrypoint, dockerNext, dockerVite) {
       f.push('dockerfile-sem-copy:' + nome)
     }
   }
+  if (extras && !/COPY\s+deploy\/nginx\/extra-\*\.conf\s+\/etc\/nginx\/templates\//.test(dockerNext)) f.push('next-sem-copy-dos-extras')
   return f
 }
 
 const MUTACOES = [
   // As duas armadilhas provadas no contêiner.
   ['tira o include de /_next/static/', 'template',
-    [['        add_header Cache-Control "public, max-age=31536000, immutable";\n        include /etc/nginx/security-headers.conf;\n    }\n\n    location /',
-      '        add_header Cache-Control "public, max-age=31536000, immutable";\n    }\n\n    location /']]],
+    [['        add_header Cache-Control "public, max-age=31536000, immutable";\n        include /etc/nginx/security-headers.conf;\n    }\n\n    # Locations que só um front tem',
+      '        add_header Cache-Control "public, max-age=31536000, immutable";\n    }\n\n    # Locations que só um front tem']]],
+  ['tira o include da location dos manuais', 'extras',
+    [['    add_header Cache-Control "public, max-age=86400";\n    include /etc/nginx/security-headers.conf;\n', '    add_header Cache-Control "public, max-age=86400";\n']]],
+  ['template sem o include do extra', 'template',
+    [['    include /etc/nginx/extra.conf;\n', '']]],
+  ['entrypoint não cria o extra vazio', 'entrypoint',
+    [['  : > /etc/nginx/extra.conf\n', '  true\n']]],
+  ['imagem Next sem o COPY dos extras', 'dockerNext',
+    [['COPY deploy/nginx/extra-*.conf /etc/nginx/templates/\n', '']]],
   ['tira o always do nosniff', 'cabecalhos',
     [['add_header X-Content-Type-Options "nosniff" always;', 'add_header X-Content-Type-Options "nosniff";']]],
   // Location nova com add_header próprio e sem o include: a regra estrutural pega.
@@ -146,8 +163,9 @@ const BASE = {
   entrypoint: ENTRYPOINT,
   dockerNext: DOCKER_NEXT,
   dockerVite: DOCKER_VITE,
+  extras: EXTRAS,
 }
-const rodar = (o) => bateria(o.cabecalhos, o.template, o.entrypoint, o.dockerNext, o.dockerVite)
+const rodar = (o) => bateria(o.cabecalhos, o.template, o.entrypoint, o.dockerNext, o.dockerVite, o.extras)
 
 const f = rodar(BASE)
 ok('os quatro cabeçalhos saem com always, o include está no server e em toda location com add_header, e as duas imagens o levam', f.length === 0, f)

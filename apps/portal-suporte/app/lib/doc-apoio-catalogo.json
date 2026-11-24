@@ -4,895 +4,895 @@
    "nome": "2017 - Configuração NF-e",
    "arquivo": "2017 - Configuração NF-e.pdf",
    "categoria": "nfe",
-   "url": "https://api.arara-tech.com/h/doc-apoio-2/PDF%20documentacao/2017%20-%20Configura%C3%A7%C3%A3o%20NF-e.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/2017%20-%20Configura%C3%A7%C3%A3o%20NF-e.pdf"
   },
   {
    "nome": "Atualização do SAT pelo PDV",
    "arquivo": "Atualização do SAT pelo PDV.pdf",
    "categoria": "pdv",
-   "url": "https://api.arara-tech.com/h/doc-apoio-3/PDF%20documentacao/Atualiza%C3%A7%C3%A3o%20do%20SAT%20pelo%20PDV.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Atualiza%C3%A7%C3%A3o%20do%20SAT%20pelo%20PDV.pdf"
   },
   {
    "nome": "Fluxograma SGC",
    "arquivo": "Fluxograma SGC.pdf",
    "categoria": "sgc",
-   "url": "https://api.arara-tech.com/h/doc-apoio-3/PDF%20documentacao/Fluxograma%20SGC.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Fluxograma%20SGC.pdf"
   },
   {
    "nome": "Guia rápido Leitor de Código de Barras Honeywell Solaris 7980g",
    "arquivo": "Guia rápido Leitor de Código de Barras Honeywell Solaris 7980g.pdf",
    "categoria": "pdv",
-   "url": "https://api.arara-tech.com/h/doc-apoio-3/PDF%20documentacao/Guia%20r%C3%A1pido%20Leitor%20de%20C%C3%B3digo%20de%20Barras%20Honeywell%20Solaris%207980g.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Guia%20r%C3%A1pido%20Leitor%20de%20C%C3%B3digo%20de%20Barras%20Honeywell%20Solaris%207980g.pdf"
   },
   {
    "nome": "Principais mensagens de erro do PDV",
    "arquivo": "Principais mensagens de erro do PDV.pdf",
    "categoria": "pdv",
-   "url": "https://api.arara-tech.com/h/doc-apoio-3/PDF%20documentacao/Principais%20mensagens%20de%20erro%20do%20PDV.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Principais%20mensagens%20de%20erro%20do%20PDV.pdf"
   },
   {
    "nome": "Recomendação de Computadores",
    "arquivo": "Recomendação de Computadores.pdf",
    "categoria": "pdv",
-   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Recomenda%C3%A7%C3%A3o%20de%20Computadores.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Recomenda%C3%A7%C3%A3o%20de%20Computadores.pdf"
   },
   {
    "nome": "Recomendação de Equipamentos de Automação",
    "arquivo": "Recomendação de Equipamentos de Automação.pdf",
    "categoria": "pdv",
-   "url": "https://api.arara-tech.com/h/doc-apoio-2/PDF%20documentacao/Recomenda%C3%A7%C3%A3o%20de%20Equipamentos%20de%20Automa%C3%A7%C3%A3o.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Recomenda%C3%A7%C3%A3o%20de%20Equipamentos%20de%20Automa%C3%A7%C3%A3o.pdf"
   },
   {
    "nome": "Tutorial Agendamento de Entregas",
    "arquivo": "Tutorial Agendamento de Entregas.pdf",
    "categoria": "integracoes",
-   "url": "https://api.arara-tech.com/h/doc-apoio/PDF%20documentacao/Tutorial%20Agendamento%20de%20Entregas.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Agendamento%20de%20Entregas.pdf"
   },
   {
    "nome": "Tutorial Alt. Custo em Lote, Clonagem Produto, Alt. Cliente no Faturamento, Edição Faturas NF-e, Sugestão de Preços por Grupo, Cancelamento Compra automatica, Filtros de Promoção",
    "arquivo": "Tutorial Alt. Custo em Lote, Clonagem Produto, Alt. Cliente no Faturamento, Edição Faturas NF-e, Sugestão de Preços por Grupo, Cancelamento Compra automatica, Filtros de Promoção.pdf",
    "categoria": "sgc",
-   "url": "https://api.arara-tech.com/h/doc-apoio/PDF%20documentacao/Tutorial%20Alt.%20Custo%20em%20Lote%2C%20Clonagem%20Produto%2C%20Alt.%20Cliente%20no%20Faturamento%2C%20Edi%C3%A7%C3%A3o%20Faturas%20NF-e%2C%20Sugest%C3%A3o%20de%20Pre%C3%A7os%20por%20Grupo%2C%20Cancelamento%20Compra%20automatica%2C%20Filtros%20de%20Promo%C3%A7%C3%A3o.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Alt.%20Custo%20em%20Lote%2C%20Clonagem%20Produto%2C%20Alt.%20Cliente%20no%20Faturamento%2C%20Edi%C3%A7%C3%A3o%20Faturas%20NF-e%2C%20Sugest%C3%A3o%20de%20Pre%C3%A7os%20por%20Grupo%2C%20Cancelamento%20Compra%20automatica%2C%20Filtros%20de%20Promo%C3%A7%C3%A3o.pdf"
   },
   {
    "nome": "Tutorial Arara TI",
    "arquivo": "Tutorial Arara TI.pdf",
    "categoria": "geral",
-   "url": "https://api.arara-tech.com/h/doc-apoio-3/PDF%20documentacao/Tutorial%20Arara%20TI.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Arara%20TI.pdf"
   },
   {
    "nome": "Tutorial Atualização de Preços, Código Sequencial, Pedido de Venda Ordenação e Produtos e Relatório de Atualização de Preços",
    "arquivo": "Tutorial Atualização de Preços, Código Sequencial, Pedido de Venda Ordenação e Produtos e Relatório de Atualização de Preços.pdf",
    "categoria": "sgc",
-   "url": "https://api.arara-tech.com/h/doc-apoio/PDF%20documentacao/Tutorial%20Atualiza%C3%A7%C3%A3o%20de%20Pre%C3%A7os%2C%20C%C3%B3digo%20Sequencial%2C%20Pedido%20de%20Venda%20Ordena%C3%A7%C3%A3o%20e%20Produtos%20e%20Relat%C3%B3rio%20de%20Atualiza%C3%A7%C3%A3o%20de%20Pre%C3%A7os.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Atualiza%C3%A7%C3%A3o%20de%20Pre%C3%A7os%2C%20C%C3%B3digo%20Sequencial%2C%20Pedido%20de%20Venda%20Ordena%C3%A7%C3%A3o%20e%20Produtos%20e%20Relat%C3%B3rio%20de%20Atualiza%C3%A7%C3%A3o%20de%20Pre%C3%A7os.pdf"
   },
   {
    "nome": "Tutorial Atualizações SGC 02.09.2024 a 19.12.2024",
    "arquivo": "Tutorial Atualizações SGC 02.09.2024 a 19.12.2024.pdf",
    "categoria": "sgc",
-   "url": "https://api.arara-tech.com/h/doc-apoio-3/PDF%20documentacao/Tutorial%20Atualiza%C3%A7%C3%B5es%20SGC%2002.09.2024%20a%2019.12.2024.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Atualiza%C3%A7%C3%B5es%20SGC%2002.09.2024%20a%2019.12.2024.pdf"
   },
   {
    "nome": "Tutorial Atualizações SGC 10.07.2024 a 29.08.2024",
    "arquivo": "Tutorial Atualizações SGC 10.07.2024 a 29.08.2024.pdf",
    "categoria": "sgc",
-   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20Atualiza%C3%A7%C3%B5es%20SGC%2010.07.2024%20a%2029.08.2024.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Atualiza%C3%A7%C3%B5es%20SGC%2010.07.2024%20a%2029.08.2024.pdf"
   },
   {
    "nome": "Tutorial Atualizações SGC 20.02.2025 a 20.03.2025",
    "arquivo": "Tutorial Atualizações SGC 20.02.2025 a 20.03.2025.pdf",
    "categoria": "sgc",
-   "url": "https://api.arara-tech.com/h/doc-apoio-3/PDF%20documentacao/Tutorial%20Atualiza%C3%A7%C3%B5es%20SGC%2020.02.2025%20a%2020.03.2025.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Atualiza%C3%A7%C3%B5es%20SGC%2020.02.2025%20a%2020.03.2025.pdf"
   },
   {
    "nome": "Tutorial Atualizações SGC 21.03.2025 à 29.04.2025",
    "arquivo": "Tutorial Atualizações SGC 21.03.2025 à 29.04.2025.pdf",
    "categoria": "sgc",
-   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20Atualiza%C3%A7%C3%B5es%20SGC%2021.03.2025%20%C3%A0%2029.04.2025.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Atualiza%C3%A7%C3%B5es%20SGC%2021.03.2025%20%C3%A0%2029.04.2025.pdf"
   },
   {
    "nome": "Tutorial Bloqueio de quantidade, Pedido de Venda, Promoção Combo, Relatório de Edição de Itens, Relatório DF-e e Consulta GTIN web service",
    "arquivo": "Tutorial Bloqueio de quantidade, Pedido de Venda, Promoção Combo, Relatório de Edição de Itens, Relatório DF-e e Consulta GTIN web service.pdf",
    "categoria": "sgc",
-   "url": "https://api.arara-tech.com/h/doc-apoio/PDF%20documentacao/Tutorial%20Bloqueio%20de%20quantidade%2C%20Pedido%20de%20Venda%2C%20Promo%C3%A7%C3%A3o%20Combo%2C%20Relat%C3%B3rio%20de%20Edi%C3%A7%C3%A3o%20de%20Itens%2C%20Relat%C3%B3rio%20DF-e%20e%20Consulta%20GTIN%20web%20service.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Bloqueio%20de%20quantidade%2C%20Pedido%20de%20Venda%2C%20Promo%C3%A7%C3%A3o%20Combo%2C%20Relat%C3%B3rio%20de%20Edi%C3%A7%C3%A3o%20de%20Itens%2C%20Relat%C3%B3rio%20DF-e%20e%20Consulta%20GTIN%20web%20service.pdf"
   },
   {
    "nome": "Tutorial Bloqueio de quantidade, Pedido de Venda, Promoção Combo, Relatório de Edição de Itens, Relatório DF-e e Consulta GTIN web service",
    "arquivo": "Tutorial Bloqueio de quantidade, Pedido de Venda, Promoção Combo, Relatório de Edição de Itens, Relatório DF-e e Consulta GTIN web service.pdf",
    "categoria": "sgc",
-   "url": "https://api.arara-tech.com/h/doc-apoio/PDF%20documentacao/Tutorial%20Bloqueio%20de%20quantidade%2C%20Pedido%20de%20Venda%2C%20Promo%C3%A7%C3%A3o%20Combo%2C%20Relat%C3%B3rio%20de%20Edi%C3%A7%C3%A3o%20de%20Itens%2C%20Relat%C3%B3rio%20DF-e%20e%20Consulta%20GTIN%20web%20service.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Bloqueio%20de%20quantidade%2C%20Pedido%20de%20Venda%2C%20Promo%C3%A7%C3%A3o%20Combo%2C%20Relat%C3%B3rio%20de%20Edi%C3%A7%C3%A3o%20de%20Itens%2C%20Relat%C3%B3rio%20DF-e%20e%20Consulta%20GTIN%20web%20service.pdf"
   },
   {
    "nome": "Tutorial Busca Preços",
    "arquivo": "Tutorial Busca Preços.pdf",
    "categoria": "integracoes",
-   "url": "https://api.arara-tech.com/h/doc-apoio/PDF%20documentacao/Tutorial%20Busca%20Pre%C3%A7os.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Busca%20Pre%C3%A7os.pdf"
   },
   {
    "nome": "Tutorial Cadastro de Pessoas e Controle de Acessos na RETAGUARDA",
    "arquivo": "Tutorial Cadastro de Pessoas e Controle de Acessos na RETAGUARDA.pdf",
    "categoria": "acessos",
-   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20Cadastro%20de%20Pessoas%20e%20Controle%20de%20Acessos%20na%20RETAGUARDA.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Cadastro%20de%20Pessoas%20e%20Controle%20de%20Acessos%20na%20RETAGUARDA.pdf"
   },
   {
    "nome": "Tutorial Cadastro de Pessoas e Controle de Acessos no PDV",
    "arquivo": "Tutorial Cadastro de Pessoas e Controle de Acessos no PDV.pdf",
    "categoria": "acessos",
-   "url": "https://api.arara-tech.com/h/doc-apoio-3/PDF%20documentacao/Tutorial%20Cadastro%20de%20Pessoas%20e%20Controle%20de%20Acessos%20no%20PDV.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Cadastro%20de%20Pessoas%20e%20Controle%20de%20Acessos%20no%20PDV.pdf"
   },
   {
    "nome": "Tutorial Cadastro NF-e",
    "arquivo": "Tutorial Cadastro NF-e.pdf",
    "categoria": "nfe",
-   "url": "https://api.arara-tech.com/h/doc-apoio/PDF%20documentacao/Tutorial%20Cadastro%20NF-e.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Cadastro%20NF-e.pdf"
   },
   {
    "nome": "Tutorial Cadastro Produto x Fornecedor - Top Line SGI",
    "arquivo": "Tutorial Cadastro Produto x Fornecedor - Top Line SGI.pdf",
    "categoria": "estoque",
-   "url": "https://api.arara-tech.com/h/doc-apoio-2/PDF%20documentacao/Tutorial%20Cadastro%20Produto%20x%20Fornecedor%20-%20Top%20Line%20SGI.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Cadastro%20Produto%20x%20Fornecedor%20-%20Top%20Line%20SGI.pdf"
   },
   {
    "nome": "Tutorial Central de Notificações",
    "arquivo": "Tutorial Central de Notificações.pdf",
    "categoria": "sgc",
-   "url": "https://api.arara-tech.com/h/doc-apoio/PDF%20documentacao/Tutorial%20Central%20de%20Notifica%C3%A7%C3%B5es.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Central%20de%20Notifica%C3%A7%C3%B5es.pdf"
   },
   {
    "nome": "Tutorial Comissões",
    "arquivo": "Tutorial Comissões.pdf",
    "categoria": "financeiro",
-   "url": "https://api.arara-tech.com/h/doc-apoio-2/PDF%20documentacao/Tutorial%20Comiss%C3%B5es.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Comiss%C3%B5es.pdf"
   },
   {
    "nome": "Tutorial Configurações e Cadastro de Tributações",
    "arquivo": "Tutorial Configurações e Cadastro de Tributações.pdf",
    "categoria": "nfe",
-   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20Configura%C3%A7%C3%B5es%20e%20Cadastro%20de%20Tributa%C3%A7%C3%B5es.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Configura%C3%A7%C3%B5es%20e%20Cadastro%20de%20Tributa%C3%A7%C3%B5es.pdf"
   },
   {
    "nome": "Tutorial Datas comemorativas, Pedido CD e Nº caixa",
    "arquivo": "Tutorial Datas comemorativas, Pedido CD e Nº caixa.pdf",
    "categoria": "sgc",
-   "url": "https://api.arara-tech.com/h/doc-apoio/PDF%20documentacao/Tutorial%20Datas%20comemorativas%2C%20Pedido%20CD%20e%20N%C2%BA%20caixa.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Datas%20comemorativas%2C%20Pedido%20CD%20e%20N%C2%BA%20caixa.pdf"
   },
   {
    "nome": "Tutorial de Alteração do Acesso de Usuários",
    "arquivo": "Tutorial de Alteração do Acesso de Usuários.pdf",
    "categoria": "acessos",
-   "url": "https://api.arara-tech.com/h/doc-apoio-3/PDF%20documentacao/Tutorial%20de%20Altera%C3%A7%C3%A3o%20do%20Acesso%20de%20Usu%C3%A1rios.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20de%20Altera%C3%A7%C3%A3o%20do%20Acesso%20de%20Usu%C3%A1rios.pdf"
   },
   {
    "nome": "Tutorial de Alteração do Acesso de Usuários",
    "arquivo": "Tutorial de Alteração do Acesso de Usuários.pdf",
    "categoria": "acessos",
-   "url": "https://api.arara-tech.com/h/doc-apoio-3/PDF%20documentacao/Tutorial%20de%20Altera%C3%A7%C3%A3o%20do%20Acesso%20de%20Usu%C3%A1rios.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20de%20Altera%C3%A7%C3%A3o%20do%20Acesso%20de%20Usu%C3%A1rios.pdf"
   },
   {
    "nome": "Tutorial de Cadastro, Liberação, Edição e Remoção de Acessos do PDV e Retaguarda SGC - Completo",
    "arquivo": "Tutorial de Cadastro, Liberação, Edição e Remoção de Acessos do PDV e Retaguarda SGC - Completo.pdf",
    "categoria": "acessos",
-   "url": "https://api.arara-tech.com/h/doc-apoio-2/PDF%20documentacao/Tutorial%20de%20Cadastro%2C%20Libera%C3%A7%C3%A3o%2C%20Edi%C3%A7%C3%A3o%20e%20Remo%C3%A7%C3%A3o%20de%20Acessos%20do%20PDV%20e%20Retaguarda%20SGC%20-%20Completo.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20de%20Cadastro%2C%20Libera%C3%A7%C3%A3o%2C%20Edi%C3%A7%C3%A3o%20e%20Remo%C3%A7%C3%A3o%20de%20Acessos%20do%20PDV%20e%20Retaguarda%20SGC%20-%20Completo.pdf"
   },
   {
    "nome": "Tutorial de Clonagem de Custos, Busca CF-e, Xml Inutilização, Log Distribuição DF-e, Lote de Impressão de Etiquetas e Impressão de Etiquetas de Prateleiras sem as Barras",
    "arquivo": "Tutorial de Clonagem de Custos, Busca CF-e, Xml Inutilização, Log Distribuição DF-e, Lote de Impressão de Etiquetas e Impressão de Etiquetas de Prateleiras sem as Barras.pdf",
    "categoria": "sgc",
-   "url": "https://api.arara-tech.com/h/doc-apoio/PDF%20documentacao/Tutorial%20de%20Clonagem%20de%20Custos%2C%20Busca%20CF-e%2C%20Xml%20Inutiliza%C3%A7%C3%A3o%2C%20Log%20Distribui%C3%A7%C3%A3o%20DF-e%2C%20Lote%20de%20Impress%C3%A3o%20de%20Etiquetas%20e%20Impress%C3%A3o%20de%20Etiquetas%20de%20Prateleiras%20sem%20as%20Barras.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20de%20Clonagem%20de%20Custos%2C%20Busca%20CF-e%2C%20Xml%20Inutiliza%C3%A7%C3%A3o%2C%20Log%20Distribui%C3%A7%C3%A3o%20DF-e%2C%20Lote%20de%20Impress%C3%A3o%20de%20Etiquetas%20e%20Impress%C3%A3o%20de%20Etiquetas%20de%20Prateleiras%20sem%20as%20Barras.pdf"
   },
   {
    "nome": "Tutorial de Clonagem de Custos, Busca CF-e, Xml Inutilização, Log Distribuição DF-e, Lote de Impressão de Etiquetas e Impressão de Etiquetas de Prateleiras sem as Barras",
    "arquivo": "Tutorial de Clonagem de Custos, Busca CF-e, Xml Inutilização, Log Distribuição DF-e, Lote de Impressão de Etiquetas e Impressão de Etiquetas de Prateleiras sem as Barras.pdf",
    "categoria": "estoque",
-   "url": "https://api.arara-tech.com/h/doc-apoio/PDF%20documentacao/Tutorial%20de%20Clonagem%20de%20Custos%2C%20Busca%20CF-e%2C%20Xml%20Inutiliza%C3%A7%C3%A3o%2C%20Log%20Distribui%C3%A7%C3%A3o%20DF-e%2C%20Lote%20de%20Impress%C3%A3o%20de%20Etiquetas%20e%20Impress%C3%A3o%20de%20Etiquetas%20de%20Prateleiras%20sem%20as%20Barras.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20de%20Clonagem%20de%20Custos%2C%20Busca%20CF-e%2C%20Xml%20Inutiliza%C3%A7%C3%A3o%2C%20Log%20Distribui%C3%A7%C3%A3o%20DF-e%2C%20Lote%20de%20Impress%C3%A3o%20de%20Etiquetas%20e%20Impress%C3%A3o%20de%20Etiquetas%20de%20Prateleiras%20sem%20as%20Barras.pdf"
   },
   {
    "nome": "Tutorial de Cotações",
    "arquivo": "Tutorial de Cotações.pdf",
    "categoria": "compras",
-   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20de%20Cota%C3%A7%C3%B5es.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20de%20Cota%C3%A7%C3%B5es.pdf"
   },
   {
    "nome": "Tutorial de Cotações",
    "arquivo": "Tutorial de Cotações.pdf",
    "categoria": "compras",
-   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20de%20Cota%C3%A7%C3%B5es.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20de%20Cota%C3%A7%C3%B5es.pdf"
   },
   {
    "nome": "Tutorial de Impressão de Etiquetas da Promoção",
    "arquivo": "Tutorial de Impressão de Etiquetas da Promoção.pdf",
    "categoria": "promocoes",
-   "url": "https://api.arara-tech.com/h/doc-apoio-2/PDF%20documentacao/Tutorial%20de%20Impress%C3%A3o%20de%20Etiquetas%20da%20Promo%C3%A7%C3%A3o.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20de%20Impress%C3%A3o%20de%20Etiquetas%20da%20Promo%C3%A7%C3%A3o.pdf"
   },
   {
    "nome": "Tutorial de Impressão de Etiquetas da Promoção",
    "arquivo": "Tutorial de Impressão de Etiquetas da Promoção.pdf",
    "categoria": "promocoes",
-   "url": "https://api.arara-tech.com/h/doc-apoio-2/PDF%20documentacao/Tutorial%20de%20Impress%C3%A3o%20de%20Etiquetas%20da%20Promo%C3%A7%C3%A3o.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20de%20Impress%C3%A3o%20de%20Etiquetas%20da%20Promo%C3%A7%C3%A3o.pdf"
   },
   {
    "nome": "Tutorial de Inventário - App",
    "arquivo": "Tutorial de Inventário - App.pdf",
    "categoria": "estoque",
-   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20de%20Invent%C3%A1rio%20-%20App.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20de%20Invent%C3%A1rio%20-%20App.pdf"
   },
   {
    "nome": "Tutorial de Inventário - App",
    "arquivo": "Tutorial de Inventário - App.pdf",
    "categoria": "estoque",
-   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20de%20Invent%C3%A1rio%20-%20App.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20de%20Invent%C3%A1rio%20-%20App.pdf"
   },
   {
    "nome": "Tutorial de Lançamento Financeiro - SGC",
    "arquivo": "Tutorial de Lançamento Financeiro - SGC.pdf",
    "categoria": "financeiro",
-   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20de%20Lan%C3%A7amento%20Financeiro%20-%20SGC.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20de%20Lan%C3%A7amento%20Financeiro%20-%20SGC.pdf"
   },
   {
    "nome": "Tutorial de Lançamento Financeiro - SGC",
    "arquivo": "Tutorial de Lançamento Financeiro - SGC.pdf",
    "categoria": "financeiro",
-   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20de%20Lan%C3%A7amento%20Financeiro%20-%20SGC.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20de%20Lan%C3%A7amento%20Financeiro%20-%20SGC.pdf"
   },
   {
    "nome": "Tutorial de Lançamento Financeiro - SGI",
    "arquivo": "Tutorial de Lançamento Financeiro - SGI.pdf",
    "categoria": "financeiro",
-   "url": "https://api.arara-tech.com/h/doc-apoio-2/PDF%20documentacao/Tutorial%20de%20Lan%C3%A7amento%20Financeiro%20-%20SGI.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20de%20Lan%C3%A7amento%20Financeiro%20-%20SGI.pdf"
   },
   {
    "nome": "Tutorial de Lançamento Financeiro - SGI",
    "arquivo": "Tutorial de Lançamento Financeiro - SGI.pdf",
    "categoria": "financeiro",
-   "url": "https://api.arara-tech.com/h/doc-apoio-2/PDF%20documentacao/Tutorial%20de%20Lan%C3%A7amento%20Financeiro%20-%20SGI.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20de%20Lan%C3%A7amento%20Financeiro%20-%20SGI.pdf"
   },
   {
    "nome": "Tutorial de Liberação de Acesso para Representantes",
    "arquivo": "Tutorial de Liberação de Acesso para Representantes.pdf",
    "categoria": "acessos",
-   "url": "https://api.arara-tech.com/h/doc-apoio-2/PDF%20documentacao/Tutorial%20de%20Libera%C3%A7%C3%A3o%20de%20Acesso%20para%20Representantes.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20de%20Libera%C3%A7%C3%A3o%20de%20Acesso%20para%20Representantes.pdf"
   },
   {
    "nome": "Tutorial de Liberação de Acesso para Representantes",
    "arquivo": "Tutorial de Liberação de Acesso para Representantes.pdf",
    "categoria": "acessos",
-   "url": "https://api.arara-tech.com/h/doc-apoio-2/PDF%20documentacao/Tutorial%20de%20Libera%C3%A7%C3%A3o%20de%20Acesso%20para%20Representantes.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20de%20Libera%C3%A7%C3%A3o%20de%20Acesso%20para%20Representantes.pdf"
   },
   {
    "nome": "Tutorial de para editar o cadastro do usuário",
    "arquivo": "Tutorial de para editar o cadastro do usuário.pdf",
    "categoria": "acessos",
-   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20de%20para%20editar%20o%20cadastro%20do%20usu%C3%A1rio.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20de%20para%20editar%20o%20cadastro%20do%20usu%C3%A1rio.pdf"
   },
   {
    "nome": "Tutorial de para editar o cadastro do usuário",
    "arquivo": "Tutorial de para editar o cadastro do usuário.pdf",
    "categoria": "acessos",
-   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20de%20para%20editar%20o%20cadastro%20do%20usu%C3%A1rio.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20de%20para%20editar%20o%20cadastro%20do%20usu%C3%A1rio.pdf"
   },
   {
    "nome": "Tutorial de Pedido de compra entre Lojas",
    "arquivo": "Tutorial de Pedido de compra entre Lojas.pdf",
    "categoria": "compras",
-   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20de%20Pedido%20de%20compra%20entre%20Lojas.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20de%20Pedido%20de%20compra%20entre%20Lojas.pdf"
   },
   {
    "nome": "Tutorial de Pedido de compra entre Lojas",
    "arquivo": "Tutorial de Pedido de compra entre Lojas.pdf",
    "categoria": "compras",
-   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20de%20Pedido%20de%20compra%20entre%20Lojas.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20de%20Pedido%20de%20compra%20entre%20Lojas.pdf"
   },
   {
    "nome": "Tutorial de Recebimento de Pedido de Compras a Cegas.",
    "arquivo": "Tutorial de Recebimento de Pedido de Compras a Cegas..pdf",
    "categoria": "compras",
-   "url": "https://api.arara-tech.com/h/doc-apoio-2/PDF%20documentacao/Tutorial%20de%20Recebimento%20de%20Pedido%20de%20Compras%20a%20Cegas..pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20de%20Recebimento%20de%20Pedido%20de%20Compras%20a%20Cegas..pdf"
   },
   {
    "nome": "Tutorial de Recebimento de Pedido de Compras a Cegas.",
    "arquivo": "Tutorial de Recebimento de Pedido de Compras a Cegas..pdf",
    "categoria": "compras",
-   "url": "https://api.arara-tech.com/h/doc-apoio-2/PDF%20documentacao/Tutorial%20de%20Recebimento%20de%20Pedido%20de%20Compras%20a%20Cegas..pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20de%20Recebimento%20de%20Pedido%20de%20Compras%20a%20Cegas..pdf"
   },
   {
    "nome": "Tutorial Desconto Automático",
    "arquivo": "Tutorial Desconto Automático.pdf",
    "categoria": "promocoes",
-   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20Desconto%20Autom%C3%A1tico.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Desconto%20Autom%C3%A1tico.pdf"
   },
   {
    "nome": "Tutorial Devolução NF-e",
    "arquivo": "Tutorial Devolução NF-e.pdf",
    "categoria": "nfe",
-   "url": "https://api.arara-tech.com/h/doc-apoio-2/PDF%20documentacao/Tutorial%20Devolu%C3%A7%C3%A3o%20NF-e.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Devolu%C3%A7%C3%A3o%20NF-e.pdf"
   },
   {
    "nome": "Tutorial Devolução NF-e de múltiplas NF-e, Campo Referência e Atualização de Preços de Custo",
    "arquivo": "Tutorial Devolução NF-e de múltiplas NF-e, Campo Referência e Atualização de Preços de Custo.pdf",
    "categoria": "nfe",
-   "url": "https://api.arara-tech.com/h/doc-apoio-3/PDF%20documentacao/Tutorial%20Devolu%C3%A7%C3%A3o%20NF-e%20de%20m%C3%BAltiplas%20NF-e%2C%20Campo%20Refer%C3%AAncia%20e%20Atualiza%C3%A7%C3%A3o%20de%20Pre%C3%A7os%20de%20Custo.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Devolu%C3%A7%C3%A3o%20NF-e%20de%20m%C3%BAltiplas%20NF-e%2C%20Campo%20Refer%C3%AAncia%20e%20Atualiza%C3%A7%C3%A3o%20de%20Pre%C3%A7os%20de%20Custo.pdf"
   },
   {
    "nome": "Tutorial Digitação Pré Venda Mazetto",
    "arquivo": "Tutorial Digitação Pré Venda Mazetto.pdf",
    "categoria": "pdv",
-   "url": "https://api.arara-tech.com/h/doc-apoio/PDF%20documentacao/Tutorial%20Digita%C3%A7%C3%A3o%20Pr%C3%A9%20Venda%20Mazetto.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Digita%C3%A7%C3%A3o%20Pr%C3%A9%20Venda%20Mazetto.pdf"
   },
   {
    "nome": "Tutorial Distribuição DF-e",
    "arquivo": "Tutorial Distribuição DF-e.pdf",
    "categoria": "nfe",
-   "url": "https://api.arara-tech.com/h/doc-apoio-3/PDF%20documentacao/Tutorial%20Distribui%C3%A7%C3%A3o%20DF-e.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Distribui%C3%A7%C3%A3o%20DF-e.pdf"
   },
   {
    "nome": "Tutorial Distribuição DF-e e Cadastro pelo Xml",
    "arquivo": "Tutorial Distribuição DF-e e Cadastro pelo Xml.pdf",
    "categoria": "nfe",
-   "url": "https://api.arara-tech.com/h/doc-apoio-2/PDF%20documentacao/Tutorial%20Distribui%C3%A7%C3%A3o%20DF-e%20e%20Cadastro%20pelo%20Xml.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Distribui%C3%A7%C3%A3o%20DF-e%20e%20Cadastro%20pelo%20Xml.pdf"
   },
   {
    "nome": "Tutorial Distribuição e Cadastro de Produtos",
    "arquivo": "Tutorial Distribuição e Cadastro de Produtos.pdf",
    "categoria": "estoque",
-   "url": "https://api.arara-tech.com/h/doc-apoio-3/PDF%20documentacao/Tutorial%20Distribui%C3%A7%C3%A3o%20e%20Cadastro%20de%20Produtos.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Distribui%C3%A7%C3%A3o%20e%20Cadastro%20de%20Produtos.pdf"
   },
   {
    "nome": "Tutorial Edição de Itens e Cupom de Troca",
    "arquivo": "Tutorial Edição de Itens e Cupom de Troca.pdf",
    "categoria": "pdv",
-   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20Edi%C3%A7%C3%A3o%20de%20Itens%20e%20Cupom%20de%20Troca.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Edi%C3%A7%C3%A3o%20de%20Itens%20e%20Cupom%20de%20Troca.pdf"
   },
   {
    "nome": "Tutorial Emissão de Cartões Fiscais PDV",
    "arquivo": "Tutorial Emissão de Cartões Fiscais PDV.pdf",
    "categoria": "pdv",
-   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20Emiss%C3%A3o%20de%20Cart%C3%B5es%20Fiscais%20PDV.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Emiss%C3%A3o%20de%20Cart%C3%B5es%20Fiscais%20PDV.pdf"
   },
   {
    "nome": "Tutorial Emissão de Cartões Fiscais PDV - 2",
    "arquivo": "Tutorial Emissão de Cartões Fiscais PDV - 2.pdf",
    "categoria": "pdv",
-   "url": "https://api.arara-tech.com/h/doc-apoio-3/PDF%20documentacao/Tutorial%20Emiss%C3%A3o%20de%20Cart%C3%B5es%20Fiscais%20PDV%20-%202.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Emiss%C3%A3o%20de%20Cart%C3%B5es%20Fiscais%20PDV%20-%202.pdf"
   },
   {
    "nome": "Tutorial Emissão NF-e",
    "arquivo": "Tutorial Emissão NF-e.pdf",
    "categoria": "nfe",
-   "url": "https://api.arara-tech.com/h/doc-apoio-3/PDF%20documentacao/Tutorial%20Emiss%C3%A3o%20NF-e.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Emiss%C3%A3o%20NF-e.pdf"
   },
   {
    "nome": "Tutorial Emissão NF-e - Digitação de Pedido",
    "arquivo": "Tutorial Emissão NF-e - Digitação de Pedido.pdf",
    "categoria": "nfe",
-   "url": "https://api.arara-tech.com/h/doc-apoio/PDF%20documentacao/Tutorial%20Emiss%C3%A3o%20NF-e%20-%20Digita%C3%A7%C3%A3o%20de%20Pedido.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Emiss%C3%A3o%20NF-e%20-%20Digita%C3%A7%C3%A3o%20de%20Pedido.pdf"
   },
   {
    "nome": "Tutorial Emissão NF-e - Digitação de Pedido 2",
    "arquivo": "Tutorial Emissão NF-e - Digitação de Pedido 2.pdf",
    "categoria": "nfe",
-   "url": "https://api.arara-tech.com/h/doc-apoio-2/PDF%20documentacao/Tutorial%20Emiss%C3%A3o%20NF-e%20-%20Digita%C3%A7%C3%A3o%20de%20Pedido%202.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Emiss%C3%A3o%20NF-e%20-%20Digita%C3%A7%C3%A3o%20de%20Pedido%202.pdf"
   },
   {
    "nome": "Tutorial Emissão NF-e - utilizando pedido no pdv",
    "arquivo": "Tutorial Emissão NF-e - utilizando pedido no pdv.pdf",
    "categoria": "nfe",
-   "url": "https://api.arara-tech.com/h/doc-apoio-2/PDF%20documentacao/Tutorial%20Emiss%C3%A3o%20NF-e%20-%20utilizando%20pedido%20no%20pdv.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Emiss%C3%A3o%20NF-e%20-%20utilizando%20pedido%20no%20pdv.pdf"
   },
   {
    "nome": "Tutorial Emissão NF-e - utilizando pedido no pdv - antigo",
    "arquivo": "Tutorial Emissão NF-e - utilizando pedido no pdv - antigo.pdf",
    "categoria": "nfe",
-   "url": "https://api.arara-tech.com/h/doc-apoio/PDF%20documentacao/Tutorial%20Emiss%C3%A3o%20NF-e%20-%20utilizando%20pedido%20no%20pdv%20-%20antigo.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Emiss%C3%A3o%20NF-e%20-%20utilizando%20pedido%20no%20pdv%20-%20antigo.pdf"
   },
   {
    "nome": "Tutorial Emissão NF-e - utilizando pedido no pdv - novo",
    "arquivo": "Tutorial Emissão NF-e - utilizando pedido no pdv - novo.pdf",
    "categoria": "nfe",
-   "url": "https://api.arara-tech.com/h/doc-apoio-2/PDF%20documentacao/Tutorial%20Emiss%C3%A3o%20NF-e%20-%20utilizando%20pedido%20no%20pdv%20-%20novo.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Emiss%C3%A3o%20NF-e%20-%20utilizando%20pedido%20no%20pdv%20-%20novo.pdf"
   },
   {
    "nome": "Tutorial Estoque Mínimo em Lote, Relatório de Meta de Vendas e Cadastro de Famílias",
    "arquivo": "Tutorial Estoque Mínimo em Lote, Relatório de Meta de Vendas e Cadastro de Famílias.pdf",
    "categoria": "estoque",
-   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20Estoque%20M%C3%ADnimo%20em%20Lote%2C%20Relat%C3%B3rio%20de%20Meta%20de%20Vendas%20e%20Cadastro%20de%20Fam%C3%ADlias.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Estoque%20M%C3%ADnimo%20em%20Lote%2C%20Relat%C3%B3rio%20de%20Meta%20de%20Vendas%20e%20Cadastro%20de%20Fam%C3%ADlias.pdf"
   },
   {
    "nome": "Tutorial Estoque Mínimo em Lote, Relatório de Meta de Vendas e Cadastro de Famílias",
    "arquivo": "Tutorial Estoque Mínimo em Lote, Relatório de Meta de Vendas e Cadastro de Famílias.pdf",
    "categoria": "estoque",
-   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20Estoque%20M%C3%ADnimo%20em%20Lote%2C%20Relat%C3%B3rio%20de%20Meta%20de%20Vendas%20e%20Cadastro%20de%20Fam%C3%ADlias.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Estoque%20M%C3%ADnimo%20em%20Lote%2C%20Relat%C3%B3rio%20de%20Meta%20de%20Vendas%20e%20Cadastro%20de%20Fam%C3%ADlias.pdf"
   },
   {
    "nome": "Tutorial Finalização, Edição e Atualização PDV",
    "arquivo": "Tutorial Finalização, Edição e Atualização PDV.pdf",
    "categoria": "pdv",
-   "url": "https://api.arara-tech.com/h/doc-apoio/PDF%20documentacao/Tutorial%20Finaliza%C3%A7%C3%A3o%2C%20Edi%C3%A7%C3%A3o%20e%20Atualiza%C3%A7%C3%A3o%20PDV.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Finaliza%C3%A7%C3%A3o%2C%20Edi%C3%A7%C3%A3o%20e%20Atualiza%C3%A7%C3%A3o%20PDV.pdf"
   },
   {
    "nome": "Tutorial Finalização, Edição e Atualização PDV",
    "arquivo": "Tutorial Finalização, Edição e Atualização PDV.pdf",
    "categoria": "pdv",
-   "url": "https://api.arara-tech.com/h/doc-apoio/PDF%20documentacao/Tutorial%20Finaliza%C3%A7%C3%A3o%2C%20Edi%C3%A7%C3%A3o%20e%20Atualiza%C3%A7%C3%A3o%20PDV.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Finaliza%C3%A7%C3%A3o%2C%20Edi%C3%A7%C3%A3o%20e%20Atualiza%C3%A7%C3%A3o%20PDV.pdf"
   },
   {
    "nome": "Tutorial Formação de Custos, Cadastro de Tributação Vários Estados, Log de Promoção e Filtros, Inativação do Grupo de Produto e Lote de Impressão",
    "arquivo": "Tutorial Formação de Custos, Cadastro de Tributação Vários Estados, Log de Promoção e Filtros, Inativação do Grupo de Produto e Lote de Impressão.pdf",
    "categoria": "sgc",
-   "url": "https://api.arara-tech.com/h/doc-apoio/PDF%20documentacao/Tutorial%20Forma%C3%A7%C3%A3o%20de%20Custos%2C%20Cadastro%20de%20Tributa%C3%A7%C3%A3o%20V%C3%A1rios%20Estados%2C%20Log%20de%20Promo%C3%A7%C3%A3o%20e%20Filtros%2C%20Inativa%C3%A7%C3%A3o%20do%20Grupo%20de%20Produto%20e%20Lote%20de%20Impress%C3%A3o.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Forma%C3%A7%C3%A3o%20de%20Custos%2C%20Cadastro%20de%20Tributa%C3%A7%C3%A3o%20V%C3%A1rios%20Estados%2C%20Log%20de%20Promo%C3%A7%C3%A3o%20e%20Filtros%2C%20Inativa%C3%A7%C3%A3o%20do%20Grupo%20de%20Produto%20e%20Lote%20de%20Impress%C3%A3o.pdf"
   },
   {
    "nome": "Tutorial Formação de Custos, Cadastro de Tributação Vários Estados, Log de Promoção e Filtros, Inativação do Grupo de Produto e Lote de Impressão",
    "arquivo": "Tutorial Formação de Custos, Cadastro de Tributação Vários Estados, Log de Promoção e Filtros, Inativação do Grupo de Produto e Lote de Impressão.pdf",
    "categoria": "financeiro",
-   "url": "https://api.arara-tech.com/h/doc-apoio/PDF%20documentacao/Tutorial%20Forma%C3%A7%C3%A3o%20de%20Custos%2C%20Cadastro%20de%20Tributa%C3%A7%C3%A3o%20V%C3%A1rios%20Estados%2C%20Log%20de%20Promo%C3%A7%C3%A3o%20e%20Filtros%2C%20Inativa%C3%A7%C3%A3o%20do%20Grupo%20de%20Produto%20e%20Lote%20de%20Impress%C3%A3o.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Forma%C3%A7%C3%A3o%20de%20Custos%2C%20Cadastro%20de%20Tributa%C3%A7%C3%A3o%20V%C3%A1rios%20Estados%2C%20Log%20de%20Promo%C3%A7%C3%A3o%20e%20Filtros%2C%20Inativa%C3%A7%C3%A3o%20do%20Grupo%20de%20Produto%20e%20Lote%20de%20Impress%C3%A3o.pdf"
   },
   {
    "nome": "Tutorial Gerar Saldo de Compra, Referência Pedido de Compra, Relatório de Produtos Vendidos, Relatório de Promoção, Cadastro de Tributação em Lote e Log Grupo de Tributação do Produto",
    "arquivo": "Tutorial Gerar Saldo de Compra, Referência Pedido de Compra, Relatório de Produtos Vendidos, Relatório de Promoção, Cadastro de Tributação em Lote e Log Grupo de Tributação do Produto.pdf",
    "categoria": "compras",
-   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20Gerar%20Saldo%20de%20Compra%2C%20Refer%C3%AAncia%20Pedido%20de%20Compra%2C%20Relat%C3%B3rio%20de%20Produtos%20Vendidos%2C%20Relat%C3%B3rio%20de%20Promo%C3%A7%C3%A3o%2C%20Cadastro%20de%20Tributa%C3%A7%C3%A3o%20em%20Lote%20e%20Log%20Grupo%20de%20Tributa%C3%A7%C3%A3o%20do%20Produto.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Gerar%20Saldo%20de%20Compra%2C%20Refer%C3%AAncia%20Pedido%20de%20Compra%2C%20Relat%C3%B3rio%20de%20Produtos%20Vendidos%2C%20Relat%C3%B3rio%20de%20Promo%C3%A7%C3%A3o%2C%20Cadastro%20de%20Tributa%C3%A7%C3%A3o%20em%20Lote%20e%20Log%20Grupo%20de%20Tributa%C3%A7%C3%A3o%20do%20Produto.pdf"
   },
   {
    "nome": "Tutorial Gerar Saldo de Compra, Referência Pedido de Compra, Relatório de Produtos Vendidos, Relatório de Promoção, Cadastro de Tributação em Lote e Log Grupo de Tributação do Produto",
    "arquivo": "Tutorial Gerar Saldo de Compra, Referência Pedido de Compra, Relatório de Produtos Vendidos, Relatório de Promoção, Cadastro de Tributação em Lote e Log Grupo de Tributação do Produto.pdf",
    "categoria": "compras",
-   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20Gerar%20Saldo%20de%20Compra%2C%20Refer%C3%AAncia%20Pedido%20de%20Compra%2C%20Relat%C3%B3rio%20de%20Produtos%20Vendidos%2C%20Relat%C3%B3rio%20de%20Promo%C3%A7%C3%A3o%2C%20Cadastro%20de%20Tributa%C3%A7%C3%A3o%20em%20Lote%20e%20Log%20Grupo%20de%20Tributa%C3%A7%C3%A3o%20do%20Produto.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Gerar%20Saldo%20de%20Compra%2C%20Refer%C3%AAncia%20Pedido%20de%20Compra%2C%20Relat%C3%B3rio%20de%20Produtos%20Vendidos%2C%20Relat%C3%B3rio%20de%20Promo%C3%A7%C3%A3o%2C%20Cadastro%20de%20Tributa%C3%A7%C3%A3o%20em%20Lote%20e%20Log%20Grupo%20de%20Tributa%C3%A7%C3%A3o%20do%20Produto.pdf"
   },
   {
    "nome": "Tutorial Instalação PDV",
    "arquivo": "Tutorial Instalação PDV.docx",
    "categoria": "pdv",
-   "url": "https://api.arara-tech.com/h/doc-apoio-3/PDF%20documentacao/Tutorial%20Instala%C3%A7%C3%A3o%20PDV.docx"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Instala%C3%A7%C3%A3o%20PDV.docx"
   },
   {
    "nome": "Tutorial Integração do Imendes.",
    "arquivo": "Tutorial Integração do Imendes..pdf",
    "categoria": "integracoes",
-   "url": "https://api.arara-tech.com/h/doc-apoio-3/PDF%20documentacao/Tutorial%20Integra%C3%A7%C3%A3o%20do%20Imendes..pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Integra%C3%A7%C3%A3o%20do%20Imendes..pdf"
   },
   {
    "nome": "Tutorial Integração do Imendes.",
    "arquivo": "Tutorial Integração do Imendes..pdf",
    "categoria": "integracoes",
-   "url": "https://api.arara-tech.com/h/doc-apoio-3/PDF%20documentacao/Tutorial%20Integra%C3%A7%C3%A3o%20do%20Imendes..pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Integra%C3%A7%C3%A3o%20do%20Imendes..pdf"
   },
   {
    "nome": "Tutorial Inventário e Bloco K",
    "arquivo": "Tutorial Inventário e Bloco K.pdf",
    "categoria": "estoque",
-   "url": "https://api.arara-tech.com/h/doc-apoio/PDF%20documentacao/Tutorial%20Invent%C3%A1rio%20e%20Bloco%20K.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Invent%C3%A1rio%20e%20Bloco%20K.pdf"
   },
   {
    "nome": "Tutorial Inventário e Bloco K",
    "arquivo": "Tutorial Inventário e Bloco K.pdf",
    "categoria": "estoque",
-   "url": "https://api.arara-tech.com/h/doc-apoio/PDF%20documentacao/Tutorial%20Invent%C3%A1rio%20e%20Bloco%20K.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Invent%C3%A1rio%20e%20Bloco%20K.pdf"
   },
   {
    "nome": "Tutorial NF-e Devolução",
    "arquivo": "Tutorial NF-e Devolução.pdf",
    "categoria": "nfe",
-   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20NF-e%20Devolu%C3%A7%C3%A3o.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20NF-e%20Devolu%C3%A7%C3%A3o.pdf"
   },
   {
    "nome": "Tutorial NF-e Devolução com  Digitação de pedido",
    "arquivo": "Tutorial NF-e Devolução com  Digitação de pedido.pdf",
    "categoria": "nfe",
-   "url": "https://api.arara-tech.com/h/doc-apoio/PDF%20documentacao/Tutorial%20NF-e%20Devolu%C3%A7%C3%A3o%20com%20%20Digita%C3%A7%C3%A3o%20de%20pedido.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20NF-e%20Devolu%C3%A7%C3%A3o%20com%20%20Digita%C3%A7%C3%A3o%20de%20pedido.pdf"
   },
   {
    "nome": "Tutorial Novo Módulo de Compras",
    "arquivo": "Tutorial Novo Módulo de Compras.pdf",
    "categoria": "compras",
-   "url": "https://api.arara-tech.com/h/doc-apoio-3/PDF%20documentacao/Tutorial%20Novo%20M%C3%B3dulo%20de%20Compras.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Novo%20M%C3%B3dulo%20de%20Compras.pdf"
   },
   {
    "nome": "Tutorial Novo Módulo de Compras",
    "arquivo": "Tutorial Novo Módulo de Compras.pdf",
    "categoria": "compras",
-   "url": "https://api.arara-tech.com/h/doc-apoio-3/PDF%20documentacao/Tutorial%20Novo%20M%C3%B3dulo%20de%20Compras.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Novo%20M%C3%B3dulo%20de%20Compras.pdf"
   },
   {
    "nome": "Tutorial Novo Módulo de Compras, Títulos por parceria filtro Matriz, Download Inutilização em Lote e Filtro venda PDV Vendas por Empresas e por Grupo de Produtos",
    "arquivo": "Tutorial Novo Módulo de Compras, Títulos por parceria filtro Matriz, Download Inutilização em Lote e Filtro venda PDV Vendas por Empresas e por Grupo de Produtos.pdf",
    "categoria": "compras",
-   "url": "https://api.arara-tech.com/h/doc-apoio/PDF%20documentacao/Tutorial%20Novo%20M%C3%B3dulo%20de%20Compras%2C%20T%C3%ADtulos%20por%20parceria%20filtro%20Matriz%2C%20Download%20Inutiliza%C3%A7%C3%A3o%20em%20Lote%20e%20Filtro%20venda%20PDV%20Vendas%20por%20Empresas%20e%20por%20Grupo%20de%20Produtos.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Novo%20M%C3%B3dulo%20de%20Compras%2C%20T%C3%ADtulos%20por%20parceria%20filtro%20Matriz%2C%20Download%20Inutiliza%C3%A7%C3%A3o%20em%20Lote%20e%20Filtro%20venda%20PDV%20Vendas%20por%20Empresas%20e%20por%20Grupo%20de%20Produtos.pdf"
   },
   {
    "nome": "Tutorial Novo Módulo de Compras, Títulos por parceria filtro Matriz, Download Inutilização em Lote e Filtro venda PDV Vendas por Empresas e por Grupo de Produtos",
    "arquivo": "Tutorial Novo Módulo de Compras, Títulos por parceria filtro Matriz, Download Inutilização em Lote e Filtro venda PDV Vendas por Empresas e por Grupo de Produtos.pdf",
    "categoria": "compras",
-   "url": "https://api.arara-tech.com/h/doc-apoio/PDF%20documentacao/Tutorial%20Novo%20M%C3%B3dulo%20de%20Compras%2C%20T%C3%ADtulos%20por%20parceria%20filtro%20Matriz%2C%20Download%20Inutiliza%C3%A7%C3%A3o%20em%20Lote%20e%20Filtro%20venda%20PDV%20Vendas%20por%20Empresas%20e%20por%20Grupo%20de%20Produtos.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Novo%20M%C3%B3dulo%20de%20Compras%2C%20T%C3%ADtulos%20por%20parceria%20filtro%20Matriz%2C%20Download%20Inutiliza%C3%A7%C3%A3o%20em%20Lote%20e%20Filtro%20venda%20PDV%20Vendas%20por%20Empresas%20e%20por%20Grupo%20de%20Produtos.pdf"
   },
   {
    "nome": "Tutorial para Alteração de Senha",
    "arquivo": "Tutorial para Alteração de Senha.pdf",
    "categoria": "acessos",
-   "url": "https://api.arara-tech.com/h/doc-apoio-2/PDF%20documentacao/Tutorial%20para%20Altera%C3%A7%C3%A3o%20de%20Senha.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20para%20Altera%C3%A7%C3%A3o%20de%20Senha.pdf"
   },
   {
    "nome": "Tutorial para Alteração de Senha",
    "arquivo": "Tutorial para Alteração de Senha.pdf",
    "categoria": "acessos",
-   "url": "https://api.arara-tech.com/h/doc-apoio-2/PDF%20documentacao/Tutorial%20para%20Altera%C3%A7%C3%A3o%20de%20Senha.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20para%20Altera%C3%A7%C3%A3o%20de%20Senha.pdf"
   },
   {
    "nome": "Tutorial para Criar Grupos de Acesso",
    "arquivo": "Tutorial para Criar Grupos de Acesso.pdf",
    "categoria": "acessos",
-   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20para%20Criar%20Grupos%20de%20Acesso.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20para%20Criar%20Grupos%20de%20Acesso.pdf"
   },
   {
    "nome": "Tutorial para Criar Grupos de Acesso",
    "arquivo": "Tutorial para Criar Grupos de Acesso.pdf",
    "categoria": "acessos",
-   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20para%20Criar%20Grupos%20de%20Acesso.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20para%20Criar%20Grupos%20de%20Acesso.pdf"
   },
   {
    "nome": "Tutorial para Criar o Cadastro de Usuários",
    "arquivo": "Tutorial para Criar o Cadastro de Usuários.pdf",
    "categoria": "acessos",
-   "url": "https://api.arara-tech.com/h/doc-apoio-3/PDF%20documentacao/Tutorial%20para%20Criar%20o%20Cadastro%20de%20Usu%C3%A1rios.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20para%20Criar%20o%20Cadastro%20de%20Usu%C3%A1rios.pdf"
   },
   {
    "nome": "Tutorial para Criar o Cadastro de Usuários",
    "arquivo": "Tutorial para Criar o Cadastro de Usuários.pdf",
    "categoria": "acessos",
-   "url": "https://api.arara-tech.com/h/doc-apoio-3/PDF%20documentacao/Tutorial%20para%20Criar%20o%20Cadastro%20de%20Usu%C3%A1rios.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20para%20Criar%20o%20Cadastro%20de%20Usu%C3%A1rios.pdf"
   },
   {
    "nome": "Tutorial para desativar o acesso de Usuários",
    "arquivo": "Tutorial para desativar o acesso de Usuários.pdf",
    "categoria": "acessos",
-   "url": "https://api.arara-tech.com/h/doc-apoio/PDF%20documentacao/Tutorial%20para%20desativar%20o%20acesso%20de%20Usu%C3%A1rios.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20para%20desativar%20o%20acesso%20de%20Usu%C3%A1rios.pdf"
   },
   {
    "nome": "Tutorial para desativar o acesso de Usuários",
    "arquivo": "Tutorial para desativar o acesso de Usuários.pdf",
    "categoria": "acessos",
-   "url": "https://api.arara-tech.com/h/doc-apoio/PDF%20documentacao/Tutorial%20para%20desativar%20o%20acesso%20de%20Usu%C3%A1rios.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20para%20desativar%20o%20acesso%20de%20Usu%C3%A1rios.pdf"
   },
   {
    "nome": "Tutorial para Editar as Permissões do Grupo de Acessos",
    "arquivo": "Tutorial para Editar as Permissões do Grupo de Acessos.pdf",
    "categoria": "acessos",
-   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20para%20Editar%20as%20Permiss%C3%B5es%20do%20Grupo%20de%20Acessos.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20para%20Editar%20as%20Permiss%C3%B5es%20do%20Grupo%20de%20Acessos.pdf"
   },
   {
    "nome": "Tutorial para Editar as Permissões do Grupo de Acessos",
    "arquivo": "Tutorial para Editar as Permissões do Grupo de Acessos.pdf",
    "categoria": "acessos",
-   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20para%20Editar%20as%20Permiss%C3%B5es%20do%20Grupo%20de%20Acessos.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20para%20Editar%20as%20Permiss%C3%B5es%20do%20Grupo%20de%20Acessos.pdf"
   },
   {
    "nome": "Tutorial para Editar as Permissões Herdadas do Grupo de Acessos",
    "arquivo": "Tutorial para Editar as Permissões Herdadas do Grupo de Acessos.pdf",
    "categoria": "acessos",
-   "url": "https://api.arara-tech.com/h/doc-apoio-2/PDF%20documentacao/Tutorial%20para%20Editar%20as%20Permiss%C3%B5es%20Herdadas%20do%20Grupo%20de%20Acessos.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20para%20Editar%20as%20Permiss%C3%B5es%20Herdadas%20do%20Grupo%20de%20Acessos.pdf"
   },
   {
    "nome": "Tutorial para Editar as Permissões Herdadas do Grupo de Acessos",
    "arquivo": "Tutorial para Editar as Permissões Herdadas do Grupo de Acessos.pdf",
    "categoria": "acessos",
-   "url": "https://api.arara-tech.com/h/doc-apoio-2/PDF%20documentacao/Tutorial%20para%20Editar%20as%20Permiss%C3%B5es%20Herdadas%20do%20Grupo%20de%20Acessos.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20para%20Editar%20as%20Permiss%C3%B5es%20Herdadas%20do%20Grupo%20de%20Acessos.pdf"
   },
   {
    "nome": "Tutorial para Editar o Acesso à Retaguarda SGC",
    "arquivo": "Tutorial para Editar o Acesso à Retaguarda SGC.pdf",
    "categoria": "acessos",
-   "url": "https://api.arara-tech.com/h/doc-apoio-3/PDF%20documentacao/Tutorial%20para%20Editar%20o%20Acesso%20%C3%A0%20Retaguarda%20SGC.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20para%20Editar%20o%20Acesso%20%C3%A0%20Retaguarda%20SGC.pdf"
   },
   {
    "nome": "Tutorial para Editar o Acesso à Retaguarda SGC",
    "arquivo": "Tutorial para Editar o Acesso à Retaguarda SGC.pdf",
    "categoria": "acessos",
-   "url": "https://api.arara-tech.com/h/doc-apoio-3/PDF%20documentacao/Tutorial%20para%20Editar%20o%20Acesso%20%C3%A0%20Retaguarda%20SGC.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20para%20Editar%20o%20Acesso%20%C3%A0%20Retaguarda%20SGC.pdf"
   },
   {
    "nome": "Tutorial para efetuar a consulta de Pedidos de Venda",
    "arquivo": "Tutorial para efetuar a consulta de Pedidos de Venda.pdf",
    "categoria": "sgc",
-   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20para%20efetuar%20a%20consulta%20de%20Pedidos%20de%20Venda.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20para%20efetuar%20a%20consulta%20de%20Pedidos%20de%20Venda.pdf"
   },
   {
    "nome": "Tutorial para Inserir Permissões Herdadas no Grupo de Acessos",
    "arquivo": "Tutorial para Inserir Permissões Herdadas no Grupo de Acessos.pdf",
    "categoria": "acessos",
-   "url": "https://api.arara-tech.com/h/doc-apoio-3/PDF%20documentacao/Tutorial%20para%20Inserir%20Permiss%C3%B5es%20Herdadas%20no%20Grupo%20de%20Acessos.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20para%20Inserir%20Permiss%C3%B5es%20Herdadas%20no%20Grupo%20de%20Acessos.pdf"
   },
   {
    "nome": "Tutorial para Inserir Permissões Herdadas no Grupo de Acessos",
    "arquivo": "Tutorial para Inserir Permissões Herdadas no Grupo de Acessos.pdf",
    "categoria": "acessos",
-   "url": "https://api.arara-tech.com/h/doc-apoio-3/PDF%20documentacao/Tutorial%20para%20Inserir%20Permiss%C3%B5es%20Herdadas%20no%20Grupo%20de%20Acessos.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20para%20Inserir%20Permiss%C3%B5es%20Herdadas%20no%20Grupo%20de%20Acessos.pdf"
   },
   {
    "nome": "Tutorial para Inserir Permissões no Grupo de Acessos",
    "arquivo": "Tutorial para Inserir Permissões no Grupo de Acessos.pdf",
    "categoria": "acessos",
-   "url": "https://api.arara-tech.com/h/doc-apoio-2/PDF%20documentacao/Tutorial%20para%20Inserir%20Permiss%C3%B5es%20no%20Grupo%20de%20Acessos.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20para%20Inserir%20Permiss%C3%B5es%20no%20Grupo%20de%20Acessos.pdf"
   },
   {
    "nome": "Tutorial para Inserir Permissões no Grupo de Acessos",
    "arquivo": "Tutorial para Inserir Permissões no Grupo de Acessos.pdf",
    "categoria": "acessos",
-   "url": "https://api.arara-tech.com/h/doc-apoio-2/PDF%20documentacao/Tutorial%20para%20Inserir%20Permiss%C3%B5es%20no%20Grupo%20de%20Acessos.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20para%20Inserir%20Permiss%C3%B5es%20no%20Grupo%20de%20Acessos.pdf"
   },
   {
    "nome": "Tutorial para Liberar o acesso ao PDV",
    "arquivo": "Tutorial para Liberar o acesso ao PDV.pdf",
    "categoria": "acessos",
-   "url": "https://api.arara-tech.com/h/doc-apoio-2/PDF%20documentacao/Tutorial%20para%20Liberar%20o%20acesso%20ao%20PDV.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20para%20Liberar%20o%20acesso%20ao%20PDV.pdf"
   },
   {
    "nome": "Tutorial para Liberar o acesso ao PDV",
    "arquivo": "Tutorial para Liberar o acesso ao PDV.pdf",
    "categoria": "acessos",
-   "url": "https://api.arara-tech.com/h/doc-apoio-2/PDF%20documentacao/Tutorial%20para%20Liberar%20o%20acesso%20ao%20PDV.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20para%20Liberar%20o%20acesso%20ao%20PDV.pdf"
   },
   {
    "nome": "Tutorial para Liberar o acesso à Retaguarda SGC",
    "arquivo": "Tutorial para Liberar o acesso à Retaguarda SGC.pdf",
    "categoria": "acessos",
-   "url": "https://api.arara-tech.com/h/doc-apoio/PDF%20documentacao/Tutorial%20para%20Liberar%20o%20acesso%20%C3%A0%20Retaguarda%20SGC.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20para%20Liberar%20o%20acesso%20%C3%A0%20Retaguarda%20SGC.pdf"
   },
   {
    "nome": "Tutorial para Liberar o acesso à Retaguarda SGC",
    "arquivo": "Tutorial para Liberar o acesso à Retaguarda SGC.pdf",
    "categoria": "acessos",
-   "url": "https://api.arara-tech.com/h/doc-apoio/PDF%20documentacao/Tutorial%20para%20Liberar%20o%20acesso%20%C3%A0%20Retaguarda%20SGC.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20para%20Liberar%20o%20acesso%20%C3%A0%20Retaguarda%20SGC.pdf"
   },
   {
    "nome": "Tutorial para Remover as Permissões do Grupo de Acessos",
    "arquivo": "Tutorial para Remover as Permissões do Grupo de Acessos.pdf",
    "categoria": "acessos",
-   "url": "https://api.arara-tech.com/h/doc-apoio-2/PDF%20documentacao/Tutorial%20para%20Remover%20as%20Permiss%C3%B5es%20do%20Grupo%20de%20Acessos.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20para%20Remover%20as%20Permiss%C3%B5es%20do%20Grupo%20de%20Acessos.pdf"
   },
   {
    "nome": "Tutorial para Remover as Permissões do Grupo de Acessos",
    "arquivo": "Tutorial para Remover as Permissões do Grupo de Acessos.pdf",
    "categoria": "acessos",
-   "url": "https://api.arara-tech.com/h/doc-apoio-2/PDF%20documentacao/Tutorial%20para%20Remover%20as%20Permiss%C3%B5es%20do%20Grupo%20de%20Acessos.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20para%20Remover%20as%20Permiss%C3%B5es%20do%20Grupo%20de%20Acessos.pdf"
   },
   {
    "nome": "Tutorial para Remover as Permissões Herdadas do Grupo de Acessos",
    "arquivo": "Tutorial para Remover as Permissões Herdadas do Grupo de Acessos.pdf",
    "categoria": "acessos",
-   "url": "https://api.arara-tech.com/h/doc-apoio-3/PDF%20documentacao/Tutorial%20para%20Remover%20as%20Permiss%C3%B5es%20Herdadas%20do%20Grupo%20de%20Acessos.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20para%20Remover%20as%20Permiss%C3%B5es%20Herdadas%20do%20Grupo%20de%20Acessos.pdf"
   },
   {
    "nome": "Tutorial para Remover as Permissões Herdadas do Grupo de Acessos",
    "arquivo": "Tutorial para Remover as Permissões Herdadas do Grupo de Acessos.pdf",
    "categoria": "acessos",
-   "url": "https://api.arara-tech.com/h/doc-apoio-3/PDF%20documentacao/Tutorial%20para%20Remover%20as%20Permiss%C3%B5es%20Herdadas%20do%20Grupo%20de%20Acessos.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20para%20Remover%20as%20Permiss%C3%B5es%20Herdadas%20do%20Grupo%20de%20Acessos.pdf"
   },
   {
    "nome": "Tutorial Pedido de Compra",
    "arquivo": "Tutorial Pedido de Compra.pdf",
    "categoria": "compras",
-   "url": "https://api.arara-tech.com/h/doc-apoio-3/PDF%20documentacao/Tutorial%20Pedido%20de%20Compra.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Pedido%20de%20Compra.pdf"
   },
   {
    "nome": "Tutorial Pedido de Compra",
    "arquivo": "Tutorial Pedido de Compra.pdf",
    "categoria": "compras",
-   "url": "https://api.arara-tech.com/h/doc-apoio-3/PDF%20documentacao/Tutorial%20Pedido%20de%20Compra.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Pedido%20de%20Compra.pdf"
   },
   {
    "nome": "Tutorial Pedido de compra CD",
    "arquivo": "Tutorial Pedido de compra CD.pdf",
    "categoria": "compras",
-   "url": "https://api.arara-tech.com/h/doc-apoio-2/PDF%20documentacao/Tutorial%20Pedido%20de%20compra%20CD.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Pedido%20de%20compra%20CD.pdf"
   },
   {
    "nome": "Tutorial Pedido de compra CD",
    "arquivo": "Tutorial Pedido de compra CD.pdf",
    "categoria": "compras",
-   "url": "https://api.arara-tech.com/h/doc-apoio-2/PDF%20documentacao/Tutorial%20Pedido%20de%20compra%20CD.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Pedido%20de%20compra%20CD.pdf"
   },
   {
    "nome": "Tutorial Permissão de usuário",
    "arquivo": "Tutorial Permissão de usuário.pdf",
    "categoria": "acessos",
-   "url": "https://api.arara-tech.com/h/doc-apoio-3/PDF%20documentacao/Tutorial%20Permiss%C3%A3o%20de%20usu%C3%A1rio.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Permiss%C3%A3o%20de%20usu%C3%A1rio.pdf"
   },
   {
    "nome": "Tutorial Produto x Fornecedor",
    "arquivo": "Tutorial Produto x Fornecedor.pdf",
    "categoria": "estoque",
-   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20Produto%20x%20Fornecedor.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Produto%20x%20Fornecedor.pdf"
   },
   {
    "nome": "Tutorial Produto x Fornecedor",
    "arquivo": "Tutorial Produto x Fornecedor.pdf",
    "categoria": "compras",
-   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20Produto%20x%20Fornecedor.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Produto%20x%20Fornecedor.pdf"
   },
   {
    "nome": "Tutorial Promoção com Desconto Manual",
    "arquivo": "Tutorial Promoção com Desconto Manual.pdf",
    "categoria": "promocoes",
-   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20Promo%C3%A7%C3%A3o%20com%20Desconto%20Manual.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Promo%C3%A7%C3%A3o%20com%20Desconto%20Manual.pdf"
   },
   {
    "nome": "Tutorial Promoção com Desconto Manual",
    "arquivo": "Tutorial Promoção com Desconto Manual.pdf",
    "categoria": "promocoes",
-   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20Promo%C3%A7%C3%A3o%20com%20Desconto%20Manual.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Promo%C3%A7%C3%A3o%20com%20Desconto%20Manual.pdf"
   },
   {
    "nome": "Tutorial Promoção com Desconto Manual, Sugestão de Compras sobre Vendas, Notificação Estoque Mínimo e Cadastro Markup",
    "arquivo": "Tutorial Promoção com Desconto Manual, Sugestão de Compras sobre Vendas, Notificação Estoque Mínimo e Cadastro Markup.pdf",
    "categoria": "promocoes",
-   "url": "https://api.arara-tech.com/h/doc-apoio-3/PDF%20documentacao/Tutorial%20Promo%C3%A7%C3%A3o%20com%20Desconto%20Manual%2C%20Sugest%C3%A3o%20de%20Compras%20sobre%20Vendas%2C%20Notifica%C3%A7%C3%A3o%20Estoque%20M%C3%ADnimo%20e%20Cadastro%20Markup.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Promo%C3%A7%C3%A3o%20com%20Desconto%20Manual%2C%20Sugest%C3%A3o%20de%20Compras%20sobre%20Vendas%2C%20Notifica%C3%A7%C3%A3o%20Estoque%20M%C3%ADnimo%20e%20Cadastro%20Markup.pdf"
   },
   {
    "nome": "Tutorial Promoção com Desconto Manual, Sugestão de Compras sobre Vendas, Notificação Estoque Mínimo e Cadastro Markup",
    "arquivo": "Tutorial Promoção com Desconto Manual, Sugestão de Compras sobre Vendas, Notificação Estoque Mínimo e Cadastro Markup.pdf",
    "categoria": "promocoes",
-   "url": "https://api.arara-tech.com/h/doc-apoio-3/PDF%20documentacao/Tutorial%20Promo%C3%A7%C3%A3o%20com%20Desconto%20Manual%2C%20Sugest%C3%A3o%20de%20Compras%20sobre%20Vendas%2C%20Notifica%C3%A7%C3%A3o%20Estoque%20M%C3%ADnimo%20e%20Cadastro%20Markup.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Promo%C3%A7%C3%A3o%20com%20Desconto%20Manual%2C%20Sugest%C3%A3o%20de%20Compras%20sobre%20Vendas%2C%20Notifica%C3%A7%C3%A3o%20Estoque%20M%C3%ADnimo%20e%20Cadastro%20Markup.pdf"
   },
   {
    "nome": "Tutorial Promoção Combo",
    "arquivo": "Tutorial Promoção Combo.pdf",
    "categoria": "promocoes",
-   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20Promo%C3%A7%C3%A3o%20Combo.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Promo%C3%A7%C3%A3o%20Combo.pdf"
   },
   {
    "nome": "Tutorial Promoção Combo",
    "arquivo": "Tutorial Promoção Combo.pdf",
    "categoria": "promocoes",
-   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20Promo%C3%A7%C3%A3o%20Combo.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Promo%C3%A7%C3%A3o%20Combo.pdf"
   },
   {
    "nome": "Tutorial Promoções",
    "arquivo": "Tutorial Promoções.pdf",
    "categoria": "promocoes",
-   "url": "https://api.arara-tech.com/h/doc-apoio/PDF%20documentacao/Tutorial%20Promo%C3%A7%C3%B5es.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Promo%C3%A7%C3%B5es.pdf"
   },
   {
    "nome": "Tutorial Promoções",
    "arquivo": "Tutorial Promoções.pdf",
    "categoria": "promocoes",
-   "url": "https://api.arara-tech.com/h/doc-apoio/PDF%20documentacao/Tutorial%20Promo%C3%A7%C3%B5es.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Promo%C3%A7%C3%B5es.pdf"
   },
   {
    "nome": "Tutorial Quantidade de compra e venda no pedido de compra, DF-e Verificada, Sugestão de Preços e Insersão de Custo Retroativo",
    "arquivo": "Tutorial Quantidade de compra e venda no pedido de compra, DF-e Verificada, Sugestão de Preços e Insersão de Custo Retroativo.pdf",
    "categoria": "compras",
-   "url": "https://api.arara-tech.com/h/doc-apoio-2/PDF%20documentacao/Tutorial%20Quantidade%20de%20compra%20e%20venda%20no%20pedido%20de%20compra%2C%20DF-e%20Verificada%2C%20Sugest%C3%A3o%20de%20Pre%C3%A7os%20e%20Insers%C3%A3o%20de%20Custo%20Retroativo.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Quantidade%20de%20compra%20e%20venda%20no%20pedido%20de%20compra%2C%20DF-e%20Verificada%2C%20Sugest%C3%A3o%20de%20Pre%C3%A7os%20e%20Insers%C3%A3o%20de%20Custo%20Retroativo.pdf"
   },
   {
    "nome": "Tutorial Quantidade de compra e venda no pedido de compra, DF-e Verificada, Sugestão de Preços e Insersão de Custo Retroativo",
    "arquivo": "Tutorial Quantidade de compra e venda no pedido de compra, DF-e Verificada, Sugestão de Preços e Insersão de Custo Retroativo.pdf",
    "categoria": "compras",
-   "url": "https://api.arara-tech.com/h/doc-apoio-2/PDF%20documentacao/Tutorial%20Quantidade%20de%20compra%20e%20venda%20no%20pedido%20de%20compra%2C%20DF-e%20Verificada%2C%20Sugest%C3%A3o%20de%20Pre%C3%A7os%20e%20Insers%C3%A3o%20de%20Custo%20Retroativo.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Quantidade%20de%20compra%20e%20venda%20no%20pedido%20de%20compra%2C%20DF-e%20Verificada%2C%20Sugest%C3%A3o%20de%20Pre%C3%A7os%20e%20Insers%C3%A3o%20de%20Custo%20Retroativo.pdf"
   },
   {
    "nome": "Tutorial Relatório de Cadastro de Produtos",
    "arquivo": "Tutorial Relatório de Cadastro de Produtos.pdf",
    "categoria": "relatorios",
-   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20Relat%C3%B3rio%20de%20Cadastro%20de%20Produtos.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Relat%C3%B3rio%20de%20Cadastro%20de%20Produtos.pdf"
   },
   {
    "nome": "Tutorial Relatório de Cadastro de Produtos",
    "arquivo": "Tutorial Relatório de Cadastro de Produtos.pdf",
    "categoria": "relatorios",
-   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20Relat%C3%B3rio%20de%20Cadastro%20de%20Produtos.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Relat%C3%B3rio%20de%20Cadastro%20de%20Produtos.pdf"
   },
   {
    "nome": "Tutorial Relatório de Vendas por Empresa e Vendas por Grupo de Produtos",
    "arquivo": "Tutorial Relatório de Vendas por Empresa e Vendas por Grupo de Produtos.pdf",
    "categoria": "relatorios",
-   "url": "https://api.arara-tech.com/h/doc-apoio-2/PDF%20documentacao/Tutorial%20Relat%C3%B3rio%20de%20Vendas%20por%20Empresa%20e%20Vendas%20por%20Grupo%20de%20Produtos.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Relat%C3%B3rio%20de%20Vendas%20por%20Empresa%20e%20Vendas%20por%20Grupo%20de%20Produtos.pdf"
   },
   {
    "nome": "Tutorial Relatório de Vendas por Empresa e Vendas por Grupo de Produtos",
    "arquivo": "Tutorial Relatório de Vendas por Empresa e Vendas por Grupo de Produtos.pdf",
    "categoria": "relatorios",
-   "url": "https://api.arara-tech.com/h/doc-apoio-2/PDF%20documentacao/Tutorial%20Relat%C3%B3rio%20de%20Vendas%20por%20Empresa%20e%20Vendas%20por%20Grupo%20de%20Produtos.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Relat%C3%B3rio%20de%20Vendas%20por%20Empresa%20e%20Vendas%20por%20Grupo%20de%20Produtos.pdf"
   },
   {
    "nome": "Tutorial Remaza Tabela de Preços",
    "arquivo": "Tutorial Remaza Tabela de Preços.pdf",
    "categoria": "sgc",
-   "url": "https://api.arara-tech.com/h/doc-apoio/PDF%20documentacao/Tutorial%20Remaza%20Tabela%20de%20Pre%C3%A7os.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Remaza%20Tabela%20de%20Pre%C3%A7os.pdf"
   },
   {
    "nome": "Tutorial Remaza Tabela de Preços",
    "arquivo": "Tutorial Remaza Tabela de Preços.pdf",
    "categoria": "sgc",
-   "url": "https://api.arara-tech.com/h/doc-apoio/PDF%20documentacao/Tutorial%20Remaza%20Tabela%20de%20Pre%C3%A7os.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Remaza%20Tabela%20de%20Pre%C3%A7os.pdf"
   },
   {
    "nome": "Tutorial Sangria e Reimpressão Cupom de Troca",
    "arquivo": "Tutorial Sangria e Reimpressão Cupom de Troca.pdf",
    "categoria": "pdv",
-   "url": "https://api.arara-tech.com/h/doc-apoio-3/PDF%20documentacao/Tutorial%20Sangria%20e%20Reimpress%C3%A3o%20Cupom%20de%20Troca.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Sangria%20e%20Reimpress%C3%A3o%20Cupom%20de%20Troca.pdf"
   },
   {
    "nome": "Tutorial Sangria e Reimpressão Cupom de Troca",
    "arquivo": "Tutorial Sangria e Reimpressão Cupom de Troca.pdf",
    "categoria": "pdv",
-   "url": "https://api.arara-tech.com/h/doc-apoio-3/PDF%20documentacao/Tutorial%20Sangria%20e%20Reimpress%C3%A3o%20Cupom%20de%20Troca.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Sangria%20e%20Reimpress%C3%A3o%20Cupom%20de%20Troca.pdf"
   },
   {
    "nome": "Tutorial Transferência entre lojas",
    "arquivo": "Tutorial Transferência entre lojas.pdf",
    "categoria": "estoque",
-   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20Transfer%C3%AAncia%20entre%20lojas.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Transfer%C3%AAncia%20entre%20lojas.pdf"
   },
   {
    "nome": "Tutorial Transferência entre lojas",
    "arquivo": "Tutorial Transferência entre lojas.pdf",
    "categoria": "estoque",
-   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20Transfer%C3%AAncia%20entre%20lojas.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Transfer%C3%AAncia%20entre%20lojas.pdf"
   },
   {
    "nome": "Tutorial Troca de senha",
    "arquivo": "Tutorial Troca de senha.pdf",
    "categoria": "acessos",
-   "url": "https://api.arara-tech.com/h/doc-apoio/PDF%20documentacao/Tutorial%20Troca%20de%20senha.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Troca%20de%20senha.pdf"
   },
   {
    "nome": "Tutorial Troca de senha",
    "arquivo": "Tutorial Troca de senha.pdf",
    "categoria": "acessos",
-   "url": "https://api.arara-tech.com/h/doc-apoio/PDF%20documentacao/Tutorial%20Troca%20de%20senha.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Troca%20de%20senha.pdf"
   },
   {
    "nome": "Tutorial Vale Funcionário",
    "arquivo": "Tutorial Vale Funcionário.pdf",
    "categoria": "financeiro",
-   "url": "https://api.arara-tech.com/h/doc-apoio/PDF%20documentacao/Tutorial%20Vale%20Funcion%C3%A1rio.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Vale%20Funcion%C3%A1rio.pdf"
   },
   {
    "nome": "Tutorial Vale Funcionário",
    "arquivo": "Tutorial Vale Funcionário.pdf",
    "categoria": "financeiro",
-   "url": "https://api.arara-tech.com/h/doc-apoio/PDF%20documentacao/Tutorial%20Vale%20Funcion%C3%A1rio.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Vale%20Funcion%C3%A1rio.pdf"
   },
   {
    "nome": "Tutorial Vale Funcionário, Emissão CF-e, Distribuição DF-e, Cadastro pelo Xml e Distribuição Entre Setores",
    "arquivo": "Tutorial Vale Funcionário, Emissão CF-e, Distribuição DF-e, Cadastro pelo Xml e Distribuição Entre Setores.pdf",
    "categoria": "financeiro",
-   "url": "https://api.arara-tech.com/h/doc-apoio/PDF%20documentacao/Tutorial%20Vale%20Funcion%C3%A1rio%2C%20Emiss%C3%A3o%20CF-e%2C%20Distribui%C3%A7%C3%A3o%20DF-e%2C%20Cadastro%20pelo%20Xml%20e%20Distribui%C3%A7%C3%A3o%20Entre%20Setores.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Vale%20Funcion%C3%A1rio%2C%20Emiss%C3%A3o%20CF-e%2C%20Distribui%C3%A7%C3%A3o%20DF-e%2C%20Cadastro%20pelo%20Xml%20e%20Distribui%C3%A7%C3%A3o%20Entre%20Setores.pdf"
   },
   {
    "nome": "Tutorial Vale Funcionário, Emissão CF-e, Distribuição DF-e, Cadastro pelo Xml e Distribuição Entre Setores",
    "arquivo": "Tutorial Vale Funcionário, Emissão CF-e, Distribuição DF-e, Cadastro pelo Xml e Distribuição Entre Setores.pdf",
    "categoria": "financeiro",
-   "url": "https://api.arara-tech.com/h/doc-apoio/PDF%20documentacao/Tutorial%20Vale%20Funcion%C3%A1rio%2C%20Emiss%C3%A3o%20CF-e%2C%20Distribui%C3%A7%C3%A3o%20DF-e%2C%20Cadastro%20pelo%20Xml%20e%20Distribui%C3%A7%C3%A3o%20Entre%20Setores.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Vale%20Funcion%C3%A1rio%2C%20Emiss%C3%A3o%20CF-e%2C%20Distribui%C3%A7%C3%A3o%20DF-e%2C%20Cadastro%20pelo%20Xml%20e%20Distribui%C3%A7%C3%A3o%20Entre%20Setores.pdf"
   },
   {
    "nome": "Tutorial Vendas Casadas e Apuração do Resultado Operacional",
    "arquivo": "Tutorial Vendas Casadas e Apuração do Resultado Operacional.pdf",
    "categoria": "relatorios",
-   "url": "https://api.arara-tech.com/h/doc-apoio-2/PDF%20documentacao/Tutorial%20Vendas%20Casadas%20e%20Apura%C3%A7%C3%A3o%20do%20Resultado%20Operacional.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Vendas%20Casadas%20e%20Apura%C3%A7%C3%A3o%20do%20Resultado%20Operacional.pdf"
   },
   {
    "nome": "Tutorial Vendas Casadas e Apuração do Resultado Operacional",
    "arquivo": "Tutorial Vendas Casadas e Apuração do Resultado Operacional.pdf",
    "categoria": "relatorios",
-   "url": "https://api.arara-tech.com/h/doc-apoio-2/PDF%20documentacao/Tutorial%20Vendas%20Casadas%20e%20Apura%C3%A7%C3%A3o%20do%20Resultado%20Operacional.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Vendas%20Casadas%20e%20Apura%C3%A7%C3%A3o%20do%20Resultado%20Operacional.pdf"
   },
   {
    "nome": "Tutorial Zerar Estoque",
    "arquivo": "Tutorial Zerar Estoque.pdf",
    "categoria": "estoque",
-   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20Zerar%20Estoque.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Zerar%20Estoque.pdf"
   },
   {
    "nome": "Tutorial Zerar Estoque",
    "arquivo": "Tutorial Zerar Estoque.pdf",
    "categoria": "estoque",
-   "url": "https://api.arara-tech.com/h/doc-apoio-4/PDF%20documentacao/Tutorial%20Zerar%20Estoque.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutorial%20Zerar%20Estoque.pdf"
   },
   {
    "nome": "Tutotial PDV",
    "arquivo": "Tutotial PDV.pdf",
    "categoria": "pdv",
-   "url": "https://api.arara-tech.com/h/doc-apoio-2/PDF%20documentacao/Tutotial%20PDV.pdf"
+   "url": "/doc-apoio/PDF%20documentacao/Tutotial%20PDV.pdf"
   }
  ],
  "secoes": [

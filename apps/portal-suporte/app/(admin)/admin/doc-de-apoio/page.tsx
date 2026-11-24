@@ -10,9 +10,9 @@
 // removi o menu de servidores e ainda sobraram 25 hosts e 22 IPs no corpo.
 //
 // Então o corte foi por natureza, não por arquivo:
-//  • os 98 PDFs (verificadamente sem credencial) vão para o hosting da
-//    plataforma, em 4 fatias — o limite de upload da API é 50 MB e o acervo
-//    tem 154 MB. `url` no catálogo já aponta para a fatia certa.
+//  • os 98 PDFs (verificadamente sem credencial) ficam numa pasta do servidor,
+//    servida pelo próprio front em /doc-apoio/ (deploy/nginx/extra-portal-suporte.conf).
+//    `url` no catálogo é o caminho dentro dessa pasta.
 //  • as 152 seções de referência sem dado sensível vêm no catálogo.
 //  • as 29 seções com IP/credencial e os 36 acessos de cliente NÃO estão aqui:
 //    entram depois, servidos com autenticação.
