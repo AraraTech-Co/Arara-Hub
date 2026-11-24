@@ -1,5 +1,6 @@
 'use client'
 
+import { SoQuemGrava } from '@/components/crm/SoQuemGrava'
 import { Suspense, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
@@ -105,7 +106,11 @@ function DealViewInner() {
         </div>
       </div>
 
-      {status === 'open' && <DealActions dealId={String(deal.id)} />}
+      {status === 'open' && (
+        <SoQuemGrava>
+          <DealActions dealId={String(deal.id)} />
+        </SoQuemGrava>
+      )}
     </div>
   )
 }

@@ -1,9 +1,10 @@
 "use client"
 
+import { AvisoSomenteLeitura, SoQuemGrava } from '@/components/crm/SoQuemGrava'
 import { useRouter } from "next/navigation"
 import { ClienteForm } from "../cliente-form"
 
-export default function NovoClientePage() {
+function NovoClientePageConteudo() {
   const router = useRouter()
 
   return (
@@ -20,5 +21,13 @@ export default function NovoClientePage() {
         cancelar={() => router.back()}
       />
     </div>
+  )
+}
+
+export default function NovoClientePage() {
+  return (
+    <SoQuemGrava seLeitura={<AvisoSomenteLeitura />}>
+      <NovoClientePageConteudo />
+    </SoQuemGrava>
   )
 }

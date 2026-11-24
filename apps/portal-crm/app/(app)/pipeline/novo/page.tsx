@@ -1,5 +1,6 @@
 'use client'
 
+import { AvisoSomenteLeitura, SoQuemGrava } from '@/components/crm/SoQuemGrava'
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { arara, useAuth } from '@/lib/arara'
@@ -156,10 +157,18 @@ function NovaNegociacaoForm() {
   )
 }
 
-export default function NovaNegociacaoPage() {
+function NovaNegociacaoPageConteudo() {
   return (
     <Suspense>
       <NovaNegociacaoForm />
     </Suspense>
+  )
+}
+
+export default function NovaNegociacaoPage() {
+  return (
+    <SoQuemGrava seLeitura={<AvisoSomenteLeitura />}>
+      <NovaNegociacaoPageConteudo />
+    </SoQuemGrava>
   )
 }

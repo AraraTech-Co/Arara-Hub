@@ -17,7 +17,7 @@ import {
 
 function ClienteDetalheInner() {
   const searchParams = useSearchParams()
-  const { profile, role } = useAuth()
+  const { profile, role, somenteLeitura } = useAuth()
   const id = searchParams.get('id') || ''
   const [client, setClient] = useState<Record<string, unknown> | null>(null)
   const [matriz, setMatriz] = useState<Record<string, unknown> | null>(null)
@@ -75,10 +75,11 @@ function ClienteDetalheInner() {
   const tags = Array.isArray(client.tags) ? (client.tags as string[]) : []
   const stageById = Object.fromEntries(stages.map((s) => [String(s.id), s]))
   // O servidor confere de novo; aqui só decide se mostra o botão.
-  const podeEditar = role === 'admin' || (!!profile?.id && String(client.ownerId || '') === String(profile.id))
+  const podeEditar = !somenteLeitura && (role === 'admin' || (!!profile?.id && String(client.ownerId || '') === String(profile.id)))
   const ehFilial = !!client.parentId
   const registroDoFunil = ehFilial ? matriz : client
   const podeMover =
+    !somenteLeitura &&
     !!registroDoFunil &&
     (role === 'admin' || (!!profile?.id && String(registroDoFunil.ownerId || '') === String(profile.id)))
 
@@ -143,12 +144,14 @@ function ClienteDetalheInner() {
       <div className="bg-white rounded-xl border border-gray-200 p-5">
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-medium text-gray-900">Negociações ({deals.length})</h2>
+          {!somenteLeitura ? (
           <Link
             href={`/pipeline/novo?clientId=${id}`}
             className="text-indigo-600 hover:text-indigo-800 text-sm font-medium"
           >
             + Nova Negociação
           </Link>
+          ) : null}
         </div>
         {deals.length === 0 ? (
           <p className="text-sm text-gray-500">Nenhuma negociação ainda.</p>

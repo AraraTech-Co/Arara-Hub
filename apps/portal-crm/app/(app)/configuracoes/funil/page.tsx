@@ -1,10 +1,11 @@
 'use client'
 
+import { AvisoSomenteLeitura, SoQuemGrava } from '@/components/crm/SoQuemGrava'
 import { useEffect, useState } from 'react'
 import { arara } from '@/lib/arara'
 import { ConfigTabs } from '../config-tabs'
 
-export default function FunilPage() {
+function FunilPageConteudo() {
   const [stages, setStages] = useState<Record<string, unknown>[]>([])
   const [name, setName] = useState('')
   const [loading, setLoading] = useState(true)
@@ -74,5 +75,13 @@ export default function FunilPage() {
         </>
       )}
     </div>
+  )
+}
+
+export default function FunilPage() {
+  return (
+    <SoQuemGrava seLeitura={<AvisoSomenteLeitura />}>
+      <FunilPageConteudo />
+    </SoQuemGrava>
   )
 }

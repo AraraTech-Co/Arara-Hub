@@ -1,5 +1,6 @@
 'use client'
 
+import { SoQuemGrava } from '@/components/crm/SoQuemGrava'
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
@@ -49,12 +50,14 @@ export default function ClientesPageInner() {
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold text-gray-900">Clientes &amp; Leads</h1>
+        <SoQuemGrava>
         <Link
           href="/clientes/novo"
           className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2.5 rounded-lg min-h-[44px] inline-flex items-center"
         >
           + Novo Cliente
         </Link>
+        </SoQuemGrava>
       </div>
 
       <ClientesFilters initialQ={q} initialTipo={tipo} />
@@ -70,12 +73,14 @@ export default function ClientesPageInner() {
       ) : list.length === 0 ? (
         <div className="flex flex-col items-center gap-3 py-20 text-center">
           <p className="text-sm font-medium text-gray-700">Nenhum cliente encontrado</p>
+          <SoQuemGrava>
           <Link
             href="/clientes/novo"
             className="mt-1 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-5 py-2.5 rounded-lg min-h-[44px] inline-flex items-center"
           >
             + Novo Cliente
           </Link>
+          </SoQuemGrava>
         </div>
       ) : (
         <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100">

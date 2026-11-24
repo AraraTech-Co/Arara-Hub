@@ -53,7 +53,7 @@ const adminItems = [
 
 export function Sidebar() {
   const pathname = usePathname()
-  const { user, profile, role, logout } = useAuth()
+  const { user, profile, role, logout, somenteLeitura } = useAuth()
   const router = useRouter()
   const displayName = profile?.fullName || user?.name || user?.email || "?"
   const [open, setOpen] = useState(false)
@@ -61,7 +61,7 @@ export function Sidebar() {
   const allItems = [
     ...navItems,
     ...(role === "admin" ? gerenteItems : []),
-    ...(role === "admin" ? adminItems : []),
+    ...(role === "admin" && !somenteLeitura ? adminItems : []),
   ]
 
   const roleLabel =

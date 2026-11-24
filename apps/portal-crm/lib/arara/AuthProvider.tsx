@@ -37,6 +37,8 @@ type AuthState = {
   login: (email: string, password: string) => Promise<void>
   logout: () => void
   refreshMe: () => Promise<void>
+  /** Perfil com papel "leitura": vê tudo, não grava. A tela esconde o que grava; o servidor recusa. */
+  somenteLeitura: boolean
 }
 
 const AuthContext = createContext<AuthState | null>(null)
@@ -71,6 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           email: p.email,
           fullName: p.fullName,
           role: normalizeRole(p.role) || crmRole(null, me.user),
+          papel: p.role ? String(p.role) : null,
           teamId: p.teamId,
         }
         setProfile(normalized)
@@ -113,6 +116,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         email: p.email,
         fullName: p.fullName,
         role: normalizeRole(p.role) || crmRole(null, data.user),
+        papel: p.role ? String(p.role) : null,
         teamId: p.teamId,
       }
       setProfile(normalized)
@@ -149,6 +153,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       login,
       logout,
       refreshMe,
+      somenteLeitura: profile?.papel === 'leitura',
     }),
     [ready, user, profile, jwt, appApiKey, login, logout, refreshMe],
   )

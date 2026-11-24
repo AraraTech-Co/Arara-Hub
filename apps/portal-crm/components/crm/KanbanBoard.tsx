@@ -6,6 +6,7 @@ import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-
 import { CSS } from "@dnd-kit/utilities"
 import { formatBRL, formatBRLCompact, formatDate } from "@/lib/format"
 import Link from "next/link"
+import { useAuth } from "@/lib/arara"
 
 type Stage = { id: string; name: string; color: string }
 type Deal = { id: string; title: string; value: number | null; expectedClose: string | null; client: { name: string } }
@@ -56,6 +57,7 @@ export function KanbanBoard({ stages, initialDeals }: { stages: Stage[]; initial
   const [deals, setDeals] = useState<DealWithStage[]>(initialDeals)
   const [activeId, setActiveId] = useState<string | null>(null)
   const [toast, setToast] = useState<string | null>(null)
+  const { somenteLeitura } = useAuth()
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -96,7 +98,7 @@ export function KanbanBoard({ stages, initialDeals }: { stages: Stage[]; initial
   const activeStage = activeDeal ? stages.find((s) => s.id === activeDeal.stageId) : undefined
 
   return (
-    <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+    <DndContext sensors={somenteLeitura ? [] : sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
       <div className="flex gap-4 overflow-x-auto pb-4">
         {stages.map((stage) => {
           const stageDeals = deals.filter((d) => d.stageId === stage.id)

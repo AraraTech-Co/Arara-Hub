@@ -1,5 +1,6 @@
 'use client'
 
+import { SoQuemGrava } from '@/components/crm/SoQuemGrava'
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { arara, useAuth } from '@/lib/arara'
@@ -101,6 +102,7 @@ export default function DashboardPage() {
         {greeting(now.getHours())}, {name}
       </h1>
 
+      <SoQuemGrava>
       <div className="grid grid-cols-3 gap-3">
         <Link
           href="/clientes/novo"
@@ -124,6 +126,7 @@ export default function DashboardPage() {
           <span className="text-xs text-amber-100">Agendar visita a cliente</span>
         </Link>
       </div>
+      </SoQuemGrava>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <KpiCard label="Vendido no mês" value={formatBRL(stats.totalVendido)} />

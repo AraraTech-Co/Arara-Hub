@@ -1,5 +1,6 @@
 "use client"
 
+import { SoQuemGrava } from "@/components/crm/SoQuemGrava"
 import { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Toast, type ToastState } from "@/components/crm/Toast"
@@ -101,6 +102,7 @@ export function ProspeccaoList({ initialLeads }: { initialLeads: Lead[] }) {
                   ))}
                 </div>
               </div>
+              <SoQuemGrava>
               <button
                 onClick={() => pegar(lead)}
                 disabled={claiming !== null}
@@ -108,6 +110,7 @@ export function ProspeccaoList({ initialLeads }: { initialLeads: Lead[] }) {
               >
                 {claiming === lead.id ? "Pegando…" : "Pegar"}
               </button>
+              </SoQuemGrava>
             </div>
           ))}
         </div>
