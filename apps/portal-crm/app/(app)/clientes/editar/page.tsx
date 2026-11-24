@@ -1,5 +1,6 @@
 'use client'
 
+import { AvisoSomenteLeitura, SoQuemGrava } from '@/components/crm/SoQuemGrava'
 import { Suspense, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -70,10 +71,18 @@ function EditarClienteInner() {
   )
 }
 
-export default function EditarClientePage() {
+function EditarClientePageConteudo() {
   return (
     <Suspense fallback={<p className="text-sm text-gray-500">Carregando…</p>}>
       <EditarClienteInner />
     </Suspense>
+  )
+}
+
+export default function EditarClientePage() {
+  return (
+    <SoQuemGrava seLeitura={<AvisoSomenteLeitura />}>
+      <EditarClientePageConteudo />
+    </SoQuemGrava>
   )
 }

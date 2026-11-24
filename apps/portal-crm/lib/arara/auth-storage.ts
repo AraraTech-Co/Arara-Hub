@@ -36,6 +36,8 @@ export type CrmProfile = {
   email?: string | null
   fullName?: string | null
   role: CanonicalRole
+  /** Papel como está no perfil do CRM (ex.: "leitura"), antes de virar papel canônico. */
+  papel?: string | null
   teamId?: string | null
 }
 

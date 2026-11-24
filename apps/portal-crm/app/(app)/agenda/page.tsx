@@ -1,5 +1,6 @@
 'use client'
 
+import { SoQuemGrava } from '@/components/crm/SoQuemGrava'
 import { Suspense, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
@@ -24,7 +25,7 @@ function dayLabel(date: Date, today: Date): string {
 }
 
 function AgendaInner() {
-  const { user } = useAuth()
+  const { user, somenteLeitura } = useAuth()
   const searchParams = useSearchParams()
   const status = searchParams.get('status') || ''
   const [activities, setActivities] = useState<Record<string, unknown>[]>([])
@@ -90,12 +91,14 @@ function AgendaInner() {
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold text-gray-900">Agenda &amp; Atividades</h1>
+        <SoQuemGrava>
         <Link
           href="/agenda/nova"
           className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2.5 rounded-lg min-h-[44px] inline-flex items-center"
         >
           + Nova Atividade
         </Link>
+        </SoQuemGrava>
       </div>
 
       <div className="flex gap-2">
@@ -145,7 +148,7 @@ function AgendaInner() {
                         {formatTime(String(a.scheduledAt))} · {formatDate(String(a.scheduledAt))}
                       </p>
                     </div>
-                    {!a.doneAt && (
+                    {!a.doneAt && !somenteLeitura && (
                       <button
                         onClick={() => complete(String(a.id))}
                         className="text-xs text-indigo-600 hover:text-indigo-800 font-medium"

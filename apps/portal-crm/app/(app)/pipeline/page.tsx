@@ -1,5 +1,6 @@
 'use client'
 
+import { SoQuemGrava } from '@/components/crm/SoQuemGrava'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { arara } from '@/lib/arara'
@@ -70,12 +71,14 @@ export default function PipelinePage() {
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold text-gray-900">Pipeline de Vendas</h1>
+        <SoQuemGrava>
         <Link
           href="/pipeline/novo"
           className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 rounded-lg transition-colors inline-flex items-center min-h-[44px]"
         >
           + Nova Negociação
         </Link>
+        </SoQuemGrava>
       </div>
 
       {stages.length === 0 ? (

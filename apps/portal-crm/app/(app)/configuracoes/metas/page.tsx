@@ -1,10 +1,11 @@
 'use client'
 
+import { AvisoSomenteLeitura, SoQuemGrava } from '@/components/crm/SoQuemGrava'
 import { useEffect, useState } from 'react'
 import { arara, useAuth } from '@/lib/arara'
 import { ConfigTabs } from '../config-tabs'
 
-export default function MetasPage() {
+function MetasPageConteudo() {
   const { user } = useAuth()
   const now = new Date()
   const [targetValue, setTargetValue] = useState('0')
@@ -92,5 +93,13 @@ export default function MetasPage() {
         </form>
       )}
     </div>
+  )
+}
+
+export default function MetasPage() {
+  return (
+    <SoQuemGrava seLeitura={<AvisoSomenteLeitura />}>
+      <MetasPageConteudo />
+    </SoQuemGrava>
   )
 }
