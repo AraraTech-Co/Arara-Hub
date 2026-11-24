@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { api, getErrorMessage } from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { fetchAdminIds } from '../lib/team.js';
+import FechamentoMes from '../components/FechamentoMes.jsx';
 
 function currentMonthYm() {
   return format(new Date(), 'yyyy-MM');
@@ -141,6 +142,8 @@ export default function Finance() {
           </button>
         </div>
       </div>
+
+      <FechamentoMes month={month} isAdmin={isAdmin} />
 
       {data && !loading && (
         <div className="rounded-lg border border-gray-200 bg-gray-50/60 px-4 py-3 text-sm text-ink-muted">

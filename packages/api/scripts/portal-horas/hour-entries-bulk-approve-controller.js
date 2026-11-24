@@ -12,6 +12,28 @@ async function handler(ctx) {
     return ctx.reply.status(401).send({ error: 'Login required' });
   }
 
+  // <mes-fechado> Fechamento de mês (desenho 2026-11-24-desenho-horas-fechamento-mes).
+  // Mesmo texto em todas as rotas que gravam lançamentos; a fonte é
+  // packages/api/scripts/portal-horas/mes-fechado.js e o teste
+  // trava-mes-fechado.test.mjs confere que as cópias são iguais.
+  // Sem o model MonthClosures nenhum mês pode ter sido fechado: segue aberto.
+  // Falha na leitura propaga; quem chama responde 503 (na dúvida, não grava).
+  async function mesFechado(data) {
+    var M = ctx.models.MonthClosures;
+    if (!M) return false;
+    var mes = String(data || '').slice(0, 7);
+    if (!/^\d{4}-\d{2}$/.test(mes)) return false;
+    var r = await M.findById(mes);
+    return !!(r && String(r.status || '') === 'fechado');
+  }
+  function recusaMesFechado(data) {
+    return ctx.reply.status(409).send({ error: 'mes_fechado', month: String(data || '').slice(0, 7) });
+  }
+  function recusaLeituraFechamento() {
+    return ctx.reply.status(503).send({ error: 'leitura_fechamento' });
+  }
+  // </mes-fechado>
+
   function pick(obj, snake, camel) {
     if (!obj) return null;
     return obj[snake] != null ? obj[snake] : obj[camel];
@@ -56,18 +78,51 @@ async function handler(ctx) {
     requester.email ||
     'Manager';
   var now = new Date().toISOString();
-  var all = await Hour.findMany({});
-  var pending = (all || []).filter(function (r) {
-    return (
-      String(pick(r, 'user_id', 'userId') || '') === userId &&
-      String(r.status || '') === 'PENDING'
-    );
-  });
+  // Lê todas as páginas (a camada devolve no máximo 500 por chamada) já
+  // filtrando pela pessoa e pelo status, em vez dos 500 mais recentes de todos.
+  var pending = [];
+  var vistos = {};
+  var completo = false;
+  for (var pg = 0; pg < 40; pg++) {
+    var pagina = await Hour.findMany({ user_id: userId, status: 'PENDING', limit: 500, offset: pg * 500 });
+    var lista = Array.isArray(pagina) ? pagina : [];
+    for (var q = 0; q < lista.length; q++) {
+      var rid = String(lista[q].id);
+      if (vistos[rid]) continue;
+      vistos[rid] = true;
+      if (String(pick(lista[q], 'user_id', 'userId') || '') !== userId) continue;
+      if (String(lista[q].status || '') !== 'PENDING') continue;
+      pending.push(lista[q]);
+    }
+    if (lista.length < 500) {
+      completo = true;
+      break;
+    }
+  }
+  if (!completo) return ctx.reply.status(503).send({ error: 'leitura_incompleta' });
+
+  // Situação de cada mês antes de gravar qualquer coisa: se a leitura falhar,
+  // nada é aprovado.
+  var mesesFechados = {};
+  try {
+    for (var mi = 0; mi < pending.length; mi++) {
+      var mesP = String(pending[mi].date || pending[mi].work_date || '').slice(0, 7);
+      if (!(mesP in mesesFechados)) mesesFechados[mesP] = await mesFechado(mesP);
+    }
+  } catch (e) {
+    return recusaLeituraFechamento();
+  }
 
   var approvedCount = 0;
   var skipped = [];
+  var closedMonth = [];
   for (var i = 0; i < pending.length; i++) {
     var entry = pending[i];
+    var mesEntry = String(entry.date || entry.work_date || '').slice(0, 7);
+    if (mesesFechados[mesEntry]) {
+      closedMonth.push({ id: entry.id, month: mesEntry });
+      continue;
+    }
     try {
       var history = Array.isArray(entry.review_history)
         ? entry.review_history.slice()
@@ -97,6 +152,8 @@ async function handler(ctx) {
     }
   }
 
-  return ctx.reply.send({ data: { approvedCount: approvedCount, skipped: skipped } });
+  return ctx.reply.send({
+    data: { approvedCount: approvedCount, skipped: skipped, closedMonth: closedMonth },
+  });
 }
 module.exports = { handler };

@@ -285,7 +285,8 @@
     "approveSelectedResult": "{{count}} entry(ies) approved. Failures: {{failed}}.",
     "selectAllGroup": "Select all for {{name}}",
     "selectEntry": "Select entry",
-    "failuresTitle": "Could not approve {{count}} entry(ies):"
+    "failuresTitle": "Could not approve {{count}} entry(ies):",
+    "bulkClosedMonth": "{{count}} entry(ies) in a closed month were not approved."
   },
   "insights": {
     "title": "Dashboard",
@@ -452,5 +453,32 @@
     "errorPrefix": "Error:",
     "yes": "Yes",
     "no": "No"
+  },
+  "fechamento": {
+    "fechado": "Month closed",
+    "fechadoPor": "on {{quando}} by {{quem}}. Entries in this month cannot be created, edited, deleted or approved.",
+    "aberto": "Month open.",
+    "verTrilha": "History ({{n}})",
+    "ocultarTrilha": "Hide history",
+    "fechar": "Close month",
+    "reabrir": "Reopen month",
+    "motivoReabrir": "Reason for reopening (required)",
+    "motivoFechar": "Note (optional)",
+    "avisoFechar": "Once closed, nobody can create, edit, delete or approve entries in this month until an admin reopens it.",
+    "confirmarFechar": "Confirm closing",
+    "confirmarReabrir": "Confirm reopening",
+    "cancelar": "Cancel",
+    "acaoFechou": "Closed",
+    "acaoReabriu": "Reopened",
+    "erro": {
+      "mesFechado": "Month closed: entries of {{month}} cannot be created, edited, deleted or approved.",
+      "pendentes": "There are still {{count}} pending entry(ies) in this month. Approve or reject them before closing.",
+      "naoTerminou": "Only a month that has ended can be closed.",
+      "jaFechado": "This month is already closed.",
+      "naoFechado": "This month is not closed.",
+      "motivo": "Enter the reason for reopening.",
+      "modelo": "Month closing is not active on the platform yet.",
+      "leitura": "Could not check whether the month is closed. Try again."
+    }
   }
 }
