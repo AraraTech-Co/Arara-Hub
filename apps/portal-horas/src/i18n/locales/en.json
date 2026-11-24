@@ -394,7 +394,8 @@
       "incrementalHours": "Incremental hours",
       "incremental": "Incremental cost",
       "totalCost": "Total cost"
-    }
+    },
+    "congelado": "Values frozen when the month was closed: later changes to salary, hourly rate, holidays or entries do not change this result."
   },
   "users": {
     "title": "Users",
@@ -456,7 +457,7 @@
   },
   "fechamento": {
     "fechado": "Month closed",
-    "fechadoPor": "on {{quando}} by {{quem}}. Entries in this month cannot be created, edited, deleted or approved.",
+    "fechadoPor": "on {{quando}} by {{quem}}. Entries in this month cannot be created, edited, deleted or approved, and the Finance values were frozen.",
     "aberto": "Month open.",
     "verTrilha": "History ({{n}})",
     "ocultarTrilha": "Hide history",

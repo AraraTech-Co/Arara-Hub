@@ -394,7 +394,8 @@
       "incrementalHours": "Horas incrementais",
       "incremental": "Custo incremental",
       "totalCost": "Custo total"
-    }
+    },
+    "congelado": "Valores congelados no fechamento do mes: mudancas posteriores de salario, valor hora, feriado ou lancamento nao alteram este resultado."
   },
   "users": {
     "title": "Usuarios",
@@ -456,7 +457,7 @@
   },
   "fechamento": {
     "fechado": "Mes fechado",
-    "fechadoPor": "em {{quando}} por {{quem}}. Lancamentos deste mes nao podem ser criados, editados, excluidos nem aprovados.",
+    "fechadoPor": "em {{quando}} por {{quem}}. Lancamentos deste mes nao podem ser criados, editados, excluidos nem aprovados, e os valores do Financeiro ficaram congelados.",
     "aberto": "Mes aberto.",
     "verTrilha": "Historico ({{n}})",
     "ocultarTrilha": "Ocultar historico",

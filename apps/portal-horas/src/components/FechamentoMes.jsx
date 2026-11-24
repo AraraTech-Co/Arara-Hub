@@ -71,7 +71,7 @@ export default function FechamentoMes({ month, isAdmin, onMudou }) {
             <span>
               <strong>{t('fechamento.fechado', { defaultValue: 'Mês fechado' })}</strong>{' '}
               {t('fechamento.fechadoPor', {
-                defaultValue: 'em {{quando}} por {{quem}}. Lançamentos deste mês não podem ser criados, editados, excluídos nem aprovados.',
+                defaultValue: 'em {{quando}} por {{quem}}. Lançamentos deste mês não podem ser criados, editados, excluídos nem aprovados, e os valores do Financeiro ficaram congelados.',
                 quando: dataHora(info.closedAt, locale),
                 quem: info.closedByName || '—',
               })}
