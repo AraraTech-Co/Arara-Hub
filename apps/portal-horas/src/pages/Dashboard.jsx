@@ -12,6 +12,7 @@ import { format } from 'date-fns';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { api, getErrorMessage } from '../api/client.js';
+import { buscarMesesFechados, mesDe, mensagemFechamento } from '../lib/fechamento.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import {
   HOUR_TYPES,
@@ -71,6 +72,7 @@ export default function Dashboard() {
   const [formOpen, setFormOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [mesesFechados, setMesesFechados] = useState(() => new Set());
   const [contestingId, setContestingId] = useState(null);
   const [contestMessage, setContestMessage] = useState('');
   const [actingId, setActingId] = useState(null);
@@ -117,8 +119,9 @@ export default function Dashboard() {
         api.get('/api/clients'),
       ];
       if (isAdmin) reqs.push(api.get('/api/users'));
-      const [eRes, cRes, uRes] = await Promise.all(reqs);
+      const [[eRes, cRes, uRes], fechados] = await Promise.all([Promise.all(reqs), buscarMesesFechados()]);
       if (seq !== loadSeq.current) return;
+      setMesesFechados(fechados);
       let list = Array.isArray(eRes.data) ? eRes.data : [];
       if (month) {
         list = list.filter((e) => String(e.date || '').startsWith(month));
@@ -227,8 +230,12 @@ export default function Dashboard() {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    setSaving(true);
     setError('');
+    if (mesesFechados.has(mesDe(form.date))) {
+      setError(mensagemFechamento({ response: { data: { error: 'mes_fechado', month: mesDe(form.date) } } }, t));
+      return;
+    }
+    setSaving(true);
     try {
       const reasonsPayload = isReasonHourType(form.hourType)
         ? Array.isArray(form.reasons)
@@ -290,7 +297,7 @@ export default function Dashboard() {
       setEditingId(null);
       await load();
     } catch (err) {
-      setError(getErrorMessage(err));
+      setError(mensagemFechamento(err, t));
     } finally {
       setSaving(false);
     }
@@ -301,6 +308,7 @@ export default function Dashboard() {
     if (String(en.userId || '') !== String(user?.id || '')) return false;
     if (en.status === 'APPROVED') return false;
     if (en.rejectionAcceptedAt) return false;
+    if (mesesFechados.has(mesDe(en.date))) return false;
     return true;
   }
 
@@ -339,7 +347,7 @@ export default function Dashboard() {
       await api.delete(`/api/hour-entries/${en.id}`);
       await load();
     } catch (err) {
-      setError(getErrorMessage(err));
+      setError(mensagemFechamento(err, t));
     } finally {
       setActingId(null);
     }

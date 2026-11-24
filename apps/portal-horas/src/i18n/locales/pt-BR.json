@@ -285,7 +285,8 @@
     "approveSelectedResult": "{{count}} lancamento(s) aprovado(s). Falhas: {{failed}}.",
     "selectAllGroup": "Selecionar todos de {{name}}",
     "selectEntry": "Selecionar lancamento",
-    "failuresTitle": "Nao foi possivel aprovar {{count}} lancamento(s):"
+    "failuresTitle": "Nao foi possivel aprovar {{count}} lancamento(s):",
+    "bulkClosedMonth": "{{count}} lancamento(s) de mes fechado nao foram aprovados."
   },
   "insights": {
     "title": "Dashboard",
@@ -452,5 +453,32 @@
     "errorPrefix": "Erro:",
     "yes": "Sim",
     "no": "Nao"
+  },
+  "fechamento": {
+    "fechado": "Mes fechado",
+    "fechadoPor": "em {{quando}} por {{quem}}. Lancamentos deste mes nao podem ser criados, editados, excluidos nem aprovados.",
+    "aberto": "Mes aberto.",
+    "verTrilha": "Historico ({{n}})",
+    "ocultarTrilha": "Ocultar historico",
+    "fechar": "Fechar mes",
+    "reabrir": "Reabrir mes",
+    "motivoReabrir": "Motivo da reabertura (obrigatorio)",
+    "motivoFechar": "Observacao (opcional)",
+    "avisoFechar": "Depois de fechado, ninguem cria, edita, exclui ou aprova lancamentos deste mes ate um admin reabrir.",
+    "confirmarFechar": "Confirmar fechamento",
+    "confirmarReabrir": "Confirmar reabertura",
+    "cancelar": "Cancelar",
+    "acaoFechou": "Fechado",
+    "acaoReabriu": "Reaberto",
+    "erro": {
+      "mesFechado": "Mes fechado: nao da para criar, editar, excluir nem aprovar lancamentos de {{month}}.",
+      "pendentes": "Ainda ha {{count}} lancamento(s) pendente(s) neste mes. Aprove ou rejeite antes de fechar.",
+      "naoTerminou": "So da para fechar um mes que ja terminou.",
+      "jaFechado": "Este mes ja esta fechado.",
+      "naoFechado": "Este mes nao esta fechado.",
+      "motivo": "Informe o motivo da reabertura.",
+      "modelo": "O fechamento de mes ainda nao esta ativo na plataforma.",
+      "leitura": "Nao foi possivel conferir se o mes esta fechado. Tente de novo."
+    }
   }
 }

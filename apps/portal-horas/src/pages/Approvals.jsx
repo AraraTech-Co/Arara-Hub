@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api, getErrorMessage } from '../api/client.js';
+import { mensagemFechamento } from '../lib/fechamento.js';
 import { fetchAdminIds } from '../lib/team.js';
 import { HourTypeBadge } from '../components/hour-type/HourTypeBadge.jsx';
 
@@ -153,7 +154,7 @@ export default function Approvals() {
         await api.post(`/api/hour-entries/${id}/approve`, { action: 'approve' });
         ok += 1;
       } catch (err) {
-        failed.push({ id, label: entryLabel(id), reason: getErrorMessage(err) });
+        failed.push({ id, label: entryLabel(id), reason: mensagemFechamento(err, t) });
       }
     }
     return { ok, fail: failed.length, failed };
@@ -201,7 +202,7 @@ export default function Approvals() {
       setActionId(null);
       await load();
     } catch (err) {
-      setError(getErrorMessage(err));
+      setError(mensagemFechamento(err, t));
     } finally {
       setBusyId(null);
     }
@@ -240,16 +241,24 @@ export default function Approvals() {
         const { data } = await api.post('/api/hour-entries/bulk-approve', {
           userId: group.userId,
         });
+        const fechados = Array.isArray(data.closedMonth) ? data.closedMonth.length : 0;
         setSuccessInfo(
           t('approvals.bulkApproveSuccess', {
             count: data.approvedCount,
             skipped: data.skipped?.length || 0,
-          })
+          }) +
+            (fechados
+              ? ' ' +
+                t('approvals.bulkClosedMonth', {
+                  defaultValue: '{{count}} lançamento(s) de mês fechado não foram aprovados.',
+                  count: fechados,
+                })
+              : '')
         );
       }
       await load();
     } catch (err) {
-      setError(getErrorMessage(err));
+      setError(mensagemFechamento(err, t));
     } finally {
       setBulkApprovingUserId(null);
     }
