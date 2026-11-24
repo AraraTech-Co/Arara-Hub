@@ -25,4 +25,15 @@ fi
 cp "$_csp" /etc/nginx/csp.conf
 echo "entrypoint: politica de conteudo de $_csp (slug='${ARARA_APP_SLUG:-}')"
 
+# Locations próprias de um front, pelo mesmo critério: existindo
+# `extra-<slug>.conf`, ele entra; não existindo, entra um arquivo vazio, para o
+# `include` do template nunca apontar para arquivo que falta.
+_extra="/etc/nginx/templates/extra-${ARARA_APP_SLUG:-}.conf"
+if [ -n "${ARARA_APP_SLUG:-}" ] && [ -f "$_extra" ]; then
+  cp "$_extra" /etc/nginx/extra.conf
+  echo "entrypoint: locations extras de $_extra"
+else
+  : > /etc/nginx/extra.conf
+fi
+
 exec nginx -g 'daemon off;'

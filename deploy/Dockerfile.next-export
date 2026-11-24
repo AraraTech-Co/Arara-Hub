@@ -42,6 +42,7 @@ COPY deploy/nginx/security-headers.conf /etc/nginx/templates/security-headers.co
 # imagem igual à que foi provada.
 ENV ARARA_APP_SLUG=${NEXT_PUBLIC_ARARA_APP_SLUG}
 COPY deploy/nginx/csp-*.conf /etc/nginx/templates/
+COPY deploy/nginx/extra-*.conf /etc/nginx/templates/
 COPY deploy/nginx/docker-entrypoint.sh /docker-entrypoint-spa.sh
 RUN chmod +x /docker-entrypoint-spa.sh
 COPY --from=builder /src/out /usr/share/nginx/html

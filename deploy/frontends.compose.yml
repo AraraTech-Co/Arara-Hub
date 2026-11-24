@@ -63,6 +63,11 @@ services:
     restart: unless-stopped
     environment:
       <<: *front-env
+    # Manuais da Documentação de apoio, servidos em /doc-apoio/ (ver
+    # deploy/nginx/extra-portal-suporte.conf). A pasta fica fora de `apps/` e
+    # `deploy/`, que o deploy sincroniza com --delete.
+    volumes:
+      - ${HOME}/arara-doc-apoio:/srv/doc-apoio:ro
     ports:
       - "10003:80"
     networks:

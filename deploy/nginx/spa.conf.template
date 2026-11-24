@@ -94,6 +94,10 @@ server {
         include /etc/nginx/security-headers.conf;
     }
 
+    # Locations que só um front tem (ex.: os manuais do portal-suporte). O
+    # entrypoint copia `extra-<slug>.conf` para cá, ou um arquivo vazio.
+    include /etc/nginx/extra.conf;
+
     location / {
         try_files $uri $uri/ /index.html;
     }
