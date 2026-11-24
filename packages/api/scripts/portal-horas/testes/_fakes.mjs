@@ -3,16 +3,20 @@
 // recentes primeiro, no máximo 500 por chamada e offset; findById pelo id do
 // registro ou pelo data.id; update por merge; registra cada gravação.
 
-export function tabela(linhas = [], { falharLeitura = false } = {}) {
+export function tabela(linhas = [], { falharLeitura = false, aoLer = null } = {}) {
   let seq = 0;
   const rows = linhas.map((r) => ({ ...r, _criado: ++seq }));
   const gravacoes = [];
+  const leituras = [];
   const achar = (id) => rows.find((r) => String(r.id) === String(id)) || null;
   const api = {
     rows,
     gravacoes,
+    leituras,
     async findMany(filtro = {}) {
       if (falharLeitura) throw new Error('falha de leitura simulada');
+      leituras.push({ ...filtro });
+      if (aoLer) aoLer(leituras.length, api);
       const meta = new Set(['limit', 'offset']);
       const campos = Object.entries(filtro).filter(([k]) => !meta.has(k));
       const take = Math.min(500, Math.max(1, Number(filtro.limit) || 500));
@@ -31,6 +35,10 @@ export function tabela(linhas = [], { falharLeitura = false } = {}) {
     },
     async create(data) {
       const r = { id: data.id || 'gen' + (seq + 1), ...data, _criado: ++seq };
+      if (api.semRegistrar) {
+        rows.push(r);
+        return { ...r };
+      }
       rows.push(r);
       gravacoes.push({ op: 'create', id: r.id });
       return { ...r };

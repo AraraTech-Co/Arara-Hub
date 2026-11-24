@@ -158,3 +158,15 @@ test('perfil além dos 500 mais recentes aparece no Financeiro', async () => {
   assert.ok(linhaC(r), 'perfil mais antigo tem de aparecer');
   assert.equal(linhaC(r).normalHours, 1);
 });
+
+test('leitura sem fim de feriados ou de perfis também responde 503', async () => {
+  let n = 0;
+  const infinita = async () => Array.from({ length: 500 }, () => ({ id: 'i' + n++, date: '2030-01-01', role: 'user' }));
+  const f = await rodar({ entries: camada([]), holidays: { findMany: infinita } });
+  assert.equal(f.status, 503);
+  assert.equal(f.body.error, 'leitura_incompleta');
+  const perfis = [...PERFIS];
+  perfis.findMany = infinita;
+  const p = await rodar({ entries: camada([]), perfis });
+  assert.equal(p.status, 503);
+});

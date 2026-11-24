@@ -148,6 +148,41 @@ test('aprovar em lote lê todas as páginas da pessoa, além dos 500 mais recent
   assert.equal(r2.body.data.approvedCount, 1200);
 });
 
+test('aprovar em lote: lançamento que reaparece na página seguinte é aprovado uma vez', async () => {
+  // 700 pendentes; depois da 1ª página entra um lançamento novo de outra
+  // pessoa (mais recente): tudo desce uma posição e o último da página 1
+  // reaparece no começo da página 2
+  const linhas = [];
+  for (let i = 0; i < 700; i += 1) linhas.push(lanc('d' + i, NOV));
+  const w = { ...mundo({ fechados: [], lancamentos: [] }) };
+  w.HourEntries = tabela(linhas, {
+    aoLer: (n, t) => {
+      if (n === 2) {
+        t.semRegistrar = true;
+        t.create(lanc('novo', NOV));
+        t.semRegistrar = false;
+      }
+    },
+  });
+  const h = carregarHandler('POST', '/hour-entries/bulk-approve');
+  const r = await h(contexto({ method: 'POST', body: { user_id: 'u' }, models: w }));
+  // o novo entrou no topo, numa página já lida: fica para a próxima aprovação
+  assert.equal(r.body.data.approvedCount, 700);
+  const ids = w.HourEntries.gravacoes.map((g) => g.id);
+  assert.equal(new Set(ids).size, ids.length, 'algum lançamento foi aprovado duas vezes');
+});
+
+test('aprovar em lote filtra pessoa e status na leitura (não varre os lançamentos de todos)', async () => {
+  const w = mundo({ fechados: [], lancamentos: [lanc('a', NOV), lanc('b', NOV, { user_id: 'outra' })] });
+  const h = carregarHandler('POST', '/hour-entries/bulk-approve');
+  await h(contexto({ method: 'POST', body: { user_id: 'u' }, models: w }));
+  assert.ok(w.HourEntries.leituras.length >= 1);
+  for (const f of w.HourEntries.leituras) {
+    assert.equal(f.user_id, 'u');
+    assert.equal(f.status, 'PENDING');
+  }
+});
+
 test('PUT /hour-entries/:id responde 405 e não grava', async () => {
   const w = mundo({ fechados: [] });
   const h = carregarHandler('PUT', '/hour-entries/:id');
