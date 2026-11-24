@@ -81,12 +81,13 @@ api.interceptors.request.use((config) => {
       return config;
     }
 
-    // Finance + users + squads + hour-entries: JWT identifies the user
+    // Finance + users + squads + hour-entries + month-closures: JWT identifies the user
     const jwtOnly =
       config.url.startsWith('/api/finance') ||
       config.url.startsWith('/api/users') ||
       config.url.startsWith('/api/squads') ||
-      config.url.startsWith('/api/hour-entries');
+      config.url.startsWith('/api/hour-entries') ||
+      config.url.startsWith('/api/month-closures');
     config.url = mapAraraPath(config.url);
     if (jwtOnly) {
       const token = localStorage.getItem('token');
