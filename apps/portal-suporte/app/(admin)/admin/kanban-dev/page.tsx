@@ -101,6 +101,10 @@ export default function KanbanDevPage() {
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState('')
   const [verDescartados, setVerDescartados] = useState(false)
+  // Aplicados no cliente há mais de uma semana ficam fora do quadro (o servidor
+  // os deixa de fora e diz quantos). O botão "Arquivados" busca de novo com eles.
+  const [verArquivados, setVerArquivados] = useState(false)
+  const [aplicadosOcultos, setAplicadosOcultos] = useState(0)
   // Indicadores do §23 — derivados do ActivityLog no servidor (GET
   // /dev/indicadores). O "desde" é deliberado: o histórico começa na virada,
   // e número sem essa nota parece medir o que nunca foi medido.
@@ -129,8 +133,9 @@ export default function KanbanDevPage() {
   const podeMover = hasMinRole(user?.roles?.[0], 'developer')
 
   const carregar = useCallback(() => {
-    kanbanDevApi.listar()
+    kanbanDevApi.listar(verArquivados)
       .then((r) => {
+        setAplicadosOcultos(Number(r.aplicados_ocultos) || 0)
         const lista = ((r.tickets || []) as unknown as Card[]).map((c) =>
           // Coluna Em Revisão removida: cards legados aparecem em Dev Finalizado
           // até a primeira movimentação (shim no servidor) ou a migração.
@@ -142,7 +147,7 @@ export default function KanbanDevPage() {
       })
       .catch((e) => setErro(e.message))
       .finally(() => setCarregando(false))
-  }, [])
+  }, [verArquivados])
   useEffect(() => { carregar() }, [carregar])
   useEffect(() => {
     araraFetchIndicadores().then(setIndicadores).catch(() => {})
@@ -314,6 +319,15 @@ export default function KanbanDevPage() {
             >
               {verDescartados ? 'Ocultar descartados' : `Descartados (${descartados.length})`}
             </button>
+            {(verArquivados || aplicadosOcultos > 0) && (
+              <button
+                onClick={() => setVerArquivados((v) => !v)}
+                title="Cards aplicados no cliente há mais de uma semana"
+                className="rounded-md border px-3 py-1.5 text-sm text-muted-foreground hover:bg-muted"
+              >
+                {verArquivados ? 'Ocultar arquivados' : `Arquivados (${aplicadosOcultos})`}
+              </button>
+            )}
             {podeMover && (
               <button
                 onClick={() => setCriando(true)}
