@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState } from 'react'
 import { arara, araraFetch } from '@/lib/arara/client'
 import { ehAgenteAtivo } from '@/lib/arara/auth-storage'
 
-/** `/tickets/kanban` devolve `{ data: {coluna: [...]}, columns, count }`. */
+/** `/tickets/kanban` devolve `{ data: {coluna: [...]}, count }` (o quadro Dev recebe `tickets`). */
 type Resposta = { data?: unknown; count?: number }
 
 function achatar(res: Resposta): Record<string, any>[] {
