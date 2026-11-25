@@ -255,7 +255,8 @@
       "friday": "Friday",
       "saturday": "Saturday",
       "sunday": "Sunday"
-    }
+    },
+    "somenteAdmin": "Only administrators change the on-call schedule. Here you can view the plans."
   },
   "approvals": {
     "title": "Approvals",

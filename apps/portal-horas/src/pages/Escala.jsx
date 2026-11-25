@@ -5,6 +5,7 @@ import { api, getErrorMessage } from '../api/client.js';
 import { inputClass } from '../lib/ui.js';
 import { HOUR_TYPES } from '../config/hourTypes.js';
 import { HourTypeBadge } from '../components/hour-type/HourTypeBadge.jsx';
+import { useAuth } from '../context/AuthContext.jsx';
 
 const DAYS = [
   { value: 'monday', key: 'monday' },
@@ -28,6 +29,9 @@ function scheduleRoleToHourType(role) {
 }
 
 export default function Escala() {
+  const { user } = useAuth();
+  // Só admin grava a escala (o servidor recusa os demais); quem não é admin só consulta.
+  const podeEditar = user?.role === 'admin' || user?.role === 'master';
   const { t } = useTranslation();
   const [schedules, setSchedules] = useState([]);
   const [users, setUsers] = useState([]);
@@ -164,6 +168,13 @@ export default function Escala() {
         </div>
       )}
 
+      {!podeEditar && (
+        <p className="mt-4 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-ink-muted">
+          {t('escala.somenteAdmin', { defaultValue: 'Somente administradores alteram a escala. Aqui você consulta os planos.' })}
+        </p>
+      )}
+
+      {podeEditar && (
       <section className="mt-8 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
         <h2 className="text-lg font-medium text-ink">{t('escala.newPlan')}</h2>
         <p className="mt-1 text-sm text-ink-muted">{t('escala.newPlanHint')}</p>
@@ -271,6 +282,7 @@ export default function Escala() {
           </div>
         </form>
       </section>
+      )}
 
       <section className="mt-10">
         <h2 className="text-lg font-medium text-ink">{t('escala.listTitle')}</h2>
@@ -314,7 +326,7 @@ export default function Escala() {
                       <td className="px-4 py-3">
                         <button
                           type="button"
-                          disabled={actingId === row.id}
+                          disabled={!podeEditar || actingId === row.id}
                           onClick={() => toggleActive(row)}
                           className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
                             row.active
@@ -328,7 +340,7 @@ export default function Escala() {
                       <td className="px-4 py-3">
                         <button
                           type="button"
-                          disabled={actingId === row.id}
+                          disabled={!podeEditar || actingId === row.id}
                           onClick={() => removeSchedule(row.id)}
                           className="text-sm text-red-600 hover:underline disabled:opacity-50"
                         >

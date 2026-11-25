@@ -255,7 +255,8 @@
       "friday": "Sexta",
       "saturday": "Sabado",
       "sunday": "Domingo"
-    }
+    },
+    "somenteAdmin": "Somente administradores alteram a escala. Aqui voce consulta os planos."
   },
   "approvals": {
     "title": "Aprovacoes",
