@@ -81,13 +81,10 @@ api.interceptors.request.use((config) => {
       return config;
     }
 
-    // Finance + users + squads + hour-entries + month-closures: JWT identifies the user
-    const jwtOnly =
-      config.url.startsWith('/api/finance') ||
-      config.url.startsWith('/api/users') ||
-      config.url.startsWith('/api/squads') ||
-      config.url.startsWith('/api/hour-entries') ||
-      config.url.startsWith('/api/month-closures');
+    // Com sessão, toda rota do app vai com o JWT: o servidor precisa saber
+    // quem pede (todas as rotas do Horas conferem a pessoa). A chave do app
+    // fica só como reserva quando não há token.
+    const jwtOnly = !!localStorage.getItem('token');
     config.url = mapAraraPath(config.url);
     if (jwtOnly) {
       const token = localStorage.getItem('token');
