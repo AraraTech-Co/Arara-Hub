@@ -48,7 +48,7 @@ function nome(p: Pessoa): string {
 }
 
 function linhas(res: unknown): ChamadoDaPergunta[] {
-  // A rota do kanban devolve `{ data: {coluna: [...]}, columns, count }`.
+  // A rota do kanban devolve `{ data: {coluna: [...]}, count }`.
   const d = (res as { data?: unknown })?.data
   if (Array.isArray(d)) return d as ChamadoDaPergunta[]
   if (d && typeof d === 'object') return Object.values(d as Record<string, ChamadoDaPergunta[]>).flat()

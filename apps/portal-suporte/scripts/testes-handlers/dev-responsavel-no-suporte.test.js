@@ -92,7 +92,9 @@ async function bateria(cod = { kanban: KANBAN, detalhe: DETALHE, mover: MOVER })
     card('D6', 'T4', { assigned_to: 'p-bia', updated_at: '2026-10-12T10:00:00Z', previsao_entrega: '2026-11-09T12:00:00' }),
   ]
   const lerKanban = async (m, quem = 'u-sup', query) => { const r = await kanban(ctxDe(m, quem, { query: query || {} })); return r }
-  const porId = (r) => Object.fromEntries(((r.body && r.body.tickets) || []).map((tt) => [tt.id, tt]))
+  // O quadro de Suporte manda os cards por coluna em `data`; o quadro Dev, em `tickets`.
+  const cards = (r) => (r.body && r.body.tickets) || Object.values((r.body && r.body.data) || {}).flat()
+  const porId = (r) => Object.fromEntries(cards(r).map((tt) => [tt.id, tt]))
 
   let m = mundo(base())
   let r = await lerKanban(m)
@@ -117,7 +119,7 @@ async function bateria(cod = { kanban: KANBAN, detalhe: DETALHE, mover: MOVER })
   x('quadro Dev: não ganha a chave `dev`', ((r.body && r.body.tickets) || []).length > 0 && r.body.tickets.every((tt) => tt.dev === undefined), r.status)
   // nível
   r = await lerKanban(mundo(base()), 'u-usr')
-  x('kanban: nível abaixo de suporte não recebe a chave `dev`', r.status === 200 && ((r.body && r.body.tickets) || []).length > 0 && r.body.tickets.every((tt) => tt.dev === undefined), r.status)
+  x('kanban: nível abaixo de suporte não recebe a chave `dev`', r.status === 200 && cards(r).length > 0 && cards(r).every((tt) => tt.dev === undefined), r.status)
 
   // detalhe do chamado
   const ver = (m2, id, quem) => detalhe(ctxDe(m2, quem || 'u-sup', { params: { id } }))

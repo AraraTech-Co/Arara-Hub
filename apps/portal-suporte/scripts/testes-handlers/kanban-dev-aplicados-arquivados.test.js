@@ -91,7 +91,9 @@ function ctxDe(query) {
 async function rodar(codigo, query) {
   const r = await compilar(codigo)(ctxDe(query))
   const b = r.body || {}
-  return { status: r.status, ids: (b.tickets || []).map((t) => t.id).sort(), ocultos: b.aplicados_ocultos, b }
+  // Quadro Dev: `tickets`. Os outros: `data`, por coluna.
+  const lista = b.tickets || Object.values(b.data || {}).flat()
+  return { status: r.status, ids: lista.map((t) => t.id).sort(), ocultos: b.aplicados_ocultos, chaves: Object.keys(b).sort().join(), b }
 }
 
 const DEV_VISIVEIS = ['ap6', 'apSemData', 'apUpd2', 'desc40', 'emdev'].sort()
@@ -109,6 +111,11 @@ async function bateria(codigo) {
   const s = await rodar(codigo, {})
   if (s.ids.join() !== ['sup1', 'sup2', 'supAplic', 'supFech'].join()) f.push('suporte:ids=' + s.ids.join('|'))
   if (s.ocultos !== 0) f.push('suporte:ocultos=' + s.ocultos)
+  // A lista vai uma vez só: Dev em `tickets`, Suporte em `data` por coluna; `columns` não vai.
+  if (d.chaves !== 'aplicados_ocultos,count,fechados_ocultos,tickets') f.push('dev:chaves=' + d.chaves)
+  if (s.chaves !== 'aplicados_ocultos,count,data,fechados_ocultos') f.push('suporte:chaves=' + s.chaves)
+  if (d.b.count !== d.ids.length || s.b.count !== s.ids.length) f.push('count')
+  if (s.b.data && (s.b.data.pendencia_dev || []).map((t) => t.id).join() !== 'sup1') f.push('suporte:coluna-pendencia_dev')
   return { f, d, a, s }
 }
 
@@ -123,6 +130,8 @@ async function bateria(codigo) {
   ok('aplicados_ocultos = 4', d.ocultos === 4, d.ocultos)
   ok('?arquivados=1 devolve todos os 9 cards Dev e ocultos 0', a.ids.join() === DEV_TODOS.join() && a.ocultos === 0, [a.ids, a.ocultos])
   ok('quadro de Suporte: os mesmos 4 chamados (inclusive um aplicado antigo) e ocultos 0', s.ids.join() === 'sup1,sup2,supAplic,supFech' && s.ocultos === 0, [s.ids, s.ocultos])
+  ok('quadro Dev manda a lista uma vez, em `tickets`', d.chaves === 'aplicados_ocultos,count,fechados_ocultos,tickets', d.chaves)
+  ok('quadro de Suporte manda a lista uma vez, em `data` por coluna', s.chaves === 'aplicados_ocultos,count,data,fechados_ocultos' && (s.b.data.pendencia_dev || []).map((t) => t.id).join() === 'sup1', s.chaves)
   ok('a bateria passa limpa', f.length === 0, f)
 
   const MUTACOES = [
@@ -133,7 +142,11 @@ async function bateria(codigo) {
     ['sem data some', 'if (!isFinite(_quando) || _quando >= _corteAplicados) return true;', 'if (_quando >= _corteAplicados) return true;'],
     ['esconde qualquer status antigo', 'if (String(t.status) !== "aplicado_no_cliente") return true;', 'if (false) return true;'],
     ['não conta os ocultos', '      _aplicadosOcultos++;\n', ''],
-    ['resposta sem aplicados_ocultos', 'aplicados_ocultos: _aplicadosOcultos })', '})'],
+    ['resposta sem aplicados_ocultos', 'aplicados_ocultos: _aplicadosOcultos };', '};'],
+    ['Suporte volta a receber `tickets`', '  else _resposta.data = columns;\n', '  else { _resposta.data = columns; _resposta.tickets = lista; }\n'],
+    ['volta o `columns`', '  return ctx.reply.send(_resposta);', '  _resposta.columns = columns;\n  return ctx.reply.send(_resposta);'],
+    ['Dev recebe `data` em vez de `tickets`', '  if (_quadro === "dev") _resposta.tickets = lista;', '  if (_quadro === "dev") _resposta.data = columns;'],
+    ['count errado', 'var _resposta = { count: lista.length,', 'var _resposta = { count: rows.length + 1,'],
   ]
   for (const [nome, de, para] of MUTACOES) {
     const n = KANBAN.split(de).length - 1
