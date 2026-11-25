@@ -28,10 +28,12 @@ export type Versao = {
 type Ok<T> = { success?: boolean; data: T }
 
 export const kanbanDevApi = {
-  /** O quadro Dev — mesma rota rica do Suporte, filtrada por quadro. */
-  listar: () =>
-    araraFetch.get<{ tickets?: Record<string, unknown>[]; count?: number }>(
-      '/api/tickets/kanban?quadro=dev',
+  /** O quadro Dev — mesma rota rica do Suporte, filtrada por quadro. Sem
+   *  `arquivados`, o servidor deixa de fora os cards aplicados no cliente há mais
+   *  de uma semana e diz quantos em `aplicados_ocultos`. */
+  listar: (arquivados = false) =>
+    araraFetch.get<{ tickets?: Record<string, unknown>[]; count?: number; aplicados_ocultos?: number }>(
+      '/api/tickets/kanban?quadro=dev' + (arquivados ? '&arquivados=1' : ''),
     ),
 
   /** Ordem manual da coluna (onda 7): grava `position` na sequência dada. support+. */
