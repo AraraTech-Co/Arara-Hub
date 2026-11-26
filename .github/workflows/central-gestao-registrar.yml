@@ -1,0 +1,77 @@
+name: Central de Gestão — registrar app e perfis
+
+# Roda packages/api/scripts/central-gestao/registrar.mjs DENTRO do contêiner da API
+# (que já tem DATABASE_URL e Prisma). Só manual. Simula por padrão; grava só com "aplicar".
+# A lista de pessoas vem do secret CENTRAL_GESTAO_PESSOAS (JSON), nunca do repositório:
+#   [{ "email": "...", "name": "...", "role": "admin"|"membro", "dono": true? }]
+# Os e-mails são mascarados no log.
+
+on:
+  workflow_dispatch:
+    inputs:
+      aplicar:
+        description: Gravar no banco (desmarcado = só simula)
+        type: boolean
+        default: false
+
+concurrency:
+  group: central-gestao-registrar
+  cancel-in-progress: false
+
+jobs:
+  registrar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: production
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Lista de pessoas (mascarada)
+        env:
+          PESSOAS: ${{ secrets.CENTRAL_GESTAO_PESSOAS }}
+        run: |
+          set -euo pipefail
+          if [ -z "${PESSOAS}" ]; then
+            echo "::error::Secret CENTRAL_GESTAO_PESSOAS ausente"
+            exit 1
+          fi
+          printf '%s' "$PESSOAS" > "$RUNNER_TEMP/pessoas.json"
+          for e in $(jq -r '.[].email' "$RUNNER_TEMP/pessoas.json"); do
+            echo "::add-mask::$e"
+            echo "::add-mask::$(printf '%s' "$e" | tr 'A-Z' 'a-z')"
+          done
+          echo "pessoas: $(jq length "$RUNNER_TEMP/pessoas.json")"
+
+      - name: Setup SSH
+        uses: ./.github/actions/setup-ssh
+        with:
+          ssh_key: ${{ secrets.SSH_PRIVATE_KEY }}
+          host: ${{ vars.DEPLOY_HOST }}
+          port: ${{ vars.DEPLOY_SSH_PORT || '22' }}
+          user: ${{ vars.DEPLOY_USER }}
+
+      - name: Registrar no contêiner da API
+        env:
+          APLICAR: ${{ inputs.aplicar }}
+        run: |
+          set -euo pipefail
+          : "${SSH_CONFIG:?Setup SSH did not export SSH_CONFIG}"
+          DIR=/tmp/central-gestao-registrar
+          ssh -F "$SSH_CONFIG" deploy-target "rm -rf $DIR && mkdir -p $DIR && chmod 700 $DIR"
+          scp -F "$SSH_CONFIG" -q \
+            packages/api/scripts/central-gestao/registrar.mjs \
+            packages/api/scripts/central-gestao/models.json \
+            "$RUNNER_TEMP/pessoas.json" \
+            "deploy-target:$DIR/"
+          rm -f "$RUNNER_TEMP/pessoas.json"
+          FLAG=""
+          if [ "$APLICAR" = "true" ]; then FLAG="--aplicar"; fi
+          ssh -F "$SSH_CONFIG" deploy-target bash -s <<REMOTE
+          set -euo pipefail
+          limpar() { docker exec -u root arara-platform-prd rm -rf /app/central-gestao-registrar >/dev/null 2>&1 || true; rm -rf $DIR; }
+          trap limpar EXIT
+          docker exec -u root arara-platform-prd rm -rf /app/central-gestao-registrar
+          docker cp $DIR/. arara-platform-prd:/app/central-gestao-registrar/
+          docker exec -w /app arara-platform-prd node central-gestao-registrar/registrar.mjs --pessoas central-gestao-registrar/pessoas.json $FLAG
+          REMOTE
