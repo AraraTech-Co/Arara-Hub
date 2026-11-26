@@ -6,6 +6,7 @@
 #   10003  suporte.arara-tech.com → portal-suporte
 #   10008  cursos.arara-tech.com → portal-cursos
 #   10009  hub.arara-tech.com → hub-araratech
+#   10010  adm.arara-tech.com → central-gestao
 #   4100   api.arara-tech.com → API (started separately)
 #
 name: arara-fronts
@@ -88,6 +89,24 @@ services:
       <<: *front-env
     ports:
       - "10008:80"
+    networks:
+      - arara
+
+  central-gestao:
+    image: arara-front-central-gestao:local
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.vite-spa
+      args:
+        APP_DIR: apps/central-gestao
+        VITE_ARARA_APP_SLUG: central-gestao
+        VITE_ARARA_API_URL: https://api.arara-tech.com
+    container_name: arara-front-central-gestao
+    restart: unless-stopped
+    environment:
+      <<: *front-env
+    ports:
+      - "10010:80"
     networks:
       - arara
 

@@ -54,6 +54,14 @@ const REGISTRY: Record<
     url: 'https://cursos.arara-tech.com',
     order: 40,
   },
+  'central-gestao': {
+    label: 'Central de Gestão',
+    description: 'Resumo da gestão e Kanban de decisões',
+    icon: '📊',
+    color: '#0f766e',
+    url: 'https://adm.arara-tech.com',
+    order: 45,
+  },
   'portal-araratech': {
     label: 'AraraTech',
     description: 'Portal institucional e mission control',
