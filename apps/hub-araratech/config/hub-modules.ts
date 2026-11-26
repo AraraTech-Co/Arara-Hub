@@ -59,7 +59,7 @@ const REGISTRY: Record<
     description: 'Resumo da gestão e Kanban de decisões',
     icon: '📊',
     color: '#0f766e',
-    url: 'https://gestao.arara-tech.com',
+    url: 'https://adm.arara-tech.com',
     order: 45,
   },
   'portal-araratech': {

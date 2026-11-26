@@ -6,7 +6,7 @@
 #   10003  suporte.arara-tech.com → portal-suporte
 #   10008  cursos.arara-tech.com → portal-cursos
 #   10009  hub.arara-tech.com → hub-araratech
-#   10010  gestao.arara-tech.com → central-gestao
+#   10010  adm.arara-tech.com → central-gestao
 #   4100   api.arara-tech.com → API (started separately)
 #
 name: arara-fronts
