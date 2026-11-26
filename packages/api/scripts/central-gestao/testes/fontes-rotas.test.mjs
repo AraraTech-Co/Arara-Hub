@@ -115,7 +115,10 @@ test('CRM: sem pessoa → 401; mês inválido → 400; contraste 200 sem dado in
 
 test('CRM: index registra a rota de resumo junto das demais (com a guarda de leitura)', () => {
   const idx = fs.readFileSync(path.join(API, 'src/apps/portal-crm/index.ts'), 'utf8');
-  assert.match(idx, /aplicarGuardaDeLeitura\(\[\.\.\.rotasGeradas, \.\.\.rotasDoFunil, \.\.\.rotasDoResumoGestao\]\)/);
+  assert.match(idx, /import \{ rotasDoResumoGestao \} from '\.\/resumo-gestao\.js'/);
+  // A rota entra na lista registrada (as guardas do CRM deixam GET passar sem mudança).
+  assert.match(idx, /\[[^\]]*\.\.\.rotasDoResumoGestao[^\]]*\]/);
+  assert.match(idx, /registerAppRoutes\('portal-crm', PortalCrmRoutes\)/);
   assert.equal(crm.rotasDoResumoGestao.length, 1);
   assert.deepEqual([crm.rotasDoResumoGestao[0].method, crm.rotasDoResumoGestao[0].path, crm.rotasDoResumoGestao[0].authMode], ['GET', '/vendas/resumo-gestao', 'actor']);
 });
