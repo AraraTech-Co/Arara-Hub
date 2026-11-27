@@ -5,6 +5,7 @@ name: Central de Gestão — registrar app e perfis
 # A lista de pessoas vem do secret CENTRAL_GESTAO_PESSOAS (JSON), nunca do repositório:
 #   [{ "email": "...", "name": "...", "role": "admin"|"membro", "dono": true? }]
 # Os e-mails são mascarados no log.
+# Disparo: Actions → "Central de Gestão — registrar app e perfis" → Run workflow (marque "aplicar" para gravar).
 
 on:
   workflow_dispatch:
